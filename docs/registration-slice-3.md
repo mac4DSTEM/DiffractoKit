@@ -145,3 +145,12 @@ margin 3.01 > ln 19). It found, all at absurd inputs or in the API, all fixed wi
 - **F3, F8, recorded:** subnormal volts lose 1e-8 relative; huge k or σ give an infinite reach in a correct verdict.
 - **§4's 49-axes line**, written loosely before code ("up to sign …"), is replaced by what is tested: the 49 axes are
   mac4DSTEM's `lowIndexZoneAxes` by value and in order, and the refuter regenerated the same list independently.
+
+### 2026-10-15, 02:05 CEST, from the coordinator: every family and indexing gate is against an independent oracle
+
+macTEM's refuter found a family check there that compared the Swift with itself. Here: `tools/slice-3/index-pins.py` takes
+its rings from `slice-2-pins.json`, written by NumPy from the definitions on pymatgen-expanded sites (slice 2 §4.1), not
+from the port; the verdicts are computed in NumPy and in an independent scalar Python implementation; `RingIndexingPinsTests`
+compares the port's own rings to those NumPy rings (g 1e-12, names, members) before it compares verdicts. Slice 1's and
+slice 2's family gates compare against pymatgen/spglib and NumPy likewise. No gate in slices 1–3 compares the port with
+itself.
