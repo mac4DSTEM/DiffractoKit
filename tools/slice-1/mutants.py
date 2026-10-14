@@ -94,10 +94,12 @@ MUTANTS = [
      "_ = grid",
      "RefuterRegressionTests.testCoarseCoordinatesGiveExactGridTranslations"),
     # Gate B's fixes (2026-10-15), each broken once.
-    ("absence tolerance without the translation uncertainty", SRC + "ReflectionList.swift",
-     "let tolerance = min(maximumAbsenceTolerance, weight * max(0, translationUncertainty) + 1e-9)",
-     "let tolerance = min(maximumAbsenceTolerance, 0 * weight * max(0, translationUncertainty) + 1e-9)",
-     "RefuterRegressionTests.testShiftedMagnesiumAtSixDecimalsKeepsItsAbsences"),
+    # The 2026-10-15 absence tolerance was an equivalent mutant (the least-squares translation makes h . t exact for
+    # every operation fixing h) and was removed; this breaks the refinement instead.
+    ("translation not refined (the trial translation kept)", SRC + "SymmetryDetection.swift",
+     "let refined = wrapFractional(trial + mean)",
+     "let refined = wrapFractional(trial + 0 * mean)",
+     "RefuterRegressionTests.testShiftedRockSaltAtFiveDecimalsKeepsItsAbsences"),
     ("the old snap: k/24 within the position tolerance", SRC + "SymmetryDetection.swift",
      "let grid = snapped(refined, within: 3 * u)",
      "let grid = snapped(refined, within: positionTolerance)",
@@ -132,9 +134,10 @@ MUTANTS = [
      "guard abs(rotation.determinant) == 1 else { throw .notInvertible(raw) }",
      "_ = rotation.determinant",
      "RefuterRegressionTests.testNonInvertibleOperationsAreRefused"),
-    ("detection metric at the apps' 1e-3", SRC + "SymmetryDetection.swift",
-     "public static let defaultMetricLengthTolerance = 1e-9",
-     "public static let defaultMetricLengthTolerance = 1e-3",
+    # Mutated at the use site: a debug build does not recompile a file whose default argument folded the constant.
+    ("detection metric at the apps' 1e-3", SRC + "CrystalStructure.swift",
+     "metricLengthTolerance: Double = SymmetryDetection.defaultMetricLengthTolerance,",
+     "metricLengthTolerance: Double = 1e-3,",
      "RefuterRegressionTests.testNearlyCubicCellIsTetragonalAndNoRingIsNamedTwice"),
     ("the file's loop taken as the operations, not detected", SRC + "CIFImport.swift",
      "cell: cell, sites: parsed.sites, fileOperations: parsed.operations,",

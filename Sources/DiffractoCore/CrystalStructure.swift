@@ -62,8 +62,9 @@ public struct CrystalStructure: Sendable, Equatable {
     /// Candidate rotations of the holohedry that failed the fixed position tolerance but would pass at the file's own
     /// written precision (3.4b): reported, not taken. Empty when the operations were given.
     public let unresolvedRotations: [IntegerMatrix]
-    /// The largest uncertainty of a detected translation that is neither exact (from the file, or on the k/24 grid)
-    /// nor zero: what the absence test allows per unit of |h| + |k| + |l| (1e-9 when every translation is exact).
+    /// The largest uncertainty of a detected translation that is neither exact (from the file, or on the k/24 grid):
+    /// its least-squares residual plus twice the written half-step, at least 1e-9. Reported; the absence test does not
+    /// need it (`ReflectionList.isAllowed`).
     public let translationUncertainty: Double
 
     /// A structure whose operations are given as they are (a cell built in code with a known group); nothing is
@@ -236,7 +237,6 @@ public struct CrystalStructure: Sendable, Equatable {
     /// Every reflection with 0 < |g| ≤ `kMax` (Å⁻¹), with its systematic-absence flag from this structure's
     /// operations, and its families by this structure's Laue group (registration 3.8, 3.9).
     public func reflections(kMax: Double) throws(ReflectionListError) -> ReflectionList {
-        try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax,
-                           translationUncertainty: translationUncertainty)
+        try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax)
     }
 }

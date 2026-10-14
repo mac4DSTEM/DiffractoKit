@@ -40,8 +40,7 @@ public enum SymmetryDetection {
         /// Candidates that fail at `positionTolerance` but pass at 10 × the written half-step (reported, not taken).
         public let unresolvedRotations: [IntegerMatrix]
         /// The largest uncertainty of a translation that was neither exact from the file nor on the k/24 grid: its
-        /// least-squares residual plus twice the coordinates' written half-step, at least 1e-9. The absence test uses
-        /// it (`ReflectionList.isAllowed(_:by:translationUncertainty:)`).
+        /// least-squares residual plus twice the coordinates' written half-step, at least 1e-9. Reported.
         public let translationUncertainty: Double
     }
 

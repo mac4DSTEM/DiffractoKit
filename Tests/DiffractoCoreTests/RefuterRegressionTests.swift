@@ -227,6 +227,41 @@ final class RefuterRegressionTests: XCTestCase {
         XCTAssertEqual(try s.reflections(kMax: 1.2).allowed.count, 282)
     }
 
+    /// F1 fix, the tolerance where refinement cannot help: rock salt shifted by an arbitrary vector and written to FIVE
+    /// decimals, so each of the 8 sites rounds differently and the refined translations keep about 1e-6 of error. Its
+    /// absences and rings equal the unshifted structure's. Mutant: the absence tolerance without the translations'
+    /// uncertainty.
+    func testShiftedRockSaltAtFiveDecimalsKeepsItsAbsences() throws {
+        let shift = SIMD3<Double>(0.123456789, 0.234567891, 0.345678912)
+        let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
+        let na = fcc.map { wrapFractional($0 + shift) }, cl = fcc.map { wrapFractional($0 + SIMD3(0.5, 0.5, 0.5) + shift) }
+        var rows = ""
+        for (i, p) in na.enumerated() { rows += String(format: "Na%d Na %.5f %.5f %.5f\n", i + 1, p.x, p.y, p.z) }
+        for (i, p) in cl.enumerated() { rows += String(format: "Cl%d Cl %.5f %.5f %.5f\n", i + 1, p.x, p.y, p.z) }
+        let cif = """
+        data_nacl5
+        _cell_length_a 5.64
+        _cell_length_b 5.64
+        _cell_length_c 5.64
+        _cell_angle_alpha 90
+        _cell_angle_beta 90
+        _cell_angle_gamma 90
+        loop_
+        _atom_site_label
+        _atom_site_type_symbol
+        _atom_site_fract_x
+        _atom_site_fract_y
+        _atom_site_fract_z
+        \(rows)
+        """
+        let shifted = try CIFImport.read(cif).structure
+        XCTAssertEqual(shifted.operations.count, 192)
+        let unshifted = CrystalStructure.detectingSymmetry(
+            cell: shifted.cell, sites: fcc.map { AtomSite(z: 11, fractional: $0) }
+                + fcc.map { AtomSite(z: 17, fractional: wrapFractional($0 + SIMD3(0.5, 0.5, 0.5))) })
+        try assertSameDiffraction(shifted, unshifted, kMax: 1.2, "NaCl shifted, 5 decimals")
+    }
+
     /// Every detected operation maps the site set onto itself within the position tolerance, on every fixture and the
     /// apps' split gold. Mutant: the final translation not re-verified after refinement and snapping.
     func testEveryDetectedOperationIsASymmetryOfTheSites() throws {

@@ -369,9 +369,12 @@ origin shift changes no absence):
   supercell's k/7 translations: 28 allowed of 122). **Fix:** each translation is refined by least squares over the
   matched sites; it is replaced by the file's exact translation when the loop holds that operation, else by the k/24
   grid point only when within three times its own uncertainty (residual spread + 2 × written half-step); the final
-  translation is re-verified as a permutation (falling back to the refined, then the trial one); the absence test
-  allows (|h| + |k| + |l|) × the structure's largest translation uncertainty + 1e-9, capped at 0.04 (below 1/24): for
-  an operation that fixes h, h · t does not depend on the origin. **Amendment 3 above is replaced by this.**
+  translation is re-verified as a permutation (falling back to the refined, then the trial one). The absence test
+  stays at 1e-9 (section 3.8): the least-squares translation is the true one plus ē − R ē (ē the sites' mean rounding
+  error, the permutation running over the whole set), and h · (ē − R ē) = 0 exactly when h R = h, so h · t is exact for
+  every operation the test reads. (A tolerance of (|h| + |k| + |l|) × the translation uncertainty was tried first; its
+  mutant stayed green on every case, rock salt at an arbitrary shift written to 5 decimals included, as the identity
+  predicts, so it was removed rather than kept as an untested loosening.) **Amendment 3 above is replaced by this.**
 - **Found while fixing F1:** detection must return a group. Pseudo-symmetry within the fractional tolerance passed
   single operations whose products do not pass (the apps' split-atom gold: 40 operations with m-3m's rotations).
   **Fix:** operations that compose out of the set (within 5e-3) are dropped until it is closed (sets of at most 2048
@@ -395,6 +398,15 @@ origin shift changes no absence):
   slice 1b. **Changed:** the metric family for detection is proposed at 1e-9 (section 3.2's default) instead of the
   apps' 1e-3 / 0.05°, because a rotation must preserve every |g| to the ring rule's 1e-9 or an orbit splits across two
   rings (a cell with c/a = 1.0001 read m-3m with every ring named twice; now 4/mmm, 16 operations, as spglib).
+
+### 2026-10-15, the parser's seed moves to mac4DSTEM 7d6fdbd1 (section 3.3)
+
+mac4DSTEM landed its own fix of the `x/2` reading at `7d6fdbd1` (00:10 CEST, pushed to origin/main by 00:25; tier 1, refuted):
+empty fraction pieces refused (`/2`, `2/`, `1//2`), a coefficient on x, y or z must be an integer (`1/2x`), and a term
+ends at a sign or the end (`xy`, `x2`, `x.5` refused, not read as x + y, x + 2, x + 0.5). The kit's parser had the first
+two and the 2026-10-14 non-finite and magnitude refusals; it now has the third, and section 3.3's seed is `7d6fdbd1`'s
+`parseSymmetryComponent` / `parseFraction`. The kit refuses a singular rotation too (Gate B F5), which mac4DSTEM's
+parser does not. Refused tokens are planted in `SymmetryOperationTests.testRefusals`; no registered number changes.
 
 ### 2026-10-14, 23:30 CEST, from the coordinator: parsing comparisons named, no change of scope
 
