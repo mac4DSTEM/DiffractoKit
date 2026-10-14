@@ -14,10 +14,10 @@ What is live, one table; then the hand-off. Rules are in `CLAUDE.md`; the regist
 | Reflections, absences, families | `ReflectionList`: per-axis tile with a size guard, the general reflection condition (exact for least-squares translations), macTEM's 1e-9 ring rule, Miller–Bravais names in hexagonal axes only | `CIFImportTests`, `PinsTests`, `RefuterRegressionTests` |
 | Pins against pymatgen | 19 structures and 7 cells equal within the registered bounds (pymatgen-core 2026.9.23, spglib 2.8.0) | `PinsTests`; `tools/slice-1/pins.py` (6960 self-checks); `Fixtures/slice-1-pins.json` |
 | Placeholder modules | `DiffractoScattering`, `DiffractoGeometry`, `DiffractoOrientation`: a scope statement each | their placeholder tests |
-| Tests | 68 tests, 0 failures (debug, after the Gate B fixes) | `swift test` |
-| Gate | `tools/test.sh` green and stamped at `b4cfe17` (the frozen commit, 56 tests). The Gate B fixes need the release gate re-run for a new stamp | `.build/last-green` |
-| Consumer check | `tools/consumer-check` builds in Debug with 0 warnings and passes 109 checks through the public API (skeleton: no negative controls yet) | `tools/consumer-check/run.sh` |
-| Break-once proof | 19 of 19 red on `9981f43`; the nine mutants of the Gate B fixes are written, their run is the next session's first step | `docs/slice-1-mutants-2026-10-14.md`, `tools/slice-1/mutants.py` |
+| Tests | 72 tests, 0 failures | `tools/test.sh` (release) at `16ce14d` |
+| Gate | `tools/test.sh` green and stamped at `16ce14d` (72 tests, release); the frozen slice-1 commit `b4cfe17` was green with 56 | `.build/last-green` |
+| Consumer check | `tools/consumer-check` builds in Debug with 0 warnings and passes 109 checks through the public API at `16ce14d` (skeleton: no negative controls yet) | `tools/consumer-check/run.sh` |
+| Break-once proof | 29 of 29 mutants red on `16ce14d` (19 planned, 10 for the Gate B fixes) | `docs/slice-1-mutants-2026-10-14.md`, `tools/slice-1/mutants.py` |
 | Gate B refuter | One refuter on `b4cfe17`: all 230 groups in standard settings agree; F1, F2, F4, F5 fixed; F3 and F6 recorded | `registration-slice-1.md` §8, 2026-10-15 |
 
 Validation: none of this is validated on a real diffraction pattern; agreement with pymatgen and recovery of planted
@@ -27,8 +27,8 @@ cells are what is claimed (`registration-slice-1.md` §7).
 
 The next session starts from the suite board's `lanes/diffractokit` prompt. In order:
 
-1. Finish the Gate B round: the release gate (`tools/test.sh`) for a new stamp, then `tools/slice-1/mutants.py` with its
-   28 mutants (19 + 9 for the fixes); every one must be red. A second refuter only on a named doubt (registration §6).
+1. Gate B is closed: the fixes are in, gate and mutants green at `16ce14d`. A second refuter only on a named doubt
+   (registration §6); none is named.
 2. Slice 1b, registered before code: a lattice reduction (Niggli or Delaunay, then the conventional cell) so a P1 file
    in a non-conventional setting detects its full symmetry (Gate B F3), and a Cartesian position tolerance as an option
    (F6); faster detection for large symmetric P1 cells (F5, about N³ now).
