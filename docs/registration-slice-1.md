@@ -290,4 +290,31 @@ Laue class. The family rule's 1e-9 is macTEM's; near-coincident rings are the ca
 
 ## 8. Amendments
 
-(none yet)
+### 2026-10-14, before any Swift code: the oracle's package is pymatgen-core
+
+Found while provisioning `References/`. pymatgen split in 2026-09: the PyPI package `pymatgen` 2026.9.24 (tag `v2026.9.24` =
+`8461938`, cloned to `References/pymatgen-8461938`) is an umbrella that depends on `pymatgen-core>=2026.9.23`, and the code
+section 2 uses (`pymatgen.core.Lattice`, `pymatgen.io.cif.CifParser`, `pymatgen.symmetry.analyzer.SpacegroupAnalyzer`,
+`pymatgen.core.operations.SymmOp`) lives in pymatgen-core (the monorepo's `pymatgen-core` submodule,
+`github.com/materialsproject/pymatgen-core`). pip first resolved pymatgen-core 2026.10.2 (12 days old); the venv is pinned to
+**pymatgen-core 2026.9.23** (tag `v2026.9.23` = `ae9a8348177b92fe33b214e54e61a3b8f4244b6e`, cloned to
+`References/pymatgen-core-ae9a834`), the version the umbrella tag was released against; the installed `core/lattice.py`,
+`io/cif.py`, `symmetry/analyzer.py` and `core/operations.py` are byte-identical to that clone (sha256 compared 2026-10-14).
+File:line pins cite `pymatgen-core-ae9a834/src/pymatgen/...`. spglib 2.8.0, NumPy 2.5.4 (`References/pymatgen-venv-freeze.txt`).
+No registered number changes.
+
+### 2026-10-14, at the first test run: a hand error in section 5.2's tetragonal multiplicities
+
+Section 5.2 wrote "4/m {210} 8 and {120} 8 as two orbits, one orbit of 16 under 4/mmm". The group code, written from
+section 3.6's definition, gives 4, 4 and 8, and that is the International Tables' value: hk0 is a special form, fixed
+by the mirror perpendicular to c (in 4/m the inversion composed with the 2-fold about c), so its multiplicity is half
+the general one: 4 under 4/m and 8 under 4/mmm; the general hkl are 8 and 16 as registered. The two-orbit statement
+stands ({2 1 0} and {1 2 0} are two orbits of 4/m, one of 4/mmm). The test asserts the corrected numbers and adds the
+general (2 1 3) at 8 and 16. The rule did not change; a planted number was wrong by hand.
+
+### 2026-10-14, at the first test run: two parser readings tightened (section 3.3)
+
+Found by the planted refusals. (1) The apps' fraction parser split "/2" into ["2"] and read `x/2` as x + 2; the kit's
+refuses an empty numerator or denominator as unparsable. (2) A coefficient or constant that is non-finite or beyond
+1000 in magnitude (`1000000000000000000000x`, which the apps' incomplete-list check guards against trapping on) is
+refused as unparsable at the parser, never converted to Int. No registered number changes.

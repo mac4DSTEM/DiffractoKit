@@ -1,0 +1,72 @@
+DiffractoKit
+Copyright (C) 2026 Paul Lobpreis
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version (LICENSE).
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+No d-spacing, orbit or cell content in this library is validated on a real
+diffraction pattern: that validation is each app's to register against a tag.
+
+
+================================================================================
+mac4DSTEM and macTEM (the seeds of slice 1)
+================================================================================
+
+The cell, lattice and reflection-list code, the CIF parser with its
+written-precision expansion and its refusals, the family (ring) rule and the
+monoclinic orbit convention are ported from mac4DSTEM (commit 7448401b:
+mac4DSTEM/Core/Crystal/Crystal.swift, CrystalModel.swift, CIFImport.swift) and
+macTEM (commit a58c84c: Sources/TEMCore/Analysis/DSpacingIndexing.swift, ADR
+022, and the V1-8 S2c registration), generalised to the seven crystal systems.
+The CIF fixtures under Tests/DiffractoCoreTests/Fixtures come from mac4DSTEM's
+tests at the same commit, each with its provenance in a comment line.
+
+    mac4DSTEM - https://github.com/mac4DSTEM/mac4DSTEM
+    macTEM    - https://github.com/mac4DSTEM/macTEM
+    Copyright (C) 2026 Paul Lobpreis
+    Both licensed under the GNU General Public License v3.0
+
+================================================================================
+py4DSTEM (conventions)
+================================================================================
+
+The apps' lattice convention (a along x, b in the xy plane; reciprocal vectors
+without 2 pi; structure factors in A) follows py4DSTEM's Crystal class
+(py4DSTEM/process/diffraction/crystal.py). No py4DSTEM code is in slice 1; the
+Lobato & Van Dyck scattering table of slice 2 will be py4DSTEM's.
+
+    py4DSTEM - https://github.com/py4dstem/py4DSTEM
+    Copyright (C) The py4DSTEM developers
+    Licensed under the GNU General Public License v3.0
+
+================================================================================
+pymatgen (the oracle of slice 1; no code copied)
+================================================================================
+
+Cells, expanded CIF sites, symmetry operations (spglib behind pymatgen),
+d-spacings and the reflections within a sphere are checked against pymatgen
+2026.9.24 / pymatgen-core 2026.9.23 by tools/slice-1/pins.py, whose output is
+the committed fixture slice-1-pins.json. The Laue orbit and the absence rule are
+computed from pymatgen's operations by the registration's definitions, in NumPy.
+
+    pymatgen - https://github.com/materialsproject/pymatgen (MIT License)
+    Copyright (c) 2011-2026 The Materials Project
+    spglib   - https://github.com/spglib/spglib (BSD-3-Clause)
+
+================================================================================
+Crystal structures named in the tests
+================================================================================
+
+beta'' (Mg5Si6): S. J. Andersen, H. W. Zandbergen, J. Jansen, C. Traeholt,
+U. Tundal, O. Reiso, Acta Materialia 46(9), 3283-3298 (1998),
+doi:10.1016/S1359-6454(97)00493-X; cell from the abstract, coordinates from
+Table 3 set 3 (C2/m). Lattice parameters and atomic coordinates are
+measurements of a crystal, cited as such; the CIF is generated, not
+redistributed (tools/crystal-structures/make_beta_double_prime.py, verbatim
+from mac4DSTEM 7448401b).
