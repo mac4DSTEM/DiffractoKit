@@ -286,7 +286,9 @@ symmetry detection of section 3.4 is a holohedry test at a fixed fractional tole
 operations of a structure written to ordinary precision in its conventional cell; a structure in a non-conventional
 cell (a monoclinic cell with its unique axis along c is conventional too and is handled; a rhombohedral structure given
 in a primitive triclinic-looking cell is not) detects only what the metric's holohedry contains, and says so by its
-Laue class. The family rule's 1e-9 is macTEM's; near-coincident rings are the caller's to judge (ADR 022).
+Laue class. The family rule's 1e-9 is macTEM's; near-coincident rings are the caller's to judge (ADR 022). Not
+claimed (Gate B, 2026-10-15): the symmetry of a P1 cell in a non-conventional setting (no lattice reduction yet);
+symmetry finer than the 5e-3 fractional tolerance in a large cell; the speed of a large symmetric P1 cell.
 
 ## 8. Amendments
 
@@ -349,6 +351,50 @@ ring of 14 held. Seven readings are settled here; the rules of sections 3.1, 3.6
    `cif-symmetry-test` carry incomplete operation loops (the apps used them to show a refusal, not a cell content): the
    fixtures here are completed to P3₂21 (6 operations, 9 atoms), R-3c (36, 30) and Pa-3 (24, 12), marked `# MODIFIED`
    with the seeded texts kept beside them (`*_as_seeded.cif`, pinned as what they are: 12, 5 and 8 atoms).
+
+### 2026-10-15, after Gate B: the refuter's findings and the fixes they require (tier 1)
+
+One fresh Sonnet refuter on the frozen `b4cfe17` (its scripts and CIFs in the session's scratchpad, `refuter/`). It
+confirmed agreement with pymatgen and spglib for all 230 space groups in their standard settings (two atoms at generic
+coordinates, as a full loop and as P1: 458 of 460 comparisons; the two others are F6 below), for β″ in the unique-axis
+b, c and a settings and in I2/m (8 operations, 1448, 419 each), and for the edge inputs of section 5.4. It found, with
+repros (now fixtures `refuter_*.cif` and `RefuterRegressionTests`; truth from pymatgen on the UNSHIFTED structures, an
+origin shift changes no absence):
+
+- **F1, port defect (silent wrong numbers): translations off the standard origin.** (a) Amendment 3's snap to k/24
+  within 5e-3 moved genuine off-grid translations (a shifted origin, a lone atom at a general position): operations lost
+  or merged, sets that were not groups, wrong absences (rock salt shifted by (0.9172, 0.6292, 0.5141): 160 operations,
+  no Laue class, 24 flags wrong; one Fe atom in a 5 Å cube: 43 operations, ring {1 1 0} of 10). (b) The absence test's
+  1e-9 failed on translations carrying the coordinates' rounding (Mg shifted, 8 decimals: 262 allowed of 282; a 7×
+  supercell's k/7 translations: 28 allowed of 122). **Fix:** each translation is refined by least squares over the
+  matched sites; it is replaced by the file's exact translation when the loop holds that operation, else by the k/24
+  grid point only when within three times its own uncertainty (residual spread + 2 × written half-step); the final
+  translation is re-verified as a permutation (falling back to the refined, then the trial one); the absence test
+  allows (|h| + |k| + |l|) × the structure's largest translation uncertainty + 1e-9, capped at 0.04 (below 1/24): for
+  an operation that fixes h, h · t does not depend on the origin. **Amendment 3 above is replaced by this.**
+- **Found while fixing F1:** detection must return a group. Pseudo-symmetry within the fractional tolerance passed
+  single operations whose products do not pass (the apps' split-atom gold: 40 operations with m-3m's rotations).
+  **Fix:** operations that compose out of the set (within 5e-3) are dropped until it is closed (sets of at most 2048
+  operations; a larger one, a big symmetric supercell, is returned as found). The split gold is mmm.
+- **F2, port defect: co-sited rows merged.** Two rows on one position (Fe²⁺ 0.5 and Fe³⁺ 0.5) under a loop merged into
+  one (cell content Fe 2 instead of 4). **Fix:** only images of the same row merge; co-sited rows stay, and at full
+  occupancy are refused by the close-contact rule.
+- **F3, registration gap, recorded in section 7 (not fixed in slice 1):** a P1 cell in a non-conventional setting (a
+  primitive cell of a centred lattice, unique axis a for a tetragonal structure, γ = 60° for a hexagonal one) is tested
+  only against its own metric's holohedry and detects a lower Laue class, so its absences and ring names follow the lower
+  class. The Laue class says so; a lattice reduction (Niggli or Delaunay, then the conventional cell) is slice 1b's.
+  With the file's loop the rotations join the candidates and these cells agree.
+- **F4, defect: Miller–Bravais names in rhombohedral axes.** **Fix:** four indices only for a hexagonal-axes Laue class
+  in a hexagonal metric (`ReflectionList.usesMillerBravais`); corundum in rhombohedral axes keeps three.
+- **F5, traps and resources.** A finite cell of 1e30 Å trapped (`Int(Double)`), 1e10 Å hung, 100 Å at 4 Å⁻¹ would need
+  about 68 GB. **Fix:** a list is refused (`cellTooLargeOrInvalid`) when the cell is invalid or the expected count
+  (4/3)π k_max³ V exceeds 10 million; a rotation with determinant other than ±1 (`x,x,z`) is refused
+  (`notInvertible`). Not fixed, recorded: importing a large SYMMETRIC P1 cell scales about as N³ (500 atoms, 30 s).
+- **F6, by design, recorded:** the 5e-3 fractional tolerance is 0.25 Å in a 50 Å cell (spglib's is 1e-4 Å), so a
+  pseudo-centring of 0.013 Å reads as symmetry (sg 54 with x = 0.00247); a Cartesian tolerance is a candidate for
+  slice 1b. **Changed:** the metric family for detection is proposed at 1e-9 (section 3.2's default) instead of the
+  apps' 1e-3 / 0.05°, because a rotation must preserve every |g| to the ring rule's 1e-9 or an orbit splits across two
+  rings (a cell with c/a = 1.0001 read m-3m with every ring named twice; now 4/mmm, 16 operations, as spglib).
 
 ### 2026-10-14, 23:30 CEST, from the coordinator: parsing comparisons named, no change of scope
 

@@ -1,0 +1,27 @@
+# provenance: DiffractoKit slice-1 Gate B refuter, 2026-10-14 night (F2e_quartz_shifted.cif); a regression fixture
+data_F2e_quartz
+_symmetry_space_group_name_H-M 'P 1'
+_symmetry_Int_Tables_number 1
+_cell_length_a 4.9134
+_cell_length_b 4.9134
+_cell_length_c 5.4052
+_cell_angle_alpha 90.0
+_cell_angle_beta 90.0
+_cell_angle_gamma 119.99999999999999
+
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Si1 Si 0.6266 0.2672 0.6470 1.0
+Si2 Si 0.1569 0.3278 0.3137 1.0
+Si3 Si 0.0963 0.7975 0.9804 1.0
+O4 O 0.8935 0.2110 0.5282 1.0
+O5 O 0.2131 0.6509 0.1949 1.0
+O6 O 0.3597 0.9441 0.7659 1.0
+O7 O 0.4800 0.3840 0.4325 1.0
+O8 O 0.0401 0.0644 0.0992 1.0
+O9 O 0.7732 0.5306 0.8615 1.0

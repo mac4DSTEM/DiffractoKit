@@ -62,6 +62,9 @@ public struct CrystalStructure: Sendable, Equatable {
     /// Candidate rotations of the holohedry that failed the fixed position tolerance but would pass at the file's own
     /// written precision (3.4b): reported, not taken. Empty when the operations were given.
     public let unresolvedRotations: [IntegerMatrix]
+    /// The largest uncertainty of a detected translation that is neither exact (from the file, or on the k/24 grid)
+    /// nor zero: what the absence test allows per unit of |h| + |k| + |l| (1e-9 when every translation is exact).
+    public let translationUncertainty: Double
 
     /// A structure whose operations are given as they are (a cell built in code with a known group); nothing is
     /// checked against the sites. A CIF goes through `CIFImport`, which detects.
@@ -78,6 +81,7 @@ public struct CrystalStructure: Sendable, Equatable {
         self.spaceGroupNumber = spaceGroupNumber
         self.name = name
         self.unresolvedRotations = []
+        self.translationUncertainty = 1e-9
     }
 
     /// A structure whose operations are detected from its sites (registration 3.4b): a P1 file, a cell built in
@@ -92,7 +96,7 @@ public struct CrystalStructure: Sendable, Equatable {
     ) -> CrystalStructure {
         let detection = SymmetryDetection.detect(
             sites: sites, cell: cell, coarsestHalfStep: coarsestHalfStep,
-            extraCandidates: fileOperations?.map(\.rotation) ?? [],
+            extraCandidates: fileOperations?.map(\.rotation) ?? [], preferredOperations: fileOperations ?? [],
             metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg)
         return CrystalStructure(cell: cell, sites: sites, detection: detection, fileOperations: fileOperations,
                                 spaceGroupNumber: spaceGroupNumber, name: name)
@@ -113,6 +117,7 @@ public struct CrystalStructure: Sendable, Equatable {
         self.spaceGroupNumber = spaceGroupNumber
         self.name = name
         self.unresolvedRotations = detection.unresolvedRotations
+        self.translationUncertainty = detection.translationUncertainty
     }
 
     public var crystalSystem: CrystalSystem? { laueClass?.crystalSystem }
@@ -231,6 +236,7 @@ public struct CrystalStructure: Sendable, Equatable {
     /// Every reflection with 0 < |g| ≤ `kMax` (Å⁻¹), with its systematic-absence flag from this structure's
     /// operations, and its families by this structure's Laue group (registration 3.8, 3.9).
     public func reflections(kMax: Double) throws(ReflectionListError) -> ReflectionList {
-        try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax)
+        try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax,
+                           translationUncertainty: translationUncertainty)
     }
 }

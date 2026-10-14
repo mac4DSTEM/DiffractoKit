@@ -77,7 +77,7 @@ final class SymmetryOperationTests: XCTestCase {
     /// `xyzString` parses back to an equivalent operation, for every operation of C2/m, P6₃/mmc's screw and a 1/3.
     func testRoundTrip() throws {
         for text in ["x,y,z", "-x,y,-z", "1/2+x,1/2+y,z", "1/2-x,1/2-y,-z", "x-y,x,z+1/2", "-y,x-y,z+1/3",
-                     "y,x,-z+3/4", "2x,y,z"] {
+                     "y,x,-z+3/4", "-x+y,y,-z"] {
             let op = try SymmetryOperation(xyz: text)
             let back = try SymmetryOperation(xyz: op.xyzString)
             XCTAssertTrue(back.isEquivalent(to: op), "\(text) -> \(op.xyzString)")

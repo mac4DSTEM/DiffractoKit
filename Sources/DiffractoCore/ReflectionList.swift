@@ -12,11 +12,19 @@ import simd
 public enum ReflectionListError: Error, Equatable, Sendable, CustomStringConvertible {
     /// k_max must be finite, positive and at most `ReflectionList.maximumKMax` Å⁻¹.
     case invalidKMax(Double)
+    /// The cell is not a valid lattice (`UnitCell.issues`), or so large that the list would exceed
+    /// `ReflectionList.maximumReflections` (about (4/3)π k_max³ V reflections; 255 bytes each).
+    case cellTooLargeOrInvalid(estimatedReflections: Double)
 
     public var description: String {
         switch self {
         case .invalidKMax(let k):
             return "k_max must be a number of Å⁻¹ above 0 and at most \(ReflectionList.maximumKMax); \(k) is not."
+        case .cellTooLargeOrInvalid(let n):
+            return n.isFinite
+                ? String(format: "This cell at this k_max holds about %.3g reflections, more than the %d a list is built to; "
+                         + "lower k_max.", n, ReflectionList.maximumReflections)
+                : "The cell is not a valid finite lattice, so no reflection list can be built."
         }
     }
 }
@@ -56,6 +64,11 @@ public struct ReflectionList: Sendable, Equatable {
     public static let familyTolerance: Double = 1e-9
     /// Two |g| are tied, for the list's order, within this relative difference.
     public static let orderTolerance: Double = 1e-12
+    /// The most reflections a list is built to hold (about 2.5 GB); above it the list is refused, never trapped.
+    public static let maximumReflections = 10_000_000
+    /// The absence test's tolerance never exceeds this: h · t for an operation fixing h is a multiple of 1/n with n at
+    /// most 24 in a conventional cell, so a tolerance below 1/24 still separates 0 from the nearest non-integer.
+    public static let maximumAbsenceTolerance: Double = 0.04
 
     public let kMax: Double
     /// Increasing |g|; equal |g| by descending lexicographic (h, k, l).
@@ -64,13 +77,29 @@ public struct ReflectionList: Sendable, Equatable {
     public let laueGroup: PointSymmetry
     public let laueClass: LaueClass?
 
-    /// The list for `cell` with the absences of `operations` and the orbits of `laueGroup`.
+    /// Whether orbit names print four Miller–Bravais indices: a hexagonal-axes Laue class (-3, -3m, 6/m, 6/mmm) in a
+    /// cell whose metric is hexagonal (a = b, γ = 120°). A trigonal structure in rhombohedral axes keeps three
+    /// indices (Gate B amendment, 2026-10-15).
+    public let usesMillerBravais: Bool
+
+    /// The list for `cell` with the absences of `operations` and the orbits of `laueGroup`. `translationUncertainty`
+    /// is the largest uncertainty of an operation's translation (a structure's; 1e-9 for exact operations).
     public init(cell: UnitCell, operations: [SymmetryOperation], laueGroup: PointSymmetry, laueClass: LaueClass?,
-                kMax: Double) throws(ReflectionListError) {
+                kMax: Double, translationUncertainty: Double = 1e-9) throws(ReflectionListError) {
         guard kMax.isFinite, kMax > 0, kMax <= ReflectionList.maximumKMax else { throw .invalidKMax(kMax) }
+        guard cell.isValid else { throw .cellTooLargeOrInvalid(estimatedReflections: .infinity) }
+        let estimate = 4.0 / 3.0 * Double.pi * kMax * kMax * kMax * cell.volume
+        let box = cell.realLattice.map { 2 * (kMax * length($0)).rounded(.up) + 1 }.reduce(1, *)
+        guard estimate.isFinite, box.isFinite, estimate <= Double(ReflectionList.maximumReflections),
+              box <= 50 * Double(ReflectionList.maximumReflections)
+        else { throw .cellTooLargeOrInvalid(estimatedReflections: estimate) }
         self.kMax = kMax
         self.laueGroup = laueGroup
         self.laueClass = laueClass
+        self.usesMillerBravais = (laueClass?.usesMillerBravais ?? false)
+            && cell.metricFamily(lengthTolerance: SymmetryDetection.defaultMetricLengthTolerance,
+                                 angleToleranceDeg: SymmetryDetection.defaultMetricAngleToleranceDeg) == .hexagonal
+        let tolerance = translationUncertainty
 
         let tile = cell.realLattice.map { max(0, Int((kMax * length($0)).rounded(.up))) }
         var out: [Reflection] = []
@@ -83,18 +112,25 @@ public struct ReflectionList: Sendable, Equatable {
                     let gLen = length(g)
                     if gLen > kMax { continue }
                     out.append(Reflection(hkl: hkl, g: g, gLength: gLen,
-                                          isAllowed: ReflectionList.isAllowed(hkl, by: operations)))
+                                          isAllowed: ReflectionList.isAllowed(hkl, by: operations,
+                                                                              translationUncertainty: tolerance)))
                 }
             }
         }
         self.reflections = ReflectionList.ordered(out)
     }
 
-    /// The general reflection condition (registration 3.8).
-    public static func isAllowed(_ hkl: MillerIndex, by operations: [SymmetryOperation]) -> Bool {
+    /// The general reflection condition (registration 3.8): absent when an operation (R, t) with (h k l) R = (h k l)
+    /// has (h k l) · t further than (|h| + |k| + |l|) · `translationUncertainty` + 1e-9 from an integer (the tolerance
+    /// capped at `maximumAbsenceTolerance`). For such an operation h · t does not depend on the origin, so a shifted
+    /// cell gives the same answer (Gate B amendment, 2026-10-15).
+    public static func isAllowed(_ hkl: MillerIndex, by operations: [SymmetryOperation],
+                                 translationUncertainty: Double = 1e-9) -> Bool {
+        let weight = Double(abs(hkl.h) + abs(hkl.k) + abs(hkl.l))
+        let tolerance = min(maximumAbsenceTolerance, weight * max(0, translationUncertainty) + 1e-9)
         for op in operations where hkl.applying(op.rotation) == hkl {
             let phase = hkl.dot(op.translation)
-            if abs(phase - phase.rounded()) > 1e-9 { return false }
+            if abs(phase - phase.rounded()) > tolerance { return false }
         }
         return true
     }
@@ -124,7 +160,7 @@ public struct ReflectionList: Sendable, Equatable {
     /// reflection of the lattice.
     public func families(allowedOnly: Bool = true) -> [ReflectionFamily] {
         let source = allowedOnly ? allowed : reflections
-        let millerBravais = laueClass?.usesMillerBravais ?? false
+        let millerBravais = usesMillerBravais
         var families: [ReflectionFamily] = []
         var group: [Reflection] = []
         func close() {

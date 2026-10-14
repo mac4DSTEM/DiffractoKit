@@ -13,6 +13,8 @@ public enum SymmetryOperationError: Error, Equatable, Sendable, CustomStringConv
     case unparsable(String)
     /// A coefficient of x, y or z is not an integer.
     case nonIntegerRotation(String)
+    /// The rotation part's determinant is not ±1 (`x,x,z`, `2x,y,z`): no symmetry operation is singular or a dilation.
+    case notInvertible(String)
 
     public var description: String {
         switch self {
@@ -20,6 +22,8 @@ public enum SymmetryOperationError: Error, Equatable, Sendable, CustomStringConv
         case .nonIntegerRotation(let raw):
             return "Symmetry operation \"\(raw)\" has a non-integer coefficient; the rotation part of a space-group "
                 + "operation is an integer matrix in every setting."
+        case .notInvertible(let raw):
+            return "Symmetry operation \"\(raw)\" is not a symmetry: its rotation part has a determinant other than ±1."
         }
     }
 }
@@ -56,7 +60,9 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
             rows.append(row)
             translation[axis] = constant
         }
-        self.rotation = IntegerMatrix(rows: rows)
+        let rotation = IntegerMatrix(rows: rows)
+        guard abs(rotation.determinant) == 1 else { throw .notInvertible(raw) }
+        self.rotation = rotation
         self.translation = translation
     }
 

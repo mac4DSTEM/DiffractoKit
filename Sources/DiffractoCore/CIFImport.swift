@@ -560,6 +560,7 @@ public enum CIFImport {
         let usableLattice = latReal.allSatisfy { $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }
 
         struct Image {
+            let row: Int
             let z: Int
             let label: String
             let occupancy: Double
@@ -568,15 +569,18 @@ public enum CIFImport {
         }
 
         var kept: [Image] = []
-        for site in baseSites {
+        for (row, site) in baseSites.enumerated() {
             for op in ops {
                 let mapped = wrapFractional(op.apply(site.position))
                 let uncertainty = SIMD3<Double>(
                     propagate(op.rotation.rows[0], site.halfStep),
                     propagate(op.rotation.rows[1], site.halfStep),
                     propagate(op.rotation.rows[2], site.halfStep))
+                // Only images of the SAME row merge (Gate B amendment, 2026-10-15): two rows on one position are two
+                // species sharing a site (Fe2+ and Fe3+ in magnetite), each with its own occupancy; at full
+                // occupancy they are refused by the close-contact rule, never silently merged.
                 let isDuplicate = kept.contains { existing in
-                    guard existing.z == site.z else { return false }
+                    guard existing.row == row else { return false }
                     let tolerance = existing.uncertainty + uncertainty
                     guard fractionalAxisDelta(existing.position.x, mapped.x) <= max(tolerance.x, 1e-6),
                           fractionalAxisDelta(existing.position.y, mapped.y) <= max(tolerance.y, 1e-6),
@@ -587,7 +591,7 @@ public enum CIFImport {
                         .squareRoot() <= maxMergeDistance
                 }
                 if !isDuplicate {
-                    kept.append(Image(z: site.z, label: site.label, occupancy: site.occupancy,
+                    kept.append(Image(row: row, z: site.z, label: site.label, occupancy: site.occupancy,
                                       position: mapped, uncertainty: uncertainty))
                 }
             }

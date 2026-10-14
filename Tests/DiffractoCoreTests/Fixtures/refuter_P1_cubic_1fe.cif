@@ -1,0 +1,19 @@
+# provenance: DiffractoKit slice-1 Gate B refuter, 2026-10-14 night (P1_cubic_1fe.cif); a regression fixture
+data_p1test
+_symmetry_space_group_name_H-M 'P 1'
+_symmetry_Int_Tables_number 1
+_cell_length_a 5.0
+_cell_length_b 5.0
+_cell_length_c 5.0
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Fe1 Fe 0.110000 0.230000 0.310000 1.0
