@@ -5,11 +5,11 @@
 //  family of each constructor. No reference code is read.
 //
 
-import XCTest
+import Testing
 import simd
 import DiffractoCore
 
-final class UnitCellTests: XCTestCase {
+struct UnitCellTests {
 
     static let cells: [(String, UnitCell)] = [
         ("monoclinic", .monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3)),
@@ -31,7 +31,7 @@ final class UnitCellTests: XCTestCase {
 
     /// V = |det A| equals abc √(1 − cos²α − cos²β − cos²γ + 2 cos α cos β cos γ). Mutant: the volume from the
     /// metric's determinant without the square root.
-    func testVolumeByBothFormulas() {
+    @Test func testVolumeByBothFormulas() {
         for (name, cell) in Self.cells {
             let ca = cos(cell.alphaDeg * .pi / 180), cb = cos(cell.betaDeg * .pi / 180), cg = cos(cell.gammaDeg * .pi / 180)
             let closed = cell.a * cell.b * cell.c * (1 - ca * ca - cb * cb - cg * cg + 2 * ca * cb * cg).squareRoot()
@@ -40,17 +40,17 @@ final class UnitCellTests: XCTestCase {
     }
 
     /// aᵢ · bⱼ = δᵢⱼ. Mutant: the reciprocal lattice as G A instead of G⁻¹ A.
-    func testReciprocalRowsAreDualToTheRealOnes() {
+    @Test func testReciprocalRowsAreDualToTheRealOnes() {
         for (name, cell) in Self.cells {
             for i in 0..<3 { for j in 0..<3 {
                 let want: Double = i == j ? 1 : 0
-                XCTAssertEqual(dot(cell.realLattice[i], cell.reciprocalLattice[j]), want, accuracy: 1e-12, "\(name) \(i)\(j)")
+                #expect(abs(dot(cell.realLattice[i], cell.reciprocalLattice[j]) - want) <= 1e-12, "\(name) \(i)\(j)")
             } }
         }
     }
 
     /// d from G* equals 1/|g| from the Cartesian vector. Mutant: G* as G.
-    func testDFromMetricEqualsDFromVector() {
+    @Test func testDFromMetricEqualsDFromVector() {
         for (name, cell) in Self.cells {
             for hkl in Self.indices {
                 assertClose(cell.d(hkl), 1 / cell.gLength(hkl), relative: 1e-12, "\(name) \(hkl)")
@@ -59,7 +59,7 @@ final class UnitCellTests: XCTestCase {
     }
 
     /// The textbook formulas, one per system (5.1), to 1e-12 relative. Mutants: β read from α; the per-axis tile.
-    func testClosedFormDPerSystem() {
+    @Test func testClosedFormDPerSystem() {
         func check(_ cell: UnitCell, _ name: String, _ oneOverDSquared: (Double, Double, Double) -> Double) {
             for hkl in Self.indices {
                 let (h, k, l) = (Double(hkl.h), Double(hkl.k), Double(hkl.l))
@@ -102,59 +102,55 @@ final class UnitCellTests: XCTestCase {
     }
 
     /// macTEM's S2c hand anchors for β″ (d in Å). Mutant: β read from α (d(200) becomes a/2).
-    func testBetaDoublePrimeHandAnchors() {
+    @Test func testBetaDoublePrimeHandAnchors() {
         let cell = Fixtures.betaDoublePrimeCell
         let anchors: [(MillerIndex, Double)] = [
             (MillerIndex(2, 0, 0), 7.31135), (MillerIndex(0, 0, 1), 6.50112), (MillerIndex(0, 2, 0), 2.025),
             (MillerIndex(1, 1, 0), 3.90306), (MillerIndex(2, 0, 1), 4.32457), (MillerIndex(2, 0, -1), 5.65554),
         ]
         for (hkl, d) in anchors {
-            XCTAssertEqual(cell.d(hkl), d, accuracy: 6e-6, "\(hkl)")
+            #expect(abs(cell.d(hkl) - d) <= 6e-6, "\(hkl)")
         }
-        XCTAssertEqual(cell.d(MillerIndex(2, 0, 0)), cell.a * sin(105.3 * .pi / 180) / 2, accuracy: 1e-12)
-        XCTAssertEqual(cell.d(MillerIndex(0, 0, 1)), cell.c * sin(105.3 * .pi / 180), accuracy: 1e-12)
-        XCTAssertNotEqual(cell.d(MillerIndex(2, 0, 1)), cell.d(MillerIndex(2, 0, -1)), "for β ≠ 90° these are two rings")
+        #expect(abs(cell.d(MillerIndex(2, 0, 0)) - (cell.a * sin(105.3 * .pi / 180) / 2)) <= 1e-12)
+        #expect(abs(cell.d(MillerIndex(0, 0, 1)) - (cell.c * sin(105.3 * .pi / 180))) <= 1e-12)
+        #expect(cell.d(MillerIndex(2, 0, 1)) != cell.d(MillerIndex(2, 0, -1)), "for β ≠ 90° these are two rings")
     }
 
     /// Each constructor's metric family, first that applies; a trigonal structure's hexagonal cell is `.hexagonal` here.
-    func testMetricFamilyOfEachConstructor() {
-        XCTAssertEqual(UnitCell.cubic(a: 4).metricFamily(), .cubic)
-        XCTAssertEqual(UnitCell.hexagonal(a: 3, c: 5).metricFamily(), .hexagonal)
-        XCTAssertEqual(UnitCell.tetragonal(a: 3, c: 5).metricFamily(), .tetragonal)
-        XCTAssertEqual(UnitCell.rhombohedral(a: 4, alphaDeg: 70).metricFamily(), .rhombohedral)
-        XCTAssertEqual(UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily(), .orthorhombic)
-        XCTAssertEqual(UnitCell.monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3).metricFamily(),
-                       .monoclinic(uniqueAxis: .b))
-        XCTAssertEqual(UnitCell(a: 3, b: 4, c: 5, alphaDeg: 100, betaDeg: 90, gammaDeg: 90).metricFamily(),
-                       .monoclinic(uniqueAxis: .a))
-        XCTAssertEqual(UnitCell(a: 3, b: 4, c: 5, alphaDeg: 90, betaDeg: 90, gammaDeg: 100).metricFamily(),
-                       .monoclinic(uniqueAxis: .c))
-        XCTAssertEqual(UnitCell.triclinic(a: 4, b: 5, c: 6, alphaDeg: 80, betaDeg: 85, gammaDeg: 95).metricFamily(), .triclinic)
+    @Test func testMetricFamilyOfEachConstructor() {
+        #expect(UnitCell.cubic(a: 4).metricFamily() == .cubic)
+        #expect(UnitCell.hexagonal(a: 3, c: 5).metricFamily() == .hexagonal)
+        #expect(UnitCell.tetragonal(a: 3, c: 5).metricFamily() == .tetragonal)
+        #expect(UnitCell.rhombohedral(a: 4, alphaDeg: 70).metricFamily() == .rhombohedral)
+        #expect(UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily() == .orthorhombic)
+        #expect(UnitCell.monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3).metricFamily() == .monoclinic(uniqueAxis: .b))
+        #expect(UnitCell(a: 3, b: 4, c: 5, alphaDeg: 100, betaDeg: 90, gammaDeg: 90).metricFamily() == .monoclinic(uniqueAxis: .a))
+        #expect(UnitCell(a: 3, b: 4, c: 5, alphaDeg: 90, betaDeg: 90, gammaDeg: 100).metricFamily() == .monoclinic(uniqueAxis: .c))
+        #expect(UnitCell.triclinic(a: 4, b: 5, c: 6, alphaDeg: 80, betaDeg: 85, gammaDeg: 95).metricFamily() == .triclinic)
         // A tetragonal cell whose c equals a is cubic by metric; the atoms decide (SymmetryDetectionTests).
-        XCTAssertEqual(UnitCell.tetragonal(a: 4, c: 4).metricFamily(), .cubic)
+        #expect(UnitCell.tetragonal(a: 4, c: 4).metricFamily() == .cubic)
         // The tolerance is the caller's: β = 90° + 1e-8 is monoclinic at 1e-9° and orthorhombic at 0.05°.
         let nearly = UnitCell(a: 3, b: 4, c: 5, alphaDeg: 90, betaDeg: 90 + 1e-8, gammaDeg: 90)
-        XCTAssertEqual(nearly.metricFamily(), .monoclinic(uniqueAxis: .b))
-        XCTAssertEqual(nearly.metricFamily(lengthTolerance: 1e-3, angleToleranceDeg: 0.05), .orthorhombic)
+        #expect(nearly.metricFamily() == .monoclinic(uniqueAxis: .b))
+        #expect(nearly.metricFamily(lengthTolerance: 1e-3, angleToleranceDeg: 0.05) == .orthorhombic)
     }
 
-    func testIssuesNameWhatIsWrong() {
-        XCTAssertEqual(UnitCell.cubic(a: 4).issues, [])
-        XCTAssertEqual(UnitCell(a: 0, b: 4, c: 4, alphaDeg: 90, betaDeg: 90, gammaDeg: 90).issues.first, .invalidLengths)
-        XCTAssertEqual(UnitCell(a: 4, b: 4, c: 4, alphaDeg: 180, betaDeg: 90, gammaDeg: 90).issues.first, .invalidAngles)
+    @Test func testIssuesNameWhatIsWrong() {
+        #expect(UnitCell.cubic(a: 4).issues == [])
+        #expect(UnitCell(a: 0, b: 4, c: 4, alphaDeg: 90, betaDeg: 90, gammaDeg: 90).issues.first == .invalidLengths)
+        #expect(UnitCell(a: 4, b: 4, c: 4, alphaDeg: 180, betaDeg: 90, gammaDeg: 90).issues.first == .invalidAngles)
         // α = β = γ = 130° gives a negative radicand: no finite volume (120° is a flat cell of volume ~1e-6 by rounding).
         let flat = UnitCell(a: 4, b: 4, c: 4, alphaDeg: 130, betaDeg: 130, gammaDeg: 130)
-        XCTAssertTrue(flat.issues.contains(.degenerateVolume))
-        XCTAssertFalse(flat.isValid)
+        #expect(flat.issues.contains(.degenerateVolume))
+        #expect(!flat.isValid)
     }
 
-    func testInterplanarAngles() {
+    @Test func testInterplanarAngles() {
         let cubic = UnitCell.cubic(a: 4)
-        XCTAssertEqual(cubic.interplanarAngleDeg(MillerIndex(1, 0, 0), MillerIndex(0, 1, 0)), 90, accuracy: 1e-12)
-        XCTAssertEqual(cubic.interplanarAngleDeg(MillerIndex(1, 0, 0), MillerIndex(1, 1, 0)), 45, accuracy: 1e-12)
-        XCTAssertEqual(cubic.interplanarAngleDeg(MillerIndex(1, 1, 1), MillerIndex(1, 1, 1)), 0, accuracy: 1e-6)
+        #expect(abs(cubic.interplanarAngleDeg(MillerIndex(1, 0, 0), MillerIndex(0, 1, 0)) - 90) <= 1e-12)
+        #expect(abs(cubic.interplanarAngleDeg(MillerIndex(1, 0, 0), MillerIndex(1, 1, 0)) - 45) <= 1e-12)
+        #expect(abs(cubic.interplanarAngleDeg(MillerIndex(1, 1, 1), MillerIndex(1, 1, 1)) - 0) <= 1e-6)
         // In a hexagonal cell (100) and (010) are 60° apart, not 90°.
-        XCTAssertEqual(UnitCell.hexagonal(a: 3, c: 5).interplanarAngleDeg(MillerIndex(1, 0, 0), MillerIndex(0, 1, 0)),
-                       60, accuracy: 1e-12)
+        #expect(abs((UnitCell.hexagonal(a: 3, c: 5).interplanarAngleDeg(MillerIndex(1, 0, 0), MillerIndex(0, 1, 0))) - 60) <= 1e-12)
     }
 }

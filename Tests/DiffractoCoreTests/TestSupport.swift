@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 import DiffractoCore
 
 enum Fixtures {
@@ -110,7 +110,7 @@ struct Pins: Decodable {
     }
 
     func structure(_ name: String) throws -> StructurePin {
-        try XCTUnwrap(structures.first { $0.name == name }, "pins hold no structure \(name)")
+        try #require(structures.first { $0.name == name }, "pins hold no structure \(name)")
     }
 }
 
@@ -232,7 +232,7 @@ extension IntegerMatrix {
 
 /// |got − want| ≤ tolerance · max(1, |want|) when `relative`, else absolute.
 func assertClose(_ got: Double, _ want: Double, relative: Double, _ message: @autoclosure () -> String = "",
-                 file: StaticString = #filePath, line: UInt = #line) {
+                 sourceLocation: SourceLocation = #_sourceLocation) {
     let bound = relative * max(abs(want), abs(got))
-    XCTAssertLessThanOrEqual(abs(got - want), bound, "\(message()) got \(got), want \(want)", file: file, line: line)
+    #expect(abs(got - want) <= bound, "\(message()) got \(got), want \(want)", sourceLocation: sourceLocation)
 }
