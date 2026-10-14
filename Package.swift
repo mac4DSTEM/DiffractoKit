@@ -34,15 +34,17 @@ let package = Package(
         // Slice 2 (docs/registration-slice-2.md): electron scattering factors (Lobato–Van Dyck, py4DSTEM's table),
         // structure factors and the kinematic ring list after the |F| cut.
         .target(name: "DiffractoScattering", dependencies: ["DiffractoCore"], swiftSettings: settings),
-        // Later: patterns, ring and ellipse calibration, camera length, zone axes, indexing. Empty until registered.
-        .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore"], swiftSettings: settings),
+        // Slice 3 (docs/registration-slice-3.md): wavelength, ring calibration and camera length, the indexing decision,
+        // zone axes (3a); the ring and ellipse fit (3b).
+        .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
         // Later: orientation results, symmetry reduction, Euler conventions against pyxem / orix. Empty until registered.
         .target(name: "DiffractoOrientation", dependencies: ["DiffractoCore"], swiftSettings: settings),
         .testTarget(name: "DiffractoCoreTests", dependencies: ["DiffractoCore"], exclude: ["Fixtures"],
                     swiftSettings: settings),
         .testTarget(name: "DiffractoScatteringTests", dependencies: ["DiffractoScattering", "DiffractoCore"],
                     exclude: ["Fixtures"], swiftSettings: settings),
-        .testTarget(name: "DiffractoGeometryTests", dependencies: ["DiffractoGeometry"], swiftSettings: settings),
+        .testTarget(name: "DiffractoGeometryTests", dependencies: ["DiffractoGeometry", "DiffractoScattering", "DiffractoCore"],
+                    exclude: ["Fixtures"], swiftSettings: settings),
         .testTarget(name: "DiffractoOrientationTests", dependencies: ["DiffractoOrientation"], swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]

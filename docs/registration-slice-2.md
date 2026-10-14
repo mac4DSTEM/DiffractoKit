@@ -146,4 +146,27 @@ theirs. No real pattern is indexed here; that is slice 3's and the apps'.
 
 ## 8. Amendments
 
-(none yet)
+### 2026-10-15, after the pin generator ran, before the pins test (no registered number changes)
+
+`tools/slice-2/pins.py` (7138 self-checks) and the apps' dump (`tools/slice-2/apps-parity`, mac4DSTEM 7d6fdbd1 compiled -O)
+held every predicted count: rings after the cut Au 8, Al 8, Si 10, Mg 24, ideal hcp 23; β″ 417 rings, 1442 reflections,
+953 / 1805 rings (3420 / 6596 reflections) at 1.6 / 2.0, dropping exactly {3 3 3} and {14 0 1}; the apps' kept sets equal
+NumPy's; the X-ray phase sums equal pymatgen's to 1.8e-13 (β″) and ≤ 2.5e-15 elsewhere. Five readings are settled:
+
+1. **Bit identity (4.4) excludes Im F below 1e-15 Å absolute.** The apps' own -O and -Onone builds differ only there (β″:
+   6 reflections at 1.2, 16 at 2.0, Im F about 1e-18, rounding noise of a centrosymmetric sum); |g|, Re F and |F|² are bit
+   identical between them. The gate: bit identity of |g|, Re F and |F|², and of Im F where |Im F| ≥ 1e-15; below that,
+   |Δ Im F| ≤ 1e-15. The -O dump is the reference.
+2. **The phase-sign mutant is seen by Im F on a non-centrosymmetric structure, not by WS₂ or the X-ray pin.** WS₂ (and
+   the Mg and WS₂ CIF fixtures) are centrosymmetric about the origin (Im F/|F| ~ 1e-14), and Σ|F|² is invariant under
+   conjugation. The mutant is aimed at quartz, the Si and Mg presets (atom at the origin, not the centre) and an added
+   preset, zinc-blende GaAs (a = 5.6533 Å, F = 4(f_Ga + i^{h+k+l} f_As)/V, a closed form for the sign).
+3. **CIF structures are pinned on their sites as written** (the kit keeps 0.333333; pymatgen snaps to ⅓): there the
+   operation-absent |F| is up to 3.0e-8 (Mg) and 7.9e-7 (WS₂), far below the cut, and ≤ 1e-12 holds on the snapped sites
+   and on the presets (1.6e-16). Section 5's "≤ 1e-12" is for exact sites; for written sites the bound is the cut's
+   side (no absent reflection is kept).
+4. **The cut's strictness gets its own case.** No pinned structure has |F| exactly 1e-4, so `>` versus `≥` was invisible.
+   `cut_edge`: a = b = 100, c = 1 Å, one site at the origin, a constant unit form factor (the `formFactor` parameter):
+   every reflection has |F| = 1/V = 1e-4 exactly (V by the cofactor determinant, as the kit and the apps); `>` keeps none.
+5. **pymatgen's 2θ range** is limited to 0.1 % beyond |g| = 1.2 (1 + 1e-6): with no range the Lorentz–polarisation
+   divergence near 180° sets the scale and pymatgen drops every low-angle peak. Recorded in the pins.
