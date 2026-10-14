@@ -62,7 +62,9 @@ enum Fixtures {
             "_atom_site_B_iso_or_equiv",
         ]
         lines += sites.map { (lab, el, x, y, z, b) in
-            String(format: "  %-5@ %-3@ %8.4f %8.4f %8.4f  1.0  %.1f", lab, el, x, y, z, b)
+            "  " + lab.padding(toLength: 5, withPad: " ", startingAt: 0) + " "
+                + el.padding(toLength: 3, withPad: " ", startingAt: 0)
+                + String(format: " %8.4f %8.4f %8.4f  1.0  %.1f", x, y, z, b)
         }
         return lines.joined(separator: "\n") + "\n"
     }
@@ -164,8 +166,16 @@ struct ReflectionPin: Decodable {
     let g: Double
     let d: Double
     let allowed: Bool
-    let orbit: [[Int]]
+    /// Carried by the first items of each list only (size).
+    let orbit: [[Int]]?
     let canonical: [Int]
+}
+
+/// What the file's loop is against the detected set (amendment 2).
+struct FileOperationsPin: Decodable {
+    let count: Int
+    let equalsDetected: Bool
+    let subsetOfDetected: Bool
 }
 
 struct ReflectionsPin: Decodable {
@@ -194,7 +204,11 @@ struct StructurePin: Decodable {
     let metric: [[Double]]
     let volume: Double
     let reciprocal: [[Double]]
+    /// As pymatgen expanded them (coordinates within 1e-4 of ⅓ and ⅔ snapped to the fraction, amendment 4).
     let sites: [SitePin]
+    /// The sites with the written coordinates, where pymatgen snapped any; what the port is compared with.
+    let sitesAsWritten: [SitePin]?
+    let siteSnapMax: Double?
     let declaredSpaceGroupNumber: Int?
     let spaceGroupNumber: Int
     let pointGroup: String
@@ -203,6 +217,9 @@ struct StructurePin: Decodable {
     let laueRotations: [[[Int]]]
     let reflections: ReflectionsPin
     let families: [FamilyPin]
+    let fileOperations: FileOperationsPin?
+
+    var expectedSites: [SitePin] { sitesAsWritten ?? sites }
 }
 
 extension MillerIndex {

@@ -1,0 +1,16 @@
+# provenance: mac4DSTEM 7448401b mac4DSTEMTests/CIFImportTests.swift data_magnesium
+data_magnesium
+_cell_length_a 3.2094
+_cell_length_b 3.2094
+_cell_length_c 5.2108
+_cell_angle_alpha 90.0
+_cell_angle_beta 90.0
+_cell_angle_gamma 120.0
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Mg1 Mg 0.3333333 0.6666667 0.25
+Mg2 Mg 0.6666667 0.3333333 0.75

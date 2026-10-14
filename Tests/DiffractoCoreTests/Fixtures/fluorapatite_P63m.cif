@@ -1,0 +1,36 @@
+# provenance: mac4DSTEM 7448401b tools/cif-symmetry-test/main.swift data_fluorapatite
+data_fluorapatite
+_cell_length_a 9.3973
+_cell_length_b 9.3973
+_cell_length_c 6.8782
+_cell_angle_alpha 90.0
+_cell_angle_beta  90.0
+_cell_angle_gamma 120.0
+loop_
+_symmetry_equiv_pos_as_xyz
+'x,y,z'
+'-y,x-y,z'
+'-x+y,-x,z'
+'-x,-y,z+1/2'
+'y,-x+y,z+1/2'
+'x-y,x,z+1/2'
+'-x,-y,-z'
+'y,-x+y,-z'
+'x-y,x,-z'
+'x,y,-z+1/2'
+'-y,x-y,-z+1/2'
+'-x+y,-x,-z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ca1 Ca 0.3333333 0.6666667 0.0011 1.0
+Ca2 Ca 0.2416 0.2411 0.2500 1.0
+P1  P  0.3985 0.3682 0.2500 1.0
+O1  O  0.3283 0.4849 0.2500 1.0
+O2  O  0.5875 0.4652 0.2500 1.0
+O3  O  0.3435 0.2579 0.0705 1.0
+F1  F  0.0000 0.0000 0.2500 1.0

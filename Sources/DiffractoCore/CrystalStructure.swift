@@ -28,10 +28,13 @@ public struct AtomSite: Sendable, Equatable {
 public struct CrystalStructure: Sendable, Equatable {
     /// Where the operations came from.
     public enum SymmetrySource: Sendable, Equatable {
-        /// The file's own operation loop (registration 3.4a).
+        /// Given to the initialiser as they are, not checked against the sites (a structure built in code).
         case operationsGiven
-        /// Found from the sites by the holohedry test (3.4b).
+        /// Found from the sites by the holohedry test (registration 3.4b).
         case detected
+        /// A file's loop expanded the asymmetric unit, then the operations were detected from the expanded cell
+        /// (3.4 as amended 2026-10-14); the loop is `fileOperations`.
+        case detectedAfterFileExpansion
     }
 
     public let cell: UnitCell
@@ -40,6 +43,13 @@ public struct CrystalStructure: Sendable, Equatable {
     /// centring translations as operations with the identity rotation).
     public let operations: [SymmetryOperation]
     public let symmetrySource: SymmetrySource
+    /// The operation loop of the file the structure came from (deduplicated, translations mod 1); nil when there was
+    /// none. It expanded the sites; it may declare less symmetry than the atoms have.
+    public let fileOperations: [SymmetryOperation]?
+    /// Whether every file operation is among the detected ones (nil without a file loop). False means the file's loop
+    /// is not a symmetry of the cell it describes: the file is inconsistent, or the metric's holohedry did not hold
+    /// one of its rotations.
+    public let fileOperationsAreSymmetries: Bool?
     /// {±R} over the operations' rotation parts.
     public let laueGroup: PointSymmetry
     /// nil only when the operations do not form a Laue group (a file whose loop is not a group).
@@ -53,13 +63,16 @@ public struct CrystalStructure: Sendable, Equatable {
     /// written precision (3.4b): reported, not taken. Empty when the operations were given.
     public let unresolvedRotations: [IntegerMatrix]
 
-    /// A structure whose operations are known (a CIF with a symmetry loop; the sites are the expanded cell).
+    /// A structure whose operations are given as they are (a cell built in code with a known group); nothing is
+    /// checked against the sites. A CIF goes through `CIFImport`, which detects.
     public init(cell: UnitCell, sites: [AtomSite], operations: [SymmetryOperation],
                 spaceGroupNumber: Int? = nil, name: String? = nil) {
         self.cell = cell
         self.sites = sites
         self.operations = operations.isEmpty ? [.identity] : operations
         self.symmetrySource = .operationsGiven
+        self.fileOperations = nil
+        self.fileOperationsAreSymmetries = nil
         self.laueGroup = PointSymmetry.laueGroup(of: self.operations)
         self.laueClass = laueGroup.laueClass
         self.spaceGroupNumber = spaceGroupNumber
@@ -67,28 +80,34 @@ public struct CrystalStructure: Sendable, Equatable {
         self.unresolvedRotations = []
     }
 
-    /// A structure given as a site list (a P1 file, a cell built in code): the operations are detected from the sites
-    /// (registration 3.4b). `coarsestHalfStep` is the written precision of the coordinates when known (a CIF's), used
-    /// only to report an unresolved candidate.
+    /// A structure whose operations are detected from its sites (registration 3.4b): a P1 file, a cell built in
+    /// code, or a file's expanded cell with its loop as `fileOperations` (whose rotations join the candidates).
+    /// `coarsestHalfStep` is the written precision of the coordinates when known, used only to report an unresolved
+    /// candidate.
     public static func detectingSymmetry(
-        cell: UnitCell, sites: [AtomSite], spaceGroupNumber: Int? = nil, name: String? = nil,
-        coarsestHalfStep: Double = 0,
+        cell: UnitCell, sites: [AtomSite], fileOperations: [SymmetryOperation]? = nil,
+        spaceGroupNumber: Int? = nil, name: String? = nil, coarsestHalfStep: Double = 0,
         metricLengthTolerance: Double = SymmetryDetection.defaultMetricLengthTolerance,
         metricAngleToleranceDeg: Double = SymmetryDetection.defaultMetricAngleToleranceDeg
     ) -> CrystalStructure {
         let detection = SymmetryDetection.detect(
             sites: sites, cell: cell, coarsestHalfStep: coarsestHalfStep,
+            extraCandidates: fileOperations?.map(\.rotation) ?? [],
             metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg)
-        return CrystalStructure(cell: cell, sites: sites, detection: detection,
+        return CrystalStructure(cell: cell, sites: sites, detection: detection, fileOperations: fileOperations,
                                 spaceGroupNumber: spaceGroupNumber, name: name)
     }
 
     init(cell: UnitCell, sites: [AtomSite], detection: SymmetryDetection.Result,
-         spaceGroupNumber: Int?, name: String?) {
+         fileOperations: [SymmetryOperation]?, spaceGroupNumber: Int?, name: String?) {
         self.cell = cell
         self.sites = sites
         self.operations = detection.operations
-        self.symmetrySource = .detected
+        self.symmetrySource = fileOperations == nil ? .detected : .detectedAfterFileExpansion
+        self.fileOperations = fileOperations
+        self.fileOperationsAreSymmetries = fileOperations.map { ops in
+            ops.allSatisfy { op in detection.operations.contains { $0.isEquivalent(to: op, translationTolerance: 1e-6) } }
+        }
         self.laueGroup = PointSymmetry.laueGroup(of: detection.operations)
         self.laueClass = laueGroup.laueClass
         self.spaceGroupNumber = spaceGroupNumber

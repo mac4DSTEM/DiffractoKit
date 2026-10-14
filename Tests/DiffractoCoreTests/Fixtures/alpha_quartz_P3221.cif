@@ -1,0 +1,28 @@
+# provenance: mac4DSTEM 7448401b tools/cif-symmetry-test/main.swift data_alpha_quartz
+# MODIFIED: operations 4-6 moved to the setting whose 2-fold axes pass z = 0 (x-y,-y,-z / y,x,-z+2/3 / -x,-x+y,-z+1/3) so Si (0.4697,0,0) sits on a 2-fold axis: Si3 O6 = 9 atoms, Si-O 1.604 and 1.613 A; the seed's operations give 12 atoms. Cell and atom coordinates verbatim; the two symmetry tags are added
+data_alpha_quartz
+_symmetry_space_group_name_H-M 'P 32 2 1'
+_symmetry_Int_Tables_number 154
+_cell_length_a 4.9134
+_cell_length_b 4.9134
+_cell_length_c 5.4052
+_cell_angle_alpha 90.0
+_cell_angle_beta  90.0
+_cell_angle_gamma 120.0
+loop_
+_symmetry_equiv_pos_as_xyz
+'x,y,z'
+'-y,x-y,z+2/3'
+'-x+y,-x,z+1/3'
+'x-y,-y,-z'
+'y,x,-z+2/3'
+'-x,-x+y,-z+1/3'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Si1 Si 0.4697 0.0000 0.0000 1.0
+O1  O  0.4135 0.2669 0.1191 1.0

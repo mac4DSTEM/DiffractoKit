@@ -1,0 +1,22 @@
+# provenance: mac4DSTEM 7448401b mac4DSTEMTests/CIFImportTests.swift data_silicon
+data_silicon
+_cell_length_a 5.4309
+_cell_length_b 5.4309
+_cell_length_c 5.4309
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Si1 Si 0.0  0.0  0.0
+Si2 Si 0.5  0.5  0.0
+Si3 Si 0.5  0.0  0.5
+Si4 Si 0.0  0.5  0.5
+Si5 Si 0.25 0.25 0.25
+Si6 Si 0.75 0.75 0.25
+Si7 Si 0.75 0.25 0.75
+Si8 Si 0.25 0.75 0.75

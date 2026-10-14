@@ -1,0 +1,21 @@
+# provenance: mac4DSTEM 7448401b mac4DSTEMTests/CIFImportTests.swift data_gold_symm
+data_gold_symm
+_cell_length_a 4.0782
+_cell_length_b 4.0782
+_cell_length_c 4.0782
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+loop_
+_symmetry_equiv_pos_as_xyz
+'x, y, z'
+'x+1/2, y+1/2, z'
+'x+1/2, y, z+1/2'
+'x, y+1/2, z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Au1 Au 0 0 0

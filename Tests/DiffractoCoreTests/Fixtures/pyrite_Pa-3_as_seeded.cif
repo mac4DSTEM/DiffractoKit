@@ -1,0 +1,32 @@
+# provenance: mac4DSTEM 7448401b tools/cif-symmetry-test/main.swift data_pyrite
+# extra: verbatim. NOTE the seed lists only the 12 rotations (point group 23) of Pa-3 (24 operations): it expands to Fe4 S4 = 8 atoms, not FeS2 x 4 = 12
+data_pyrite
+_cell_length_a 5.4179
+_cell_length_b 5.4179
+_cell_length_c 5.4179
+_cell_angle_alpha 90.0
+_cell_angle_beta  90.0
+_cell_angle_gamma 90.0
+loop_
+_symmetry_equiv_pos_as_xyz
+'x,y,z'
+'-x+1/2,-y,z+1/2'
+'-x,y+1/2,-z+1/2'
+'x+1/2,-y+1/2,-z'
+'z,x,y'
+'z+1/2,-x+1/2,-y'
+'-z+1/2,-x,y+1/2'
+'-z,x+1/2,-y+1/2'
+'y,z,x'
+'-y,z+1/2,-x+1/2'
+'y+1/2,-z+1/2,-x'
+'-y+1/2,-z,x+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Fe1 Fe 0.0000 0.0000 0.0000 1.0
+S1  S  0.3851 0.3851 0.3851 1.0

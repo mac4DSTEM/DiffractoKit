@@ -98,7 +98,8 @@ public struct CIFDocument: Sendable, Equatable {
     public let declaredSpaceGroupNumber: Int?
     /// The coarsest rounding half-step over every written fractional coordinate (0 when all are exact).
     public let coarsestHalfStep: Double
-    /// Whether the file carried an expanding symmetry-operation loop (else the symmetry was detected from the sites).
+    /// Whether the file carried an expanding symmetry-operation loop (`structure.fileOperations`); the structure's
+    /// operations are detected from the expanded cell either way.
     public let hadSymmetryOperations: Bool
 }
 
@@ -111,15 +112,11 @@ public enum CIFImport {
         let cell = UnitCell(a: parsed.a, b: parsed.b, c: parsed.c,
                             alphaDeg: parsed.alpha, betaDeg: parsed.beta, gammaDeg: parsed.gamma)
         let name = displayName(dataBlockName: parsed.dataBlockName, fileBaseName: fileBaseName)
-        let structure: CrystalStructure
-        if let operations = parsed.operations {
-            structure = CrystalStructure(cell: cell, sites: parsed.sites, operations: operations,
-                                         spaceGroupNumber: parsed.spaceGroupNumber, name: name)
-        } else {
-            structure = CrystalStructure.detectingSymmetry(
-                cell: cell, sites: parsed.sites, spaceGroupNumber: parsed.spaceGroupNumber, name: name,
-                coarsestHalfStep: parsed.coarsestHalfStep)
-        }
+        // The symmetry is detected from the (expanded) cell either way (registration 3.4, amended 2026-10-14): a
+        // file's loop may declare less than its atoms have.
+        let structure = CrystalStructure.detectingSymmetry(
+            cell: cell, sites: parsed.sites, fileOperations: parsed.operations,
+            spaceGroupNumber: parsed.spaceGroupNumber, name: name, coarsestHalfStep: parsed.coarsestHalfStep)
         let issues = structure.validationIssues
         guard issues.isEmpty else { throw .invalidStructure(issues.map(\.message)) }
         return CIFDocument(structure: structure, dataBlockName: parsed.dataBlockName, displayName: name,

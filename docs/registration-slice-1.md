@@ -312,6 +312,44 @@ the general one: 4 under 4/m and 8 under 4/mmm; the general hkl are 8 and 16 as 
 stands ({2 1 0} and {1 2 0} are two orbits of 4/m, one of 4/mmm). The test asserts the corrected numbers and adds the
 general (2 1 3) at 8 and 16. The rule did not change; a planted number was wrong by hand.
 
+### 2026-10-14, after the pin generator ran, before the pins test: what pymatgen and the fixtures found
+
+Found by `tools/slice-1/pins.py` (6960 self-checks passed) on 19 structures. The β″ predictions held exactly (1448
+allowed reflections, 419 families, the first ten rings' names, d and multiplicities); Au 8, Si 12 and the ideal-hcp
+ring of 14 held. Seven readings are settled here; the rules of sections 3.1, 3.6, 3.8 and 3.9 do not change.
+
+1. **Section 3.5 counts the orders of the proper rotations** (determinant +1). Read over every element, −3 has order 6
+   and -3m reads as 6/m, m-3 as 6/mmm; the Swift was written over the proper rotations from the start.
+2. **Section 3.4 is amended: the operations of a structure are always detected from its sites.** A file's operation
+   loop expands the asymmetric unit (3.7's checks unchanged) and is kept as `fileOperations`; the structure's
+   `operations`, Laue group, absences and orbits come from the detection of 3.4b on the expanded cell, with the loop's
+   rotations added to the holohedry's candidates (so a non-conventional setting is not under-detected). Reason: a loop
+   may legitimately declare less symmetry than the atoms have (the apps' gold fixture lists one atom and the four
+   centring translations, a legal CIF whose loop alone reads as Laue -1, while its atoms are m-3m; spglib finds 192
+   operations), and the apps' importer already confirmed the family from the atoms, never from the loop. The pins
+   record whether the loop equals or is a subset of the detected set (`file_operations`); the port reports
+   `fileOperationsAreSymmetries`. The β″ loop equals its detected set.
+3. **Detected translations are snapped to the nearest k/24** when within the position tolerance (5e-3): a translation
+   found from coordinates written to six or seven digits carries their error (⅔ written as 0.666667), and the absence
+   test of 3.8 needs h · t exact. Every translation of a space-group operation in a conventional or centred setting is
+   a multiple of 1/24 (halves, thirds, quarters, sixths, eighths). pymatgen does the same (`limit_denominator(1000)`);
+   the pins carry k/24.
+4. **pymatgen's `CifParser` snaps a coordinate within 1e-4 of ⅓ or ⅔ to the exact fraction** before expanding
+   (`pymatgen-core-ae9a834/src/pymatgen/io/cif.py`, about line 610). The port keeps the written value, as the apps do.
+   For magnesium, fluorapatite, WS₂ and CdI₂ the pinned sites therefore differ from the written ones by up to 3.3e-7;
+   the site pin compares the port against `sites_as_written`, and `site_snap_max` records pymatgen's displacement.
+   Symmetry, absences and families are identical either way.
+5. **Magnesium has 25 symmetry-allowed families at 1.2 Å⁻¹, not 24**, and ideal hcp 24, not 23: {3 0 -3 1} is allowed
+   by P6₃/mmc's operations and has F = 0 by the basis (unit scatterers: 24 survive), exactly as Si's {2 2 2} and
+   {4 4 2}. macTEM's 24 is after the |F| cut, slice 2's. Section 5.3's "24 families as macTEM counts" reads 25.
+6. **Names of a multi-orbit ring follow the descending lexicographic order of the orbits**, as 3.9 says: Si's ring is
+   `{5 1 1} + {3 3 3}` (macTEM's `orbits` are `[(5 1 1), (3 3 3)]` too); 5.3's prose had them the other way round.
+7. **The apps' "tetragonal a = c" fixture** (the P1 two-site cell) is Amm2 by its atoms, Laue mmm, not tetragonal:
+   section 5.3 said only that its class is read from its atoms; it is. The seeded quartz, calcite and pyrite texts of
+   `cif-symmetry-test` carry incomplete operation loops (the apps used them to show a refusal, not a cell content): the
+   fixtures here are completed to P3₂21 (6 operations, 9 atoms), R-3c (36, 30) and Pa-3 (24, 12), marked `# MODIFIED`
+   with the seeded texts kept beside them (`*_as_seeded.cif`, pinned as what they are: 12, 5 and 8 atoms).
+
 ### 2026-10-14, at the first test run: two parser readings tightened (section 3.3)
 
 Found by the planted refusals. (1) The apps' fraction parser split "/2" into ["2"] and read `x/2` as x + 2; the kit's

@@ -1,0 +1,43 @@
+# provenance: mac4DSTEM 7448401b tools/cif-symmetry-test/main.swift data_magnesium_symop
+# extra (not in registration 5.3 list): the full 24-operation P6_3/mmc loop, one site; interpolated decimals = 7 (magnesiumSymopLoop(decimals: 7))
+data_magnesium_symop
+_cell_length_a 3.2094
+_cell_length_b 3.2094
+_cell_length_c 5.2108
+_cell_angle_alpha 90.0
+_cell_angle_beta  90.0
+_cell_angle_gamma 120.0
+loop_
+_symmetry_equiv_pos_as_xyz
+'x,y,z'
+'-y,x-y,z'
+'-x+y,-x,z'
+'-x,-y,z+1/2'
+'y,-x+y,z+1/2'
+'x-y,x,z+1/2'
+'y,x,-z'
+'x-y,-y,-z'
+'-x,-x+y,-z'
+'-y,-x,-z+1/2'
+'-x+y,y,-z+1/2'
+'x,x-y,-z+1/2'
+'-x,-y,-z'
+'y,-x+y,-z'
+'x-y,x,-z'
+'x,y,-z+1/2'
+'-y,x-y,-z+1/2'
+'-x+y,-x,-z+1/2'
+'-y,-x,z'
+'-x+y,y,z'
+'x,x-y,z'
+'y,x,z+1/2'
+'x-y,-y,z+1/2'
+'-x,-x+y,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Mg1 Mg 0.3333333 0.6666667 0.2500 1.0
