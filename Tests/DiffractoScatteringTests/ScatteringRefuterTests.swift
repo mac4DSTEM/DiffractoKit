@@ -24,7 +24,7 @@ struct ScatteringRefuterTests {
         for ff: FormFactor in [{ _, _ in .nan }, { _, _ in .infinity }, { z, g in z == 17 ? .nan : ElectronScatteringFactors.f(z: z, gSquared: g) }] {
             #expect(throws: KinematicError.self) { try s.kinematicReflections(kMax: 1.2, formFactor: ff) }
             do { _ = try s.kinematicReflections(kMax: 1.2, formFactor: ff); Issue.record("admitted") }
-            catch { guard case .nonFiniteStructureFactor = error as? KinematicError else { Issue.record("\(error)"); continue } }
+            catch { guard case .nonFiniteStructureFactor = error else { Issue.record("\(error)"); continue } }
         }
     }
 
@@ -41,7 +41,7 @@ struct ScatteringRefuterTests {
         for sites in cases {
             let s = CrystalStructure(cell: cell, sites: sites, operations: [.identity])
             do { _ = try s.kinematicReflections(kMax: 1.2); Issue.record("admitted \(sites)") }
-            catch { guard case .invalidStructure = error as? KinematicError else { Issue.record("\(error)"); continue } }
+            catch { guard case .invalidStructure = error else { Issue.record("\(error)"); continue } }
         }
     }
 
