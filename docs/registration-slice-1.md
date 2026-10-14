@@ -350,9 +350,23 @@ ring of 14 held. Seven readings are settled here; the rules of sections 3.1, 3.6
    fixtures here are completed to P3₂21 (6 operations, 9 atoms), R-3c (36, 30) and Pa-3 (24, 12), marked `# MODIFIED`
    with the seeded texts kept beside them (`*_as_seeded.cif`, pinned as what they are: 12, 5 and 8 atoms).
 
+### 2026-10-14, 23:30 CEST, from the coordinator: parsing comparisons named, no change of scope
+
+No Swift crystallography package exists (d-spacings, structure factors, indexing): DiffractoKit is the first. A Swift
+CIF parser does: SKCIFParser inside iRASPA (MIT), vendored by the macOS Quick Look extension CIFPreview
+(`github.com/grebenyyk/CIFPreview`), with symmetry expansion. It and Gemmi (C++/Python, reads COD and small-molecule
+CIFs) are **parsing comparisons** for section 3.7 (which files parse, which symmetry lists expand), never a numbers
+oracle; pymatgen stays the oracle for cells, symmetry, d and F. Neither is run in this session; a later session may
+add them as a tier-2 check of the parser on database CIFs. Dependencies: none beyond Foundation and simd in slice 1;
+when a linear-algebra path comes, Apple's swift-numerics and Accelerate directly, never the small single-maintainer
+wrappers (LASwift, LANumerics, Surge). No registered number changes.
+
 ### 2026-10-14, at the first test run: two parser readings tightened (section 3.3)
 
 Found by the planted refusals. (1) The apps' fraction parser split "/2" into ["2"] and read `x/2` as x + 2; the kit's
-refuses an empty numerator or denominator as unparsable. (2) A coefficient or constant that is non-finite or beyond
+refuses an empty numerator or denominator as unparsable. (The coordinator relayed the same reading at 23:40 CEST as
+macTEM's refuter finding F5 on its own CIF lane, upstream in mac4DSTEM; the planted cases here hold `x/2`, `0.5x`,
+`1/3x` refused and `-y+1/2`, `x-y`, `2x`, `-z+1/3` parsed and round-tripped; a non-integer coefficient is refused
+whatever pymatgen would read into such a string, since no space-group operation has one.) (2) A coefficient or constant that is non-finite or beyond
 1000 in magnitude (`1000000000000000000000x`, which the apps' incomplete-list check guards against trapping on) is
 refused as unparsable at the parser, never converted to Int. No registered number changes.

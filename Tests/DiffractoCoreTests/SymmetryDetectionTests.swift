@@ -74,15 +74,26 @@ final class SymmetryDetectionTests: XCTestCase {
         XCTAssertEqual(structure.laueClass, .mThreeBarM)
     }
 
-    /// An FCC cell whose face-centre atom is split into a dumbbell is at best tetragonal; the permutation test must
-    /// not let two sites claim one target. Mutant: the target-distinct guard dropped.
+    /// The apps' bijection fixture (mac4DSTEM `CIFSymmetryBijectionTests`): FCC gold plus two extra Au at
+    /// (0.004, 0, 0) and (0, 0.004, 0), inside the 5e-3 tolerance of the origin atom but 0.0057 from each other and
+    /// from where the 3-fold sends them. No translation makes the 3-fold a permutation of these six sites, so the cell
+    /// is not cubic; a matcher that lets two sites share one target says it is. Mutant: the target-distinct guard
+    /// dropped. (A dumbbell split within the tolerance, ±0.002 about a face centre, IS cubic at that tolerance and is
+    /// not a test of the guard; a ±0.02 split is refused by distance alone, second loop.)
     func testSplitSiteGoldIsNotCubic() {
         var sites = Self.fcc.map { AtomSite(z: 79, fractional: $0, occupancy: 1) }
-        sites[1] = AtomSite(z: 79, fractional: [0.5, 0.5, 0.02], occupancy: 0.5)
-        sites.append(AtomSite(z: 79, fractional: [0.5, 0.5, -0.02], occupancy: 0.5))
+        sites.append(AtomSite(z: 79, fractional: [0.004, 0, 0], occupancy: 1))
+        sites.append(AtomSite(z: 79, fractional: [0, 0.004, 0], occupancy: 1))
         let structure = CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: sites)
         XCTAssertNotEqual(structure.laueClass, .mThreeBarM)
         XCTAssertLessThan(structure.laueGroup.order, 48)
+        XCTAssertFalse(structure.isUsable, "0.0163 Å apart is a close contact")
+
+        var dumbbell = Self.fcc.map { AtomSite(z: 79, fractional: $0, occupancy: 0.5) }
+        dumbbell[1] = AtomSite(z: 79, fractional: [0.5, 0.5, 0.02], occupancy: 0.5)
+        dumbbell.append(AtomSite(z: 79, fractional: [0.5, 0.5, 0.98], occupancy: 0.5))
+        let split = CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: dumbbell)
+        XCTAssertNotEqual(split.laueClass, .mThreeBarM)
     }
 
     /// A metrically cubic cell (a = c) whose atoms carry only a 4-fold along c: 4/mmm, not m-3m (the apps refused it).

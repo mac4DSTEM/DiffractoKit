@@ -145,10 +145,10 @@ report.section("CrystalStructure, CIFImport, ReflectionList") { r in
     r.equal("list Laue class", list.laueClass, .mThreeBarM)
     r.equal("constants", (ReflectionList.maximumKMax, ReflectionList.familyTolerance) == (4, 1e-9), true)
     var refused: ReflectionListError?
-    do { _ = try s.reflections(kMax: 0) } catch { refused = error }
+    do { _ = try s.reflections(kMax: 0) } catch let e as ReflectionListError { refused = e } catch {}
     r.equal("k_max refusal", refused, .invalidKMax(0))
     var missing: CIFImportError?
-    do { _ = try CIFImport.read("data_x\n_cell_length_a 1\n") } catch { missing = error }
+    do { _ = try CIFImport.read("data_x\n_cell_length_a 1\n") } catch let e as CIFImportError { missing = e } catch {}
     r.equal("CIF refusal is typed", missing, .missingTag("_cell_length_b"))
     r.equal("space group order", CIFImport.spaceGroupOrder(225), 192)
     r.equal("required count", CIFImport.requiredOperationCount(spaceGroup: 12, alphaDeg: 90, betaDeg: 105, gammaDeg: 90), 8)
