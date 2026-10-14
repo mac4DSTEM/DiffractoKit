@@ -30,3 +30,14 @@ struct Report {
         return failed == 0 ? 0 : 1
     }
 }
+
+/// The value, or a thrown check failure (a consumer package has no #require).
+func unwrap<T>(_ value: T?, _ what: String = #function) throws -> T {
+    guard let value else { throw CheckFailure("nil where a value was expected (\(what))") }
+    return value
+}
+
+struct CheckFailure: Error, CustomStringConvertible {
+    let description: String
+    init(_ description: String) { self.description = description }
+}

@@ -167,6 +167,35 @@ report.section("CrystalStructure, CIFImport, ReflectionList") { r in
     r.equal("fractional helpers", fractionalAxisDelta(0.99, 0.01) < 0.021 && wrapFractional(SIMD3(-0.25, 1.5, 0)) == SIMD3(0.75, 0.5, 0), true)
 }
 
+report.section("DiffractoScattering (slice 2)") { r in
+    let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
+    let gold = CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: fcc.map { AtomSite(z: 79, fractional: $0) })
+    let list = try gold.kinematicReflections(kMax: 1.2)
+    r.equal("Au rings after the cut", list.families.count, 8)
+    r.equal("Au first ring", list.families.first?.family.name, "{1 1 1}")
+    r.equal("cut default", StructureFactors.defaultCut, 1e-4)
+    r.equal("kept count", list.kept.count, 112)
+    r.equal("all >= kept", list.all.count >= list.kept.count, true)
+    r.equal("k_max and cut", list.kMax == 1.2 && list.cut == 1e-4, true)
+    r.equal("no operation-absent kept", list.keptButOperationAbsent.isEmpty, true)
+    let f111 = try unwrap(StructureFactors.compute(MillerIndex(1, 1, 1), in: gold))
+    let fe = try unwrap(ElectronScatteringFactors.f(z: 79, gSquared: f111.gLength * f111.gLength))
+    r.near("F(111) = 4 f_e / V", f111.real, 4 * fe / gold.cell.volume, 1e-12)
+    r.near("|F| and |F|^2", f111.magnitude * f111.magnitude, f111.intensity, 1e-15)
+    r.near("d", f111.d, 4.0782 / 3.0.squareRoot(), 1e-12)
+    r.equal("imaginary part zero", abs(f111.imaginary) < 1e-15, true)
+    r.equal("g vector", f111.g == gold.cell.gVector(MillerIndex(1, 1, 1)), true)
+    r.equal("ring intensity positive", (list.families.first?.intensity ?? 0) > 0, true)
+    r.equal("reflection in kinematic list", list.kept.first?.reflection.hkl.h.magnitude, 1)
+    r.equal("table size", ElectronScatteringFactors.parameters.count, ElectronScatteringFactors.maximumAtomicNumber)
+    r.equal("supported", ElectronScatteringFactors.isSupported(z: 103) && !ElectronScatteringFactors.isSupported(z: 104), true)
+    let custom: FormFactor = { _, _ in 1 }
+    r.equal("custom form factor", try gold.kinematicReflections(kMax: 1.2, cut: 0, formFactor: custom).kept.isEmpty, false)
+    var refused: KinematicError?
+    do { _ = try gold.kinematicReflections(kMax: 1.2, cut: -1) } catch let e as KinematicError { refused = e } catch {}
+    r.equal("cut refusal typed", refused, .invalidCut(-1))
+}
+
 report.section("Placeholder modules") { r in
     r.equal("DiffractoScattering states its scope", DiffractoScattering.plannedScope.isEmpty, false)
     r.equal("DiffractoGeometry states its scope", DiffractoGeometry.plannedScope.isEmpty, false)
@@ -174,3 +203,4 @@ report.section("Placeholder modules") { r in
 }
 
 exit(report.finish())
+
