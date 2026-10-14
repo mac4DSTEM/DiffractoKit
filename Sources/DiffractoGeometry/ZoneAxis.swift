@@ -50,11 +50,18 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
 
     /// The detector basis of a unit beam direction `n`: columns e₁, e₂, n, orthonormal and right-handed. The reference is
     /// x unless |n.x| ≥ 0.9, then y; e₁ = normalize(n × reference), e₂ = n × e₁ (mac4DSTEM `ACOMOrientation.detectorBasis`).
+    /// `n` must be a unit vector (`cartesian(in:)` returns one); `isUnitDirection` says whether it is (Gate B on slice 3a,
+    /// F4: a non-unit n gave a non-orthonormal or NaN basis silently).
     public static func detectorBasis(_ n: SIMD3<Double>) -> simd_double3x3 {
         let reference: SIMD3<Double> = abs(n.x) < 0.9 ? [1, 0, 0] : [0, 1, 0]
         let e1 = simd_normalize(simd_cross(n, reference))
         let e2 = simd_cross(n, e1)
         return simd_double3x3(columns: (e1, e2, n))
+    }
+
+    /// Whether `n` is finite with |n| = 1 within 1e-9: what `detectorBasis` and `project` require.
+    public static func isUnitDirection(_ n: SIMD3<Double>) -> Bool {
+        n.x.isFinite && n.y.isFinite && n.z.isFinite && abs(simd_length(n) - 1) <= 1e-9
     }
 
     /// One reflection seen down a beam direction.
@@ -74,14 +81,21 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
     /// With `wavelengthAngstroms` the sphere's curvature is included, s_g = g · n + (λ/2)|g|²: even in g, so g and −g
     /// are excited differently (mac4DSTEM `OrientationPlan.project`).
     ///
-    /// DEVIATION (sign) from py4DSTEM f050d207, `Crystal.excitation_errors`: it writes s_g = (2 g_z − λ|g|²) / (2 − 2λ g_z)
-    /// with k₀ = [0, 0, −1/λ], and its lab z is the NEGATIVE of this beam direction (the two lab frames differ by an
-    /// x ↔ y swap plus a z flip), so in terms of g · n the curvature term has the opposite sign here. Both are the same
-    /// physics; only the frame differs. The denominator (2 − 2λ g_z) is not applied: s_g is the first-order form.
+    /// THE SENSE OF n: the direction the beam TRAVELS (source to specimen). Then g · n + λ|g|²/2 = 0 is the Ewald condition
+    /// |k₀ + g| = |k₀| with k₀ = n/λ exactly. A zone axis written pointing toward the source is −n here.
+    ///
+    /// DEVIATION (overall sign) from py4DSTEM f050d207, `Crystal.excitation_errors`: it writes s_g = (2 g_z − λ|g|²) /
+    /// (2 − 2λ g_z) with k₀ = [0, 0, −1/λ], so its lab z is −n and its s_g = −s_g(here) / (1 + λ g · n): the whole
+    /// expression has the opposite sign, both terms flip together, the zero locus is the same (Gate B on slice 3a, F6
+    /// corrected the earlier wording, which said only the curvature term flips). The denominator is not applied: s_g here
+    /// is the first-order form (the factor differs from 1 by under 1e-3 near the sphere).
     ///
     /// A reflection is kept when |s_g| ≤ `sgMax` (a non-finite s_g is never kept).
+    /// Nothing is kept for a non-unit or non-finite `n`, or a wavelength that is not finite and ≥ 0 (Gate B F4, F5).
     public static func project(_ reflections: [KinematicReflection], onto n: SIMD3<Double>,
                                wavelengthAngstroms: Double? = nil, sgMax: Double) -> [Projected] {
+        guard isUnitDirection(n) else { return [] }
+        if let lambda = wavelengthAngstroms { guard lambda.isFinite, lambda >= 0 else { return [] } }
         let basis = detectorBasis(n)
         let e1 = basis.columns.0
         let e2 = basis.columns.1

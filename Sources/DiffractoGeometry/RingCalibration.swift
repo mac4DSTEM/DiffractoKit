@@ -211,13 +211,15 @@ public struct RingCalibration: Sendable, Equatable {
     /// Closer to 90° the number is right only to that error; `.braggLimit` is the only guard.
     public static func cameraLengthPixels(radius: Double, twoTheta: Double) -> Double {
         guard radius.isFinite, radius > 0, twoTheta.isFinite, twoTheta > 0, twoTheta < .pi / 2 else { return .nan }
-        return radius / tan(twoTheta)
+        let length = radius / tan(twoTheta)
+        return length.isFinite ? length : .nan   // an overflow is NaN, never infinity (Gate B on slice 3a, F2)
     }
 
     /// Δq = (1/d)/R, Å⁻¹ per pixel, for d in Å and R in pixels. NaN unless both are finite and positive.
     public static func qPerPixel(d: Double, radius: Double) -> Double {
         guard d.isFinite, d > 0, radius.isFinite, radius > 0 else { return .nan }
-        return (1 / d) / radius
+        let q = (1 / d) / radius
+        return q.isFinite ? q : .nan   // a subnormal d or R overflows: NaN, never infinity (Gate B on slice 3a, F2)
     }
 
     /// L = p · L_px, millimetres, for a pixel pitch p in MILLIMETRES (a 14 µm pixel is 0.014). NaN unless p is finite

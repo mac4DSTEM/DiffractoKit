@@ -37,6 +37,10 @@ public enum ElectronWavelength {
     /// λ in Å at an accelerating voltage in VOLTS (200 kV is 200_000). NaN unless volts is finite and positive.
     public static func angstroms(volts: Double) -> Double {
         guard volts.isFinite, volts > 0 else { return .nan }
-        return planckTimesLightEVAngstroms / (volts * (2 * electronRestEnergyEV + volts)).squareRoot()
+        // Above about 1.3e154 V the product overflows and λ would read 0, a plausible-looking number (Gate B on slice
+        // 3a, F1): NaN instead. The arithmetic below the guard is macTEM's, unchanged.
+        let product = volts * (2 * electronRestEnergyEV + volts)
+        guard product.isFinite else { return .nan }
+        return planckTimesLightEVAngstroms / product.squareRoot()
     }
 }

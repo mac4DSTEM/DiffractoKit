@@ -139,6 +139,13 @@ public enum RingIndexing {
     /// The family `q` (Å⁻¹) belongs to among the kinematic rings (slice 2's list after the |F| cut), given its standard
     /// uncertainty `sigma` (Å⁻¹), the k_max the list was built to and the coverage factor k; or the first refusal that
     /// applies (the header's order).
+    /// The decision against a kinematic list, with the k_max it was built to (Gate B on slice 3a, F7: a free k_max larger
+    /// than the list's turns the beyondKMax guard off; this overload cannot be given one).
+    public static func index(q: Double, sigma: Double, in list: KinematicReflectionList,
+                             coverage k: Double = defaultCoverage) throws(Refusal) -> Assignment {
+        try index(q: q, sigma: sigma, in: list.families, kMax: list.kMax, coverage: k)
+    }
+
     public static func index(q: Double, sigma: Double, in families: [KinematicFamily], kMax: Double,
                              coverage k: Double = defaultCoverage) throws(Refusal) -> Assignment {
         try index(q: q, sigma: sigma, in: families.map(\.family), kMax: kMax, coverage: k)

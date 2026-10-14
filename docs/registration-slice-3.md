@@ -124,4 +124,24 @@ mac4DSTEM's, on its harness sets, cited, not re-claimed.
 
 ## 7. Amendments
 
-(none yet)
+### 2026-10-15, after Gate B on 3a (refuter on a16cf84): no number moved; guards, an overload and two wording errors
+
+The refuter agreed with 60-digit arithmetic (λ ≤ 1.7e-16 relative from 1 V to 1e154 V; 2θ, Δq near the Bragg limit), all
+64 refusal combinations, 21,530 indexing plants against its own 50-digit specification, and the zone geometry against
+pymatgen (Gram matrices 5.6e-16) on four cells × 49 axes; `accepted` never had a second family within kσ (minimum
+margin 3.01 > ln 19). It found, all at absurd inputs or in the API, all fixed with a test (`GeometryRefuterTests`):
+- **F1:** λ read 0 (not NaN) above about 1.3e154 V, where V(2m₀c² + V) overflows: now NaN.
+- **F2:** L_px and Δq could be +∞ (R 1e300, a subnormal d): now NaN, never infinity.
+- **F4, F5:** `detectorBasis` / `project` accepted a non-unit, zero or non-finite n and a negative or non-finite λ
+  silently (NaN positions, mirrored curvature): `project` keeps nothing for them; `isUnitDirection(_:)` says what is
+  required.
+- **F6, wording:** §4's "the exact length exceeds the small-angle one by 4e-5 … 9.5e-4" has the sign wrong: the exact
+  L = R / tan 2θ is SMALLER than R d / λ by about 1.5 (λ/2d)² (4.25e-5 at 200 kV Au {111}); the tests always held the
+  magnitudes. And the sense of n: n is the beam's TRAVEL direction (then s_g = g·n + λ|g|²/2 = 0 is the Ewald condition
+  exactly); py4DSTEM's s_g is −s_g/(1 + λ g·n), both terms flipping together (the earlier note said only the curvature
+  term flips).
+- **F7:** `index(q:sigma:in:kMax:)` takes a free k_max; a larger one than the list's turns `beyondKMax` off. An overload
+  `index(q:sigma:in: KinematicReflectionList)` uses the list's own k_max.
+- **F3, F8, recorded:** subnormal volts lose 1e-8 relative; huge k or σ give an infinite reach in a correct verdict.
+- **§4's 49-axes line**, written loosely before code ("up to sign …"), is replaced by what is tested: the 49 axes are
+  mac4DSTEM's `lowIndexZoneAxes` by value and in order, and the refuter regenerated the same list independently.
