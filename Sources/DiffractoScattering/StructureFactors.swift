@@ -1,6 +1,7 @@
 //
 //  StructureFactors.swift
-//  Role: kinematic structure factors F(hkl) = (1/V) Σ_sites f(Z, |g|²) · occ · exp(2πi (h x + k y + l z)) in Å, and the
+//  Role: kinematic structure factors F(hkl) = (1/V) Σ_sites f(Z, |g|²) · occ · exp(2πi (h x + k y + l z)) in Å⁻² (f in Å
+//        over V in Å³; py4DSTEM's and the apps' "A" label names f's unit, not F's: Gate B, 2026-10-15), and the
 //        reflection list after the |F| cut with its rings (registration docs/registration-slice-2.md §1, §3.2, §3.3).
 //        The loop is mac4DSTEM 7d6fdbd1's `Crystal.reflections(kMax:tolerance:)`, in the same order of operations, so
 //        the numbers can be bit identical to the apps'; the enumeration and the ring rule are slice 1's.
@@ -20,13 +21,13 @@ public struct StructureFactor: Sendable, Equatable {
     public let g: SIMD3<Double>
     /// |g| (Å⁻¹).
     public let gLength: Double
-    /// Re F and Im F (Å).
+    /// Re F and Im F (Å⁻²: f_e in Å over V in Å³).
     public let real: Double
     public let imaginary: Double
-    /// |F|² = Re² + Im² (Å²).
+    /// |F|² = Re² + Im² (Å⁻⁴).
     public let intensity: Double
 
-    /// |F| (Å).
+    /// |F| (Å⁻²).
     public var magnitude: Double { intensity.squareRoot() }
     /// d = 1/|g| (Å).
     public var d: Double { 1 / gLength }
@@ -34,7 +35,8 @@ public struct StructureFactor: Sendable, Equatable {
 
 public enum StructureFactors {
 
-    /// The apps' |F| cut-off (Å): a reflection is kept when |F| > cut.
+    /// The apps' |F| cut-off (Å⁻²): a reflection is kept when |F| > cut. A fixed number against a quantity that scales as
+    /// 1/V: a large cell keeps fewer reflections at the same cut (registration slice 2 §7).
     public static let defaultCut = 1e-4
 
     /// F(hkl) for `structure`, with the electron form factor unless another is given. nil when a site's element has
@@ -72,6 +74,11 @@ public enum KinematicError: Error, Equatable, Sendable, CustomStringConvertible 
     case reflectionList(ReflectionListError)
     /// The cut is not a finite number ≥ 0.
     case invalidCut(Double)
+    /// The structure fails `CrystalStructure.validationIssues` (non-finite or out-of-range occupancy or coordinate, a
+    /// degenerate cell, a close contact): refused before any F, never silently scored as nothing.
+    case invalidStructure([String])
+    /// The form factor returned a non-finite value, or F came out non-finite, at this reflection.
+    case nonFiniteStructureFactor(MillerIndex)
 
     public var description: String {
         switch self {
@@ -79,7 +86,11 @@ public enum KinematicError: Error, Equatable, Sendable, CustomStringConvertible 
             return "The scattering table has no entry for Z = \(z.map(String.init).joined(separator: ", ")), so this "
                 + "crystal's structure factors would be wrong."
         case .reflectionList(let e): return e.description
-        case .invalidCut(let c): return "The |F| cut must be a finite number of Å at least 0; \(c) is not."
+        case .invalidCut(let c): return "The |F| cut must be a finite number of Å⁻² at least 0; \(c) is not."
+        case .invalidStructure(let issues):
+            return "The structure is not valid, so its structure factors would be meaningless: \(issues.joined(separator: "; "))."
+        case .nonFiniteStructureFactor(let hkl):
+            return "The structure factor of \(hkl) is not a finite number (the form factor returned NaN or infinity)."
         }
     }
 }
@@ -93,7 +104,7 @@ public struct KinematicReflection: Sendable, Equatable {
 /// A ring after the cut: slice 1's family of the kept reflections, with Σ|F|² over its members.
 public struct KinematicFamily: Sendable, Equatable {
     public let family: ReflectionFamily
-    /// Σ|F|² over the members (Å²).
+    /// Σ|F|² over the members (Å⁻⁴).
     public let intensity: Double
 }
 
@@ -107,6 +118,11 @@ public struct KinematicReflectionList: Sendable, Equatable {
     public let kept: [KinematicReflection]
     /// Slice 1's ring rule on `kept`.
     public let families: [KinematicFamily]
+
+    /// Kept reflections that the detected space-group operations forbid: their |F| is non-zero only because the sites'
+    /// written coordinates break the symmetry slightly (⅓ written as 0.333 gives |F| up to 3e-4 in magnesium). The apps
+    /// keep them by |F| alone and so does the list; this names them so a caller can tell (Gate B F4, 2026-10-15).
+    public var keptButOperationAbsent: [KinematicReflection] { kept.filter { !$0.reflection.isAllowed } }
 }
 
 extension CrystalStructure {
@@ -118,6 +134,8 @@ extension CrystalStructure {
         guard cut.isFinite, cut >= 0 else { throw .invalidCut(cut) }
         let missing = Array(Set(sites.map(\.z).filter { formFactor($0, 0) == nil })).sorted()
         guard missing.isEmpty else { throw .unsupportedElements(missing) }
+        let issues = validationIssues
+        guard issues.isEmpty else { throw .invalidStructure(issues.map(\.message)) }
         let list: ReflectionList
         do { list = try reflections(kMax: kMax) } catch { throw .reflectionList(error) }
         var all: [KinematicReflection] = []
@@ -126,7 +144,12 @@ extension CrystalStructure {
             // Unreachable nil: every element was checked above.
             guard let f = StructureFactors.compute(r.hkl, g: r.g, sites: sites, volume: cell.volume,
                                                    formFactor: formFactor)
-            else { throw .unsupportedElements(missing) }
+            else {
+                // A form factor that has no value at this g² for some element: name the elements (Gate B F3).
+                let gSq = r.gLength * r.gLength
+                throw .unsupportedElements(Array(Set(sites.map(\.z).filter { formFactor($0, gSq) == nil })).sorted())
+            }
+            guard f.real.isFinite, f.imaginary.isFinite else { throw .nonFiniteStructureFactor(r.hkl) }
             all.append(KinematicReflection(reflection: r, structureFactor: f))
         }
         let kept = all.filter { $0.structureFactor.magnitude > cut }

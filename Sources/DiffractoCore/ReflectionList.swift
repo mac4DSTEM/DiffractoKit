@@ -64,8 +64,12 @@ public struct ReflectionList: Sendable, Equatable {
     public static let familyTolerance: Double = 1e-9
     /// Two |g| are tied, for the list's order, within this relative difference.
     public static let orderTolerance: Double = 1e-12
-    /// The most reflections a list is built to hold (about 2.5 GB); above it the list is refused, never trapped.
+    /// The most reflections a list is built to hold (measured about 800 B each with their structure factors: about 8 GB);
+    /// above it the list is refused, never trapped.
     public static let maximumReflections = 10_000_000
+    /// The most (h, k, l) the enumeration box may hold: a needle-shaped cell has few reflections by volume but a long box
+    /// (Gate B on slice 2: a = 1e7, b = c = 1e-3 Å passed the volume estimate and enumerated 24 million).
+    public static let maximumEnumeration = 100_000_000
 
     public let kMax: Double
     /// Increasing |g|; equal |g| by descending lexicographic (h, k, l).
@@ -87,7 +91,7 @@ public struct ReflectionList: Sendable, Equatable {
         let estimate = 4.0 / 3.0 * Double.pi * kMax * kMax * kMax * cell.volume
         let box = cell.realLattice.map { 2 * (kMax * length($0)).rounded(.up) + 1 }.reduce(1, *)
         guard estimate.isFinite, box.isFinite, estimate <= Double(ReflectionList.maximumReflections),
-              box <= 50 * Double(ReflectionList.maximumReflections)
+              box <= Double(ReflectionList.maximumEnumeration)
         else { throw .cellTooLargeOrInvalid(estimatedReflections: estimate) }
         self.kMax = kMax
         self.laueGroup = laueGroup

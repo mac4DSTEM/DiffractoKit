@@ -145,7 +145,9 @@ public struct UnitCell: Sendable, Equatable {
         if [alphaDeg, betaDeg, gammaDeg].contains(where: { !$0.isFinite || $0 <= 0 || $0 >= 180 }) {
             out.append(.invalidAngles)
         }
-        if !volume.isFinite || volume <= 0 { out.append(.degenerateVolume) }
+        // A cell flatter than V = 1e-6 · a b c is coplanar up to rounding (α = β = γ = 120° gives V ≈ 3e-6 Å³ for 5 Å
+        // edges, and structure factors of 1e6): refused (Gate B on slice 2, 2026-10-15).
+        if !volume.isFinite || volume <= 0 || volume < 1e-6 * a * b * c { out.append(.degenerateVolume) }
         return out
     }
 

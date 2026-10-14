@@ -127,10 +127,11 @@ public enum ElectronScatteringFactors {
 
     public static func isSupported(z: Int) -> Bool { z >= 1 && z <= maximumAtomicNumber }
 
-    /// f_e(Z, g²) in Å, g² = |g|² in Å⁻²; nil for an element outside the table (callers fail loudly, never score 0).
-    /// The arithmetic is the apps' (`ScatteringFactors.electronScatteringFactor`), in the same order.
+    /// f_e(Z, g²) in Å, g² = |g|² in Å⁻²; nil for an element outside the table or a g² that is not a finite number ≥ 0
+    /// (callers fail loudly, never score 0). The arithmetic is the apps' (`ScatteringFactors.electronScatteringFactor`),
+    /// in the same order.
     public static func f(z: Int, gSquared: Double) -> Double? {
-        guard isSupported(z: z) else { return nil }
+        guard isSupported(z: z), gSquared.isFinite, gSquared >= 0 else { return nil }
         let p = parameters[z - 1]
         var fe = 0.0
         for i in 0..<5 {

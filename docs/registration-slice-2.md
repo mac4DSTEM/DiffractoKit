@@ -176,3 +176,26 @@ NumPy's; the X-ray phase sums equal pymatgen's to 1.8e-13 (β″) and ≤ 2.5e-1
    where rounding decides inclusion; the test allows exactly those.
 5. **pymatgen's 2θ range** is limited to 0.1 % beyond |g| = 1.2 (1 + 1e-6): with no range the Lorentz–polarisation
    divergence near 180° sets the scale and pymatgen drops every low-angle peak. Recorded in the pins.
+
+### 2026-10-15, after Gate B (refuter on be6b832): no wrong number; guards and labels fixed (tier 1)
+
+The refuter agreed with NumPy, pymatgen (X-ray, 7 more structures), the table (1030 parameters bit for bit) and the
+apps' compiled code (bit identical on GaAs, ZnO and 12 random oblique cells it built), and found:
+- **F1, units (documentation defect):** F = f_e (Å) / V (Å³) is in **Å⁻²**, |F|² in Å⁻⁴, the cut 1e-4 in Å⁻²; py4DSTEM's and
+  the apps' "A" names f_e's unit. Sections 1, 3.2 and 7 read "Å" for F: read Å⁻². The cut is a fixed number against a
+  quantity that scales as 1/V, so a large cell keeps fewer reflections (a 30 Å cell at 2 Å⁻¹ keeps 16,326 of 904,088): §7.
+- **F2, fixed:** a NaN or infinite form factor, a NaN occupancy or an infinite coordinate gave zero reflections kept and no
+  error. Now: the structure's `validationIssues` refuse it first (`invalidStructure`), and a non-finite F refuses at its
+  reflection (`nonFiniteStructureFactor`).
+- **F3, fixed:** a form factor with no value at g² > 0 threw `unsupportedElements([])`; the failing elements are now
+  named at the g² where they fail.
+- **F4, recorded and named:** with ⅓ written as 0.333 magnesium keeps 24 operation-absent reflections with |F| up to
+  3e-4 (306 kept and 28 rings against 270 and 24). The list keeps them by |F|, as the apps do (bit-for-bit kept sets);
+  `keptButOperationAbsent` names them for the caller.
+- **F5, fixed:** the size guard's volume estimate passed a needle (a = 1e7, b = c = 1e-3 Å: 24 million reflections, 19.7
+  GB); the enumeration box is now capped at 1e8, and the measured memory (about 800 B a reflection with F) is stated.
+- **F6, fixed (slice 1's cell rule):** a coplanar cell (α = β = γ = 120°) had a rounding volume of 3.5e-6 Å³ and F of 1e6;
+  V < 1e-6 · abc is now `degenerateVolume`.
+- **F7, slice 1's known limit:** a primitive-fcc cell detects -3m and names its rings accordingly (slice 1 §8, F3).
+- **F8, fixed:** f_e is nil for a negative or non-finite g². A caller's `operations` that do not match the sites can split
+  an orbit at the cut; "a whole orbit or none" holds for detected symmetry, as §3.3 says.
