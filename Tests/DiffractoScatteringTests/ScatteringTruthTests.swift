@@ -219,6 +219,8 @@ struct ScatteringTruthTests {
     @Test func testRefusals() throws {
         let rf = Presets.structure(.cubic(a: 4), [AtomSite(z: 104, fractional: [0, 0, 0])])
         #expect(throws: KinematicError.unsupportedElements([104])) { try rf.kinematicReflections(kMax: 1.2) }
+        // Refused before any F, even when no reflection lies within k_max (an empty list would hide the missing row).
+        #expect(throws: KinematicError.unsupportedElements([104])) { try rf.kinematicReflections(kMax: 0.01) }
         #expect(throws: KinematicError.invalidCut(-1)) { try Presets.gold.kinematicReflections(kMax: 1.2, cut: -1) }
         #expect(throws: KinematicError.reflectionList(.invalidKMax(5))) { try Presets.gold.kinematicReflections(kMax: 5) }
         let one = try #require(StructureFactors.compute(MillerIndex(1, 1, 1), in: Presets.gold))

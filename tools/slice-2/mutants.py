@@ -124,7 +124,9 @@ def main():
         failed = result.returncode != 0
         red += failed
         aimed = test.split(".")[-1]
-        caught_by_aim = f"{aimed}]' failed" in result.stdout or f"error: -[DiffractoCoreTests.{test}]" in result.stdout
+        caught_by_aim = (f"{aimed}]' failed" in result.stdout or f"error: -[DiffractoCoreTests.{test}]" in result.stdout
+                         or f"Test {aimed}() failed" in result.stdout or f"Test {aimed}(" in result.stdout and "failed" in result.stdout
+                         and any(line.startswith("✘") and f"{aimed}(" in line for line in result.stdout.splitlines()))
         verdict = "RED" if failed else "GREEN (test missing)"
         print(f"{verdict:20s} {name} [{file.split('/')[-1]}; aimed at {test}; "
               f"{'caught by it' if caught_by_aim else 'caught elsewhere' if failed else 'not caught'}; "
