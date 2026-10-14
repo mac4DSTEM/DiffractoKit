@@ -151,8 +151,14 @@ public struct ReflectionList: Sendable, Equatable {
     /// The rings (registration 3.9), on the allowed reflections by default; `allowedOnly: false` groups every
     /// reflection of the lattice.
     public func families(allowedOnly: Bool = true) -> [ReflectionFamily] {
-        let source = allowedOnly ? allowed : reflections
-        let millerBravais = usesMillerBravais
+        ReflectionList.families(of: allowedOnly ? allowed : reflections, laueGroup: laueGroup,
+                                millerBravais: usesMillerBravais)
+    }
+
+    /// The ring rule on any reflections in the list's order (increasing |g|): a reflection joins the current ring while
+    /// |g| ≤ g₀(1 + `familyTolerance`); orbits and names by `laueGroup` (slice 2 applies it after the |F| cut).
+    public static func families(of reflections: [Reflection], laueGroup: PointSymmetry,
+                                millerBravais: Bool) -> [ReflectionFamily] {
         var families: [ReflectionFamily] = []
         var group: [Reflection] = []
         func close() {
@@ -167,7 +173,7 @@ public struct ReflectionList: Sendable, Equatable {
                     .joined(separator: " + ")))
             group = []
         }
-        for r in source {
+        for r in reflections {
             if let first = group.first, r.gLength > first.gLength * (1 + ReflectionList.familyTolerance) { close() }
             group.append(r)
         }
