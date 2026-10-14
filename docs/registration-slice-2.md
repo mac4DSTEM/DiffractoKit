@@ -168,5 +168,11 @@ NumPy's; the X-ray phase sums equal pymatgen's to 1.8e-13 (β″) and ≤ 2.5e-1
 4. **The cut's strictness gets its own case.** No pinned structure has |F| exactly 1e-4, so `>` versus `≥` was invisible.
    `cut_edge`: a = b = 100, c = 1 Å, one site at the origin, a constant unit form factor (the `formFactor` parameter):
    every reflection has |F| = 1/V = 1e-4 exactly (V by the cofactor determinant, as the kit and the apps); `>` keeps none.
+6. **β″ against the apps (4.4).** Bit identity holds when the kit builds β″ from the apps' own hand site list (a test, at
+   1.2 and 2.0 Å⁻¹). Built through `CIFImport` its 22 sites come in another order, and the sum's rounding differs by at
+   most 2.7e-13 of max(|F|, 1e-4) on Re F and 5.5e-13 on |F|² (measured; |g|, V and the kept sets are bit equal). The
+   registered 1e-14 for the CIF-order comparison was a guess below a summation-order effect; it is 1e-12 (Re F, Im F)
+   and 2e-12 (|F|²). The `cut_edge` count may differ from NumPy's by the reflections exactly on |g| = 1.2 (2 of 72890),
+   where rounding decides inclusion; the test allows exactly those.
 5. **pymatgen's 2θ range** is limited to 0.1 % beyond |g| = 1.2 (1 + 1e-6): with no range the Lorentz–polarisation
    divergence near 180° sets the scale and pymatgen drops every low-angle peak. Recorded in the pins.
