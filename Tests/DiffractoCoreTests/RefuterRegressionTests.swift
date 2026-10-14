@@ -172,6 +172,87 @@ final class RefuterRegressionTests: XCTestCase {
         XCTAssertNoThrow(try SymmetryOperation(xyz: "x-y,x,z"))
     }
 
+    /// F1 fix, the grid: magnesium at the standard origin written to four decimals (⅓ as 0.3333) has every translation
+    /// exactly on the k/24 grid (within its own uncertainty), so the absence test is exact. Mutant: the grid step dropped.
+    func testCoarseCoordinatesGiveExactGridTranslations() throws {
+        let cif = """
+        data_mg4
+        _cell_length_a 3.2094
+        _cell_length_b 3.2094
+        _cell_length_c 5.2108
+        _cell_angle_alpha 90
+        _cell_angle_beta 90
+        _cell_angle_gamma 120
+        loop_
+        _atom_site_label
+        _atom_site_fract_x
+        _atom_site_fract_y
+        _atom_site_fract_z
+        Mg1 0.3333 0.6667 0.25
+        Mg2 0.6667 0.3333 0.75
+        """
+        let s = try CIFImport.read(cif).structure
+        XCTAssertEqual(s.operations.count, 24)
+        for op in s.operations {
+            let scaled = op.translationMod1 * 24
+            let worst = max(abs(scaled.x - scaled.x.rounded()), abs(scaled.y - scaled.y.rounded()), abs(scaled.z - scaled.z.rounded()))
+            XCTAssertEqual(worst, 0, accuracy: 1e-12, op.xyzString)
+        }
+        XCTAssertEqual(s.translationUncertainty, 1e-9)
+    }
+
+    /// F1 fix, the tolerance: the shifted magnesium written to SIX decimals, where the least-squares refinement does
+    /// not cancel the rounding (two sites), keeps P6₃/mmc's 282 allowed reflections. Mutant: the absence tolerance
+    /// without the translations' uncertainty.
+    func testShiftedMagnesiumAtSixDecimalsKeepsItsAbsences() throws {
+        let cif = """
+        data_mg6
+        _cell_length_a 3.2094
+        _cell_length_b 3.2094
+        _cell_length_c 5.2112
+        _cell_angle_alpha 90
+        _cell_angle_beta 90
+        _cell_angle_gamma 120
+        loop_
+        _atom_site_label
+        _atom_site_fract_x
+        _atom_site_fract_y
+        _atom_site_fract_z
+        Mg1 0.433333 0.866667 0.55
+        Mg2 0.766667 0.533333 0.05
+        """
+        let s = try CIFImport.read(cif).structure
+        XCTAssertEqual(s.operations.count, 24)
+        XCTAssertGreaterThan(s.translationUncertainty, 1e-9, "the shifted translations are off the grid and carry the rounding")
+        XCTAssertEqual(try s.reflections(kMax: 1.2).allowed.count, 282)
+    }
+
+    /// Every detected operation maps the site set onto itself within the position tolerance, on every fixture and the
+    /// apps' split gold. Mutant: the final translation not re-verified after refinement and snapping.
+    func testEveryDetectedOperationIsASymmetryOfTheSites() throws {
+        var structures: [(String, CrystalStructure)] = []
+        let files = try FileManager.default.contentsOfDirectory(atPath: Fixtures.directory.path).filter { $0.hasSuffix(".cif") }
+        for file in files { structures.append((file, try CIFImport.read(try Fixtures.text(file)).structure)) }
+        let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
+        let split = fcc.map { AtomSite(z: 79, fractional: $0) }
+            + [AtomSite(z: 79, fractional: [0.004, 0, 0]), AtomSite(z: 79, fractional: [0, 0.004, 0])]
+        structures.append(("split gold", CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: split)))
+        for (name, s) in structures {
+            for op in s.operations {
+                for site in s.sites {
+                    let image = wrapFractional(op.apply(site.fractional))
+                    let hit = s.sites.contains { other in
+                        other.z == site.z && fractionalAxisDelta(other.fractional.x, image.x) < 5e-3
+                            && fractionalAxisDelta(other.fractional.y, image.y) < 5e-3
+                            && fractionalAxisDelta(other.fractional.z, image.z) < 5e-3
+                    }
+                    XCTAssertTrue(hit, "\(name): \(op.xyzString) sends a site nowhere")
+                    if !hit { break }
+                }
+            }
+        }
+    }
+
     /// F6: a cell 1e-4 from cubic (c/a − 1) with cubic fractional coordinates is tetragonal (4/mmm, 16 operations, as
     /// spglib), so no orbit is split across two rings; at the apps' 1e-3 metric tolerance it read m-3m with every ring
     /// named twice.

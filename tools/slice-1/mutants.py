@@ -92,12 +92,12 @@ MUTANTS = [
     ("detected translations never put on the k/24 grid", SRC + "SymmetryDetection.swift",
      "if grid.onGrid { options.append((grid.value, 0)) }",
      "_ = grid",
-     "PinsTests.testEveryStructureAgreesWithPymatgen"),
+     "RefuterRegressionTests.testCoarseCoordinatesGiveExactGridTranslations"),
     # Gate B's fixes (2026-10-15), each broken once.
     ("absence tolerance without the translation uncertainty", SRC + "ReflectionList.swift",
      "let tolerance = min(maximumAbsenceTolerance, weight * max(0, translationUncertainty) + 1e-9)",
      "let tolerance = min(maximumAbsenceTolerance, 0 * weight * max(0, translationUncertainty) + 1e-9)",
-     "RefuterRegressionTests.testShiftedMagnesiumKeepsItsAbsences"),
+     "RefuterRegressionTests.testShiftedMagnesiumAtSixDecimalsKeepsItsAbsences"),
     ("the old snap: k/24 within the position tolerance", SRC + "SymmetryDetection.swift",
      "let grid = snapped(refined, within: 3 * u)",
      "let grid = snapped(refined, within: positionTolerance)",
@@ -105,7 +105,7 @@ MUTANTS = [
     ("final translation not re-verified", SRC + "SymmetryDetection.swift",
      "permutation(rotation, $0.0, of: sites, positionTolerance: positionTolerance) != nil\n            }) else { continue }",
      "true || permutation(rotation, $0.0, of: sites, positionTolerance: positionTolerance) != nil\n            }) else { continue }",
-     "SymmetryDetectionTests.testSplitSiteGoldIsNotCubic"),
+     "RefuterRegressionTests.testEveryDetectedOperationIsASymmetryOfTheSites"),
     ("no closure: the operations returned as found", SRC + "SymmetryDetection.swift",
      "guard operations.count <= closureCheckLimit else { return operations }",
      "return operations",
@@ -119,9 +119,15 @@ MUTANTS = [
      "            || cell.metricFamily(lengthTolerance: SymmetryDetection.defaultMetricLengthTolerance,",
      "RefuterRegressionTests.testRhombohedralAxesKeepThreeIndexNames"),
     ("no size guard", SRC + "ReflectionList.swift",
-     "guard estimate.isFinite, box.isFinite, estimate <= Double(ReflectionList.maximumReflections),",
-     "guard estimate.isFinite || true, box.isFinite || true, estimate <= Double(ReflectionList.maximumReflections) || true,",
+     ["guard estimate.isFinite, box.isFinite, estimate <= Double(ReflectionList.maximumReflections),",
+      "box <= 50 * Double(ReflectionList.maximumReflections)"],
+     ["guard estimate.isFinite || true, box.isFinite || true, estimate <= Double(ReflectionList.maximumReflections) || true,",
+      "box <= 50 * Double(ReflectionList.maximumReflections) || true"],
      "RefuterRegressionTests.testHugeCellsAreRefusedNotTrapped"),
+    ("a term not required to end at a sign (xy read as x+y)", SRC + "SymmetryOperation.swift",
+     "if i < chars.count, chars[i] != \"+\", chars[i] != \"-\" { throw .unparsable(raw) }",
+     "_ = 0",
+     "SymmetryOperationTests.testRefusals"),
     ("singular rotations accepted", SRC + "SymmetryOperation.swift",
      "guard abs(rotation.determinant) == 1 else { throw .notInvertible(raw) }",
      "_ = rotation.determinant",
@@ -139,6 +145,17 @@ MUTANTS = [
      "let orders = Set(rotations.compactMap(\\.order))",
      "CIFImportTests.testTrigonalInHexagonalAxesIsThreeBarM"),
 ]
+
+
+def touch_module():
+    """Every source of DiffractoCore gets a new mtime, so the debug build recompiles the whole module. Without it an
+    incremental build recompiles only the mutated file, and a constant another file folded in (a default argument
+    reading `defaultMetricLengthTolerance`) keeps its old value: the first run of 2026-10-15 reported such mutants
+    green although the code they change was never rebuilt."""
+    now = time.time()
+    folder = os.path.join(SCRATCH, SRC)
+    for name in os.listdir(folder):
+        os.utime(os.path.join(folder, name), (now, now))
 
 
 def run(cmd, **kw):
@@ -177,12 +194,14 @@ def main():
         for o, n in zip(old if isinstance(old, list) else [old], new if isinstance(new, list) else [new]):
             mutated = mutated.replace(o, n)
         open(path, "w").write(mutated)
+        touch_module()
         t0 = time.time()
         try:
             result = run(["swift", "test", "--filter", "DiffractoCoreTests"], cwd=SCRATCH, timeout=900)
         except subprocess.TimeoutExpired as e:   # a mutant that hangs the tests counts as caught, as a timeout
             result = subprocess.CompletedProcess(e.cmd, 124, stdout="(timeout)")
         open(path, "w").write(pristine[file])
+        touch_module()
         failed = result.returncode != 0
         red += failed
         aimed = test.split(".")[-1]

@@ -96,6 +96,9 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
                 default: coefficients.z += sign * magnitude
                 }
                 i += 1
+                // A term ends at a sign or at the end: `xy`, `x2` and `x.5` are refused, not read as x + y, x + 2,
+                // x + 0.5 (mac4DSTEM 7d6fdbd1's rule, its refuter RF5, 2026-10-15).
+                if i < chars.count, chars[i] != "+", chars[i] != "-" { throw .unparsable(raw) }
             } else if hasNumeric {
                 constant += sign * magnitude
             } else {

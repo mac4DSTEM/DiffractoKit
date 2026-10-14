@@ -72,6 +72,12 @@ final class SymmetryOperationTests: XCTestCase {
         XCTAssertThrowsError(try SymmetryOperation(xyz: "x+1000000000000000000000,y,z"))
         XCTAssertThrowsError(try SymmetryOperation(xyz: "x+inf,y,z"))
         XCTAssertThrowsError(try SymmetryOperation(xyz: "x/0,y,z"))
+        // mac4DSTEM 7d6fdbd1's rule: empty fraction pieces, and a term that does not end at a sign or the end.
+        for raw in ["x+2/,y,z", "x+1//2,y,z", "xy,y,z", "x2,y,z", "x.5,y,z", "-y1/2,x,z", "1/2x,y,z"] {
+            XCTAssertThrowsError(try SymmetryOperation(xyz: raw), raw)
+        }
+        XCTAssertNoThrow(try SymmetryOperation(xyz: "-y+1/2,x-y,z+1/3"))
+        XCTAssertNoThrow(try SymmetryOperation(xyz: "1/2+x,1/2-y,-z"))
     }
 
     /// `xyzString` parses back to an equivalent operation, for every operation of C2/m, P6₃/mmc's screw and a 1/3.
