@@ -92,3 +92,21 @@ the annulus, the maximum residuals and the progress and cancellation arguments o
 - Mutants: 28 / 28 red (`tools/kit-0.2.0/mutants-policy.py`, one default changed per group, on the lane's base).
 - Consumer check: 537 / 537 at the floor, 0 warnings; Policy checks and their negative controls NOT yet added (0.2.x).
 - Refuter: not yet run; the 0.2.x session runs the one Gate B refuter on this frozen candidate before the owner tags 0.2.0.
+
+### 2026-10-15, 16:12 CEST: the kit-loop asks from mac4DSTEM's switch refuter (coordinator relay 15:35), registered before code
+
+1. **Memory of the kinematic list (tier 1).** `kinematicReflections` holds every reflection before the |F| cut (`all`), so a
+   30 Å cell at kMax 2.5 peaks at about 800 MB resident (the apps' old code: about 8 MB) and runs about 4x slower; at the
+   1e7 expected-count limit that is about 4.5 GB. Change: a parameter `retainingAll: Bool = true` (the default keeps 0.2.0's
+   behaviour and `all`); with `false` the structure factor of each reflection is computed as the reflections are generated and
+   only those above the cut are kept, `all` is empty, and the pre-cut list is never held (in Core or in Scattering). Gates:
+   `kept` and `families` bit identical between the two modes on the slice 2 pins' 20 structures and on the 30 Å cell (a test,
+   broken once); peak resident memory and time of the 30 Å cell at kMax 2.5 measured in both modes in an executable under
+   `../tools/memcap.sh` (`/usr/bin/time -l`), recorded here; mac4DSTEM's call passes `false`.
+2. **The refusal names its numbers (tier 3).** `ReflectionListError.cellTooLargeOrInvalid`'s text (and so
+   `KinematicError.reflectionList`'s) names the estimated count and the limit; the case keeps its signature
+   (`estimatedReflections:`), so the text names the default limit (1e7) and that `ReflectionList.Policy.maximumReflections`
+   sets another, as the other error texts quote their default bounds (§4).
+3. **Polarity (tier 3, docs).** A kinematic pattern cannot tell +c from −c on a polar structure (|F(hkl)|² = |F(−h−k−l)|²
+   without anomalous scattering; true of py4DSTEM as well); the DocC articles of `DiffractoScattering` and
+   `DiffractoOrientation` say that no consumer may claim a polarity from a kinematic match.

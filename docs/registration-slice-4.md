@@ -195,7 +195,7 @@ experimental vector computed in Double before the subtraction (the Float order l
    same hkl set (relative intensities 1-24 % apart); θ′ [112] +6, θ′ [123] +21, β″ [111] +51, β″ [123] −54. The frame rotation
    φ_py is a proper rotation (det +1) on every axis; the per-axis 2 × 2 map is in the pins (`frame_map`).
 
-### 2026-10-15, 16:15 CEST: from the apps-parity harness (`tools/slice-4/apps-parity`, before the G1 tests)
+### 2026-10-15, 16:08 CEST: from the apps-parity harness (`tools/slice-4/apps-parity`, before the G1 tests)
 
 The harness compiles the apps' code from 7d6fdbd1 with no hand-written shim (`BraggPeak`, `BraggVectors`, `EulerAngles` and
 `ACOMOrientation` cut out of their files by line range) and dumps 72 `map` runs, four libraries, fits, claims, 270 Euler cases
