@@ -37,8 +37,24 @@ public struct CrystalStructure: Sendable, Equatable {
         case detectedAfterFileExpansion
     }
 
+    /// Which cell the numbers of this value (`cell`, `sites`, `operations`, `laueGroup`, and the reflections and rings
+    /// built from them) are in. A file's own setting is never relabelled silently (slice 1b).
+    public enum Setting: Sendable, Equatable {
+        /// The cell the structure was given in.
+        case file
+        /// The conventional (centred) cell of the lattice: `ConventionalSetting.structure`.
+        case conventional
+    }
+
     public let cell: UnitCell
     public let sites: [AtomSite]
+    /// The cell `cell`, `sites` and `operations` are in: `.file` for everything a caller builds or imports.
+    public let setting: Setting
+    /// The same structure in the conventional cell of its lattice, with the transformation between the two cells
+    /// (`detectingSymmetry(conventional: true)`, the default); nil when the operations were given, or when
+    /// `conventional: false`. `operations`, `laueGroup` and `laueClass` above are the file setting's, conjugated back
+    /// from the operations detected in the conventional cell.
+    public let conventionalSetting: ConventionalSetting?
     /// The space-group operations modulo lattice translations (the identity included; for a centred cell, the
     /// centring translations as operations with the identity rotation).
     public let operations: [SymmetryOperation]
@@ -73,6 +89,8 @@ public struct CrystalStructure: Sendable, Equatable {
                 spaceGroupNumber: Int? = nil, name: String? = nil) {
         self.cell = cell
         self.sites = sites
+        self.setting = .file
+        self.conventionalSetting = nil
         self.operations = operations.isEmpty ? [.identity] : operations
         self.symmetrySource = .operationsGiven
         self.fileOperations = nil
@@ -93,20 +111,33 @@ public struct CrystalStructure: Sendable, Equatable {
         cell: UnitCell, sites: [AtomSite], fileOperations: [SymmetryOperation]? = nil,
         spaceGroupNumber: Int? = nil, name: String? = nil, coarsestHalfStep: Double = 0,
         metricLengthTolerance: Double = SymmetryDetection.defaultMetricLengthTolerance,
-        metricAngleToleranceDeg: Double = SymmetryDetection.defaultMetricAngleToleranceDeg
+        metricAngleToleranceDeg: Double = SymmetryDetection.defaultMetricAngleToleranceDeg,
+        tolerance: SymmetryDetection.Tolerance = .default,
+        conventional: Bool = true,
+        search: SymmetryDetection.Search = .cellList
     ) -> CrystalStructure {
+        if conventional {
+            return detectingInConventionalCell(
+                cell: cell, sites: sites, fileOperations: fileOperations, spaceGroupNumber: spaceGroupNumber, name: name,
+                coarsestHalfStep: coarsestHalfStep, metricLengthTolerance: metricLengthTolerance,
+                metricAngleToleranceDeg: metricAngleToleranceDeg, tolerance: tolerance, search: search)
+        }
         let detection = SymmetryDetection.detect(
             sites: sites, cell: cell, coarsestHalfStep: coarsestHalfStep,
             extraCandidates: fileOperations?.map(\.rotation) ?? [], preferredOperations: fileOperations ?? [],
-            metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg)
+            metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg,
+            tolerance: tolerance, search: search)
         return CrystalStructure(cell: cell, sites: sites, detection: detection, fileOperations: fileOperations,
                                 spaceGroupNumber: spaceGroupNumber, name: name)
     }
 
     init(cell: UnitCell, sites: [AtomSite], detection: SymmetryDetection.Result,
-         fileOperations: [SymmetryOperation]?, spaceGroupNumber: Int?, name: String?) {
+         fileOperations: [SymmetryOperation]?, spaceGroupNumber: Int?, name: String?,
+         setting: Setting = .file, conventionalSetting: ConventionalSetting? = nil) {
         self.cell = cell
         self.sites = sites
+        self.setting = setting
+        self.conventionalSetting = conventionalSetting
         self.operations = detection.operations
         self.symmetrySource = fileOperations == nil ? .detected : .detectedAfterFileExpansion
         self.fileOperations = fileOperations

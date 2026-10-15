@@ -71,7 +71,14 @@ enum IndexPresets {
     }
     static var mP: CrystalStructure { mono(7.2, 4.9, 5.6, 104) }
     static var mC: CrystalStructure { mono(7.2, 4.9, 5.6, 104, sites: alCentred) }
-    static var mSq: CrystalStructure { mono(5, 4, 5, acos(-0.25) * 180 / .pi) }
+    /// a = c and cos β = −1/4 make this metric C-centred orthorhombic: full detection (slice 1b, `conventional: true`)
+    /// reads mmm and relates {1 0 0} and {0 0 1} by symmetry. macTEM's accidental-coincidence case is the file setting's
+    /// 2/m, so this preset is detected in the file's setting only (`conventional: false`).
+    static var mSq: CrystalStructure {
+        CrystalStructure.detectingSymmetry(cell: .monoclinic(a: 5, b: 4, c: 5, betaDeg: acos(-0.25) * 180 / .pi),
+                                           sites: alOrigin, conventional: false)
+    }
+    static var mSqFull: CrystalStructure { mono(5, 4, 5, acos(-0.25) * 180 / .pi) }
 
     /// The rings of `s` after the |F| cut, slice 1's families.
     static func rings(_ s: CrystalStructure, kMax: Double = 1.2) throws -> [ReflectionFamily] {
@@ -687,6 +694,11 @@ struct RingIndexingTests {
         let a = try family(l, containing: hkl(1, 0, 0))
         #expect(a.name == "{1 0 0} + {0 0 1}")
         #expect(a.multiplicity == 4)
+        // With its full symmetry (slice 1b) the same cell's {1 0 0} and {0 0 1} are one orbit, not a coincidence.
+        let full = try IndexPresets.rings(IndexPresets.mSqFull)
+        let merged = try family(full, containing: hkl(1, 0, 0))
+        #expect(merged.multiplicity == 4)
+        #expect(merged.orbits.count == 1, "\(merged.name)")
         #expect(abs(a.d - 4.8412) <= 5e-5)
         let b = try family(l, containing: hkl(1, 1, 0))
         #expect(b.name == "{1 1 0} + {0 1 1}")
