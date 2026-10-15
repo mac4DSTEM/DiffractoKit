@@ -20,7 +20,7 @@ let settings: [SwiftSetting] = [
 
 let package = Package(
     name: "DiffractoKit",
-    platforms: [.macOS("27.0")],
+    platforms: [.macOS("15.0"), .iOS("18.0")],
     products: [
         .library(name: "DiffractoCore", targets: ["DiffractoCore"]),
         .library(name: "DiffractoScattering", targets: ["DiffractoScattering"]),
