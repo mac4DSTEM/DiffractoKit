@@ -142,8 +142,10 @@ CONTROLS = [
     decl(RE, "RingEvidence", "public struct RingEvidence: Sendable, Equatable {"),
     access(RE, "RingEvidence", "amplitude", "public let amplitude: Double"),
     access(RE, "RingEvidence", "secondaryPeak", "public let secondaryPeak: Double?"),
-    access(RE, "RingEvidence", "maximumSecondaryPeak", "public static let maximumSecondaryPeak = 0.25"),
-    access(RE, "RingEvidence", "isSingleRing", "public var isSingleRing: Bool"),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.maximumSecondaryPeak", "public static let maximumSecondaryPeak = 0.25", DEFAULT_ARGUMENT),
+    # overloaded by `isSingleRing(_ policy:)` since 0.2.0: the property reverted leaves the function, whose type the call then mismatches
+    used(RE, "RingEvidence.isSingleRing", "public var isSingleRing: Bool", r"cannot convert value of type '@Sendable \(RingEvidence.Policy\) -> Bool'|cannot be used as a boolean"),
     access(RE, "RingEvidence", "sectorAmplitudes", "public let sectorAmplitudes: [Double?]"),
     access(RE, "RingEvidence", "sectorAmplitudeErrors", "public let sectorAmplitudeErrors: [Double?]"),
     access(RE, "RingEvidence", "sectorShifts", "public let sectorShifts: [Double?]"),
@@ -157,16 +159,26 @@ CONTROLS = [
     access(RE, "RingEvidence", "ellipseShiftError", "public let ellipseShiftError: Double?"),
     used(RE, "RingEvidence.init", "public init(amplitude: Double, sectorAmplitudes:"),
     access(RE, "RingEvidence", "sectorCount", "public static let sectorCount = 36"),
-    access(RE, "RingEvidence", "minimumSectorPixels", "public static let minimumSectorPixels = 8"),
-    access(RE, "RingEvidence", "minimumAmplitudeFraction", "public static let minimumAmplitudeFraction = 0.5"),
-    access(RE, "RingEvidence", "minimumSignificance", "public static let minimumSignificance = 3.0"),
-    access(RE, "RingEvidence", "minimumOccupiedBins", "public static let minimumOccupiedBins = 30"),
-    access(RE, "RingEvidence", "minimumDrop", "public static let minimumDrop = 0.25"),
-    access(RE, "RingEvidence", "maximumShift", "public static let maximumShift = 0.25"),
-    access(RE, "RingEvidence", "shiftSignificance", "public static let shiftSignificance = 4.0"),
-    access(RE, "RingEvidence", "isPeak", "public var isPeak: Bool"),
-    access(RE, "RingEvidence", "geometryHolds", "public var geometryHolds: Bool"),
-    access(RE, "RingEvidence", "passes", "public var passes: Bool"),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.minimumSectorPixels", "public static let minimumSectorPixels = 8", DEFAULT_ARGUMENT),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.minimumAmplitudeFraction", "public static let minimumAmplitudeFraction = 0.5", DEFAULT_ARGUMENT),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.minimumSignificance", "public static let minimumSignificance = 3.0", DEFAULT_ARGUMENT),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.minimumOccupiedBins", "public static let minimumOccupiedBins = 30", DEFAULT_ARGUMENT),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.minimumDrop", "public static let minimumDrop = 0.25", DEFAULT_ARGUMENT),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.maximumShift", "public static let maximumShift = 0.25", DEFAULT_ARGUMENT),
+    # a default argument of RingEvidence.Policy.init since 0.2.0
+    library(RE, "RingEvidence.shiftSignificance", "public static let shiftSignificance = 4.0", DEFAULT_ARGUMENT),
+    # overloaded by `isPeak(_ policy:)` since 0.2.0: the property reverted leaves the function, whose type the call then mismatches
+    used(RE, "RingEvidence.isPeak", "public var isPeak: Bool", r"cannot convert value of type '@Sendable \(RingEvidence.Policy\) -> Bool'|cannot be used as a boolean"),
+    # overloaded by `geometryHolds(_ policy:)` since 0.2.0: the property reverted leaves the function, whose type the call then mismatches
+    used(RE, "RingEvidence.geometryHolds", "public var geometryHolds: Bool", r"cannot convert value of type '@Sendable \(RingEvidence.Policy\) -> Bool'|cannot be used as a boolean"),
+    # overloaded by `passes(_ policy:)` since 0.2.0: the property reverted leaves the function, whose type the call then mismatches
+    used(RE, "RingEvidence.passes", "public var passes: Bool", r"cannot convert value of type '@Sendable \(RingEvidence.Policy\) -> Bool'|cannot be used as a boolean"),
     # EllipseCalibration.ringEvidence and EllipseCalibrationFit.ringEvidence
     access(RE, "EllipseCalibration", "ringEvidence", "public static func ringEvidence(pattern:"),
     access(EC, "EllipseCalibrationFit", "ringEvidence", "public let ringEvidence: RingEvidence?"),
@@ -187,7 +199,7 @@ CONTROLS = [
     library(RC, "RingCalibration.Refusal.errorDescription", "public var errorDescription: String? { reason }",
             r"property 'errorDescription' " + WITNESS + r" 'LocalizedError'"),
     access(RC, "RingCalibration.Refusal", "name", "public var name: String {"),
-    access(RC, "RingCalibration.Refusal", "reason", "public var reason: String {"),
+    used(RC, "RingCalibration.Refusal.reason", "public var reason: String {", r"'@Sendable \(RingCalibration.Policy\) -> String' has no member"),
     access(RC, "RingCalibration.Refusal", "withholdsDeltaQ", "public var withholdsDeltaQ: Bool {"),
 
     # ---- DiffractoCore ----------------------------------------------------------------------------------------------
@@ -201,7 +213,7 @@ CONTROLS = [
     access(CS, "CrystalStructure", "laueClass", "public let laueClass: LaueClass?"),
     access(CS, "CrystalStructure", "operations", "public let operations: [SymmetryOperation]"),
     access(CS, "CrystalStructure", "formula", "public var formula: String {"),
-    access(CS, "CrystalStructure", "reflections", "public func reflections(kMax: Double)"),
+    used(CS, "CrystalStructure.reflections(kMax:)", "public func reflections(kMax: Double)", r"missing argument for parameter 'policy' in call"),
     decl(CS, "AtomSite", "public struct AtomSite: Sendable, Equatable {"),
     access(CS, "AtomSite", "z", "public var z: Int"),
     access(CS, "AtomSite", "label", "public var label: String?"),
@@ -215,7 +227,7 @@ CONTROLS = [
     decl(RL, "ReflectionList", "public struct ReflectionList: Sendable, Equatable {"),
     access(RL, "ReflectionList", "allowed", "public var allowed: [Reflection]"),
     access(RL, "ReflectionList", "isAllowed", "public static func isAllowed("),
-    access(RL, "ReflectionList", "maximumKMax", "public static let maximumKMax"),
+    library(RL, "ReflectionList.maximumKMax", "public static let maximumKMax", DEFAULT_ARGUMENT),
     decl(LC, "LaueClass", "public enum LaueClass: String, Sendable, Equatable, CaseIterable, CustomStringConvertible {"),
     access(LC, "LaueClass", "symbol", "public var symbol: String"),
     access(LC, "LaueClass", "order", "public var order: Int {"),
@@ -365,14 +377,14 @@ CONTROLS = [
     access(RL, "ReflectionList", "policy", "public let policy: Policy"),
     # CrystalStructure.ValidationPolicy
     decl(CS, "CrystalStructure.ValidationPolicy", "public struct ValidationPolicy: Sendable, Equatable {", "ValidationPolicy"),
-    library(CS, "CrystalStructure.ValidationPolicy.default", "public static let `default` = ValidationPolicy()", DEFAULT_ARGUMENT),
+    library(CS, "CrystalStructure.ValidationPolicy.default", "public static let `default` = ValidationPolicy()", DEFAULT_ARGUMENT, "CIFImport.swift"),
     access(CS, "CrystalStructure.ValidationPolicy", "closeContactLimit", "public var closeContactLimit: Double"),
-    access(CS, "CrystalStructure", "isUsable", "public func isUsable(under policy"),
-    access(CS, "CrystalStructure", "shortestCloseContact", "public func shortestCloseContact(using policy"),
-    access(CS, "CrystalStructure", "validationIssues", "public func validationIssues(using policy"),
+    used(CS, "CrystalStructure.isUsable(under:)", "public func isUsable(under policy", r"cannot call value of non-function type"),
+    used(CS, "CrystalStructure.shortestCloseContact(using:)", "public func shortestCloseContact(using policy", r"cannot call value of non-function type"),
+    used(CS, "CrystalStructure.validationIssues(using:)", "public func validationIssues(using policy", r"cannot call value of non-function type"),
     # SymmetryDetection.Policy, the tolerance's domain and refusal, SymmetryOperation(xyz:maximumMagnitude:)
     decl(SD, "SymmetryDetection.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
-    library(SD, "SymmetryDetection.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    library(SD, "SymmetryDetection.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT, "CrystalStructure.swift"),
     access(SD, "SymmetryDetection.Policy", "occupancyTolerance", "public var occupancyTolerance: Double"),
     access(SD, "SymmetryDetection.Tolerance", "refusal", "public func refusal(for cell: UnitCell)"),
     access(SD, "SymmetryDetection.Tolerance", "isValid", "public func isValid(for cell: UnitCell)"),
@@ -388,7 +400,7 @@ CONTROLS = [
     access(CIF, "CIFImport.Policy", "maximumMergeDistance", "public var maximumMergeDistance: Double"),
     # EllipseCalibration.Policy
     decl(EPOL, "EllipseCalibration.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
-    library(EPOL, "EllipseCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    library(EPOL, "EllipseCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT, "EllipseCalibration.swift"),
     access(EPOL, "EllipseCalibration.Policy", "angularBinCount", "public var angularBinCount: Int"),
     access(EPOL, "EllipseCalibration.Policy", "degeneracyBoundBins", "public var degeneracyBoundBins: Int"),
     access(EPOL, "EllipseCalibration.Policy", "isValid", "public var isValid: Bool"),
@@ -396,17 +408,17 @@ CONTROLS = [
     used(EPOL, "EllipseCalibration.Policy.init", "public init(\n            angularBinCount: Int = 36,"),
     # RingEvidence.Policy and its judgements
     decl(RE, "RingEvidence.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
-    library(RE, "RingEvidence.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    library(RE, "RingEvidence.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT, "EllipseCalibration+Policy.swift"),
     access(RE, "RingEvidence.Policy", "minimumDrop", "public var minimumDrop: Double"),
     access(RE, "RingEvidence.Policy", "isValid", "public var isValid: Bool"),
-    used(RE, "RingEvidence.isPeak(_:)", "public func isPeak(_ policy: Policy) -> Bool", "inaccessible due to 'package' protection level|cannot be used|no exact matches"),
-    used(RE, "RingEvidence.passes(_:)", "public func passes(_ policy: Policy) -> Bool", "inaccessible due to 'package' protection level|cannot be used|no exact matches"),
+    used(RE, "RingEvidence.isPeak(_:)", "public func isPeak(_ policy: Policy) -> Bool", r"cannot call value of non-function type|inaccessible due to 'package' protection level"),
+    used(RE, "RingEvidence.passes(_:)", "public func passes(_ policy: Policy) -> Bool", r"cannot call value of non-function type|inaccessible due to 'package' protection level"),
     # RingCalibration.Policy
     decl(RC, "RingCalibration.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
     library(RC, "RingCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
     access(RC, "RingCalibration.Policy", "minimumOccupiedAngularBins", "public var minimumOccupiedAngularBins: Int"),
     access(RC, "RingCalibration.Policy", "maximumResidual", "public var maximumResidual: Double"),
-    used(RC, "RingCalibration.Refusal.reason(policy:)", "public func reason(policy: RingCalibration.Policy)", "inaccessible due to 'package' protection level|no exact matches|cannot be used"),
+    used(RC, "RingCalibration.Refusal.reason(policy:)", "public func reason(policy: RingCalibration.Policy)", r"cannot call value of non-function type|inaccessible due to 'package' protection level"),
     # RingIndexing's minimum margin; kinematicReflections (retainingAll:, policy:, validation:)
     library(RI, "RingIndexing.minimumMargin", "public static let minimumMargin: Double", DEFAULT_ARGUMENT),
     used(SF, "CrystalStructure.kinematicReflections(retainingAll:)", "public func kinematicReflections(kMax: Double, cut: Double"),

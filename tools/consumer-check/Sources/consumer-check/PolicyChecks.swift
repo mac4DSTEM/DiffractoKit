@@ -107,13 +107,17 @@ func runPolicyChecks(_ report: inout Report) {
             r.check("... and the structure is the identity alone, unusable, with the reason",
                     s.operations == [.identity] && s.symmetryRefusal != nil && !s.isUsable)
         }
+        r.equal("the floor of the tolerance window", SymmetryDetection.Tolerance.minimumWindow, 1e-9)
+        let refused = SymmetryDetection.detect(sites: goldSites, cell: cell, tolerance: .fractional(-1))
+        r.check("detect returns the identity alone and the reason", refused.operations == [.identity] && refused.refusal != nil)
+        r.equal("... and no reason for a usable tolerance", SymmetryDetection.detect(sites: goldSites, cell: cell).refusal, nil)
         r.check("the default is in the domain", SymmetryDetection.Tolerance.default.isValid(for: cell))
         r.equal("... and detects gold's 192 operations", CrystalStructure.detectingSymmetry(cell: cell, sites: goldSites, tolerance: .default).operations.count, 192)
 
         r.equal("default magnitude", SymmetryOperation.defaultMaximumMagnitude, 1000)
-        var refused = false
-        do { _ = try SymmetryOperation(xyz: "x+2000,y,z") } catch SymmetryOperationError.unparsable { refused = true } catch {}
-        r.equal("a number of 2000 is unparsable at the default", refused, true)
+        var unparsable = false
+        do { _ = try SymmetryOperation(xyz: "x+2000,y,z") } catch SymmetryOperationError.unparsable { unparsable = true } catch {}
+        r.equal("a number of 2000 is unparsable at the default", unparsable, true)
         let wide = try SymmetryOperation(xyz: "x+2000,y,z", maximumMagnitude: 5000)
         r.equal("... and parsed at 5000, as the identity mod 1", wide.isIdentity, true)
     }
