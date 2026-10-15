@@ -221,3 +221,42 @@ closure is `@Sendable` under Swift 6, and the fit's local functions capture muta
 concurrency warnings (found by lane D's build; the consumer check requires 0). The serial loop is restored, which is the
 apps' arithmetic by construction; the speedup was never measured (the machine ran at load 76 to 143) and is a later lane
 with a Sendable design. Cancellation and progress are unchanged; the `parallel-sum-order` mutant goes with the path.
+
+### 2026-10-15, about 14:20 CEST: Gate B on f3933d2 (one refuter, 181 ring plants, 836 G1 comparisons, 6054 G2 cases, 129 structures)
+
+Held: bit identity with mac4DSTEM 7d6fdbd1 on 78 clean, 44 sparse, 98 Poisson, 30 broad-beam, 30 low-range and 26
+negative-background results; scale exact within the normalised regime from 2^−60 to 2^100 and within 3.5e-11 across it
+(θ to 9.6e-7 rad off powers of two on one near-circular ring, inside the 1e-6 band); G2 against mpmath at 80 digits (q
+worst 2.6e-16, radius about 7e-16/cos 2θ as documented, no finite value past the Bragg limit); G1 equal on 836
+comparisons; tetragonal along any axis equal to spglib on 129 structures in three settings; cancellation stops a 6–32 s
+fit within one iteration; the one-sided floor reads R within 0.016 px on 79 of 80 sharp-edged plants and accepted no dead
+ring or disk edge. Right rings 84 of 98 accepted (|R| error ≤ 0.6 % but item F4 below); non-rings 61 of 83 refused, 9 of the
+22 accepted being right (gaps just over 60°, texture read correctly).
+
+Findings and what was done (fixed after the freeze; the tag 0.0.4 is f3933d2, the fixes ship in 0.1.0):
+- **F1, a wrong acceptance, fixed:** a second ring inside the annulus (9–25 px from the first at σ 3) was accepted in 13
+  of 14 plants, 3 on the other ring and 7 between the two (1.1–2.3 % off). The evidence now looks for a second peak of the
+  pooled profile over the whole annulus, from 1 px off the fitted radius: a bin rising by 0.25 A above the lowest bins on
+  both sides is another ring, refused as `secondRingInAnnulus(height:)` (a new case, after `notARingPeak`). A tail rising
+  to the annulus's edge is not a peak (tested). At 3σ (9 px) the dip is 0.23 A and the fit reads the intended ring within
+  0.2 %; at 12, 14 and 24 px it is refused. The search starts 1 px off the radius, not beyond w, because a fit can swallow
+  its neighbour into a wide sigma (measured at 12 px, amplitude 1.2: R on the outer ring with a wide inner sigma).
+- **F2, a wrong number in G7, fixed:** progress went backwards (by up to 0.04, in 72 of 335 runs) through the one-sided
+  refit, whose span overlapped the robust refit's. The refine's spans are now 0–0.5, 0.5–0.85, 0.85–1. Tested on a sharp
+  edge.
+- **F3, conservative refusals, recorded:** a ring on a steep 1/r² tail of twice its peak (R −0.2 %) is refused as
+  `notARingPeak`, and composite backgrounds (tail, a wide central beam, a tilt) were refused 14 of 14; a tilt of ±0.3–0.6
+  of the peak at R 40 is refused correctly (its fit is 0.5–0.9 px off); one noisy sharp edge at R 150 failed to fit. A
+  background model in the evidence is a later item.
+- **F4, model misfits accepted, recorded:** an exponential outer tail (σ_out/σ_in 1.5–3) reads R −0.9 to −2.1 %, and a
+  flat-top box ring of width 14 px reads R +4.8 to +6.0 px (at its outer edge; width 8: +2.1 px, width 4: ≤ 0.3 px). The
+  evidence reads the data at the fitted shape and cannot see these; "the radius" of such a profile is a convention. Stated
+  in the consumers note beside the Lorentzian and skewed rings.
+- **F5, bit identity outside the stated cases, recorded:** a one-pixel spike of ≥ ~50× the ring OUTSIDE the annulus (a
+  one-pixel central beam) is skipped in the global maximum and moves the profile fit by ≤ 1.3e-7 px in the centre and
+  ≤ 1.1e-4 px in a and b; sparse Poisson thin rings (σ 0.5–0.6, 6–12 counts) lose 1–12 of ~300k pixels as impulses (3 of 24
+  differ, R by ≤ 0.005 px). Both are the impulse rule as registered (§1.1 names the global maximum); the consumers note
+  now says "anywhere in the pattern" and names the sparse-count case.
+- **F6, wording:** with an invalid V AND a ring that cannot be fitted, `fit` throws `invalidInput` (it checks d, V and the
+  pitch first) while `calibrating(fitRing(...))` throws the fit's error (4 of 210 such pairs). §2's "exactly" holds on
+  every input where at most one of the two is wrong; documented.

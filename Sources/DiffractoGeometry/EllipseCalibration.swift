@@ -855,7 +855,7 @@ public enum EllipseCalibration {
         /// One refinement from `start`: the fit, py4DSTEM's optional robust refit, and the acceptance checks.
         func refine(_ start: [Double], progress: ProgressSpan) throws -> EllipseCalibrationFit {
             try checkCancellation(isCancelled)
-            var parameters = try optimize(start, indices: allIndices, progress: progress.sub(0, 0.6))
+            var parameters = try optimize(start, indices: allIndices, progress: progress.sub(0, 0.5))
 
             // One robust refit mirrors py4DSTEM's optional outlier refinement while
             // keeping the final acceptance residual defined over every selected pixel.
@@ -869,7 +869,7 @@ public enum EllipseCalibration {
                 let threshold = 4 * 1.4826 * mad
                 let inliers = allIndices.filter { abs(firstResiduals[$0] - centerResidual) <= threshold }
                 if inliers.count * 10 >= samples.count * 7, inliers.count < samples.count {
-                    parameters = try optimize(parameters, indices: inliers, progress: progress.sub(0.6, 1))
+                    parameters = try optimize(parameters, indices: inliers, progress: progress.sub(0.5, 0.85))
                 }
             }
 
@@ -912,7 +912,7 @@ public enum EllipseCalibration {
                 }
                 ringSigmaFloor = 0.01
                 defer { ringSigmaFloor = 0.25 }
-                let lowered = try optimize(parameters, indices: allIndices, progress: progress.sub(0.9, 1))
+                let lowered = try optimize(parameters, indices: allIndices, progress: progress.sub(0.85, 1))
                 let prediction = predictions(lowered, indices: allIndices)
                 let cost = zip(prediction, samples).reduce(0.0) { $0 + ($1.0 - $1.1.value) * ($1.0 - $1.1.value) }
                 let loweredResidual = sqrt(cost / Double(samples.count)) / dynamicRange

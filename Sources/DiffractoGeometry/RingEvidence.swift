@@ -19,6 +19,11 @@
 //  - The geometry: over the sectors with evidence, t = c0 + c1 cos φ + s1 sin φ + c2 cos 2φ + s2 sin 2φ weighted by
 //    1/(SE(t)² + 0.01²), its covariance scaled by max(1, χ²/(n − 5)); the centre shift √(c1² + s1²) and the ellipse shift
 //    √(c2² + s2²) each fail beyond 0.25 px AND 4 standard errors.
+//  - One ring (added after Gate B on 0.0.4, F1: a neighbouring ring inside the annulus was fitted, or fitted between the
+//    two): the profile pooled over the WHOLE annulus in 0.5 px bins of δ, smoothed over 3 bins, must not hold a second
+//    peak more than 1 px from the fitted radius: a bin that rises above the lowest bin between it and the ring AND above the lowest bin
+//    between it and the annulus's edge, by 0.25 A or more on both sides. A tail rising to the edge (a central beam) is
+//    not a peak.
 //  All numbers are stored without NaN (nil where undefined), so two evidences compare with `==`.
 //
 
@@ -46,10 +51,15 @@ public struct RingEvidence: Sendable, Equatable {
     public let centreShiftError: Double?
     public let ellipseShift: Double?
     public let ellipseShiftError: Double?
+    /// The highest second peak of the pooled profile more than 1 px from the fitted radius inside the annulus, as a fraction of A (the
+    /// smaller of its rises above the lowest bins on either side); nil when no such peak or no bins there.
+    public let secondaryPeak: Double?
 
     public init(amplitude: Double, sectorAmplitudes: [Double?], sectorAmplitudeErrors: [Double?], sectorShifts: [Double?],
                 occupiedBins: Int, innerDrop: Double?, outerDrop: Double?, radiusShift: Double?, centreShift: Double?,
-                centreShiftError: Double?, ellipseShift: Double?, ellipseShiftError: Double?) {
+                centreShiftError: Double?, ellipseShift: Double?, ellipseShiftError: Double?,
+                secondaryPeak: Double? = nil) {
+        self.secondaryPeak = secondaryPeak
         self.amplitude = amplitude
         self.sectorAmplitudes = sectorAmplitudes
         self.sectorAmplitudeErrors = sectorAmplitudeErrors
@@ -75,6 +85,8 @@ public struct RingEvidence: Sendable, Equatable {
     public static let minimumDrop = 0.25
     public static let maximumShift = 0.25
     public static let shiftSignificance = 4.0
+    /// A second peak of this height or more (a fraction of A) is another ring in the annulus.
+    public static let maximumSecondaryPeak = 0.25
 
     /// Both drops at least `minimumDrop`.
     public var isPeak: Bool {
@@ -91,8 +103,11 @@ public struct RingEvidence: Sendable, Equatable {
         return !exceeds(centreShift, centreShiftError) && !exceeds(ellipseShift, ellipseShiftError)
     }
 
-    /// What a calibration requires: 30 sectors holding the ring, a peak, and the geometry.
-    public var passes: Bool { occupiedBins >= Self.minimumOccupiedBins && isPeak && geometryHolds }
+    /// No second peak of `maximumSecondaryPeak` or more in the annulus.
+    public var isSingleRing: Bool { (secondaryPeak ?? 0) < Self.maximumSecondaryPeak }
+
+    /// What a calibration requires: 30 sectors holding the ring, a peak, one ring in the annulus, and the geometry.
+    public var passes: Bool { occupiedBins >= Self.minimumOccupiedBins && isPeak && isSingleRing && geometryHolds }
 }
 
 extension EllipseCalibration {
@@ -144,10 +159,14 @@ extension EllipseCalibration {
 
         struct Read { let sector: Int; let offset: Double; let value: Double }
         var reads: [Read] = []
+        var wholeBins: [Int: (sum: Double, count: Int)] = [:]
         for pixel in annulus {
             let dx = Double(pixel.qx) - fit.centerQX, dy = Double(pixel.qy) - fit.centerQY
             let rho2 = max(0, coefficientA * dx * dx + coefficientB * dx * dy + coefficientC * dy * dy)
             let offset = rho2.squareRoot() - radius
+            let wholeBin = Int((offset / 0.5).rounded(.down))
+            wholeBins[wholeBin, default: (0, 0)].sum += pixel.value
+            wholeBins[wholeBin, default: (0, 0)].count += 1
             guard offset >= lowerOffset, offset <= upperOffset else { continue }
             var angle = atan2(dy, dx)
             if angle < 0 { angle += 2 * .pi }
@@ -231,6 +250,34 @@ extension EllipseCalibration {
             outerDrop = outerMinimum.map { (peak - $0) / amplitude }.flatMap { $0.isFinite ? $0 : nil }
         }
 
+        // One ring: a second peak of the whole annulus's pooled profile beyond the ring's ±w.
+        var secondaryPeak: Double?
+        let keys = wholeBins.keys.filter { wholeBins[$0]!.count >= 3 }.sorted()
+        if keys.count >= 3 {
+            let means = keys.map { wholeBins[$0]!.sum / Double(wholeBins[$0]!.count) }
+            let smooth = means.indices.map { i -> Double in
+                let window = means[max(0, i - 1)...min(means.count - 1, i + 1)]
+                return window.reduce(0, +) / Double(window.count)
+            }
+            let middles = keys.map { (Double($0) + 0.5) * 0.5 }
+            func height(_ side: [Int]) -> Double? {   // indices ordered from the ring outwards to the annulus's edge
+                var best: Double?
+                for (position, i) in side.enumerated() {
+                    let towardRing = side[..<position].map { smooth[$0] }.min()
+                    let towardEdge = side[(position + 1)...].map { smooth[$0] }.min()
+                    guard let towardRing, let towardEdge else { continue }
+                    let rise = min(smooth[i] - towardRing, smooth[i] - towardEdge) / amplitude
+                    if rise > 0, rise.isFinite { best = max(best ?? rise, rise) }
+                }
+                return best
+            }
+            // From 1 px off the fitted radius: a fit can swallow its neighbour into a wide sigma, and a flank that only
+            // falls (or a tail that rises to the edge) never meets the two-sided rise, so starting close is safe.
+            let outer = keys.indices.filter { middles[$0] > 1 }
+            let inner = keys.indices.filter { middles[$0] < -1 }.reversed()
+            secondaryPeak = [height(Array(outer)), height(Array(inner))].compactMap { $0 }.max()
+        }
+
         // The geometry: harmonics 0, 1, 2 of the offsets of the sectors that hold the ring.
         var harmonicRows: [[Double]] = [], harmonicValues: [Double] = [], weights: [Double] = []
         var keptShifts = [Double?](repeating: nil, count: sectors)
@@ -265,7 +312,7 @@ extension EllipseCalibration {
                             sectorShifts: keptShifts, occupiedBins: occupiedBins, innerDrop: innerDrop,
                             outerDrop: outerDrop, radiusShift: radiusShift, centreShift: centreShift,
                             centreShiftError: centreShiftError, ellipseShift: ellipseShift,
-                            ellipseShiftError: ellipseShiftError)
+                            ellipseShiftError: ellipseShiftError, secondaryPeak: secondaryPeak)
     }
 
     // MARK: Least squares for the evidence (small systems, normal equations)

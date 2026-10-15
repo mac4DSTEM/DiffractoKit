@@ -82,6 +82,10 @@ public struct RingCalibration: Sendable, Equatable {
         /// was pulled by where the intensity is, not by where the ring is (registration-0.0.4 §1.3; slice 3b's F1 gap
         /// noise, F2 texture).
         case ringGeometryInconsistent(centreShift: Double, ellipseShift: Double)
+        /// The annulus holds a second ring: the pooled profile rises again beyond the fitted ring by `height` of its
+        /// amplitude (registration-0.0.4 §8, after Gate B: a neighbouring ring pulled the fit onto itself or between the
+        /// two). Narrow the annulus to one ring.
+        case secondRingInAnnulus(height: Double)
 
         /// The case's name, without its numbers: a stable key for logs and tools/ring-calibration-parity.
         public var name: String {
@@ -97,6 +101,7 @@ public struct RingCalibration: Sendable, Equatable {
             case .ringOutsideAnnulus: return "ringOutsideAnnulus"
             case .notARingPeak: return "notARingPeak"
             case .ringGeometryInconsistent: return "ringGeometryInconsistent"
+            case .secondRingInAnnulus: return "secondRingInAnnulus"
             }
         }
 
@@ -137,6 +142,8 @@ public struct RingCalibration: Sendable, Equatable {
                 return "The intensity about the fitted ring falls by \(percent(innerDrop)) of the ring's amplitude inside it and by \(percent(outerDrop)) outside it; a ring falls by at least \(Int(100 * RingEvidence.minimumDrop)) % on both sides, so this is an edge or a slope, not a ring."
             case .ringGeometryInconsistent(let centre, let ellipse):
                 return String(format: "Read sector by sector, the ring lies %.2f px off the fitted centre and %.2f px off the fitted ellipse (the bound is %.2f px), so the fit follows where the intensity is rather than where the ring is.", centre, ellipse, RingEvidence.maximumShift)
+            case .secondRingInAnnulus(let height):
+                return String(format: "The annulus holds a second ring (a peak of %.0f %% of the fitted ring's amplitude beyond it), so the fit may sit on either ring or between them; narrow the annulus to one ring.", 100 * height)
             }
         }
 
@@ -340,6 +347,7 @@ public struct RingCalibration: Sendable, Equatable {
         }
         if let evidence = fit.ringEvidence {
             if !evidence.isPeak { refused.append(.notARingPeak(innerDrop: evidence.innerDrop, outerDrop: evidence.outerDrop)) }
+            if !evidence.isSingleRing, let height = evidence.secondaryPeak { refused.append(.secondRingInAnnulus(height: height)) }
             // Undefined shifts come with fewer than 6 sectors holding the ring, which the coverage refusal names.
             if !evidence.geometryHolds, let centre = evidence.centreShift, let ellipse = evidence.ellipseShift {
                 refused.append(.ringGeometryInconsistent(centreShift: centre, ellipseShift: ellipse))

@@ -58,7 +58,7 @@ def main():
         shutil.rmtree(copy)
     copy.mkdir(parents=True)
     shutil.copy(ROOT / "Package.swift", copy / "Package.swift")
-    for d in ("Sources", "Tests"):
+    for d in ("Sources", "Tests", "Examples"):
         shutil.copytree(ROOT / d, copy / d)
     test = ["swift", "test", "-c", "release", "--scratch-path", str(build)]
     path = copy / FILE

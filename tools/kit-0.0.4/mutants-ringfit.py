@@ -42,6 +42,12 @@ MUTANTS = [
     ("annulus-and-peak-dropped", CAL,
      "           !(fit.radius > inner && fit.radius < outer) {", "           false {",
      AMEND + "/theAnnulusRefusalReadsTheReportsRadii", "the annulus refusal removed (F2, blob; the peak test also refuses the blob)"),
+    ("second-peak-bound", EVI,
+     "public static let maximumSecondaryPeak = 0.25", "public static let maximumSecondaryPeak = 25.0",
+     AMEND + "/aSecondRingInTheAnnulus", "a second ring in the annulus not refused (Gate B F1)"),
+    ("refit-progress-span", ELL,
+     "progress: progress.sub(0.85, 1))", "progress: progress.sub(0.6, 1))",
+     SPLIT + "/progressIsMonotone", "the one-sided refit's progress span overlaps the refine's (Gate B F2)"),
     ("ellipse-shift-unbounded", EVI,
      "return !exceeds(centreShift, centreShiftError) && !exceeds(ellipseShift, ellipseShiftError)",
      "return !exceeds(centreShift, centreShiftError)",
@@ -93,7 +99,7 @@ def main():
         shutil.rmtree(copy)
     copy.mkdir(parents=True)
     shutil.copy(ROOT / "Package.swift", copy / "Package.swift")
-    for d in ("Sources", "Tests"):
+    for d in ("Sources", "Tests", "Examples"):
         shutil.copytree(ROOT / d, copy / d)
     # the copy's tests read fixtures by #filePath, which is inside the copy; the copy is a full copy
     test = ["swift", "test", "-c", "release", "--scratch-path", str(build)]

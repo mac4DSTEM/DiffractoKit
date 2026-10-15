@@ -57,6 +57,17 @@ Nothing else moves: the closed forms, the indexing, the crystal, CIF and scatter
 `EllipseCalibration`'s default path is bit identical to mac4DSTEM `7d6fdbd1` on the 35 parity rings at -O and -Onone, with
 and without the new closures.
 
+## After the tag: Gate B on the 0.0.4 commit (f3933d2)
+
+The tag `0.0.4` is commit f3933d2. Its refuter (registration-0.0.4 §8, "Gate B on f3933d2") found one wrong acceptance and
+one wrong progress report, both fixed on `main` after the tag and shipped in 0.1.0 (the apps take 0.1.0, owner 13:10):
+a second ring inside the annulus could pull the calibration onto the other ring or between the two (now refused as
+`secondRingInAnnulus(height:)`), and progress could step back through the one-sided refit. Also recorded there: a ring on
+a steep 1/r² tail or a composite background is refused (conservative); an exponential outer tail reads R up to −2.1 % and
+a flat-top ring of width 14 px reads R at its outer edge (accepted: the evidence reads the data at the fitted shape); the
+impulse rule acts on a one-pixel spike anywhere in the pattern (a one-pixel central beam moves a fit by ≤ 1.1e-4 px) and
+on isolated high counts of a sparse Poisson ring (R by ≤ 0.005 px).
+
 ## What is new (additive)
 
 - `RingCalibration.fitRing(...) -> RingRadiusFit` (`fit`, `report`, `refusals`, `radius`, `isUsable`) and

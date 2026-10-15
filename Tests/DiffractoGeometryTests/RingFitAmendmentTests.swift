@@ -219,6 +219,36 @@ struct RingFitAmendmentTests {
         }
     }
 
+    /// A second ring inside the annulus never gives a wrong number (Gate B on 0.0.4, F1: such fits landed on the other ring
+    /// or between the two, 1-2.3 % off): the calibration is refused by name, or reads the intended ring within 0.3 %.
+    /// Measured: at 9 px (3σ) the dip between the rings is 0.23 of the amplitude, under the 0.25 bound, and the fit reads
+    /// R 44.096 (0.2 %); at 14 and 24 px it is refused as secondRingInAnnulus.
+    /// RED UNDER: the second-peak bound raised from 0.25 to 25.
+    @Test(arguments: [(9.0, 0.8), (14.0, 1.0), (24.0, 0.6), (12.0, 1.2)])
+    func aSecondRingInTheAnnulusIsRefused(separation: Double, amplitude: Double) throws {
+        let pattern = Self.render { dr, dc in
+            Self.ring(dr, dc, radius: 44) + amplitude * Self.ring(dr, dc, radius: 44 + separation)
+        }
+        let result = try? Self.calibrate(pattern, inner: 32, outer: 44 + separation + 10)
+        if let calibration = result?.calibration {
+            #expect(abs(calibration.radius / 44 - 1) < 3e-3, "calibrated at R \(calibration.radius)")
+        } else if let result, result.report?.ringEvidence != nil {
+            #expect(Self.names(result).contains("secondRingInAnnulus"), "refused as \(Self.names(result))")
+        }
+        if separation >= 12 { #expect(result?.calibration == nil) }
+    }
+
+    /// One ring on a central-beam tail rising to the annulus's inner edge is not a second ring.
+    @Test func aTailRisingToTheEdgeIsNotASecondRing() throws {
+        let pattern = Self.render { dr, dc in
+            let r = max((dr * dr + dc * dc).squareRoot(), 1)
+            return Self.ring(dr, dc, radius: 44) + 0.6 * exp(-r / 12)
+        }
+        let result = try Self.calibrate(pattern, inner: 20, outer: 58)
+        #expect(!Self.names(result).contains("secondRingInAnnulus"), "refused as \(Self.names(result))")
+        #expect(result.calibration != nil, "refused as \(Self.names(result))")
+    }
+
     // MARK: F3: isolated impulses
 
     /// One hot pixel on the ring (5x, 20x, 1000x its peak) does not refuse a perfect ring, and one strongly negative pixel
@@ -407,6 +437,15 @@ struct RingFitSplitAndCancellationTests {
                                     isCancelled: { calls.add(1); return calls.values.count > 3 })
         }
         #expect(calls.values.count == 4)
+
+        // Monotone also through the one-sided-floor refit (Gate B on 0.0.4, F2: it reported backwards by up to 0.04).
+        let sharp = RingFitAmendmentTests.render { dr, dc in
+            RingFitAmendmentTests.ring(dr, dc, radius: 40, sigmaIn: 3, sigmaOut: 0.1) }
+        let sharpBox = Box()
+        _ = try RingCalibration.fitRing(pattern: sharp, centerQX: 64.1, centerQY: 61.2, innerRadius: 26, outerRadius: 52,
+                                        progress: { sharpBox.add($0) })
+        #expect(zip(sharpBox.values, sharpBox.values.dropFirst()).allSatisfy { $0 <= $1 })
+        #expect(sharpBox.values.last == 1)
 
         let task = Task.detached { () throws -> RingRadiusFit in
             try RingCalibration.fitRing(pattern: pattern, centerQX: 64.1, centerQY: 61.2, innerRadius: 28, outerRadius: 56)

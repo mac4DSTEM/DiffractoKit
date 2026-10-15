@@ -78,7 +78,7 @@ private func reported(_ refusal: RingCalibration.Refusal) -> Double? {
     case .modelNotAsymmetricGaussian, .noHighTension, .invalidInput: return nil
     // DiffractoKit 0.0.4's refusals come from a fit's ring evidence; ring-pins.py's closed-form cases never meet them.
     case .ringOutsideAnnulus(let radius, _, _): return radius
-    case .notARingPeak, .ringGeometryInconsistent: return nil
+    case .notARingPeak, .ringGeometryInconsistent, .secondRingInAnnulus: return nil
     }
 }
 
