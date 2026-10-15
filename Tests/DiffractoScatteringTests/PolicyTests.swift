@@ -37,7 +37,7 @@ struct ScatteringPolicyTests {
         #expect(lower.kept.count > higher.kept.count)
         for bad in [-1.0, Double.nan] {
             var refused = false
-            do { _ = try structure.kinematicReflections(kMax: 1.5, cut: bad) } catch KinematicError.invalidCut { refused = true }
+            do { _ = try structure.kinematicReflections(kMax: 1.5, cut: bad) } catch { guard case .invalidCut = error else { throw error }; refused = true }
             #expect(refused)
         }
     }
@@ -49,7 +49,7 @@ struct ScatteringPolicyTests {
         let structure = Self.aluminium(.cubic(a: 1.2))
         var refused = false
         do { _ = try structure.kinematicReflections(kMax: 4.5) }
-        catch KinematicError.reflectionList(let inner) { refused = inner == .invalidKMax(4.5) }
+        catch { guard case .reflectionList(let inner) = error else { throw error }; refused = inner == .invalidKMax(4.5) }
         #expect(refused)
         let raised = try structure.kinematicReflections(kMax: 4.5, policy: ReflectionList.Policy(maximumKMax: 5))
         #expect(raised.kept.count > 0)
@@ -68,7 +68,7 @@ struct ScatteringPolicyTests {
                                      sites: [AtomSite(z: 13, fractional: [0, 0, 0]), AtomSite(z: 13, fractional: [0.075, 0, 0])],
                                      operations: [.identity])
         var refused = false
-        do { _ = try close.kinematicReflections(kMax: 1) } catch KinematicError.invalidStructure { refused = true }
+        do { _ = try close.kinematicReflections(kMax: 1) } catch { guard case .invalidStructure = error else { throw error }; refused = true }
         #expect(refused)
         let relaxed = try close.kinematicReflections(kMax: 1, validation: CrystalStructure.ValidationPolicy(closeContactLimit: 0.2))
         #expect(relaxed.all.count > 0)

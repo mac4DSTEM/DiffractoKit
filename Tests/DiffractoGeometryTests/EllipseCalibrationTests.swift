@@ -86,7 +86,7 @@ struct EllipseCalibrationTests {
         let tiny = DiffractionPattern(width: 2, height: 40, pixels: [Float](repeating: 1, count: 80))
         let torn = DiffractionPattern(width: 40, height: 40, pixels: [Float](repeating: 1, count: 1599))
         func refused(_ body: () throws -> EllipseCalibrationFit) -> Bool {
-            do { _ = try body() } catch EllipseCalibration.FitError.invalidInput { return true } catch { return false }
+            do { _ = try body() } catch let caught as EllipseCalibration.FitError { if case .invalidInput = caught { return true }; return false } catch { return false }
             return false
         }
         #expect(refused { try EllipseCalibration.fit1D(pattern: tiny, centerQX: 20, centerQY: 1, innerRadius: 1, outerRadius: 5) })
@@ -209,7 +209,7 @@ struct EllipseCalibrationTests {
             _ = try EllipseCalibration.fit1D(pattern: pattern, centerQX: plant.centerQX + 1.3, centerQY: plant.centerQY - 0.9,
                                              innerRadius: plant.b - 20, outerRadius: plant.a + 20, maximumResidual: 0.4,
                                              acceptSparseCoverage: true)
-        } catch EllipseCalibration.FitError.insufficientAngularCoverage(let bins) {
+        } catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let bins) = caught else { throw caught };
             count = bins
         }
         #expect(count >= 0 && count < EllipseCalibration.sparseFloorBins, "occupied bins \(count)")
@@ -230,7 +230,7 @@ struct EllipseCalibrationTests {
             _ = try EllipseCalibration.fit1D(pattern: grains, centerQX: 64.4, centerQY: 63.6, innerRadius: 12, outerRadius: 54,
                                              maximumResidual: 0.4, acceptSparseCoverage: true)
             Issue.record("three grains were fitted as one ring")
-        } catch EllipseCalibration.FitError.moreThanOneRing(let low, let high) {
+        } catch let caught as EllipseCalibration.FitError { guard case .moreThanOneRing(let low, let high) = caught else { throw caught };
             #expect(high / low > 1.10, "ratio \(high / low)")
         }
         let oneRing = arcs(size: 128, center: 64, sigma: 2, sectors: [(0, 90, 30), (180, 270, 30)])
@@ -298,7 +298,7 @@ struct EllipseCalibrationTests {
         do {
             _ = try EllipseCalibration.fitBestAvailable(pattern: pair(9), centerQX: 40.5, centerQY: 39.5, innerRadius: 10, outerRadius: 40)
             Issue.record("a residual above the cap was accepted")
-        } catch EllipseCalibration.FitError.excessiveResidual(let residual) {
+        } catch let caught as EllipseCalibration.FitError { guard case .excessiveResidual(let residual) = caught else { throw caught };
             #expect(residual > 0.22 && residual < 0.26, "\(residual)")
         }
     }

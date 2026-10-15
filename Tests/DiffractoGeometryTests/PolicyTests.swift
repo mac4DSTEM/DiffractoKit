@@ -116,19 +116,19 @@ struct EllipsePolicyTests {
         for policy in Self.invalidPolicies() {
             #expect(!policy.isValid)
             var refusedConic = false
-            do { _ = try Self.conic(pattern, policy: policy) } catch EllipseCalibration.FitError.invalidInput { refusedConic = true }
+            do { _ = try Self.conic(pattern, policy: policy) } catch let caught as EllipseCalibration.FitError { guard case .invalidInput = caught else { throw caught }; refusedConic = true }
             #expect(refusedConic, "\(policy)")
             var refusedBest = false
             do {
                 _ = try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: 64.1, centerQY: 61.2, innerRadius: 28,
                                                             outerRadius: 56, policy: policy)
-            } catch EllipseCalibration.FitError.invalidInput { refusedBest = true }
+            } catch let caught as EllipseCalibration.FitError { guard case .invalidInput = caught else { throw caught }; refusedBest = true }
             #expect(refusedBest)
             var refusedProfile = false
             do {
                 _ = try EllipseCalibration.fitAmorphousRing(pattern: pattern, initial: valid, centerQX: 64.1, centerQY: 61.2,
                                                             innerRadius: 28, outerRadius: 56, policy: policy)
-            } catch EllipseCalibration.FitError.invalidInput { refusedProfile = true }
+            } catch let caught as EllipseCalibration.FitError { guard case .invalidInput = caught else { throw caught }; refusedProfile = true }
             #expect(refusedProfile)
         }
         let bad = RingEvidence.Policy(minimumSectorPixels: 2)
@@ -144,7 +144,7 @@ struct EllipsePolicyTests {
     @Test func theCoverageBoundMovesWhatIsAccepted() throws {
         let wide = Self.gapped(120)
         var refused = -1
-        do { _ = try Self.conic(wide, policy: .default) } catch EllipseCalibration.FitError.insufficientAngularCoverage(let n) { refused = n }
+        do { _ = try Self.conic(wide, policy: .default) } catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let n) = caught else { throw caught }; refused = n }
         #expect(refused == 25)
         let loose = Policy(degeneracyBoundBins: 20)
         let fit = try Self.conic(wide, policy: loose)
@@ -156,7 +156,7 @@ struct EllipsePolicyTests {
         #expect(accepted.occupiedAngularBins >= 30)
         let strict = Policy(degeneracyBoundBins: 36)
         var strictRefused = -1
-        do { _ = try Self.conic(narrow, policy: strict) } catch EllipseCalibration.FitError.insufficientAngularCoverage(let n) { strictRefused = n }
+        do { _ = try Self.conic(narrow, policy: strict) } catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let n) = caught else { throw caught }; strictRefused = n }
         #expect(strictRefused == accepted.occupiedAngularBins)
     }
 
@@ -170,13 +170,13 @@ struct EllipsePolicyTests {
         let raised = Policy(angularBinCount: 36, degeneracyBoundBins: 30, sparseFloorBins: 26)
         var raisedCount = -1
         do { _ = try Self.conic(plant, policy: raised, sparse: true) }
-        catch EllipseCalibration.FitError.insufficientAngularCoverage(let n) { raisedCount = n }
+        catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let n) = caught else { throw caught }; raisedCount = n }
         #expect(raisedCount == 25)
 
         let sparse = Self.gapped(270)
         var defaultCount = -1
         do { _ = try Self.conic(sparse, policy: .default, sparse: true) }
-        catch EllipseCalibration.FitError.insufficientAngularCoverage(let n) { defaultCount = n }
+        catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let n) = caught else { throw caught }; defaultCount = n }
         #expect(defaultCount >= 0 && defaultCount < 12)
         let lowered = Policy(angularBinCount: 36, degeneracyBoundBins: 30, sparseFloorBins: 6)
         var loweredAnswer = "fitted"
@@ -196,7 +196,7 @@ struct EllipsePolicyTests {
         let high = Policy(strongSignalFraction: 0.5)
         var count = -1
         do { _ = try Self.conic(pattern, policy: high, residual: 0.4) }
-        catch EllipseCalibration.FitError.insufficientAngularCoverage(let n) { count = n }
+        catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let n) = caught else { throw caught }; count = n }
         #expect(count >= 0 && count < 30, "\(count)")
     }
 
@@ -223,12 +223,12 @@ struct EllipsePolicyTests {
         var strictAnswer = "fitted"
         do { _ = try EllipseCalibration.fit1D(pattern: grains, centerQX: 64.4, centerQY: 63.6, innerRadius: 12, outerRadius: 54,
                                               maximumResidual: 0.4, acceptSparseCoverage: true) }
-        catch EllipseCalibration.FitError.moreThanOneRing { strictAnswer = "moreThanOneRing" } catch { strictAnswer = "\(error)" }
+        catch let caught as EllipseCalibration.FitError { guard case .moreThanOneRing = caught else { throw caught }; strictAnswer = "moreThanOneRing" } catch { strictAnswer = "\(error)" }
         #expect(strictAnswer == "moreThanOneRing")
         var looseAnswer = "fitted"
         do { _ = try EllipseCalibration.fit1D(pattern: grains, centerQX: 64.4, centerQY: 63.6, innerRadius: 12, outerRadius: 54,
                                               maximumResidual: 0.4, acceptSparseCoverage: true, policy: Policy(oneRingRatio: 10)) }
-        catch EllipseCalibration.FitError.moreThanOneRing { looseAnswer = "moreThanOneRing" } catch { looseAnswer = "\(error)" }
+        catch let caught as EllipseCalibration.FitError { guard case .moreThanOneRing = caught else { throw caught }; looseAnswer = "moreThanOneRing" } catch { looseAnswer = "\(error)" }
         #expect(looseAnswer != "moreThanOneRing", "\(looseAnswer)")
 
         let oneRing = arcs([(0, 90, 30), (180, 270, 30)])
@@ -238,7 +238,7 @@ struct EllipsePolicyTests {
         var tightAnswer = "fitted"
         do { _ = try EllipseCalibration.fit1D(pattern: oneRing, centerQX: 64.4, centerQY: 63.6, innerRadius: 20, outerRadius: 48,
                                               maximumResidual: 0.4, acceptSparseCoverage: true, policy: Policy(oneRingRatio: 1)) }
-        catch EllipseCalibration.FitError.moreThanOneRing { tightAnswer = "moreThanOneRing" } catch { tightAnswer = "\(error)" }
+        catch let caught as EllipseCalibration.FitError { guard case .moreThanOneRing = caught else { throw caught }; tightAnswer = "moreThanOneRing" } catch { tightAnswer = "\(error)" }
         #expect(tightAnswer == "moreThanOneRing")
     }
 
@@ -250,7 +250,7 @@ struct EllipsePolicyTests {
         let pattern = Self.clean()
         var tinyRefused = false
         do { _ = try Self.conic(pattern, policy: Policy(maximumConicResidual: 1e-9)) }
-        catch EllipseCalibration.FitError.excessiveResidual { tinyRefused = true }
+        catch let caught as EllipseCalibration.FitError { guard case .excessiveResidual = caught else { throw caught }; tinyRefused = true }
         #expect(tinyRefused)
         let explicit = try Self.conic(pattern, policy: Policy(maximumConicResidual: 1e-9), residual: 0.2)
         let baseline = try Self.conic(pattern)
@@ -274,14 +274,14 @@ struct EllipsePolicyTests {
         let near = try best(8, .default)
         #expect(near.model == .asymmetricGaussian)
         var capped = false
-        do { _ = try best(8, Policy(maximumProfileResidual: 0.2)) } catch EllipseCalibration.FitError.excessiveResidual { capped = true }
+        do { _ = try best(8, Policy(maximumProfileResidual: 0.2)) } catch let caught as EllipseCalibration.FitError { guard case .excessiveResidual = caught else { throw caught }; capped = true }
         #expect(capped)
         let farDefault = try? best(9, .default)
         #expect(farDefault == nil)
         let farLoose = try best(9, Policy(maximumProfileResidual: 0.30))
         #expect(farLoose.model == .asymmetricGaussian)
         var seedRefused = false
-        do { _ = try best(8, Policy(profileSeedResidual: 0.25)) } catch EllipseCalibration.FitError.excessiveResidual { seedRefused = true }
+        do { _ = try best(8, Policy(profileSeedResidual: 0.25)) } catch let caught as EllipseCalibration.FitError { guard case .excessiveResidual = caught else { throw caught }; seedRefused = true }
         #expect(seedRefused)
     }
 
@@ -295,7 +295,7 @@ struct EllipsePolicyTests {
         do {
             _ = try EllipseCalibration.fit1D(pattern: pattern, centerQX: 64.1, centerQY: 61.2, innerRadius: 22, outerRadius: 64,
                                              policy: Policy(maximumAxisRatio: 1.2))
-        } catch EllipseCalibration.FitError.invalidEllipse { refused = true }
+        } catch let caught as EllipseCalibration.FitError { guard case .invalidEllipse = caught else { throw caught }; refused = true }
         #expect(refused)
     }
 
@@ -305,14 +305,14 @@ struct EllipsePolicyTests {
         let pattern = Self.clean()
         var fewConic = false
         do { _ = try Self.conic(pattern, policy: Policy(minimumConicSamples: 100_000)) }
-        catch EllipseCalibration.FitError.invalidInput { fewConic = true }
+        catch let caught as EllipseCalibration.FitError { guard case .invalidInput = caught else { throw caught }; fewConic = true }
         #expect(fewConic)
         let seed = try Self.conic(pattern)
         var fewProfile = false
         do {
             _ = try EllipseCalibration.fitAmorphousRing(pattern: pattern, initial: seed, centerQX: 64.1, centerQY: 61.2,
                                                         innerRadius: 28, outerRadius: 56, policy: Policy(minimumProfileSamples: 100_000))
-        } catch EllipseCalibration.FitError.insufficientSignal { fewProfile = true }
+        } catch let caught as EllipseCalibration.FitError { guard case .insufficientSignal = caught else { throw caught }; fewProfile = true }
         #expect(fewProfile)
 
         // a ring of amplitude 1 on a background of 1e5: range / maximum is 1e-5
@@ -320,7 +320,7 @@ struct EllipsePolicyTests {
         _ = try Self.conic(lifted, residual: 0.4)
         var noSignal = false
         do { _ = try Self.conic(lifted, policy: Policy(minimumRelativeSignal: 1e-2), residual: 0.4) }
-        catch EllipseCalibration.FitError.insufficientSignal { noSignal = true }
+        catch let caught as EllipseCalibration.FitError { guard case .insufficientSignal = caught else { throw caught }; noSignal = true }
         #expect(noSignal)
 
         // one hot pixel on the ring: ignored by default, a coverage of one bin when the exclusion is off
@@ -333,7 +333,7 @@ struct EllipsePolicyTests {
         #expect(ignored.occupiedAngularBins >= 30)
         var coverage = -1
         do { _ = try Self.conic(spiked, policy: Policy(impulseRangeFactor: 0)) }
-        catch EllipseCalibration.FitError.insufficientAngularCoverage(let n) { coverage = n }
+        catch let caught as EllipseCalibration.FitError { guard case .insufficientAngularCoverage(let n) = caught else { throw caught }; coverage = n }
         #expect(coverage >= 0 && coverage < 5, "\(coverage)")
     }
 
@@ -352,7 +352,7 @@ struct EllipsePolicyTests {
                                                            innerRadius: 10, outerRadius: 30, policy: policy)
         }
         var narrowRefused = false
-        do { _ = try profile(thin(0.27), .default) } catch EllipseCalibration.FitError.ringWidthAtFloor { narrowRefused = true }
+        do { _ = try profile(thin(0.27), .default) } catch let caught as EllipseCalibration.FitError { guard case .ringWidthAtFloor = caught else { throw caught }; narrowRefused = true }
         #expect(narrowRefused)
         let narrow = try profile(thin(0.27), Policy(ringWidthFloorTolerance: 0))
         #expect(narrow.model == .asymmetricGaussian)
@@ -361,10 +361,10 @@ struct EllipsePolicyTests {
         #expect(wide.model == .asymmetricGaussian)
         var wideRefused = false
         do { _ = try profile(thin(0.35), Policy(ringWidthFloorTolerance: 0.15)) }
-        catch EllipseCalibration.FitError.ringWidthAtFloor { wideRefused = true }
+        catch let caught as EllipseCalibration.FitError { guard case .ringWidthAtFloor = caught else { throw caught }; wideRefused = true }
         #expect(wideRefused)
         var floorRaised = false
-        do { _ = try profile(thin(0.35), Policy(ringWidthFloor: 0.5)) } catch EllipseCalibration.FitError.ringWidthAtFloor { floorRaised = true }
+        do { _ = try profile(thin(0.35), Policy(ringWidthFloor: 0.5)) } catch let caught as EllipseCalibration.FitError { guard case .ringWidthAtFloor = caught else { throw caught }; floorRaised = true }
         #expect(floorRaised)
     }
 
@@ -602,7 +602,7 @@ struct RingCalibrationPolicyTests {
         #expect(demanding.report?.ringEvidence?.occupiedBins == 0)
         #expect(demanding.refusals.map(\.name).contains("insufficientAngularCoverage"))
         var refused = false
-        do { _ = try ring(P(maximumResidual: .nan)) } catch RingCalibration.Refusal.invalidInput { refused = true }
+        do { _ = try ring(P(maximumResidual: .nan)) } catch let caught as RingCalibration.Refusal { guard case .invalidInput = caught else { throw caught }; refused = true }
         #expect(refused)
     }
 }

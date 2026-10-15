@@ -40,17 +40,17 @@ struct ReflectionListPolicyTests {
     @Test func theKMaxCapMovesWhatIsBuilt() throws {
         let structure = Self.aluminium(.cubic(a: 1))
         var refused = false
-        do { _ = try structure.reflections(kMax: 5) } catch ReflectionListError.invalidKMax { refused = true }
+        do { _ = try structure.reflections(kMax: 5) } catch { guard case .invalidKMax = error else { throw error }; refused = true }
         #expect(refused)
         let raised = try structure.reflections(kMax: 5, policy: Policy(maximumKMax: 6))
         #expect(raised.reflections.count > 0)
         _ = try structure.reflections(kMax: 2)
         var lowered = false
-        do { _ = try structure.reflections(kMax: 2, policy: Policy(maximumKMax: 1)) } catch ReflectionListError.invalidKMax { lowered = true }
+        do { _ = try structure.reflections(kMax: 2, policy: Policy(maximumKMax: 1)) } catch { guard case .invalidKMax = error else { throw error }; lowered = true }
         #expect(lowered)
         for bad in [Double.nan, 0, -4] {
             var rejected = false
-            do { _ = try structure.reflections(kMax: 1, policy: Policy(maximumKMax: bad)) } catch ReflectionListError.invalidKMax { rejected = true }
+            do { _ = try structure.reflections(kMax: 1, policy: Policy(maximumKMax: bad)) } catch { guard case .invalidKMax = error else { throw error }; rejected = true }
             #expect(rejected)
         }
     }
@@ -64,15 +64,15 @@ struct ReflectionListPolicyTests {
         #expect(built.reflections.count > 50)
         var tooMany = false
         do { _ = try structure.reflections(kMax: 1, policy: Policy(maximumReflections: 50)) }
-        catch ReflectionListError.cellTooLargeOrInvalid { tooMany = true }
+        catch { guard case .cellTooLargeOrInvalid = error else { throw error }; tooMany = true }
         #expect(tooMany)
         var tooWide = false
         do { _ = try structure.reflections(kMax: 1, policy: Policy(maximumEnumeration: 100)) }
-        catch ReflectionListError.cellTooLargeOrInvalid { tooWide = true }
+        catch { guard case .cellTooLargeOrInvalid = error else { throw error }; tooWide = true }
         #expect(tooWide)
         var negative = false
         do { _ = try structure.reflections(kMax: 1, policy: Policy(maximumReflections: -1)) }
-        catch ReflectionListError.cellTooLargeOrInvalid { negative = true }
+        catch { guard case .cellTooLargeOrInvalid = error else { throw error }; negative = true }
         #expect(negative)
     }
 
@@ -268,14 +268,14 @@ struct DetectionPolicyTests {
     @Test func theOperationMagnitudeBoundIsAParameter() throws {
         #expect(SymmetryOperation.defaultMaximumMagnitude == 1000)
         var refused = false
-        do { _ = try SymmetryOperation(xyz: "1500+x,y,z") } catch SymmetryOperationError.unparsable { refused = true }
+        do { _ = try SymmetryOperation(xyz: "1500+x,y,z") } catch { guard case .unparsable = error else { throw error }; refused = true }
         #expect(refused)
         let parsed = try SymmetryOperation(xyz: "1500+x,y,z", maximumMagnitude: 2000)
         #expect(parsed.translation.x == 1500)
         _ = try SymmetryOperation(xyz: "1/2+x,y,z")
         for bound in [0.4, Double.nan, -1] {
             var tight = false
-            do { _ = try SymmetryOperation(xyz: "1/2+x,y,z", maximumMagnitude: bound) } catch SymmetryOperationError.unparsable { tight = true }
+            do { _ = try SymmetryOperation(xyz: "1/2+x,y,z", maximumMagnitude: bound) } catch { guard case .unparsable = error else { throw error }; tight = true }
             #expect(tight)
         }
         _ = try SymmetryOperation(xyz: "x,y,z", maximumMagnitude: 0)
@@ -366,7 +366,7 @@ struct CIFImportPolicyTests {
         #expect(merged.structure.sites.count == 1)
         var refused = false
         do { _ = try CIFImport.read(Self.nearlyCoincident, policy: Policy(maximumMergeDistance: 0.05)) }
-        catch CIFImportError.invalidStructure { refused = true }
+        catch { guard case .invalidStructure = error else { throw error }; refused = true }
         #expect(refused)
         var both = Policy(maximumMergeDistance: 0.05)
         both.validation = CrystalStructure.ValidationPolicy(closeContactLimit: 0.05)
@@ -375,7 +375,7 @@ struct CIFImportPolicyTests {
         for bad in [Double.nan, -1] {
             var rejected = false
             do { _ = try CIFImport.read(Self.nearlyCoincident, policy: Policy(maximumMergeDistance: bad)) }
-            catch CIFImportError.invalidStructure { rejected = true }
+            catch { guard case .invalidStructure = error else { throw error }; rejected = true }
             #expect(rejected)
         }
     }
@@ -385,7 +385,7 @@ struct CIFImportPolicyTests {
     @Test func theOperationBoundReachesTheLoop() {
         var refused = false
         do { _ = try CIFImport.read(Self.nearlyCoincident, policy: Policy(maximumOperationMagnitude: 0.001)) }
-        catch CIFImportError.unsupportedSymmetryOperation { refused = true } catch {}
+        catch { if case .unsupportedSymmetryOperation = error { refused = true } }
         #expect(refused)
     }
 
