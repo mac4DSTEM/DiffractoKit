@@ -164,4 +164,33 @@ experimental vector computed in Double before the subtraction (the Float order l
 
 ## 9. Amendments
 
-(none yet)
+### 2026-10-15, 15:55 CEST: from the pins (`tools/slice-4/pins.py`, written before the Swift tests; exit 3 on three registered numbers, none edited)
+
+1. **G2 intensity tolerance.** py4DSTEM f050d207 holds its structure factors in complex64: its relative intensities differ
+   from float64 by up to 1.15e-5 (β″'s weak reflections; 3.1e-6 θ′; 1.8-3.6e-7 elsewhere). G2 becomes: against py4DSTEM, hkl
+   sets equal, |q| within 1e-12 Å⁻¹, the rotated q within 1e-12, relative intensity within 5e-5 relative; against the NumPy
+   float64 reference in the same file (py4DSTEM's convention: Lobato table, no Debye-Waller, occupancy, 1/V, no 2π, the flat
+   excitation), relative intensity within 1e-12. Measured λ → 0 through py4DSTEM's own API (`setup_diffraction(1e30)`): 0 on six
+   phases, 1.5e-14 on β″ against NumPy-flat; hkl sets identical, positions 2.2e-16.
+2. **The low-index set has 49 axes, not 62.** The source's code (u, v, w in −2…2, divided by their gcd, deduplicated up to
+   sign) gives 49; "62" came from a comment in the source ("a 62-axis sweep"), which is wrong about its own code. The code is
+   the contract (G1); the kit's doc says 49.
+3. **The gimbal threshold.** The source switches to the gimbal branch at |sin Φ| ≤ 1e-8; SciPy 1.18.1 locks at Φ below about
+   1e-7. For Φ in (1e-8, 1e-7) the two give different, equally valid splits of the same rotation between φ1 and φ2. The kit
+   keeps the source's rule (G1, bit identity with the apps); G3 compares the rotation matrix there, not the angles (the pins flag
+   those cases `rules_agree: false`); a parity row records the window. Mutant 13 stays caught at Φ = 1e-6 and 1e-5.
+4. **`PhaseVectorResolution` defined** (missing in §4): pixels = tolerance / scale (NaN when scale ≤ 0); advice only when
+   scale > 0, the pair radius in pixels is finite and below 1; `scaledToDetector` sets pair radius and matrix tolerance to one
+   pixel, the not-indexed distance to 0.75 pixel and the direct-beam radius to max(setting, 3 pixels), unchanged when scale ≤ 0.
+   Tested against this closed form in the Swift test.
+5. **Definitions the pins chose, recorded:** `score` = each experimental vector assigned its nearest reference within ρ, the
+   mean over the references hit of their best distance; `containsFriedelPair` = some pair with |vᵢ + vⱼ| ≤ radius; `inPlaneSteps`
+   rounds half away from zero (steps 11 and 13 separate rounding from truncation). If the source differs, the source is the
+   contract and the pin is corrected with this amendment's reason.
+6. **Structures.** θ′-Al2Cu has no definition in the apps or the kit: the pins use a body-centred tetragonal cell, a 4.04 Å,
+   c 5.80 Å, Cu at (0,0,0) and Al at (0,½,¼), (½,0,¼), (0,½,¾), (½,0,¾), plus the body centring (Al4Cu2), written out site by
+   site (the owner may confirm the structure; it is a test phase, not a claim about θ′). The triclinic phase is slice 1's cell
+   (4, 5, 6 Å; 80, 85, 95°) with two sites. β″ is the apps' preset in its site order.
+7. **The 200 kV parity record** (py4DSTEM's curved Ewald sphere against the flat one, same σ and slab): 33 of 37 axes keep the
+   same hkl set (relative intensities 1-24 % apart); θ′ [112] +6, θ′ [123] +21, β″ [111] +51, β″ [123] −54. The frame rotation
+   φ_py is a proper rotation (det +1) on every axis; the per-axis 2 × 2 map is in the pins (`frame_map`).
