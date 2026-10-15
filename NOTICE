@@ -15,7 +15,7 @@ diffraction pattern: that validation is each app's to register against a tag.
 
 
 ================================================================================
-mac4DSTEM and macTEM (the seeds of slice 1)
+mac4DSTEM and macTEM (the seeds of slices 1 to 3)
 ================================================================================
 
 The cell, lattice and reflection-list code, the CIF parser with its
@@ -26,6 +26,14 @@ macTEM (commit a58c84c: Sources/TEMCore/Analysis/DSpacingIndexing.swift, ADR
 022, and the V1-8 S2c registration), generalised to the seven crystal systems.
 The CIF fixtures under Tests/DiffractoCoreTests/Fixtures come from mac4DSTEM's
 tests at the same commit, each with its provenance in a comment line.
+
+Slices 2 and 3 were read at mac4DSTEM 7d6fdbd1 (structure factors and the |F|
+cut, Crystal.swift and ScatteringFactors.swift; EllipseCalibration.swift with
+ADR 069; the ellipse transform of Calibration.swift; the zone axes of
+PhaseReferenceLibrary.swift, OrientationPlan.swift and OrientationResult.swift)
+and macTEM 9482831 (RingCalibration.swift, RingCalibration+Fit.swift and
+DSpacingIndexing.swift). The ring-fit tests port the apps' plants and their
+renderer at those commits.
 
     mac4DSTEM - https://github.com/mac4DSTEM/mac4DSTEM
     macTEM    - https://github.com/mac4DSTEM/macTEM
@@ -38,8 +46,13 @@ py4DSTEM (conventions)
 
 The apps' lattice convention (a along x, b in the xy plane; reciprocal vectors
 without 2 pi; structure factors in A) follows py4DSTEM's Crystal class
-(py4DSTEM/process/diffraction/crystal.py). No py4DSTEM code is in slice 1; the
-Lobato & Van Dyck scattering table of slice 2 will be py4DSTEM's.
+(py4DSTEM/process/diffraction/crystal.py). The Lobato & Van Dyck electron
+scattering table of slice 2 is py4DSTEM's (commit f050d207,
+scattering_factors.txt, sha256 be845d1d..., fetched by
+tools/slice-2/fetch-table.sh into the gitignored References/ and pinned bit for
+bit), and the ring fit's models follow py4DSTEM's fit_ellipse_1D and
+fit_ellipse_amorphous_ring (process/calibration/ellipse.py) through mac4DSTEM's
+port.
 
     py4DSTEM - https://github.com/py4dstem/py4DSTEM
     Copyright (C) The py4DSTEM developers
