@@ -37,8 +37,10 @@ let package = Package(
         // Slice 3 (docs/registration-slice-3.md): wavelength, ring calibration and camera length, the indexing decision,
         // zone axes (3a); the ring and ellipse fit (3b).
         .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
-        // Later: orientation results, symmetry reduction, Euler conventions against pyxem / orix. Empty until registered.
-        .target(name: "DiffractoOrientation", dependencies: ["DiffractoCore"], swiftSettings: settings),
+        // Slice 4 (docs/registration-slice-4.md): the reference library and the vector matcher of phase mapping, and the
+        // value types of an orientation result (Euler angles, the zone-axis frame). Later: symmetry reduction and template
+        // matching against pyxem / orix (slice 5).
+        .target(name: "DiffractoOrientation", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
         // The README's first ten minutes as a program (no product: `swift run diffracto-example`, or `swift build --product
         // diffracto-example`).
         .executableTarget(name: "diffracto-example",
@@ -50,7 +52,9 @@ let package = Package(
                     exclude: ["Fixtures"], swiftSettings: settings),
         .testTarget(name: "DiffractoGeometryTests", dependencies: ["DiffractoGeometry", "DiffractoScattering", "DiffractoCore"],
                     exclude: ["Fixtures"], swiftSettings: settings),
-        .testTarget(name: "DiffractoOrientationTests", dependencies: ["DiffractoOrientation"], swiftSettings: settings),
+        .testTarget(name: "DiffractoOrientationTests",
+                    dependencies: ["DiffractoOrientation", "DiffractoScattering", "DiffractoCore"],
+                    exclude: ["Fixtures"], swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]
 )
