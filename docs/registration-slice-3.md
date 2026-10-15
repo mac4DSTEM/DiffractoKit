@@ -110,7 +110,8 @@ S3-b numbers move when it imports the kit; stated in the consumers note).
 
 1. Pins within their bands; the apps' code bit for bit where the registration says so.
 2. Truth exact or to its stated bound.
-3. Every new test broken once (`tools/slice-3/mutants.py`, slice 1's pattern touching the module after each edit).
+3. Every new test broken once (`tools/slice-3/mutants.py`, slice 1's pattern touching the module after each edit). The pin
+   generators, their self-checks and how to run them: `tools/slice-3/README.md`.
 4. One Gate B refuter per part on its frozen commit; Gate D when a cause is unproven.
 5. `tools/test.sh` green with the stamp; consumer-check extended; `docs/consumers-0.0.3.md` says what mac4DSTEM and macTEM
    change to import DiffractoKit for these (their own sessions do the switch).
