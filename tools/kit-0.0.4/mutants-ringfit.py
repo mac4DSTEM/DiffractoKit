@@ -79,10 +79,6 @@ MUTANTS = [
      "                                    innerRadius: innerRadius, outerRadius: outerRadius)\n        span(1)\n",
      "                                    innerRadius: innerRadius, outerRadius: outerRadius)\n",
      SPLIT + "/progressIsMonotone", "the final progress report dropped (G7)"),
-    ("parallel-sum-order", ELL,
-     "                            for sampleIndex in currentResidual.indices {\n                                sum +=",
-     "                            for sampleIndex in currentResidual.indices.reversed() {\n                                sum +=",
-     "EllipseAppsParityTests/testCleanSweep", "the gradient summed in reverse order (the parallel path must keep the serial order)"),
 ]
 
 

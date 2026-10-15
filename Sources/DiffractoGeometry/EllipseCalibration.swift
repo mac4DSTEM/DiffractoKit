@@ -789,45 +789,32 @@ public enum EllipseCalibration {
             for iteration in 0..<80 {
                 try checkCancellation(isCancelled)
                 progress(Double(iteration) / 80)
-                // The Jacobian's columns and the normal matrix's rows are computed in parallel (DiffractoKit 0.0.4,
-                // registration-0.0.4 §4); each column and each sum is formed by one thread in the sequential order, so
-                // the result is the serial one bit for bit (held by the parity gate).
-                let point = p
-                var columns = [[Double]](repeating: [], count: count)
-                columns.withUnsafeMutableBufferPointer { out in
-                    DispatchQueue.concurrentPerform(iterations: count) { parameter in
-                        var plus = point, minus = point
-                        plus[parameter] += scales[parameter] * epsilon
-                        minus[parameter] -= scales[parameter] * epsilon
-                        plus = bounded(plus); minus = bounded(minus)
-                        let high = predictions(plus, indices: indices)
-                        let low = predictions(minus, indices: indices)
-                        out[parameter] = zip(high, low).map { ($0 - $1) / (2 * epsilon) }
-                    }
+                var columns = [[Double]]()
+                columns.reserveCapacity(count)
+                for parameter in parameters.indices {
+                    var plus = p, minus = p
+                    plus[parameter] += scales[parameter] * epsilon
+                    minus[parameter] -= scales[parameter] * epsilon
+                    plus = bounded(plus); minus = bounded(minus)
+                    let high = predictions(plus, indices: indices)
+                    let low = predictions(minus, indices: indices)
+                    columns.append(zip(high, low).map { ($0 - $1) / (2 * epsilon) })
                 }
-                var flatNormal = [Double](repeating: 0, count: count * count)
+                var normal = Array(repeating: [Double](repeating: 0, count: count), count: count)
                 var gradient = [Double](repeating: 0, count: count)
-                let currentResidual = residual
-                flatNormal.withUnsafeMutableBufferPointer { normalOut in
-                    gradient.withUnsafeMutableBufferPointer { gradientOut in
-                        DispatchQueue.concurrentPerform(iterations: count) { row in
-                            var sum = 0.0
-                            for sampleIndex in currentResidual.indices {
-                                sum += columns[row][sampleIndex] * currentResidual[sampleIndex]
-                            }
-                            gradientOut[row] = sum
-                            for column in row..<count {
-                                var value = 0.0
-                                for sampleIndex in currentResidual.indices {
-                                    value += columns[row][sampleIndex] * columns[column][sampleIndex]
-                                }
-                                normalOut[row * count + column] = value
-                                normalOut[column * count + row] = value
-                            }
+                for row in parameters.indices {
+                    for sampleIndex in residual.indices {
+                        gradient[row] += columns[row][sampleIndex] * residual[sampleIndex]
+                    }
+                    for column in row..<count {
+                        var value = 0.0
+                        for sampleIndex in residual.indices {
+                            value += columns[row][sampleIndex] * columns[column][sampleIndex]
                         }
+                        normal[row][column] = value
+                        normal[column][row] = value
                     }
                 }
-                var normal = (0..<count).map { Array(flatNormal[($0 * count)..<(($0 + 1) * count)]) }
                 for diagonal in parameters.indices {
                     normal[diagonal][diagonal] += damping
                         * max(normal[diagonal][diagonal], 1e-12)

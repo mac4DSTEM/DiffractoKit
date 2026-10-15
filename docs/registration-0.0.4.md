@@ -213,3 +213,11 @@ ellipses), F3 (5×, 20×, 1000× hot pixels refused), F6 (2^−40 refused as `in
 radius 3.3e-15 on the grid and 4.5e-14 at 0.99 of the Bragg limit, round trip 5.7e-16, the 1/d identity on slice 3a's 320
 cases 5.5e-16 (band 1e-12); the truth computed two ways (algebraic and series) agreeing to 1e-50. The inverse's last check is
 `isFinite && != 0` so the Bragg guard is seen by its own test (its mutant stayed green with `> 0`). Mutants 6 of 6 red.
+
+### 2026-10-15, about 13:15 CEST: the parallel Jacobian is withdrawn
+
+The profile fit's Jacobian columns and normal matrix ran in parallel through `DispatchQueue.concurrentPerform` (§4). Its
+closure is `@Sendable` under Swift 6, and the fit's local functions capture mutable state, so the build carried about 20
+concurrency warnings (found by lane D's build; the consumer check requires 0). The serial loop is restored, which is the
+apps' arithmetic by construction; the speedup was never measured (the machine ran at load 76 to 143) and is a later lane
+with a Sendable design. Cancellation and progress are unchanged; the `parallel-sum-order` mutant goes with the path.
