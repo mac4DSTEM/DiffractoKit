@@ -1,4 +1,4 @@
-# DiffractoKit CI: the gate (tools/test.sh = `swift test -c release`), the hook proof, the consumer check and the example.
+# DiffractoKit CI: the gate (tools/test.sh = `swift test -c release`), the hook proof, the consumer check, the README consumer and the example.
 #
 # Modelled on SpectroKit's workflow. Enabling it (Actions on the repository) is the owner's. The package needs macOS 27 and a
 # Swift 6.2 toolchain (Package.swift: `.macOS("27.0")`, tools 6.2): the runner image must carry an Xcode with the macOS 27 SDK.
@@ -40,6 +40,8 @@ jobs:
         run: tools/test.sh
       - name: Consumer check (a separate package, the public API only)
         run: tools/consumer-check/run.sh
+      - name: README consumer (a separate package compiling exactly the README's program, output checked)
+        run: tools/readme-consumer/run.sh
       - name: Example executable (the README's first ten minutes)
         run: |
           swift build -c release --product diffracto-example

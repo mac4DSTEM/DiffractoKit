@@ -4,9 +4,8 @@ Crystallography and electron diffraction for macOS, as a Swift package: the numb
 is the Mac-native counterpart of the crystallography parts of **pymatgen**, **py4DSTEM** and **pyxem**: the unit cell and its
 reciprocal lattice, symmetry found from the atoms, CIF import, d-spacings and the list of reflections with systematic
 absences, electron scattering factors and kinematic structure factors, rings and zone axes, and the calibration of a
-diffraction pattern (wavelength, camera length, reciprocal-space pixel size, the ring and ellipse fit). It is the library
-that the macEM suite's apps, mac4DSTEM and macTEM, import by tagged version, and it is built so that other people can build
-their own apps on it.
+diffraction pattern (wavelength, camera length, reciprocal-space pixel size, the ring and ellipse fit). It is built to be
+imported by tagged version into applications.
 
 Mac-native: Swift 6 strict concurrency, `Foundation` and `simd` only (no Python, no dependency), macOS 27. Headless, one
 SwiftPM product per module. Where a path is accelerated (Accelerate, none yet), it keeps a CPU reference path with a
@@ -28,7 +27,7 @@ One SwiftPM product per module; a module imports only the ones above it in this 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.1.0"),
+    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.2.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -46,45 +45,121 @@ dependency: your build compiles it optimised itself; a Debug build of the reflec
 
 ## First ten minutes
 
-The program below is `Examples/diffracto-example`; run it with `swift run -c release diffracto-example`. It reads gold from a
-CIF, lists its rings, computes the wavelength, and fits and calibrates a synthetic ring.
+The program below is `Examples/diffracto-example` (run it with `swift run -c release diffracto-example`), character for
+character, and `tools/readme-consumer/run.sh` proves it: that separate package compiles exactly this code against the
+public API in a Debug build, with no warnings, and checks its output against the block under it. It reads gold from a CIF,
+lists its rings after the |F| cut, renders a synthetic ring pattern at a camera length of 300 mm, fits the ring with
+`RingCalibration.fitRing`, calibrates with `RingCalibration.calibrating`, and prints the recovered pixel size in reciprocal
+space (dq) and camera length (L) beside the true ones.
 
 ```swift
+// DiffractoKit, the first ten minutes (this is the README's program, character for character).
+//
+// Gold from a CIF -> its rings after the |F| cut -> a synthetic ring pattern at a known camera length -> the ring fitted
+// and the camera calibrated back. The CIF below is written out in the program: the cubic cell of gold, a = 4.0782 A (the
+// room-temperature lattice parameter, the value used throughout the kit's tests) and the four atoms of
+// the face-centred basis. Run it with:  swift run -c release diffracto-example
+import Foundation
 import DiffractoCore
 import DiffractoScattering
 import DiffractoGeometry
 
-// 1. A structure: from CIF text (named errors for a file it cannot trust), or built in code.
-let gold = try CIFImport.read(cifText).structure
-//   let cell = UnitCell.cubic(a: 4.0782)
-//   let gold = CrystalStructure.detectingSymmetry(cell: cell, sites: [AtomSite(z: 79, fractional: [0, 0, 0]), ...])
-print(gold.formula, gold.laueClass?.symbol ?? "?", gold.cell.d(MillerIndex(1, 1, 1)))   // Au4 m-3m 2.3545...
+let cifText: String = """
+data_gold
+_cell_length_a 4.0782
+_cell_length_b 4.0782
+_cell_length_c 4.0782
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Au1 Au 0.0 0.0 0.0
+Au2 Au 0.5 0.5 0.0
+Au3 Au 0.5 0.0 0.5
+Au4 Au 0.0 0.5 0.5
+"""
 
-// 2. The rings to k = 1/d = 1.2 per A, after the |F| cut (default 1e-4): d, multiplicity, summed |F|^2.
-let list = try gold.kinematicReflections(kMax: 1.2)
-for ring in list.families.prefix(6) {
-    print(ring.family.name, ring.family.d, ring.family.multiplicity, ring.intensity)
-}
+func fixed(_ x: Double, _ digits: Int) -> String { String(format: "%.\(digits)f", x) }
+func sci(_ x: Double) -> String { String(format: "%.4e", x) }
 
-// 3. The relativistic electron wavelength, in angstroms, for volts.
-let lambda = ElectronWavelength.angstroms(volts: 200_000)               // 0.025079... A
+do {
+    // 1. The structure. A CIF that cannot be trusted throws an error that names the tag or value at fault.
+    let gold: CrystalStructure = try CIFImport.read(cifText).structure
+    let laue: String = gold.laueClass?.symbol ?? "?"
+    print("\(gold.formula): a = \(fixed(gold.cell.a, 4)) A, Laue class \(laue), \(gold.operations.count) operations")
 
-// 4. Fit a ring in a pattern and calibrate. `pattern` is a DiffractionPattern(width:height:pixels:) of Float32;
-//    the start centre is (row, column), the annulus brackets the ring, d is the ring's spacing in A.
-let result = try RingCalibration.fit(pattern: pattern, centerQX: 101.4, centerQY: 98.8,
-                                     innerRadius: 44, outerRadius: 84,
-                                     d: list.families[0].family.d, highTensionVolts: 200_000, pixelPitchMM: 0.05)
-if result.refusals.isEmpty, let calibration = result.calibration {
-    print(calibration.deltaQ, calibration.lengthPixels ?? .nan, calibration.lengthMillimetres ?? .nan)
-} else {
-    print(result.refusals.map(\.name))      // e.g. "insufficientAngularCoverage", "excessiveEllipticity"
+    // 2. The rings to k = 1/d = 1.2 per A after the |F| cut (default 1e-4): d, multiplicity and the summed |F|^2.
+    let list: KinematicReflectionList = try gold.kinematicReflections(kMax: 1.2)
+    print("\(list.families.count) rings, \(list.kept.count) reflections:")
+    for ring in list.families.prefix(6) {
+        let name: String = ring.family.name.padding(toLength: 9, withPad: " ", startingAt: 0)
+        let d: String = fixed(ring.family.d, 4)
+        print("  \(name) d = \(d) A  multiplicity \(ring.family.multiplicity)  sum|F|^2 = \(sci(ring.intensity)) A^-4")
+    }
+
+    // 3. A synthetic {111} ring. A camera length of 300 mm on 0.05 mm pixels is 6000 px, the electron wavelength at
+    //    200 kV is lambda, and the ring sits at R = L tan(2 theta). The kit has to find R, and from it dq and L, back.
+    let volts: Double = 200_000
+    let pitchMM: Double = 0.05
+    let lambda: Double = ElectronWavelength.angstroms(volts: volts)
+    let d111: Double = list.families[0].family.d
+    let trueLength: Double = 300.0 / pitchMM
+    let twoTheta: Double = RingCalibration.twoTheta(wavelengthAngstroms: lambda, d: d111)
+    let trueRadius: Double = trueLength * tan(twoTheta)
+    let trueDeltaQ: Double = (1.0 / d111) / trueRadius
+    print("lambda(200 kV) = \(fixed(lambda, 6)) A")
+
+    let size: Int = 200
+    let trueRow: Double = 100.4
+    let trueColumn: Double = 99.6
+    let sigma: Double = 2.2
+    var pixels: [Float] = [Float](repeating: 0, count: size * size)
+    for row in 0..<size {
+        for column in 0..<size {
+            let dr: Double = Double(row) - trueRow
+            let dc: Double = Double(column) - trueColumn
+            let x: Double = (dr * dr + dc * dc).squareRoot() - trueRadius
+            let value: Double = exp(-x * x / (2.0 * sigma * sigma))
+            pixels[row * size + column] = Float(value)
+        }
+    }
+    let pattern: DiffractionPattern = DiffractionPattern(width: size, height: size, pixels: pixels)
+
+    // 4. Fit the ring (start centre one click away; the annulus brackets the ring), then calibrate with its spacing.
+    let ring: RingRadiusFit = try RingCalibration.fitRing(pattern: pattern, centerQX: trueRow + 1.0,
+                                                          centerQY: trueColumn - 0.8, innerRadius: trueRadius - 20.0,
+                                                          outerRadius: trueRadius + 20.0)
+    let result: RingFitCalibration = try RingCalibration.calibrating(ring, d: d111, highTensionVolts: volts,
+                                                                     pixelPitchMM: pitchMM)
+    if let fit = result.fit {
+        let radius: Double = (fit.a + fit.b) / 2.0
+        print("fit: centre (\(fixed(fit.centerQX, 3)), \(fixed(fit.centerQY, 3))) [true (\(trueRow), \(trueColumn))], "
+              + "R = \(fixed(radius, 3)) px [true \(fixed(trueRadius, 3))]")
+    }
+    if result.refusals.isEmpty, let calibration = result.calibration {
+        let length: Double = calibration.lengthPixels ?? .nan
+        let millimetres: Double = calibration.lengthMillimetres ?? .nan
+        print("dq = \(sci(calibration.deltaQ)) per A per px [true \(sci(trueDeltaQ))]")
+        print("L = \(fixed(length, 1)) px = \(fixed(millimetres, 2)) mm [true \(fixed(trueLength, 1)) px = 300.00 mm]")
+    } else {
+        print("not calibrated; refusals: \(result.refusals.map(\.name))")
+    }
+} catch {
+    print("error: \(error.localizedDescription)")
+    exit(1)
 }
 ```
 
-Output of the program on the machine it was written on (macOS 27, Apple Swift 6.4, release build):
+Output of the program on the machine it was written on (macOS 27, Apple Swift 6.4, release build); the last three lines show the planted
+truth recovered:
 
 ```
-Au4: a = 4.0782 A, V = 67.827 A^3, Laue class m-3m (cubic), 192 operations
+Au4: a = 4.0782 A, Laue class m-3m, 192 operations
 8 rings, 112 reflections:
   {1 1 1}   d = 2.3545 A  multiplicity 8  sum|F|^2 = 1.2701e+00 A^-4
   {2 0 0}   d = 2.0391 A  multiplicity 6  sum|F|^2 = 7.8331e-01 A^-4
@@ -93,9 +168,15 @@ Au4: a = 4.0782 A, V = 67.827 A^3, Laue class m-3m (cubic), 192 operations
   {2 2 2}   d = 1.1773 A  multiplicity 8  sum|F|^2 = 3.8030e-01 A^-4
   {4 0 0}   d = 1.0195 A  multiplicity 6  sum|F|^2 = 2.0531e-01 A^-4
 lambda(200 kV) = 0.025079 A
-fit: Asymmetric Gaussian ring, centre (100.400, 99.600) [true (100.4, 99.6)], R = 63.911 px [true 63.911]
-calibrated: dq = 6.645293e-03 per A per px, L = 6000.0 px = 300.00 mm [true 6000.0 px]
+fit: centre (100.400, 99.600) [true (100.4, 99.6)], R = 63.911 px [true 63.911]
+dq = 6.6453e-03 per A per px [true 6.6453e-03]
+L = 6000.0 px = 300.00 mm [true 6000.0 px = 300.00 mm]
 ```
+
+Without a CIF, build the structure in code: `let cell = UnitCell.cubic(a: 4.0782)` and
+`CrystalStructure.detectingSymmetry(cell: cell, sites: [AtomSite(z: 79, fractional: [0, 0, 0]), ...])`. For a ring whose
+spacing is not yet known, `fitRing` alone gives its radius; `RingCalibration.fit` is `fitRing` followed by `calibrating` in
+one call.
 
 Conventions to know before you use a number: lengths in angstroms; reciprocal vectors **without** 2 pi (g = h b1 + k b2 +
 l b3, d = 1/\|g\|, \|g\| in A^-1); the real lattice has a along x and b in the xy plane (the py4DSTEM and VESTA convention);
@@ -116,14 +197,14 @@ Every number has a reference, and the references are pinned (`CLAUDE.md`):
 
 - **pymatgen 2026.9.24** with pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7 (cells, expanded CIF sites,
   symmetry operations, d-spacings, reflections within a sphere, the X-ray peak sums), SciPy 1.18.1 (the ring fit's
-  least-squares optimum), **py4DSTEM** f050d207's `scattering_factors.txt` (sha256 `be845d1d...`, bit for bit), and the suite
-  apps' compiled code (mac4DSTEM 7d6fdbd1, macTEM 9482831) where a port must be bit identical.
+  least-squares optimum), **py4DSTEM** f050d207's `scattering_factors.txt` (sha256 `be845d1d...`, bit for bit), and the compiled
+  code of two earlier GPL-3.0 applications (pinned by commit in `NOTICE`) where a port must be bit identical.
 - The pins are generated before the Swift code (`tools/slice-*/pins.py`, committed as JSON under `Tests/*/Fixtures/`); the
   Swift tests read the pins and a planted truth (a closed form, a group-theory count, a cell content); a difference is a
   failure of the port, never a tolerance to widen. Agreement with a package is agreement, not truth.
 - `docs/parity.md` lists, function by function, what is held against pymatgen, py4DSTEM and pyxem / diffsims / orix, and
   how each row is checked. It also says what is **not** held.
-- Nothing here is validated on a real diffraction pattern: that validation is each app's to register against a tag
+- Nothing here is validated on a real diffraction pattern: that validation is each consuming application's to register against a tag
   (`NOTICE`).
 
 ## Build and test
@@ -132,6 +213,7 @@ Every number has a reference, and the references are pinned (`CLAUDE.md`):
 tools/test.sh                      # the gate: swift test -c release, stamps .build/last-green on a clean tree
 tools/last-green.sh                # the last green commit and whether HEAD equals it
 tools/consumer-check/run.sh        # a separate package using the public API only
+tools/readme-consumer/run.sh       # a separate package compiling exactly the README's program, checking its output
 swift run -c release diffracto-example
 ```
 
@@ -141,19 +223,19 @@ committed pins and need no Python. The oracle venv is not in the repository: `do
 
 ## Licence
 
-GPL-3.0 (`LICENSE`, `NOTICE`). The code is ported from mac4DSTEM and macTEM (both GPL-3.0; `github.com/mac4DSTEM`), whose
+GPL-3.0 (`LICENSE`, `NOTICE`). The code is ported from two earlier GPL-3.0 applications by the same author (named, with their commits, in `NOTICE`), whose
 lattice and reflection conventions follow py4DSTEM's `Crystal` class (GPL-3.0): the real-lattice matrix with a along x and b in
 the xy plane, reciprocal vectors without 2 pi, the per-axis index bound. The electron scattering table of
 `DiffractoScattering` is py4DSTEM's (Lobato and Van Dyck 2014), also GPL-3.0. **pymatgen** (MIT) is an oracle: cells,
 symmetry and d-spacings are checked against it, and no pymatgen code is copied or ported; a part ported from pymatgen in the
 future would be MIT on its own, but one package with any GPL part is GPL, so the whole is GPL-3.0 and an app built on it must
-be GPL-compatible. The CIF fixtures under `Tests/` come from mac4DSTEM's tests (GPL-3.0) with their provenance in a comment
-line; the beta'' cell content (Andersen et al. 1998) is written by a generator into the gitignored `References/`, as the apps
-do. Per-source notices are in `NOTICE`.
+be GPL-compatible. The CIF fixtures under `Tests/` come from those applications' tests (GPL-3.0) with their provenance in a comment
+line; the beta'' cell content (Andersen et al. 1998) is written by a generator into the gitignored `References/`, as those
+applications do. Per-source notices are in `NOTICE`.
 
 ## Status and documents
 
-0.0.x: the API may move between tags; the apps pin exact tags. `docs/status.md` says what is live and what is unverified.
+0.0.x: the API may move between tags; consumers pin exact tags. `docs/status.md` says what is live and what is unverified.
 
 | Document | What |
 |---|---|
@@ -163,4 +245,6 @@ do. Per-source notices are in `NOTICE`.
 | `docs/consumers-0.0.3.md` | what an app changes to import 0.0.3, and the numbers that move |
 | `docs/slice-1-mutants-2026-10-14.md` | the mutation run behind slice 1 |
 | `tools/consumer-check/README.md` | the separate package that uses the public API only |
+| `tools/readme-consumer/README.md` | the separate package that compiles and runs exactly this README's program |
+| `Sources/*/*.docc` | the DocC catalogues: one landing page and one article per module |
 | `CLAUDE.md` | the rules for working in this repository |

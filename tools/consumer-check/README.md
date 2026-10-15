@@ -42,3 +42,6 @@ tools/consumer-check/run.sh              # the plain check
 tools/consumer-check/run.sh --controls   # the plain check, then the negative controls
 CONSUMER_CHECK_JOBS=2 tools/consumer-check/run.sh --controls   # every swift build with -j 2
 ```
+
+Its sibling `tools/readme-consumer` is a second, much smaller consumer: it compiles exactly the main README's program and
+checks the output against the README's (`tools/readme-consumer/run.sh`).
