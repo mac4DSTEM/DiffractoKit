@@ -112,8 +112,10 @@ public enum CIFImport {
 
     /// The thresholds of the import that are the suite's choices rather than the CIF grammar (DiffractoKit 0.2.0), with
     /// `Policy.default` the set every release before used. A distance, cap or bound that is NaN or negative is taken as
-    /// 0 (merge nothing but coincident images, treat coordinates as exact, parse no number but 0); the tolerances of the
-    /// nested policies are described where they are declared.
+    /// 0 (merge nothing but coincident images, treat coordinates as exact, parse no number but 0); so are the two metric
+    /// tolerances, and an infinite one too (+infinity is read as 0, not as "accept everything"). The position tolerance
+    /// is not clamped: one outside its domain (`SymmetryDetection.Tolerance`) makes `read` throw `invalidStructure`; the
+    /// tolerances of the nested policies are described where they are declared.
     public struct Policy: Sendable, Equatable {
         /// Images of one site merge only within this distance (Å) as well as within the propagated rounding error, so a
         /// coarse cell cannot collapse chemistry. Default 0.10.
@@ -176,7 +178,8 @@ public enum CIFImport {
         let structure = CrystalStructure.detectingSymmetry(
             cell: cell, sites: parsed.sites, fileOperations: parsed.operations,
             spaceGroupNumber: parsed.spaceGroupNumber, name: name, coarsestHalfStep: parsed.coarsestHalfStep,
-            metricLengthTolerance: policy.metricLengthTolerance, metricAngleToleranceDeg: policy.metricAngleToleranceDeg,
+            metricLengthTolerance: policy.nonNegative(policy.metricLengthTolerance),
+            metricAngleToleranceDeg: policy.nonNegative(policy.metricAngleToleranceDeg),
             tolerance: policy.positionTolerance, policy: policy.symmetry)
         let issues = structure.validationIssues(using: policy.validation)
         guard issues.isEmpty else { throw .invalidStructure(issues.map(\.message)) }

@@ -83,6 +83,18 @@ public enum SymmetryDetection {
     /// `symprec = t` still finds it up to 1.0 to 1.1 `t`. The set of operations is also closed under composition at this
     /// bound (`closedSubset`). Roughly, `.cartesian(2 * s)` here corresponds to spglib's symprec `s`, and the
     /// proposed `1e-3` to a symprec of about 5e-4 Å. The default is unchanged.
+    ///
+    /// **The domain** (DiffractoKit 0.2.0, the Gate B findings F5 and F6). Whichever sense is used, the tolerance acts as a
+    /// window in fractional coordinates along each cell axis: `t` itself for `.fractional(t)`, `t` times the reciprocal axis
+    /// length |bᵢ| for `.cartesian(t)`. Every window must lie in `minimumWindow` (1e-9) up to, not including,
+    /// `maximumWindow` (0.5). The floor is the scale at which the cell wrap snaps a coordinate to the cell edge
+    /// (`wrapFractional`, 1e-9): below it a site is not reliably the same site as its own image, so even the identity
+    /// operation could fail to be found; the cap is half a cell, where "the same site" stops meaning anything. A tolerance
+    /// outside the domain (NaN, zero, negative, infinite, denormal, below the floor, a window of half a cell or more) is
+    /// REFUSED, not clamped: `refusal(for:)` says why; `CrystalStructure.detectingSymmetry` and `SymmetryDetection.detect`
+    /// return the identity alone with the reason in `symmetryRefusal` / `refusal` (and `validationIssues` reports it, so
+    /// `isUsable` is false); `CIFImport.read` throws `CIFImportError.invalidStructure` naming the tolerance. Nothing traps,
+    /// and no structure comes back without the identity operation. The defaults (`.fractional(5e-3)`) are in the domain.
     public enum Tolerance: Sendable, Equatable {
         case fractional(Double)
         case cartesian(Double)
@@ -91,6 +103,36 @@ public enum SymmetryDetection {
         /// 10 × spglib's default symprec of 1e-4 Å: the value proposed for a Cartesian default (its effective bound on a
         /// displacement is about half of it, see `Tolerance`).
         public static let proposedCartesian: Tolerance = .cartesian(1e-3)
+
+        /// The smallest window, as a fraction of a cell axis (the scale of the cell wrap's edge snap).
+        public static let minimumWindow = 1e-9
+        /// The window of half a cell or more is refused.
+        public static let maximumWindow = 0.5
+
+        /// The fractional window along each cell axis; NaN where the tolerance or the cell has no meaningful one.
+        func windows(in cell: UnitCell) -> SIMD3<Double> {
+            switch self {
+            case .fractional(let t):
+                return SIMD3(repeating: t)
+            case .cartesian(let t):
+                let b = cell.reciprocalLattice.map { length($0) }
+                return SIMD3(t * b[0], t * b[1], t * b[2])
+            }
+        }
+
+        /// Why this tolerance cannot be used on `cell`; nil when it is in its domain (see the type's note).
+        public func refusal(for cell: UnitCell) -> String? {
+            let w = windows(in: cell)
+            let usable = (0..<3).allSatisfy { w[$0].isFinite && w[$0] >= Tolerance.minimumWindow && w[$0] < Tolerance.maximumWindow }
+            guard !usable else { return nil }
+            return "The position tolerance \(self) cannot be used on this cell: its window along each cell axis, as a fraction of "
+                + "the axis, must lie from \(Tolerance.minimumWindow) up to (not including) \(Tolerance.maximumWindow) "
+                + "(.fractional(t) gives t; .cartesian(t) gives t times the reciprocal axis length). A tolerance that is not a "
+                + "number, is zero, negative, infinite, smaller than the floor or as wide as half a cell is refused, not clamped."
+        }
+
+        /// Whether `refusal(for:)` is nil.
+        public func isValid(for cell: UnitCell) -> Bool { refusal(for: cell) == nil }
     }
 
     /// How the permutation test finds the target of an image: a cell list (bins of the position tolerance, O(1) per
@@ -110,6 +152,18 @@ public enum SymmetryDetection {
         /// The largest uncertainty of a translation that was neither exact from the file nor on the k/24 grid: its
         /// least-squares residual plus twice the coordinates' written half-step, at least 1e-9. Reported.
         public let translationUncertainty: Double
+        /// Why nothing was detected: the reason the position tolerance was refused (`Tolerance.refusal(for:)`); nil
+        /// otherwise. The operations are then the identity alone.
+        public let refusal: String?
+
+        init(candidates: PointSymmetry, operations: [SymmetryOperation], unresolvedRotations: [IntegerMatrix],
+             translationUncertainty: Double, refusal: String? = nil) {
+            self.candidates = candidates
+            self.operations = operations
+            self.unresolvedRotations = unresolvedRotations
+            self.translationUncertainty = translationUncertainty
+            self.refusal = refusal
+        }
     }
 
     /// The operations of `sites` in `cell`. `coarsestHalfStep` is the coarsest written rounding half-step of the
@@ -122,6 +176,10 @@ public enum SymmetryDetection {
         metricAngleToleranceDeg: Double = defaultMetricAngleToleranceDeg,
         tolerance: Tolerance = .default, search: Search = .cellList, policy: Policy = .default
     ) -> Result {
+        if let reason = tolerance.refusal(for: cell) {
+            return Result(candidates: PointSymmetry(rotations: [.identity]), operations: [.identity], unresolvedRotations: [],
+                          translationUncertainty: 1e-9, refusal: reason)
+        }
         let family = cell.metricFamily(lengthTolerance: metricLengthTolerance, angleToleranceDeg: metricAngleToleranceDeg)
         let holohedry = PointSymmetry.holohedry(of: family)
         let candidates = extraCandidates.isEmpty
@@ -163,8 +221,11 @@ public enum SymmetryDetection {
             return (lhs.translation.x, lhs.translation.y, lhs.translation.z)
                 < (rhs.translation.x, rhs.translation.y, rhs.translation.z)
         }
-        return Result(candidates: candidates, operations: closedSubset(operations, tolerance: matcher.fractionalBound),
-                      unresolvedRotations: unresolved,
+        var closed = closedSubset(operations, tolerance: matcher.fractionalBound)
+        // The identity is a symmetry of every structure: it is found as the site's own image at any tolerance in the
+        // domain, and put first here if the matching ever missed it (no structure is returned without it).
+        if !closed.contains(where: { $0.isIdentity }) { closed.insert(.identity, at: 0) }
+        return Result(candidates: candidates, operations: closed, unresolvedRotations: unresolved,
                       translationUncertainty: uncertainty)
     }
 
@@ -393,7 +454,9 @@ struct SiteIndex: Sendable {
         let wanted = max(1, Int(cbrt(Double(sites.count)).rounded(.up)))
         var nb = SIMD3<Int>(repeating: 1)
         for axis in 0..<3 {
-            let limit = window[axis] > 0 ? Int((1 / (2 * window[axis])).rounded(.down)) : 1_000_000
+            // 1 / (2 w) is infinite for a denormal w, and Int(infinity) traps: the bin count is capped first.
+            let inverse = window[axis] > 0 ? 1 / (2 * window[axis]) : 1_000_000
+            let limit = inverse.isFinite && inverse < 1_000_000 ? Int(inverse.rounded(.down)) : 1_000_000
             nb[axis] = max(1, min(limit, wanted))
         }
         bins = nb

@@ -85,7 +85,8 @@ public struct ConventionalCell: Sendable, Equatable {
 
     /// Whether the Niggli reduction under this cell reached its conditions (`reduced.converged`). False for an invalid
     /// cell (`UnitCell.isValid`: this includes a cell flatter than V < 1e-6·a·b·c, which is where a shear of about 10^6
-    /// lattice units lands), for a shear beyond 2⁴⁰ units, and for a reduction that did not stop within its 2000 steps.
+    /// lattice units lands), for a shear beyond 2⁴⁰ units, for a reduction that did not stop within its 2000 steps, and
+    /// for a cell whose axes differ so much (a billion to one and more) that the integer matrices of the route overflow.
     /// Then the conventional route has no reduced basis to work on: `bravais` is `aP` and `transformation` the identity,
     /// which is NOT a finding about the lattice, `setting` says "not reducible", and
     /// `detectingSymmetry(conventional: true)` falls back to the detection in the file's own cell (what
@@ -105,9 +106,10 @@ extension UnitCell {
     /// metric (|RᵀGR − G|ᵢⱼ ≤ tolerance · √(Gᵢᵢ Gⱼⱼ)); this is the only tolerance of the route (the file header, F3: a bcc
     /// primitive cell with 109.4712° reads hR below a tolerance of about 1e-5). An invalid cell, or one whose reduction does
     /// not converge, returns itself as `aP` with `reductionConverged == false`. A cell that is already conventional in
-    /// another setting is re-labelled into this one (the file header, F2).
+    /// another setting is re-labelled into this one (the file header, F2). A `tolerance` that is NaN, negative or infinite
+    /// is read as 0 (the metric must be preserved exactly), never as "every integer matrix is a symmetry".
     public func conventionalCell(tolerance: Double = UnitCell.conventionalCellTolerance) -> ConventionalCell {
-        LatticeConstruction.conventionalCell(of: self, tolerance: tolerance)
+        LatticeConstruction.conventionalCell(of: self, tolerance: UnitCell.readAsToleranceOrZero(tolerance))
     }
 }
 
@@ -205,14 +207,16 @@ enum LatticeConstruction {
     }
 
     /// The Gauss-reduced basis of the plane {ℓ·x = 0} under the metric `g`: the shortest vector first.
-    static func reducedPlane(_ ell: SIMD3<Int>, _ g: [SIMD3<Double>]) -> (SIMD3<Int>, SIMD3<Int>) {
+    static func reducedPlane(_ ell: SIMD3<Int>, _ g: [SIMD3<Double>]) throws -> (SIMD3<Int>, SIMD3<Int>) {
         var (u1, u2) = kernelBasis(of: ell)
         func q(_ x: SIMD3<Int>) -> Double { UnitCell.bilinear(g, x, x) }
         for _ in 0..<100 {
             if q(u2) < q(u1) { swap(&u1, &u2) }
             let mu = (UnitCell.bilinear(g, u1, u2) / q(u1)).rounded()
             if mu == 0 { break }
-            u2 = u2 &- Int(mu) &* u1
+            // a multiple that is not a number or not an Int (a plane of a billion-to-one cell) is an overflow
+            guard abs(mu) < 4.0e18, let next = UnitCell.sheared(u2, by: Int(mu), along: u1) else { throw LatticeOverflow() }
+            u2 = next
             if q(u2) >= q(u1) * (1 - 1e-12) { break }
         }
         if q(u2) < q(u1) { swap(&u1, &u2) }
@@ -220,9 +224,11 @@ enum LatticeConstruction {
     }
 
     /// The distinct lattice points of the conventional cell (numerators over |det P|, each in 0 ..< |det P|).
-    static func pointClasses(_ p: IntegerMatrix) -> (denominator: Int, classes: Set<SIMD3<Int>>) {
+    static func pointClasses(_ p: IntegerMatrix) throws -> (denominator: Int, classes: Set<SIMD3<Int>>) {
         let d = abs(p.determinant)
-        let adj = p.adjugate
+        // a conventional cell holds 1 to 4 lattice points (the loop below is d³ long): a determinant beyond 64, or an
+        // adjugate that overflows, is not a cell
+        guard d <= 64, let adj = p.adjugateChecked else { throw LatticeOverflow() }
         let sign = p.determinant > 0 ? 1 : -1
         var out = Set<SIMD3<Int>>()
         for i in 0..<d { for j in 0..<d { for k in 0..<d {
@@ -231,6 +237,10 @@ enum LatticeConstruction {
         } } }
         return (d, out)
     }
+
+    /// Thrown inside the route when an integer product, an adjugate or a plane reduction leaves `Int` (a cell whose axes
+    /// differ by a billion to one): the route then answers "not reducible", never traps.
+    struct LatticeOverflow: Error {}
 
     static func fallback(_ cell: UnitCell) -> ConventionalCell {
         let reduced = cell.niggliReduced()
@@ -241,11 +251,24 @@ enum LatticeConstruction {
 
     static func conventionalCell(of input: UnitCell, tolerance: Double) -> ConventionalCell {
         let reduced = input.niggliReduced()
-        guard reduced.converged, input.isValid else {
-            return ConventionalCell(cell: input, bravais: .aP, transformation: .identity, reduced: reduced,
-                                    centringTranslations: [SIMD3(0, 0, 0)], uniqueAxis: nil,
-                                    setting: "aP: the cell as given (not reducible)")
+        guard reduced.converged, input.isValid else { return notReducible(input, reduced) }
+        do {
+            return try build(of: input, reduced: reduced, tolerance: tolerance)
+        } catch {
+            // an integer overflow: the cell is flagged as not reduced (reductionConverged == false)
+            let flagged = ReducedCell(cell: reduced.cell, transformation: reduced.transformation, epsilon: reduced.epsilon,
+                                      converged: false, steps: reduced.steps)
+            return notReducible(input, flagged)
         }
+    }
+
+    static func notReducible(_ input: UnitCell, _ reduced: ReducedCell) -> ConventionalCell {
+        ConventionalCell(cell: input, bravais: .aP, transformation: .identity, reduced: reduced,
+                         centringTranslations: [SIMD3(0, 0, 0)], uniqueAxis: nil,
+                         setting: "aP: the cell as given (not reducible)")
+    }
+
+    static func build(of input: UnitCell, reduced: ReducedCell, tolerance: Double) throws -> ConventionalCell {
         let pRed = reduced.transformation
         let g = UnitCell.gram(of: pRed, input.metricTensor)         // the reduced metric, exact from the input's
         let group = automorphisms(of: g, tolerance: tolerance)
@@ -267,7 +290,7 @@ enum LatticeConstruction {
         case 24:
             guard let six = proper.first(where: { $0.order == 6 }), let w = axis(of: six),
                   let ell = planeFunctional(of: six, order: 6) else { return fallback(input) }
-            let (p, _) = reducedPlane(ell, g)
+            let (p, _) = try reducedPlane(ell, g)
             let three = six.multiplied(by: six)
             cols = [p, three.times(p), w]
             unique = .c
@@ -275,14 +298,14 @@ enum LatticeConstruction {
         case 12:
             guard let three = proper.first(where: { $0.order == 3 }), let w = axis(of: three),
                   let ell = planeFunctional(of: three, order: 3) else { return fallback(input) }
-            let (p, _) = reducedPlane(ell, g)
+            let (p, _) = try reducedPlane(ell, g)
             cols = [p, three.times(p), w]
             unique = .c
             description = "hexagonal axes of a rhombohedral lattice, obverse, γ = 120°"
         case 16:
             guard let four = proper.first(where: { $0.order == 4 }), let w = axis(of: four),
                   let ell = planeFunctional(of: four, order: 4) else { return fallback(input) }
-            let (p, _) = reducedPlane(ell, g)
+            let (p, _) = try reducedPlane(ell, g)
             cols = [p, four.times(p), w]
             unique = .c
             description = "tetragonal, unique axis c"
@@ -294,7 +317,7 @@ enum LatticeConstruction {
         case 4:
             guard let two = proper.first(where: { $0.order == 2 }), let w = axis(of: two),
                   let ell = planeFunctional(of: two, order: 2) else { return fallback(input) }
-            let (e1, e2) = reducedPlane(ell, g)
+            let (e1, e2) = try reducedPlane(ell, g)
             unique = .b
             let index = abs(IntegerMatrix(columns: [e1, e2, w]).determinant)
             if index == 1 {
@@ -305,7 +328,7 @@ enum LatticeConstruction {
             } else if index == 2 {
                 // the centring class: λ = [e1 e2 w]⁻¹ n mod 1 for a lattice vector not in the plane+axis sublattice
                 let basis = IntegerMatrix(columns: [e1, e2, w])
-                let adj = basis.adjugate
+                guard let adj = basis.adjugateChecked else { throw LatticeOverflow() }
                 let sign = basis.determinant > 0 ? 1 : -1
                 var parity = SIMD2<Int>(0, 0)
                 for n in [SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 0, 1)] {
@@ -341,7 +364,7 @@ enum LatticeConstruction {
 
         var pc = IntegerMatrix(columns: cols)
         // the family's conventional cell can still be P, centred, or (orthorhombic) differently centred
-        var (d, classes) = pointClasses(pc)
+        var (d, classes) = try pointClasses(pc)
         var bravais: BravaisLattice
         switch group.count {
         case 48: bravais = d == 1 ? .cP : (d == 2 ? .cI : .cF)
@@ -366,12 +389,12 @@ enum LatticeConstruction {
         if group.count == 12 {
             guard pc.determinant != 0, abs(pc.determinant) == 3 else { return fallback(input) }
             // reverse setting → obverse: (a, b, c) → (−a, −b, c)
-            if !pointClasses(pc).classes.contains(SIMD3(2, 1, 1)) {
+            if !(try pointClasses(pc)).classes.contains(SIMD3(2, 1, 1)) {
                 cols[0] = 0 &- cols[0]; cols[1] = 0 &- cols[1]; pc = IntegerMatrix(columns: cols)
             }
         }
         if pc.determinant < 0 { pc = pc.negated }
-        (d, classes) = pointClasses(pc)
+        (d, classes) = try pointClasses(pc)
 
         // Among the equivalent conventional bases (the cell's own symmetries that keep the lattice, and for orthorhombic
         // every signed permutation that keeps the centring), the one closest to the identity.
@@ -391,10 +414,10 @@ enum LatticeConstruction {
         var bestScore = Int.max
         var bestKey: [Int] = []
         for candidate in candidates {
-            let trial = pc.multiplied(by: candidate)
-            let trialClasses = pointClasses(trial)
+            guard let trial = pc.multipliedChecked(by: candidate) else { throw LatticeOverflow() }
+            let trialClasses = try pointClasses(trial)
             guard trialClasses.denominator == d, trialClasses.classes == classes else { continue }
-            let total = pRed.multiplied(by: trial)
+            guard let total = pRed.multipliedChecked(by: trial) else { throw LatticeOverflow() }
             var score = 0
             var key: [Int] = []
             for i in 0..<3 { for j in 0..<3 { score += abs(total[i, j] - (i == j ? 1 : 0)); key.append(total[i, j]) } }
@@ -403,7 +426,7 @@ enum LatticeConstruction {
             }
         }
         pc = bestMatrix
-        let total = pRed.multiplied(by: pc)
+        guard let total = pRed.multipliedChecked(by: pc), total.adjugateChecked != nil else { throw LatticeOverflow() }
         let gTotal = UnitCell.gram(of: total, input.metricTensor)
         let cell: UnitCell
         if total == .identity { cell = input } else { cell = idealised(gTotal, bravais) }

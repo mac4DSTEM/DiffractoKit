@@ -174,7 +174,11 @@ public struct UnitCell: Sendable, Equatable {
 
     /// Lengths equal within `lengthTolerance` (relative), angles within `angleToleranceDeg` (degrees). The defaults
     /// are the reference implementation's indexing tolerance (1e-9); a CIF reader that wants the reference implementations' 1e-3 / 0.05° passes them.
+    /// A tolerance that is NaN, negative or infinite is read as 0 (lengths and angles must be exactly equal), never as
+    /// "nothing is equal" or "everything is".
     public func metricFamily(lengthTolerance: Double = 1e-9, angleToleranceDeg: Double = 1e-9) -> MetricFamily {
+        let lengthTolerance = UnitCell.readAsToleranceOrZero(lengthTolerance)
+        let angleToleranceDeg = UnitCell.readAsToleranceOrZero(angleToleranceDeg)
         func same(_ x: Double, _ y: Double) -> Bool { abs(x - y) <= lengthTolerance * max(abs(x), abs(y)) }
         func angle(_ x: Double, _ target: Double) -> Bool { abs(x - target) <= angleToleranceDeg }
         let ab = same(a, b), ac = same(a, c), bc = same(b, c)
@@ -193,6 +197,9 @@ public struct UnitCell: Sendable, Equatable {
         if ra && rb && !rc { return .monoclinic(uniqueAxis: .c) }
         return .triclinic
     }
+
+    /// A tolerance as used: itself when it is a finite number of at least 0, else 0.
+    static func readAsToleranceOrZero(_ value: Double) -> Double { value.isFinite && value >= 0 ? value : 0 }
 
     // MARK: - Small linear-algebra helpers (row-vector matrices), as the reference implementations'
 

@@ -96,11 +96,14 @@ public struct IntegerMatrix: Sendable, Hashable, CustomStringConvertible {
                       SIMD3(rows[0].z, rows[1].z, rows[2].z))
     }
 
+    /// The determinant. Computed in wrapping arithmetic: it never traps, and it is the exact determinant whenever that fits
+    /// in an `Int` (the value mod 2⁶⁴ is the value), as it does for every unimodular matrix however large its entries.
     public var determinant: Int {
         let m = rows
-        return m[0].x * (m[1].y * m[2].z - m[1].z * m[2].y)
-             - m[0].y * (m[1].x * m[2].z - m[1].z * m[2].x)
-             + m[0].z * (m[1].x * m[2].y - m[1].y * m[2].x)
+        let a: Int = m[1].y &* m[2].z &- m[1].z &* m[2].y
+        let b: Int = m[1].x &* m[2].z &- m[1].z &* m[2].x
+        let c: Int = m[1].x &* m[2].y &- m[1].y &* m[2].x
+        return m[0].x &* a &- m[0].y &* b &+ m[0].z &* c
     }
 
     public var trace: Int { rows[0].x + rows[1].y + rows[2].z }

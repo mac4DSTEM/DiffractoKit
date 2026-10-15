@@ -37,8 +37,13 @@ extension UnitCell {
 
     /// The Niggli-reduced cell of this lattice (the cell is taken as a PRIMITIVE lattice: centring in a file's atoms
     /// is not a property of the six parameters) and the matrix P that reaches it.
+    ///
+    /// A `relativeEpsilon` that is NaN, negative or infinite is refused the way an invalid cell is: the cell comes back
+    /// unreduced (identity transformation, epsilon 0) with `converged == false`, never as reduced. A finite epsilon so
+    /// large that no comparison can fail also stops at once and reports what it reached (a cell reduced only to within
+    /// that epsilon): keep it to the order of 1e-5.
     public func niggliReduced(relativeEpsilon: Double = UnitCell.niggliRelativeEpsilon) -> ReducedCell {
-        guard isValid else {
+        guard isValid, relativeEpsilon.isFinite, relativeEpsilon >= 0 else {
             return ReducedCell(cell: self, transformation: .identity, epsilon: 0, converged: false, steps: 0)
         }
         let g = metricTensor
@@ -73,22 +78,26 @@ extension UnitCell {
             if abs(xi) > b + eps || (abs(xi - b) <= eps && 2 * eta < zeta - eps) || (abs(xi + b) <= eps && zeta < -eps) {
                 let n: Int = UnitCell.shearMultiple(abs(xi), b, eps)
                 if n < 0 { break }
-                cols[2] = cols[2] &- (xi >= 0 ? n : -n) &* cols[1]; continue
+                guard let sheared = UnitCell.sheared(cols[2], by: xi >= 0 ? n : -n, along: cols[1]) else { break }
+                cols[2] = sheared; continue
             }
             if abs(eta) > a + eps || (abs(eta - a) <= eps && 2 * xi < zeta - eps) || (abs(eta + a) <= eps && zeta < -eps) {
                 let n: Int = UnitCell.shearMultiple(abs(eta), a, eps)
                 if n < 0 { break }
-                cols[2] = cols[2] &- (eta >= 0 ? n : -n) &* cols[0]; continue
+                guard let sheared = UnitCell.sheared(cols[2], by: eta >= 0 ? n : -n, along: cols[0]) else { break }
+                cols[2] = sheared; continue
             }
             if abs(zeta) > a + eps || (abs(zeta - a) <= eps && 2 * xi < eta - eps) || (abs(zeta + a) <= eps && eta < -eps) {
                 let n: Int = UnitCell.shearMultiple(abs(zeta), a, eps)
                 if n < 0 { break }
-                cols[1] = cols[1] &- (zeta >= 0 ? n : -n) &* cols[0]; continue
+                guard let sheared = UnitCell.sheared(cols[1], by: zeta >= 0 ? n : -n, along: cols[0]) else { break }
+                cols[1] = sheared; continue
             }
             // A8: c → a + b + c when that shortens it
             let sum = xi + eta + zeta + a + b
             if sum < -eps || (abs(sum) <= eps && 2 * (a + eta) + zeta > eps) {
-                cols[2] = cols[0] &+ cols[1] &+ cols[2]; continue
+                guard let summed = UnitCell.checkedSum(cols[0], cols[1], cols[2]) else { break }
+                cols[2] = summed; continue
             }
             converged = true
             break
@@ -114,6 +123,32 @@ extension UnitCell {
             return max(1, Int(n))
         }
         return 1
+    }
+
+    /// `v - n * w` componentwise; nil if any component overflows `Int` (the reduction then stops unconverged).
+    static func sheared(_ v: SIMD3<Int>, by n: Int, along w: SIMD3<Int>) -> SIMD3<Int>? {
+        var out = SIMD3<Int>(0, 0, 0)
+        for k in 0..<3 {
+            let (product, o1) = n.multipliedReportingOverflow(by: w[k])
+            if o1 { return nil }
+            let (difference, o2) = v[k].subtractingReportingOverflow(product)
+            if o2 { return nil }
+            out[k] = difference
+        }
+        return out
+    }
+
+    /// `a + b + c` componentwise; nil on overflow.
+    static func checkedSum(_ a: SIMD3<Int>, _ b: SIMD3<Int>, _ c: SIMD3<Int>) -> SIMD3<Int>? {
+        var out = SIMD3<Int>(0, 0, 0)
+        for k in 0..<3 {
+            let (ab, o1) = a[k].addingReportingOverflow(b[k])
+            if o1 { return nil }
+            let (abc, o2) = ab.addingReportingOverflow(c[k])
+            if o2 { return nil }
+            out[k] = abc
+        }
+        return out
     }
 
     /// xᵀ G y.
@@ -169,6 +204,47 @@ extension IntegerMatrix {
             SIMD3(m[1].x * m[2].y - m[1].y * m[2].x, m[0].y * m[2].x - m[0].x * m[2].y, m[0].x * m[1].y - m[0].y * m[1].x))
     }
 
+    /// The product `self · other`, or nil if any entry overflows `Int`.
+    func multipliedChecked(by other: IntegerMatrix) -> IntegerMatrix? {
+        func entry(_ r: SIMD3<Int>, _ column: Int) -> Int? {
+            var total = 0
+            for k in 0..<3 {
+                let (product, o1) = r[k].multipliedReportingOverflow(by: other.rows[k][column])
+                if o1 { return nil }
+                let (sum, o2) = total.addingReportingOverflow(product)
+                if o2 { return nil }
+                total = sum
+            }
+            return total
+        }
+        var rowsOut: [SIMD3<Int>] = []
+        for r in rows {
+            guard let x = entry(r, 0), let y = entry(r, 1), let z = entry(r, 2) else { return nil }
+            rowsOut.append(SIMD3(x, y, z))
+        }
+        return IntegerMatrix(rows: rowsOut)
+    }
+
+    /// The classical adjoint, or nil if any minor overflows `Int`.
+    var adjugateChecked: IntegerMatrix? {
+        func minor(_ a: Int, _ b: Int, _ c: Int, _ d: Int) -> Int? {       // a b - c d
+            let (p, o1) = a.multipliedReportingOverflow(by: b)
+            let (q, o2) = c.multipliedReportingOverflow(by: d)
+            if o1 || o2 { return nil }
+            let (difference, o3) = p.subtractingReportingOverflow(q)
+            return o3 ? nil : difference
+        }
+        let m = rows
+        guard let a00 = minor(m[1].y, m[2].z, m[1].z, m[2].y), let a01 = minor(m[0].z, m[2].y, m[0].y, m[2].z),
+              let a02 = minor(m[0].y, m[1].z, m[0].z, m[1].y),
+              let a10 = minor(m[1].z, m[2].x, m[1].x, m[2].z), let a11 = minor(m[0].x, m[2].z, m[0].z, m[2].x),
+              let a12 = minor(m[0].z, m[1].x, m[0].x, m[1].z),
+              let a20 = minor(m[1].x, m[2].y, m[1].y, m[2].x), let a21 = minor(m[0].y, m[2].x, m[0].x, m[2].y),
+              let a22 = minor(m[0].x, m[1].y, m[0].y, m[1].x)
+        else { return nil }
+        return IntegerMatrix(SIMD3(a00, a01, a02), SIMD3(a10, a11, a12), SIMD3(a20, a21, a22))
+    }
+
     /// M⁻¹ v.
     func inverseApplied(to v: SIMD3<Double>) -> SIMD3<Double> {
         let adj = adjugate.apply(v)
@@ -179,7 +255,8 @@ extension IntegerMatrix {
     func conjugating(_ other: IntegerMatrix) -> IntegerMatrix? {
         let det = determinant
         guard det != 0 else { return nil }
-        let product = multiplied(by: other).multiplied(by: adjugate)
+        guard let adjugate = adjugateChecked, let first = multipliedChecked(by: other),
+              let product = first.multipliedChecked(by: adjugate) else { return nil }
         var out: [SIMD3<Int>] = []
         for r in product.rows {
             guard r.x % det == 0, r.y % det == 0, r.z % det == 0 else { return nil }
@@ -192,7 +269,8 @@ extension IntegerMatrix {
     func conjugatedBy(_ other: IntegerMatrix) -> IntegerMatrix? {
         let det = determinant
         guard det != 0 else { return nil }
-        let product = adjugate.multiplied(by: other).multiplied(by: self)
+        guard let adjugate = adjugateChecked, let first = adjugate.multipliedChecked(by: other),
+              let product = first.multipliedChecked(by: self) else { return nil }
         var out: [SIMD3<Int>] = []
         for r in product.rows {
             guard r.x % det == 0, r.y % det == 0, r.z % det == 0 else { return nil }

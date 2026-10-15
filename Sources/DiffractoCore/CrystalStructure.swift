@@ -82,6 +82,10 @@ public struct CrystalStructure: Sendable, Equatable {
     /// its least-squares residual plus twice the written half-step, at least 1e-9. Reported; the absence test does not
     /// need it (`ReflectionList.isAllowed`).
     public let translationUncertainty: Double
+    /// Why the symmetry detection did not run: the position tolerance it was given is outside its domain
+    /// (`SymmetryDetection.Tolerance`). The operations are then the identity alone, `validationIssues` reports it
+    /// (`invalid_symmetry_tolerance`) and `isUsable` is false. nil for every structure that was detected or given.
+    public let symmetryRefusal: String?
 
     /// A structure whose operations are given as they are (a cell built in code with a known group); nothing is
     /// checked against the sites. A CIF goes through `CIFImport`, which detects.
@@ -101,6 +105,7 @@ public struct CrystalStructure: Sendable, Equatable {
         self.name = name
         self.unresolvedRotations = []
         self.translationUncertainty = 1e-9
+        self.symmetryRefusal = nil
     }
 
     /// A structure whose operations are detected from its sites (registration 3.4b): a P1 file, a cell built in
@@ -114,7 +119,10 @@ public struct CrystalStructure: Sendable, Equatable {
     /// 109.4712° is a rhombohedral lattice at 1e-9 and reads Im-3m only from `metricLengthTolerance` ≈ 1e-5 (spglib's
     /// default symprec reads it so). If the lattice cannot be reduced, `conventionalSetting.reductionConverged` is false
     /// and the operations are those of the file's cell (see `ConventionalCell.reductionConverged`). `tolerance`:
-    /// `.cartesian(t)` finds operations only to about half of `t` (see `SymmetryDetection.Tolerance`).
+    /// `.cartesian(t)` finds operations only to about half of `t` (see `SymmetryDetection.Tolerance`). A `tolerance`
+    /// outside its domain (NaN, zero, negative, infinite, below 1e-9 or as wide as half a cell) is refused: the structure
+    /// has the identity alone, `symmetryRefusal` names the reason and `validationIssues` reports it (`isUsable` is false).
+    /// The two metric tolerances read NaN, negative and infinite as 0.
     public static func detectingSymmetry(
         cell: UnitCell, sites: [AtomSite], fileOperations: [SymmetryOperation]? = nil,
         spaceGroupNumber: Int? = nil, name: String? = nil, coarsestHalfStep: Double = 0,
@@ -160,6 +168,7 @@ public struct CrystalStructure: Sendable, Equatable {
         self.name = name
         self.unresolvedRotations = detection.unresolvedRotations
         self.translationUncertainty = detection.translationUncertainty
+        self.symmetryRefusal = detection.refusal
     }
 
     public var crystalSystem: CrystalSystem? { laueClass?.crystalSystem }
@@ -220,6 +229,7 @@ public struct CrystalStructure: Sendable, Equatable {
             case .degenerateVolume: add("invalid_cell_volume", issue.description)
             }
         }
+        if let refusal = symmetryRefusal { add("invalid_symmetry_tolerance", refusal) }
         if sites.isEmpty {
             add("missing_atomic_basis", "At least one occupied atomic site is required.")
         }
