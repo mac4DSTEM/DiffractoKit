@@ -73,4 +73,28 @@ read here (the parsing comparisons SKCIFParser and Gemmi stay a separate tier-2 
 
 ## 6. Amendments
 
-(none yet)
+### 2026-10-15, about 14:00 CEST, after the port (DiffractoKit's third session, lane E): what the code settled
+
+- **The 44 lattice characters** are not tabulated in the code: the conventional cell is derived from the lattice's integer
+  automorphisms on the Niggli basis (entries −1, 0, 1), which is equivalent (the characters are the classes those
+  automorphisms define). Setting rules fixed by the port: monoclinic unique axis b with C centring and β ≥ 90°, hR in
+  obverse hexagonal axes, and among equivalent bases the one closest to the identity. ε = 1e-5 · V^(2/3).
+- **Both settings**: `CrystalStructure.operations`, the Laue group and the rings stay in the FILE's setting (found through
+  the conventional cell, conjugated back); the conventional structure is `conventionalSetting.structure` with
+  `.setting == .conventional`. The file's setting is never relabelled.
+- **The rings against spglib** are compared at slice 1's level (before the |F| cut); the cut rings are compared in
+  `DiffractoScatteringTests` (`ConventionalRingsTests`). Ring names are compared where the conventional cell has spglib's
+  parameters (1294 compared, 872 skipped: β″, tetragonal a = c, the 7× supercell).
+- **A number moves for one existing test** (the registration's "a non-conventional cell now gets its full symmetry"):
+  `RingIndexingTests`' `mSq` preset, a monoclinic cell with a = c and cos β = −1/4, is metrically C-centred orthorhombic;
+  with `conventional: true` it reads mmm and {1 0 0} and {0 0 1} are one orbit. macTEM's accidental-coincidence case is
+  the file setting's 2/m, so that preset is detected with `conventional: false`, and the test now also holds the merged
+  orbit under full detection. No other existing test moved.
+- **Results**: Niggli reduction against spglib and pymatgen on 2827 cells, worst 3.5e-11 (the oracles agree to 2.8e-13);
+  Bravais names 2800 / 2800; operation counts and Laue classes equal spglib's in both settings on 27 structures; 4332 rings
+  to 1e-8 in g; the truths of §3 hold (Au primitive 192 operations and 8 rings, β″ primitive 417 rings and 1442 kept
+  after the cut, rutile along a 4/mmm 16, Mg γ = 60° 6/mmm 24, corundum −3m 36 in hexagonal axes). Fast detection: a
+  500-atom symmetric P1 cell in 0.008 s, a 5×5×5 gold supercell (24000 operations) in 1.1 s (slice 1: about 30 s), equal
+  to the brute-force scan bit for bit on 69 fixtures. Mutants 27 / 27 red. The Cartesian default stays fractional (5e-3);
+  `.cartesian(1e-3 Å)` is offered as `proposedCartesian`. What moves for the apps is in `docs/consumers-0.1.0.md` (slice 1b
+  ships at 0.1.0, not 0.0.4).
