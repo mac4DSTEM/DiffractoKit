@@ -3,8 +3,9 @@
 DiffractoKit: the macEM suite's crystallography and diffraction library, a Swift port of what mac4DSTEM and macTEM compute
 about crystals (cells, symmetry, CIF import, d-spacings, orbits; scattering and structure factors; pattern geometry;
 orientation), checked against pymatgen, py4DSTEM and pyxem, imported by tagged version by both apps. GPL-3.0 (README.md
-says which parts come from where). Modules: `DiffractoCore` (slice 1), `DiffractoScattering` (slice 2), `DiffractoGeometry`,
-`DiffractoOrientation` (placeholders with their planned scope in a doc comment). Rules only here; state in `docs/status.md`.
+says which parts come from where). Modules: `DiffractoCore` (slice 1), `DiffractoScattering` (slice 2),
+`DiffractoGeometry` (slice 3), `DiffractoOrientation` (a placeholder with its planned scope). Rules only here; state in
+`docs/status.md`. Tests are Swift Testing (`import Testing`, `@Test`, `#expect`, `#require`).
 
 ## Read first
 
@@ -18,7 +19,8 @@ says which parts come from where). Modules: `DiffractoCore` (slice 1), `Diffract
 
 - **mac4DSTEM and macTEM are read-only from here**: `git -C ../<repo> --no-optional-locks show <commit>:<path>`, never their
   working trees. Never build, test or write in them. The seeds of slice 1 were read at mac4DSTEM `7448401b` and macTEM `a58c84c`
-  (their pushed heads on 2026-10-14 night).
+  (their pushed heads on 2026-10-14 night); slices 2 and 3 at mac4DSTEM `7d6fdbd1` and macTEM `9482831`. The apps' code is
+  also compiled by `git show` into `.build/` for bit-for-bit parity (`tools/slice-2/apps-parity`, `tools/slice-3b/apps-parity`).
 - **Registration before code** for anything tier 1 (every number a scientist reads): `docs/registration-<slice>.md`, with the
   definitions, the pins, the planted truth, the gates and the planned mutants, committed before the first Swift line; a change
   after code starts is a dated amendment with its reason.
@@ -32,7 +34,9 @@ says which parts come from where). Modules: `DiffractoCore` (slice 1), `Diffract
 - **A reference for every number.** Pins: pymatgen 2026.9.24 (tag `v2026.9.24` = `8461938`, the umbrella package) with
   pymatgen-core 2026.9.23 (the package that holds `core`, `io.cif` and `symmetry`; its tag is cloned beside the venv for
   file:line), spglib 2.8.0, NumPy 2.5.4, Python 3.14.7, all in the gitignored `References/` (`pymatgen-venv`,
-  `pymatgen-8461938`, `pymatgen-core-<sha7>`, `pymatgen-venv-freeze.txt`). Oracles run as `References/pymatgen-venv/bin/python
+  `pymatgen-8461938`, `pymatgen-core-<sha7>`, `pymatgen-venv-freeze.txt`), py4DSTEM f050d207's scattering table (sha256
+  be845d1d…, `tools/slice-2/fetch-table.sh` into `References/py4dstem-scattering/`), SciPy 1.18.1 in the same venv for slice
+  3b's sweep. Oracles run as `References/pymatgen-venv/bin/python
   -I -B`. An unpinned copy is never a reference. Agreement with pymatgen is agreement, not truth: truth is a closed form, a
   group-theory count or a cell content the file's formula states.
 - **Pins are generated before the Swift code** (`tools/slice-1/pins.py` writes `Tests/DiffractoCoreTests/Fixtures/
