@@ -226,3 +226,21 @@ moves at least one position on the scans.
    `consumers-0.3.0.md` for the app.
 6. **Euler details** beyond §4: Φ = acos of the clamped R22; |sin Φ| > 1e-8 for the general branch; wrapped angles with
    |angle| < 1e-12 snapped to 0; angles stored as Float and `crystalToLabMatrix` built from the Float-rounded angles.
+
+### 2026-10-15, 16:40 CEST: from the G2-G4 and G1 tests (both green; two fixes in the source, three recorded properties)
+
+1. **Fix: a rotation about the beam lost at R22 = 1 − 2⁻⁵³** (a defect in the source). acos(1 − 2⁻⁵³) = 1.49e-8, so sin Φ is
+   above the 1e-8 threshold while R20 = R21 = 0 can hold exactly; the general branch then took atan2(0, 0) for both angles and
+   the round trip was 0.479 off (the pins' gimbal row "Φ = 0, φ1 = −2.5, φ2 = 2.0"). The general branch now also needs
+   hypot(R20, R21) > 1e-8; otherwise the matrix is folded into φ1 at the gimbal as the source does for R22 = ±1. G1 stays bit
+   identical (the 270 dumped Euler cases do not reach the window); test `aRotationAboutTheBeamWithR22JustBelowOneKeepsItsAngle`
+   red first; every gimbal row now splits φ1 / φ2 as SciPy does. Named in `consumers-0.3.0.md` for mac4DSTEM.
+2. **Fix: exact phase ties** (amendment 16:08 item 5): ranked by the cross-phase rule, then by the lower phase index; test
+   `anExactTieBetweenPhasesGoesToTheLowerPhaseIndex` (eight identical candidate phases) red first; G1 bit identical.
+3. **Recorded, held as known issues in the tests, each pinned to its exact row set (a change turns the test red):**
+   Φ = acos(R22) is accurate only to about 1.5e-8 rad within 1e-5 of 0 and π (acos's conditioning at R22 near ±1; 16 gimbal
+   rows; φ1 and φ2 are within a Float ulp of SciPy's there); the G3 round trip of 2e-7 is exceeded by three Float roundings
+   (2.10e-7, one random rotation; a Float-rounding bound with Φ's conditioning holds on every row); one θ′ [011] reflection far
+   below the floor (relative intensity 6.9e-7) is 2.7e-12 from NumPy (cancellation in |F|²; the same axis after the floor is
+   1.5e-14), bounded at 1e-9. The pins flag 11 rows where the two gimbal rules differ, not 12. None is widened in place: these
+   three are the measured limits, and the tolerances of §7 stand everywhere else.

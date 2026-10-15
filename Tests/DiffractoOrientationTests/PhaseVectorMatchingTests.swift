@@ -991,6 +991,29 @@ import DiffractoOrientation
                         role: .candidate, zoneAxes: [SIMD3(0, 1, 0)])
     }
 
+    /// An exact tie between phases is broken by the lower phase index, not by the process's hash seed (registration slice 4,
+    /// amendment 16:08 item 5). Eight identical candidate phases score identically on a pattern of one of them; the label
+    /// must be the first, the runner-up the second. Under the source (a Dictionary sorted by score alone) both hold in about
+    /// 1 run in 56. Mutation: the phase-index tie-break dropped.
+    @Test func anExactTieBetweenPhasesGoesToTheLowerPhaseIndex() throws {
+        let beta = candidateBeta()
+        let copies = (0..<8).map {
+            PhaseDefinition(id: "\(beta.id)-\($0)", displayName: "\(beta.displayName) \($0)", crystal: beta.crystal,
+                            role: .candidate, zoneAxes: beta.zoneAxes,
+                            orientationRelationships: beta.orientationRelationships,
+                            excitationSlabInvAngstrom: beta.excitationSlabInvAngstrom)
+        }
+        let library = try PhaseReferenceLibrary.build(phases: [matrixAluminium()] + copies, settings: coarseSettings())
+        let entry = library.entries[library.candidateEntryIndices[0]]
+        let result = PhaseVectorMatcher.classify(
+            vectors: entry.vectors.prefix(10).map(\.q), library: library, settings: PhaseVectorSettings(),
+            matrixEntry: nil, candidateEntryIndices: library.candidateEntryIndices,
+            scratch: PhaseVectorMatcher.Scratch(capacity: 256))
+        #expect(result.verdict == .indexed)
+        #expect(result.phaseIndex == 1)
+        #expect(result.runnerUpPhaseIndex == 2)
+    }
+
     private func smallLibrary() throws -> PhaseReferenceLibrary {
         try PhaseReferenceLibrary.build(phases: [matrixAluminium(), candidateBeta()],
                                         settings: coarseSettings())

@@ -67,6 +67,21 @@ import DiffractoOrientation
         #expect(abs(nearBack.phi2 - 0.4) < 1e-3, "φ2 was folded away at Φ = 5e-6, above the gimbal threshold")
     }
 
+    /// A rotation about z whose R22 rounds to 1 − 2⁻⁵³ (acos gives Φ = 1.49e-8, sin Φ above the 1e-8 threshold) while R20, R21,
+    /// R02 and R12 are exactly 0: the source's general branch took atan2(0, 0) for both angles and lost the rotation (round trip
+    /// 0.479 off; the slice 4 pins' gimbal row "Φ = 0, φ1 = −2.5, φ2 = 2.0"). The kit folds it into φ1 (registration slice 4,
+    /// amendment 16:40). Mutation: the general branch taken on sin Φ alone.
+    @Test func aRotationAboutTheBeamWithR22JustBelowOneKeepsItsAngle() {
+        let angle = -0.5
+        let r22 = 1 - 0x1p-53
+        let crystalToLab = simd_double3x3(columns: (SIMD3(cos(angle), sin(angle), 0), SIMD3(-sin(angle), cos(angle), 0),
+                                                    SIMD3(0, 0, r22)))
+        let back = EulerAngles(py4DSTEMOrientationMatrix: simd_transpose(crystalToLab))
+        #expect(maxDifference(back.crystalToLabMatrix, crystalToLab) < 2e-7)
+        #expect(abs(Double(back.phi1) - angle) < 1e-6)
+        #expect(back.phi2 == 0)
+    }
+
     /// The angles are wrapped to (−π, π] and a value under 1e-12 is 0: the identity is all zeros.
     @Test func theIdentityIsAllZeroAndAnglesAreWrapped() {
         let identity = EulerAngles(py4DSTEMOrientationMatrix: matrix_identity_double3x3)

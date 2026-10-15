@@ -38,7 +38,11 @@ public struct EulerAngles: Sendable, Equatable, Hashable {
         let sine = sin(middle)
         let first: Double
         let third: Double
-        if abs(sine) > 1e-8 {
+        // The general branch needs the angle in the off-diagonal terms too: when R22 rounds to ±(1 − 2⁻⁵³) acos gives
+        // Φ = 1.49e-8 (sin Φ above the threshold) while R20, R21 can be exactly 0, and atan2(0, 0) would lose the rotation
+        // about the beam. Such a matrix is at the gimbal and is folded into φ1 below. Identical to the source wherever the
+        // source returns the rotation (registration slice 4, amendment 16:40).
+        if abs(sine) > 1e-8, (r.columns.0.z * r.columns.0.z + r.columns.1.z * r.columns.1.z).squareRoot() > 1e-8 {
             first = atan2(r.columns.0.z, r.columns.1.z)   // atan2(R20,R21)
             third = atan2(r.columns.2.x, -r.columns.2.y) // atan2(R02,-R12)
         } else if r22 > 0 {

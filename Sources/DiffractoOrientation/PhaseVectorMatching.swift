@@ -1109,11 +1109,14 @@ public enum PhaseVectorMatcher {
             return result
         }
 
+        // An exact tie goes to the lower phase index (the order the library lists the phases), so the label never depends on
+        // the Dictionary's per-process hash order (registration slice 4, amendment 16:08 item 5); identical to the source
+        // wherever the source is deterministic.
         let ranked = bestPerPhase.sorted {
-            crossPhaseWinsOver(
-                (matched: $0.value.matched, score: $0.value.score),
-                (matched: $1.value.matched, score: $1.value.score),
-                completenessAware: settings.completenessAwareCrossPhaseRanking)
+            let a = (matched: $0.value.matched, score: $0.value.score), b = (matched: $1.value.matched, score: $1.value.score)
+            let aWins = crossPhaseWinsOver(a, b, completenessAware: settings.completenessAwareCrossPhaseRanking)
+            let bWins = crossPhaseWinsOver(b, a, completenessAware: settings.completenessAwareCrossPhaseRanking)
+            return aWins != bWins ? aWins : $0.key < $1.key
         }
         let winner = ranked[0]
         result.score = Float(winner.value.score)

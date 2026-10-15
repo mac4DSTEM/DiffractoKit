@@ -411,20 +411,16 @@ struct Slice4G3Tests {
         "gimbal-Phi=1e-7-phi1=-2.5-phi2=2.0",
         "gimbal-Phi=1e-6-phi1=0.7-phi2=-1.1", "gimbal-Phi=1e-6-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-6-phi1=3.0-phi2=3.0",
         "gimbal-Phi=1e-5-phi1=0.7-phi2=-1.1", "gimbal-Phi=1e-5-phi1=-2.5-phi2=2.0",
+        // Since the gimbal fix (amendment 16:40) these fold into phi1 as SciPy does; only Phi's acos precision is left.
+        "gimbal-Phi=0-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-9-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-10-phi1=-2.5-phi2=2.0",
+        "gimbal-Phi=5e-9-phi1=-2.5-phi2=2.0",
     ]
     /// FINDING 2 (the lock is not detected): the registered lock |sin Phi| <= 1e-8 is applied to Phi = acos(R22), whose
     /// smallest non-zero value is 1.49e-8 (R22 = 1 - 2^-53), so a rotation at Phi = 0, pi or within 1e-8 of them is locked
     /// only when R22 is exactly +-1. Otherwise the unlocked formula is used: a valid but different split of the same
     /// rotation (phi1, phi2 as generated, Phi 1.5e-8), where SciPy puts everything in phi1. One row loses the rotation.
-    static let lockNotDetectedRows: Set<String> = [
-        "gimbal-Phi=0-phi1=-2.5-phi2=2.0", "gimbal-Phi=pi-phi1=0.7-phi2=-1.1",
-        "gimbal-Phi=1e-9-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-10-phi1=-2.5-phi2=2.0",
-        "gimbal-Phi=5e-9-phi1=-2.5-phi2=2.0",
-        "gimbal-Phi=pi-1e-9-phi1=0.7-phi2=-1.1", "gimbal-Phi=pi-1e-10-phi1=0.7-phi2=-1.1",
-        "gimbal-Phi=pi-5e-9-phi1=0.7-phi2=-1.1",
-    ]
-    /// The one row whose rotation is LOST (round trip 0.479 = sin 0.5): Phi = 0 with R22 = 1 - 2^-53 and R20 = R21 = 0.
-    static let lostRotationRow = "gimbal-Phi=0-phi1=-2.5-phi2=2.0"
+    /// Fixed (amendment 16:40): the general branch now also needs R20, R21 to carry the angle, so every such row is locked.
+    static let lockNotDetectedRows: Set<String> = []
     /// The one random rotation whose round trip exceeds the registered 2e-7 (2.10e-7): three Float roundings.
     static let floatRoundTripRow = "random-579"
 
@@ -473,9 +469,6 @@ struct Slice4G3Tests {
             withKnownIssue("Phi = acos(R22) misses SciPy's Phi by more than one Float ulp + 1e-12 for Phi <= 1e-5") {
                 #expect(phiOnly.isEmpty)
             }
-            withKnownIssue("the registered lock |sin Phi| <= 1e-8 is not reached for R22 = +-(1 - 2^-53): SciPy's split of phi1/phi2 is not reproduced") {
-                #expect(lockMissed.isEmpty)
-            }
             #expect(phiOnly == Self.phiPrecisionRows, "phi-only rows: \(phiOnly.symmetricDifference(Self.phiPrecisionRows))")
             #expect(lockMissed == Self.lockNotDetectedRows, "lock rows: \(lockMissed.symmetricDifference(Self.lockNotDetectedRows))")
         } else {
@@ -522,37 +515,34 @@ struct Slice4G3Tests {
             let e = EulerAngles(py4DSTEMOrientationMatrix: m)
             let d = maxAbsDiff(e.py4DSTEMOrientationMatrix, m)
             if d > Self.matrixTolerance {
-                if row.label == Self.lostRotationRow || row.label == Self.floatRoundTripRow { over[row.label] = d }
+                if row.label == Self.floatRoundTripRow { over[row.label] = d }
                 else { failures.append("\(row.label): \(d)") }
             }
             // The rigorous Float bound: each matrix entry is 1-Lipschitz in each angle, so rounding three angles to Float
-            // moves it by at most the sum of half ulps (+1e-12 for the double arithmetic, + Phi's conditioning below). The lost rotation is exempt.
+            // moves it by at most the sum of half ulps (+1e-12 for the double arithmetic, + Phi's conditioning below). (The Phi = 0 row that lost its rotation before amendment 16:40 is held to it too.)
             // Phi = acos(R22) also carries its own conditioning error, about 2.3e-16 / sin Phi, capped by the resolution of
             // R22 near 1 (the acos of 1 - 2^-53 is 1.49e-8): allowed for here, it is finding 1.
             let sinPhi = abs(sin(Double(e.Phi)))
             let phiConditioning = sinPhi > 0 ? min(4.5e-16 / sinPhi, 1.6e-8) : 1.6e-8
             let bound = (Double(e.phi1.ulp) + Double(e.Phi.ulp) + Double(e.phi2.ulp)) / 2 + phiConditioning + 1e-12
-            if row.label != Self.lostRotationRow {
-                worst = max(worst, d)
-                worstOverRounding = max(worstOverRounding, d / bound)
-                if d > bound { failures.append("\(row.label): \(d) exceeds the Float rounding bound \(bound)") }
-            }
+            worst = max(worst, d)
+            worstOverRounding = max(worstOverRounding, d / bound)
+            if d > bound { failures.append("\(row.label): \(d) exceeds the Float rounding bound \(bound)") }
         }
-        report("G3roundtrip", group.rawValue, [("matrix_excl_lost", worst), ("over_float_bound", worstOverRounding)],
+        report("G3roundtrip", group.rawValue, [("matrix", worst), ("over_float_bound", worstOverRounding)],
                note: "over 2e-7: \(over)")
         #expect(failures.isEmpty, "\(failures.count) failures, first: \(failures.prefix(6))")
         let expected: Set<String> = switch group {
         case .random: [Self.floatRoundTripRow]
-        case .gimbal: [Self.lostRotationRow]
+        case .gimbal: []
         case .py4dstem: []
         }
         #expect(Set(over.keys) == expected, "rows over 2e-7: \(over)")
         if !expected.isEmpty {
-            withKnownIssue("registered round trip 2e-7: three Float roundings can reach 2.1e-7 (random-579); Phi = 0 with R22 = 1 - 2^-53 loses the rotation (0.479)") {
+            withKnownIssue("registered round trip 2e-7: three Float roundings can reach 2.1e-7 (random-579); (the Phi = 0 row that lost its rotation is fixed, amendment 16:40)") {
                 #expect(over.isEmpty)
             }
         }
-        if group == .gimbal { #expect((over[Self.lostRotationRow] ?? 0) > 0.4) }
     }
 
     @Test("ZoneAxisFrame.matrix is B R_z(a): the 20 pinned products")
