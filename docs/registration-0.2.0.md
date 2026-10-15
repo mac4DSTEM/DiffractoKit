@@ -86,7 +86,7 @@ the annulus, the maximum residuals and the progress and cancellation arguments o
   the Niggli epsilon default (1e-5, an argument already). Error texts quote the default bounds (except
   `RingCalibration.Refusal.reason(policy:)`). The consumer check has no Policy checks yet.
 
-**Gates' results (to be filled at the freeze):**
+**Gates' results at the freeze (88d4f33):**
 - Suite: 352 / 0 merged on 6c16c9a (306 before, no existing expectation edited; the apps-parity fixtures and every pin
   unchanged, so the default path is bit identical); 348 on the lane's base afe6983.
 - Mutants: 28 / 28 red (`tools/kit-0.2.0/mutants-policy.py`, one default changed per group, on the lane's base).

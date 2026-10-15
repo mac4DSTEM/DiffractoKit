@@ -3,7 +3,7 @@
 Written 2026-10-15 by DiffractoKit's session, for mac4DSTEM's and macTEM's sessions. 0.2.0 is the generality pass: every
 suite policy is a parameter with the old value as the documented default, no app or suite name stays in Sources, the
 README and docs stand alone, and the platform floor is macOS 15 and iOS 18. Registered in `docs/registration-0.2.0.md`
-(with its dated amendments). **TAG COMMIT: to be filled.** The tag is the owner's; until it exists nothing here can be
+(with its dated amendments). **TAG COMMIT: the commit after the 0.2.x refuter closes (candidate 88d4f33 and its fixes).** The tag is the owner's; until it exists nothing here can be
 pinned. Read `docs/consumers-0.1.0.md` and `docs/consumers-0.1.1.md` first: this note lists only what changed since 0.1.1.
 
 ## In one table
