@@ -1,0 +1,9 @@
+# Swift Package Index: which modules get hosted DocC documentation. Listing on the Index is the owner's, once the repository
+# is public. DiffractoKit is macOS-only today (Package.swift: macOS 27, swift-tools 6.2), so the docs build on the Index's
+# macOS SwiftPM builder; if its Xcode lacks the macOS 27 SDK, the build waits for it. DiffractoOrientation is an empty
+# placeholder until its first registration and is left out; the example executable has no documentation.
+version: 1
+builder:
+  configs:
+    - platform: macos-spm
+      documentation_targets: [DiffractoCore, DiffractoScattering, DiffractoGeometry]

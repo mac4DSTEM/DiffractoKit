@@ -39,6 +39,11 @@ let package = Package(
         .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
         // Later: orientation results, symmetry reduction, Euler conventions against pyxem / orix. Empty until registered.
         .target(name: "DiffractoOrientation", dependencies: ["DiffractoCore"], swiftSettings: settings),
+        // The README's first ten minutes as a program (no product: `swift run diffracto-example`, or `swift build --product
+        // diffracto-example`).
+        .executableTarget(name: "diffracto-example",
+                          dependencies: ["DiffractoCore", "DiffractoScattering", "DiffractoGeometry"],
+                          path: "Examples/diffracto-example", swiftSettings: settings),
         .testTarget(name: "DiffractoCoreTests", dependencies: ["DiffractoCore"], exclude: ["Fixtures"],
                     swiftSettings: settings),
         .testTarget(name: "DiffractoScatteringTests", dependencies: ["DiffractoScattering", "DiffractoCore"],
