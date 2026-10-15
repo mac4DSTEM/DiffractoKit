@@ -37,10 +37,8 @@ Per entry the fixture carries: the cell, the sites, pymatgen's space-group numbe
 space-group operations on the cell as given (get_symmetry_operations; centring translations counted, lattice
 translations not), and the order of the Laue group (2 x the point-group's proper part: the count of {+-R}).
 """
-import resource
-# Suite rule (owner, 2026-10-15 12:30): a hard 8 GB memory cap before anything else.
-resource.setrlimit(resource.RLIMIT_AS, (8 << 30, 8 << 30))
-resource.setrlimit(resource.RLIMIT_DATA, (8 << 30, 8 << 30))
+# Run under the suite's memory cap (a process cannot cap itself on macOS 27):
+#   ../tools/memcap.sh -- References/pymatgen-venv/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
 import json
 import math
 import os

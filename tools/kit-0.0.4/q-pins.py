@@ -37,10 +37,8 @@ volts, lambda_A, l_px, q, r_px, numpy_r, kind}], "identity": [{name, d_A, r_px, 
 a, l_px, lambda_A, note}] }. A number that is not finite is written as the string "nan" / "inf" / "-inf".
 Exit 0: every self-check holds. 1: one failed (printed).
 """
-import resource
-# Suite rule (owner, 2026-10-15 12:30): a hard 8 GB memory cap before anything else.
-resource.setrlimit(resource.RLIMIT_AS, (8 << 30, 8 << 30))
-resource.setrlimit(resource.RLIMIT_DATA, (8 << 30, 8 << 30))
+# Run under the suite's memory cap (a process cannot cap itself on macOS 27):
+#   ../tools/memcap.sh -- References/pymatgen-venv/bin/python -I -B tools/kit-0.0.4/q-pins.py
 import json
 import math
 import os
