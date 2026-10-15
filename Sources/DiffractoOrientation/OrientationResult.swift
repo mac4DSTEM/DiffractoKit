@@ -5,7 +5,7 @@
 //        (one position's result). Registration docs/registration-slice-4.md, sections 1 and 4. The map, its presentation and
 //        the symmetry reduction are not here (slice 5).
 //
-//  `ZoneAxisFrame` is the type the source file calls by an application-specific name; the renaming is the only change.
+//  `ZoneAxisFrame` is the apps' application-specific frame type under a library name; the renaming is the only change.
 //
 
 import Foundation
@@ -27,7 +27,7 @@ public struct EulerAngles: Sendable, Equatable, Hashable {
 
     public static let zero = EulerAngles(phi1: 0, Phi: 0, phi2: 0)
 
-    /// Decompose py4DSTEM's orientation-matrix convention exactly: transpose
+    /// Decompose in py4DSTEM's orientation-matrix convention: transpose
     /// crystal-coordinate lab axes to crystal→lab, then extrinsic zxz. At
     /// gimbal lock, match SciPy by folding the observable rotation into phi1
     /// and setting phi2 to zero.
@@ -40,8 +40,8 @@ public struct EulerAngles: Sendable, Equatable, Hashable {
         let third: Double
         // The general branch needs the angle in the off-diagonal terms too: when R22 rounds to ±(1 − 2⁻⁵³) acos gives
         // Φ = 1.49e-8 (sin Φ above the threshold) while R20, R21 can be exactly 0, and atan2(0, 0) would lose the rotation
-        // about the beam. Such a matrix is at the gimbal and is folded into φ1 below. Identical to the source wherever the
-        // source returns the rotation (registration slice 4, amendment 16:26).
+        // about the beam. Such a matrix is at the gimbal and is folded into φ1 below. Identical to the apps' original wherever it
+        // returns the rotation.
         if abs(sine) > 1e-8, (r.columns.0.z * r.columns.0.z + r.columns.1.z * r.columns.1.z).squareRoot() > 1e-8 {
             first = atan2(r.columns.0.z, r.columns.1.z)   // atan2(R20,R21)
             third = atan2(r.columns.2.x, -r.columns.2.y) // atan2(R02,-R12)

@@ -59,6 +59,13 @@ identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the
   - A rotation about the beam whose R22 rounds to 1 − 2⁻⁵³ (with R20 = R21 = 0) was lost by the Euler decomposition (both
     angles 0); it is folded into φ1.
   - An exact score tie between two phases was broken by the process's hash seed; it goes to the lower phase index.
+  - An in-plane step of 1e-300 degrees trapped in `Int(_:)` and 1e-9 degrees asked for 3.6e11 rotations: `build` throws
+    `libraryTooLarge` before allocating, `fitZoneAxis` throws it past `PhaseReferenceLibrary.maximumInPlaneStepCount` (360 000),
+    and `inPlaneSteps` holds a finer step at that count. Steps within the cap give the same rotations as before.
+  - `PhaseMap(width:height:...)` trapped on a width × height that overflows (it now holds no results); `map` returns nil for a
+    hand-built library whose entries name a missing phase (`PhaseReferenceLibrary.isConsistent`); `classify` and
+    `classifyKnownVariants` give no verdict for candidate indices outside the library.
+  - A cancelled `PhaseReferenceLibrary.build` returned a library silently lacking phases; it now throws `CancellationError`.
 
 ### Migration
 **Policies.** Nothing is required: every new parameter defaults to the previous value. Notes for a caller who sets policies:
@@ -76,7 +83,9 @@ kit refuses throws `PhaseReferenceLibrary.Failure.structureRefused`; `BraggVecto
 `PeakCoordinates` (pass each peak's `Float` x, y as `SIMD2<Double>`; the pixel form reproduces the old arithmetic bit for bit);
 the cancellation token becomes `progress:` / `isCancelled:` closures; `ACOMOrientation` is `ZoneAxisFrame`; `fitZoneAxis`
 throws; a scan whose position count is not width × height gives nil (or `[]`) from every entry point, and an out-of-range
-`matrixEntryIndex` makes `map` return nil. No other number moves.
+`matrixEntryIndex` makes `map` return nil; a cancelled `build` throws `CancellationError`. The decision rule of `.knownVariants` and its
+two constants follow Thronsen et al., Ultramicroscopy 255 (2024) 113861 (CC BY 4.0; NOTICE). No other number moves. On
+re-pinning to 0.3.0, mac4DSTEM deletes its own `PhaseVectorMatching` and `PhaseReferenceLibrary` copies.
 
 ## 0.1.1
 

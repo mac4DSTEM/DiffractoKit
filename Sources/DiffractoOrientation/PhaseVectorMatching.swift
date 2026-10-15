@@ -152,8 +152,8 @@ public struct PhaseVectorSettings: Sendable, Equatable {
     /// half it fell over the cliff while a lucky two-vector pair passed;
     /// at 0.75 and at 1.0 both datasets read the same (Thronsen 7.96 %
     /// free / 6.64 % with the OR at 0.75, 7.94 / 6.61 at 1.0, seven
-    /// positions apart; the demo cube identical at all three), Al and the
-    /// demo cube's false labels unchanged. Not 1.0:
+    /// positions apart; the demonstration scan identical at all three), Al and the
+    /// demonstration scan's false labels unchanged. Not 1.0:
     /// a mean of distances each within the pair radius is within it, so
     /// the refusal would never fire and the setting would be dead.
     public var notIndexedAboveInvAngstrom: Double = 0.015
@@ -219,7 +219,7 @@ public struct PhaseVectorSettings: Sendable, Equatable {
     /// not "not indexed": this rule has no matrix challenge, and too little
     /// evidence for a precipitate is what the matrix means here.
     ///
-    /// DEVIATION: cell 16 has no such guard (argmin wins however little the
+    /// DEVIATION from the paper's rule: it has no such guard (the argmin wins however little the
     /// winner matched). MEASURED on Thronsen et al.'s dataset A, stride 3,
     /// at this rule's defaults (pair radius 0.020 Å⁻¹): 529 → 423 of 29 241
     /// mislabelled at the 0.1 % detection floor, 424 → 383 at 0.15 %,
@@ -368,7 +368,9 @@ public struct PhaseMap: Sendable {
     public init(width: Int, height: Int, matrixEntryIndex: Int,
                              phaseNames: [String], matrixPhaseIndex: Int) {
         self.width = width; self.height = height
-        self.results = Array(repeating: PhaseVectorResult(), count: max(0, width * height))
+        // A size whose product overflows holds no results (`map` refuses such a scan; this initialiser must not trap).
+        let (positions, overflow) = width.multipliedReportingOverflow(by: height)
+        self.results = Array(repeating: PhaseVectorResult(), count: overflow ? 0 : max(0, positions))
         self.matrixEntryIndex = matrixEntryIndex
         self.phaseNames = phaseNames
         self.matrixPhaseIndex = matrixPhaseIndex
@@ -393,7 +395,7 @@ public struct PhaseMap: Sendable {
 /// How the positions of a scan's peaks become calibrated in-plane vectors (Å⁻¹).
 public enum PeakCoordinates: Sendable, Equatable {
     /// Detector pixels: u = (Double(Float(x) − originX) · scale, Double(Float(y) − originY) · scale). The subtraction is
-    /// done in `Float`, exactly as the source did on its `Float` peak positions, so an application holding `Float`
+    /// done in `Float`, exactly as the apps' original did on its `Float` peak positions, so an application holding `Float`
     /// positions passes `SIMD2<Double>(Double(x), Double(y))` and gets bit-identical vectors.
     case detectorPixels(originX: Float, originY: Float, invAngstromPerPixel: Double)
     /// Calibrated vectors in Å⁻¹ about the origin, used as given (no `Float` rounding, no scale).
@@ -429,7 +431,7 @@ public enum PhaseVectorMatcher {
     /// Detector-pixel form: `peaks` are pixel positions (an application holding
     /// `Float` positions passes `SIMD2<Double>(Double(x), Double(y))` and gets
     /// bit-identical vectors); the subtraction is done in `Float`, then `Double`,
-    /// then the scale, as in the source.
+    /// then the scale, as in the apps' original.
     public static func experimentalVectors(peaks: [SIMD2<Double>],
                                             originX: Float, originY: Float,
                                             invAngstromPerPixel: Double,
@@ -695,7 +697,7 @@ public enum PhaseVectorMatcher {
 
         /// Mean distances closer than this, in Å⁻¹, rank as equal.
         ///
-        /// WHY (S4, 2026-09-30): symmetry-equivalent axes tie on matched count
+        /// WHY (2026-09-30): symmetry-equivalent axes tie on matched count
         /// by construction, and their mean distances then differ only in the
         /// last bits of the arithmetic that rotated their references — so a
         /// tied family's order was set by rounding: deterministic for one build
@@ -992,7 +994,7 @@ public enum PhaseVectorMatcher {
     }
 
     /// Is `scan` a scan: width and height positive, and exactly width · height positions? A malformed scan is refused by
-    /// `map` and `fitMatrixOrientation` (nil) and gives no zone-axis fits, as the source refused one. A width · height that
+    /// `map` and `fitMatrixOrientation` (nil) and gives no zone-axis fits, as the apps' original refused one. A width · height that
     /// overflows is not a scan.
     static func scanIsWellFormed(_ scan: [[SIMD2<Double>]], scanWidth: Int, scanHeight: Int) -> Bool {
         guard scanWidth > 0, scanHeight > 0 else { return false }
@@ -1038,6 +1040,8 @@ public enum PhaseVectorMatcher {
         }
         var result = PhaseVectorResult()
         guard !vectors.isEmpty else { return result }
+        // Caller-supplied indices outside the library give no verdict (`map` checks the library's own consistency once).
+        guard candidateEntryIndices.allSatisfy({ library.entries.indices.contains($0) }) else { return result }
 
         // 1 — matrix removal in vector space.
         var surviving: [SIMD2<Double>] = []
@@ -1119,8 +1123,8 @@ public enum PhaseVectorMatcher {
         }
 
         // An exact tie goes to the lower phase index (the order the library lists the phases), so the label never depends on
-        // the Dictionary's per-process hash order (registration slice 4, amendment 16:08 item 5); identical to the source
-        // wherever the source is deterministic.
+        // the Dictionary's per-process hash order; identical to the apps' original
+        // wherever it is deterministic.
         let ranked = bestPerPhase.sorted {
             let a = (matched: $0.value.matched, score: $0.value.score), b = (matched: $1.value.matched, score: $1.value.score)
             let aWins = crossPhaseWinsOver(a, b, completenessAware: settings.completenessAwareCrossPhaseRanking)
@@ -1159,7 +1163,7 @@ public enum PhaseVectorMatcher {
         // one, step 1 removes almost nothing and the whole pattern is offered
         // to the candidates — and a candidate coherent with the matrix wins by
         // default, because nothing else is in the competition. Measured on the
-        // demo cube: 2 250 positions of pure aluminium on [011] came back
+        // demonstration scan: 2 250 positions of pure aluminium on [011] came back
         // 100 % "β″ [001]". β″ [001] covers 10 of the 16 [011]Al reflections
         // at 0.0059 Å⁻¹; Al [011] covers all 16 at 0.0000 Å⁻¹, and was never
         // asked.
@@ -1224,7 +1228,7 @@ public enum PhaseVectorMatcher {
     /// dispatches here for `settings.classificationRule == .knownVariants`;
     /// this function never runs for `.search`.
     ///
-    /// DEVIATION (cell 16, `if len(xy) <= direct_Al: … 'Al'`): the paper's
+    /// DEVIATION from the paper's rule (which assigns Al directly when few vectors survive): the paper's
     /// five references are θ′ and T1 only — Al is never among them. Here Al
     /// (the matrix) is decided ENTIRELY by step b, by survivor count, and a
     /// matrix-phase entry is excluded from scoring in step c for that same
@@ -1237,6 +1241,7 @@ public enum PhaseVectorMatcher {
                                               candidateEntryIndices: [Int]) -> PhaseVectorResult {
         var result = PhaseVectorResult()
         guard !vectors.isEmpty else { return result }
+        guard candidateEntryIndices.allSatisfy({ library.entries.indices.contains($0) }) else { return result }
 
         // a — matrix removal, identical to `classify` step 1: same
         // tolerance, same survivors, same removedCount. DEVIATION: the
@@ -1269,27 +1274,27 @@ public enum PhaseVectorMatcher {
 
         // c — score every entry whose phase is NOT the matrix's. The paper's
         // per-entry scoring: for every survivor, the TRUE nearest
-        // reference vector of the entry (`np.argmin` over the WHOLE set, no
+        // reference vector of the entry (the argmin over the WHOLE set, no
         // radius — see `nearestReferenceVector` below for why `nearest(_:in:
         // radius:)` above is not reused), summed over every survivor, and
         // divided by the count of DISTINCT reference vectors hit
-        // (`np.unique(ref_tmp[n], axis=0).shape[0]`) — a reference claimed
+        // (the count of unique reference vectors) — a reference claimed
         // twice costs the sum without buying a second denominator credit,
         // which is what makes two survivors splitting one spot score worse
         // than two survivors hitting two spots at the same distances.
         //
-        // DEVIATION (cell 16's loop carries none of these — each omission
-        // named against the cell that has no such term):
-        //  - no `minimumMatchedVectors` / Friedel-pair floor (cell 16: every
+        // DEVIATION (the paper's loop carries none of these — each omission
+        // named against the paper's rule, which has no such term):
+        //  - no `minimumMatchedVectors` / Friedel-pair floor (the paper: every
         //    survivor is scored, however few clear any particular entry);
-        //  - no `chanceMatchMultiple` guard (cell 16: no chance expectation
+        //  - no `chanceMatchMultiple` guard (the paper: no chance expectation
         //    is computed at all);
-        //  - no matrix challenge, `classify` step 5 (cell 16: the matrix is
+        //  - no matrix challenge, `classify` step 5 (the paper: the matrix is
         //    never re-offered once step b has passed it by);
-        //  - no `minimumPhaseContrastInvAngstrom` margin (cell 16:
-        //    `phase.append(phase_list[np.argmin(score)])` takes the argmin
+        //  - no `minimumPhaseContrastInvAngstrom` margin (the paper:
+        //    the phase with the lowest score is taken
         //    outright, no runner-up margin considered);
-        //  - no completeness-aware cross-phase ranking (cell 16: `np.argmin`
+        //  - no completeness-aware cross-phase ranking (the paper: the argmin
         //    is by score alone, matched count never enters the ordering).
         //
         // DEVIATION: the paper's five entries are hand-built at fixed
@@ -1329,7 +1334,7 @@ public enum PhaseVectorMatcher {
         // d — argmin over ALL entries, ties to the first in library order.
         // Reduced through `bestPerPhase` above (the global minimum is always
         // some phase's own minimum), then picked by entry index ascending so
-        // a tie keeps the earliest entry, the way `np.argmin` over a flat
+        // a tie keeps the earliest entry, the way an argmin over a flat
         // array would.
         let ranked = bestPerPhase.map {
             (phaseIndex: $0.key, entryIndex: $0.value.entryIndex,
@@ -1466,7 +1471,7 @@ public enum PhaseVectorMatcher {
     /// pattern is safe BY CONSTRUCTION. The first version required only "at
     /// least as many", and a review measured what that costs: with a sparse
     /// precipitate of 3 to 6 vectors and 0.004 Å⁻¹ of jitter — a third of a
-    /// detector pixel on the demo cube, inside this file's own stated
+    /// detector pixel on the demonstration scan, inside this file's own stated
     /// measurement budget — a 49-axis search found a coincidental matrix fit
     /// with the same count and a smaller distance, and took 26.5 % of
     /// three-vector precipitates. A second matrix grain is the opposite case:
@@ -1662,6 +1667,7 @@ public enum PhaseVectorMatcher {
                             progress: (@Sendable (Double) -> Void)? = nil,
                             isCancelled: (@Sendable () -> Bool)? = nil) -> PhaseMap? {
         guard scanIsWellFormed(scan, scanWidth: scanWidth, scanHeight: scanHeight) else { return nil }
+        guard library.isConsistent else { return nil }
         if let matrixEntryIndex, !library.entries.indices.contains(matrixEntryIndex) { return nil }
 
         let fitted = matrixEntryIndex ?? fitMatrixOrientation(
@@ -1754,7 +1760,7 @@ public enum PhaseVectorMatcher {
         init(_ v: UnsafeMutablePointer<PhaseVectorResult>) { value = v }
     }
 
-    /// The positions done so far, shared by the workers: the source's lock around a captured counter.
+    /// The positions done so far, shared by the workers: a lock around a captured counter, as in the apps' original.
     private final class ProgressCounter: @unchecked Sendable {
         private let lock = NSLock()
         private var done = 0

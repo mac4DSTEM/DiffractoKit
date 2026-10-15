@@ -329,6 +329,12 @@ public struct PhaseReferenceLibrary: Sendable {
         self.matrixPhaseIndex = matrixPhaseIndex
     }
 
+    /// Does every entry name a phase of this library, and is `matrixPhaseIndex` one of them? A library from `build` always
+    /// is; a hand-built one may not be, and the matcher refuses it rather than index out of range.
+    public var isConsistent: Bool {
+        phases.indices.contains(matrixPhaseIndex) && entries.allSatisfy { phases.indices.contains($0.phaseIndex) }
+    }
+
     public var matrixEntryIndices: [Int] {
         entries.indices.filter { entries[$0].phaseIndex == matrixPhaseIndex }
     }
@@ -379,8 +385,8 @@ public struct PhaseReferenceLibrary: Sendable {
 
     // MARK: Build
 
-    /// Builds the library. A cancelled build (`isCancelled` returns true) returns the entries made so far, as the
-    /// source does; a phase the kit's scattering table does not cover, or a structure the kit refuses, throws.
+    /// Builds the library. A cancelled build (`isCancelled` returns true) throws `CancellationError`, never a library
+    /// that lacks phases; a phase the kit's scattering table does not cover, or a structure the kit refuses, throws.
     public static func build(phases: [PhaseDefinition],
                               settings: PhaseReferenceSettings = .init(),
                               isCancelled: (@Sendable () -> Bool)? = nil)
@@ -421,7 +427,7 @@ public struct PhaseReferenceLibrary: Sendable {
         entries.reserveCapacity(Int(requested))
 
         for (phaseIndex, phase) in phases.enumerated() {
-            if isCancelled?() == true { break }
+            if isCancelled?() == true { throw CancellationError() }
             let reflections = try Self.reflections(of: phase.crystal, kMaxInvAngstrom: settings.kMaxInvAngstrom,
                                                    phase: phase.displayName)
             let axes = phase.zoneAxes.isEmpty ? lowIndexZoneAxes : phase.zoneAxes
@@ -434,7 +440,7 @@ public struct PhaseReferenceLibrary: Sendable {
                 phase.excitationSlabInvAngstrom ?? settings.excitationSlabInvAngstrom
 
             for axis in axes {
-                if isCancelled?() == true { break }
+                if isCancelled?() == true { throw CancellationError() }
                 let base = projectedVectors(reflections: reflections,
                                             crystal: phase.crystal,
                                             zoneAxis: axis,

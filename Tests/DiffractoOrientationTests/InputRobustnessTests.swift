@@ -82,3 +82,54 @@ import DiffractoOrientation
         #expect(lib.entries.count == 24)
     }
 }
+
+@Suite struct CallerInputRobustnessTests {
+
+    private func library() throws -> PhaseReferenceLibrary {
+        var s = PhaseReferenceSettings()
+        s.kMaxInvAngstrom = 1.0
+        s.inPlaneStepDeg = 90
+        return try PhaseReferenceLibrary.build(
+            phases: [PhaseDefinition(id: "al", displayName: "Al", crystal: .aluminum, role: .matrix, zoneAxes: [SIMD3(0, 0, 1)]),
+                     PhaseDefinition(id: "beta", displayName: "β″", crystal: .betaDoublePrime, role: .candidate,
+                                     zoneAxes: [SIMD3(0, 1, 0)])], settings: s)
+    }
+
+    /// A width · height that overflows must not trap in the public initialiser.
+    @Test func phaseMapInitDoesNotTrapOnAnOverflowingSize() {
+        let map = PhaseMap(width: Int.max, height: 2, matrixEntryIndex: -1, phaseNames: [], matrixPhaseIndex: 0)
+        #expect(map.results.isEmpty)
+    }
+
+    /// A hand-built library whose entries name a phase it does not have is refused (nil), not trapped on.
+    @Test func mapRefusesAnInconsistentLibrary() throws {
+        let good = try library()
+        let bad = PhaseOrientationReference(phaseIndex: 7, zoneAxis: SIMD3(0, 0, 1), inPlaneRotationRad: 0,
+                                            vectors: good.entries[1].vectors)
+        let lib = PhaseReferenceLibrary(phases: good.phases, settings: good.settings,
+                                        entries: good.entries + [bad], matrixPhaseIndex: good.matrixPhaseIndex)
+        let scan: [[SIMD2<Double>]] = [[SIMD2(0.2, 0.0), SIMD2(0.0, 0.2), SIMD2(0.3, 0.1)]]
+        #expect(PhaseVectorMatcher.map(scan: scan, scanWidth: 1, scanHeight: 1, library: lib, settings: PhaseVectorSettings(),
+                                       coordinates: .calibrated) == nil)
+    }
+
+    /// Caller-supplied entry indices outside the library give an answer, not a trap.
+    @Test func classifyIgnoresOutOfRangeCandidateIndices() throws {
+        let lib = try library()
+        let result = PhaseVectorMatcher.classify(
+            vectors: [SIMD2(0.2, 0.0), SIMD2(0.0, 0.2), SIMD2(0.3, 0.1)], library: lib, settings: PhaseVectorSettings(),
+            matrixEntry: nil, candidateEntryIndices: [-1, 9_999], scratch: PhaseVectorMatcher.Scratch(capacity: 64))
+        #expect(result.verdict != .indexed)
+    }
+
+    /// A cancelled build is an error, not a library that silently lacks phases.
+    @Test func cancelledBuildThrowsCancellation() throws {
+        #expect(throws: CancellationError.self) {
+            _ = try PhaseReferenceLibrary.build(
+                phases: [PhaseDefinition(id: "al", displayName: "Al", crystal: .aluminum, role: .matrix, zoneAxes: [SIMD3(0, 0, 1)]),
+                         PhaseDefinition(id: "beta", displayName: "β″", crystal: .betaDoublePrime, role: .candidate,
+                                         zoneAxes: [SIMD3(0, 1, 0)])],
+                isCancelled: { true })
+        }
+    }
+}
