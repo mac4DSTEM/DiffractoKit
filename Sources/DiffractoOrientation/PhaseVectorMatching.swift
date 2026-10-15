@@ -753,7 +753,9 @@ public enum PhaseVectorMatcher {
     /// `scan` is row-major (`scanWidth` × `scanHeight`); a count that is not
     /// width · height gives no fits, as no peaks do. Throws when the kit refuses
     /// the structure (`PhaseReferenceLibrary.Failure.structureRefused`,
-    /// `.unsupportedElements`).
+    /// `.unsupportedElements`), and `.libraryTooLarge(requested:limit:)` when `inPlaneStepDeg` asks for more than
+    /// `PhaseReferenceLibrary.maximumInPlaneStepCount` rotations (a step finer than 0.001 degrees), with the count asked
+    /// for and the cap.
     public static func fitZoneAxis(scan: [[SIMD2<Double>]], scanWidth: Int, scanHeight: Int,
                                     crystal: CrystalStructure,
                                     referenceSettings: PhaseReferenceSettings,
@@ -823,6 +825,15 @@ public enum PhaseVectorMatcher {
 
         var reference = referenceSettings
         reference.inPlaneStepDeg = inPlaneStepDeg
+        // A step finer than 360 / maximumInPlaneStepCount degrees is refused, with the count asked for (saturated at
+        // Int.max) and the cap, not held at the cap: a sweep at a different step than the one asked for would be a
+        // different answer.
+        let stepCount = PhaseReferenceLibrary.inPlaneStepCount(reference)
+        guard stepCount <= Double(PhaseReferenceLibrary.maximumInPlaneStepCount) else {
+            throw PhaseReferenceLibrary.Failure.libraryTooLarge(
+                requested: stepCount < 9.0e18 ? Int(stepCount) : Int.max,
+                limit: PhaseReferenceLibrary.maximumInPlaneStepCount)
+        }
         let reflections = try PhaseReferenceLibrary.reflections(of: crystal, kMaxInvAngstrom: reference.kMaxInvAngstrom)
         let rotations = PhaseReferenceLibrary.inPlaneSteps(reference)
         let scratch = Scratch(capacity: max(1, reference.maximumVectorsPerEntry))

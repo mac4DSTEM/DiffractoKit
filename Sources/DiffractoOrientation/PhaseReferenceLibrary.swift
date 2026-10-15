@@ -400,22 +400,25 @@ public struct PhaseReferenceLibrary: Sendable {
             }
         }
 
-        // Size the library before building it, so a refusal costs nothing.
-        let steps = inPlaneSteps(settings)
-        var requested = 0
+        // Size the library before building it, so a refusal costs nothing: the count is a Double (a step of 1e-300 degrees
+        // is 3.6e302 rotations) and no array of steps exists until the size is known to be within `maximumEntries`.
+        let stepCount = inPlaneStepCount(settings)
+        var requested = 0.0
         for phase in phases {
             let axes = phase.zoneAxes.isEmpty ? lowIndexZoneAxes : phase.zoneAxes
             guard !axes.contains(where: { $0 == SIMD3(0, 0, 0) }) else {
                 throw Failure.degenerateZoneAxis(phase: phase.displayName)
             }
-            requested += axes.count * steps.count
+            requested += Double(axes.count) * stepCount
         }
-        guard requested <= settings.maximumEntries else {
-            throw Failure.libraryTooLarge(requested: requested, limit: settings.maximumEntries)
+        guard requested <= Double(settings.maximumEntries), let steps = Int(exactly: stepCount) else {
+            // Saturated at Int.max when the count does not fit an Int.
+            let asked = requested < 9.0e18 ? Int(requested) : Int.max
+            throw Failure.libraryTooLarge(requested: asked, limit: settings.maximumEntries)
         }
 
         var entries: [PhaseOrientationReference] = []
-        entries.reserveCapacity(requested)
+        entries.reserveCapacity(Int(requested))
 
         for (phaseIndex, phase) in phases.enumerated() {
             if isCancelled?() == true { break }
@@ -438,7 +441,8 @@ public struct PhaseReferenceLibrary: Sendable {
                                             settings: phaseSettings)
                 if base.isEmpty { continue }
                 phaseHasAny = true
-                for theta in steps {
+                for stepIndex in 0..<steps {
+                    let theta = inPlaneAngle(stepIndex, of: steps)
                     entries.append(PhaseOrientationReference(
                         phaseIndex: phaseIndex, zoneAxis: axis, inPlaneRotationRad: theta,
                         vectors: rotate(base, by: theta)
@@ -488,12 +492,31 @@ public struct PhaseReferenceLibrary: Sendable {
         }
     }
 
-    /// In-plane rotations sampled, radians. Always includes 0.
-    public static func inPlaneSteps(_ settings: PhaseReferenceSettings) -> [Double] {
+    /// The most in-plane rotations `inPlaneSteps` returns and `fitZoneAxis` accepts: 360 000, a step of 0.001 degrees. A finer
+    /// step is not a sampling choice but a mistake (a step of 1e-9 degrees asks for 3.6e11 rotations); `inPlaneSteps` holds
+    /// it at this count, `fitZoneAxis` refuses it, and `build` refuses it through `maximumEntries`.
+    public static let maximumInPlaneStepCount = 360_000
+
+    /// How many in-plane rotations `settings.inPlaneStepDeg` asks for, as a `Double` so that a tiny step is a large number
+    /// and not a conversion that traps: 1 for a step that is not finite, not positive or above 360, else 360 / step rounded.
+    static func inPlaneStepCount(_ settings: PhaseReferenceSettings) -> Double {
         let step = settings.inPlaneStepDeg
-        guard step.isFinite, step > 0, step <= 360 else { return [0] }
-        let n = max(1, Int((360.0 / step).rounded()))
-        return (0..<n).map { Double($0) * (2 * Double.pi / Double(n)) }
+        guard step.isFinite, step > 0, step <= 360 else { return 1 }
+        return max(1, (360.0 / step).rounded())
+    }
+
+    /// The `index`-th of `count` evenly spaced rotations, radians (the one expression `inPlaneSteps` and `build` share).
+    @inline(__always)
+    static func inPlaneAngle(_ index: Int, of count: Int) -> Double {
+        Double(index) * (2 * Double.pi / Double(count))
+    }
+
+    /// In-plane rotations sampled, radians, k 2π/N for N = 360 / step rounded. Always includes 0. A step that is not finite,
+    /// not positive or above 360 gives `[0]`; a step finer than 360 / `maximumInPlaneStepCount` degrees gives
+    /// `maximumInPlaneStepCount` rotations (the cap is on this array, which a caller holds in memory).
+    public static func inPlaneSteps(_ settings: PhaseReferenceSettings) -> [Double] {
+        let n = Int(min(inPlaneStepCount(settings), Double(maximumInPlaneStepCount)))
+        return (0..<n).map { inPlaneAngle($0, of: n) }
     }
 
     // MARK: The projection itself
