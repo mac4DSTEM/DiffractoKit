@@ -154,3 +154,23 @@ from the port; the verdicts are computed in NumPy and in an independent scalar P
 compares the port's own rings to those NumPy rings (g 1e-12, names, members) before it compares verdicts. Slice 1's and
 slice 2's family gates compare against pymatgen/spglib and NumPy likewise. No gate in slices 1–3 compares the port with
 itself.
+
+### 2026-10-15, after the 3b port, before its refuter: what the port found
+
+- **Bit identity held, per build.** On 35 rings (7 noisy, 4 stop-rule, 20 clean sweep, 4 sparse) × six calls, every output
+  field (and every thrown error and fallback reason) of the kit equals mac4DSTEM 7d6fdbd1's compiled code bit for bit, at
+  -O and at -Onone. The apps' OWN -O and -Onone builds differ in the last bits of some profile fits (25 ulps in a centre, 98
+  in a θ), so the gate holds each build to the apps built the same way: Debug against `slice-3b-apps-onone.json`, release
+  (`tools/test.sh`) against `slice-3b-apps.json`. Nothing is loosened.
+- **macTEM's eight `RingFitCalibrationTests` pass unchanged on the 7d6fdbd1 fit**; against macTEM's pre-ADR-069 copy its clean
+  plants move about 1e-9 relative (stated in `docs/consumers-0.0.3.md`).
+- **The clean sweep against SciPy 1.18.1 `least_squares`**: centre 7.1e-8 px, axes 1.2e-9 relative, θ 5.0e-8 rad (bands 1e-5,
+  1e-7, 1e-6).
+- **A band set on rings the lane added**: the apps' "centre within 0.05 px of the plant" is for unbroken rings; on new rings
+  of R 32–52 px with a 60° arc missing the fit's centre sits 0.055–0.094 px from the plant, and SciPy's optimum of the same
+  objective agrees with the kit's to 7e-8 px, so it is the objective's property (macTEM's S3-b recorded 0.078–0.130 px on its
+  gapped rings). Gapped rings are held to 0.1 px, unbroken ones to 0.05 px.
+- **Skipped by name**: `testRinglessFitOnARealMeanPatternFallsBackToTheConic` reads the owner's Ni65Cu35 mean pattern, which
+  has no `../data/README.md` manifest line yet; disabled with that reason. Its floor-guard claim is held synthetically.
+- The parity set alone does not reach the floor, the residual cap or the outer boundary; the dedicated unit tests do (9 of 9
+  mutants red in the lane's copy).
