@@ -386,10 +386,15 @@ struct RingCalibrationTests {
         #expect(RingCalibration.refusals(fit, highTensionVolts: 200_000) == [], "0.092")
         fit.semiAxisA = 100; fit.semiAxisB = 109.2
         #expect(RingCalibration.refusals(fit, highTensionVolts: 200_000) == [], "0.092, swapped")
+        // Typed locals: the literal inside #expect timed out the type checker on the CI runner (2026-10-15).
+        let ellipticity: Double = 109.4 / 100 - 1
+        let expected: [RingCalibration.Refusal] = [.excessiveEllipticity(ellipticity)]
         fit.semiAxisA = 109.4; fit.semiAxisB = 100
-        #expect(RingCalibration.refusals(fit, highTensionVolts: 200_000) == [.excessiveEllipticity(109.4 / 100 - 1)], "0.094")
+        let wide: [RingCalibration.Refusal] = RingCalibration.refusals(fit, highTensionVolts: 200_000)
+        #expect(wide == expected, "0.094")
         fit.semiAxisA = 100; fit.semiAxisB = 109.4
-        #expect(RingCalibration.refusals(fit, highTensionVolts: 200_000) == [.excessiveEllipticity(109.4 / 100 - 1)], "0.094, swapped")
+        let swapped: [RingCalibration.Refusal] = RingCalibration.refusals(fit, highTensionVolts: 200_000)
+        #expect(swapped == expected, "0.094, swapped")
     }
 
     /// No high tension: refused by name (the refusal that leaves Δq given), and the same fit with V is not.
