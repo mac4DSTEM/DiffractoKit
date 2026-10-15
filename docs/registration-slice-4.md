@@ -194,3 +194,35 @@ experimental vector computed in Double before the subtraction (the Float order l
 7. **The 200 kV parity record** (py4DSTEM's curved Ewald sphere against the flat one, same σ and slab): 33 of 37 axes keep the
    same hkl set (relative intensities 1-24 % apart); θ′ [112] +6, θ′ [123] +21, β″ [111] +51, β″ [123] −54. The frame rotation
    φ_py is a proper rotation (det +1) on every axis; the per-axis 2 × 2 map is in the pins (`frame_map`).
+
+### 2026-10-15, 16:15 CEST: from the apps-parity harness (`tools/slice-4/apps-parity`, before the G1 tests)
+
+The harness compiles the apps' code from 7d6fdbd1 with no hand-written shim (`BraggPeak`, `BraggVectors`, `EulerAngles` and
+`ACOMOrientation` cut out of their files by line range) and dumps 72 `map` runs, four libraries, fits, claims, 270 Euler cases
+and the detector bases (`slice-4-apps.json`, 13.5 MB; git stores it compressed, about 2.2 MB). Every `PhaseVectorSettings` field
+moves at least one position on the scans.
+
+1. **-O against -Onone.** Every `map` result, fit, claim and basis is byte identical. Three last-bit differences, all from
+   code generation, none in a verdict: Im F of some β″ and triclinic reflections (|Δ| ≤ 2e-18; slice 2's amendment 1), the
+   in-plane step k = 13 of every library (at -O `rotate` takes cos and sin of one angle as one `__sincos_stret` call, which
+   differs from two libm calls at that angle), and `crystalToLabMatrix` in 2 of 270 cases (same cause). G1 is at -O against the
+   -O dump, as slices 2 and 3b; the kit's `rotate` keeps cos and sin of one angle in one function so the optimiser pairs them.
+2. **What the source refuses, precisely** (the port matches it, and §2.2 is read this way): only `map` refuses a position count
+   that is not width × height (and a width or height ≤ 0, and an orientation-relationship filter that leaves no candidate);
+   `fitMatrixOrientation` and `fitZoneAxis` do not check the count. On cancellation `map` returns nil, `fitMatrixOrientation`
+   its best so far and `fitZoneAxis` a partial list. The port's additions (a malformed scan gives `[]` from `fitZoneAxis`, an
+   out-of-range matrix entry gives nil from `map` where the source traps) are refusals of inputs the source does not define,
+   recorded in `docs/consumers-0.3.0.md`.
+3. **`inPlaneSteps`** is θ_k = Double(k) · (2π / Double(N)) with the quotient computed once; N = round(360/step) rounding half
+   away from zero. §4's "k · 2π/N" is read as this expression.
+4. **Reflection order** of the source: h, then k, then l ascending over ±ceil(kMax · |aᵢ|), (0,0,0) skipped, |g| ≤ kMax
+   inclusive, |F| > 1e-4, then sorted by |g|; in all six dumped lists every exact tie is in (h, k, l) ascending order. The port's
+   order (|g|, then hkl ascending, on the kit's kept list) is this order; G1 checks it list by list.
+5. **A finding in the source: phase ties depend on the hash seed.** `classify` (`.search`) ranks phases out of a Dictionary,
+   so an exact score tie between two phases is broken by the process's random hash seed: the same input can be labelled
+   differently in two runs. The harness pins `SWIFT_DETERMINISTIC_HASHING=1`; a random-seed run was byte identical on the
+   dumped scans (no exact tie there). Planned fix in the kit (tier 1, a test first): ties broken by the lower phase index, the
+   order the library lists the phases; identical to the source wherever the source is deterministic; named in
+   `consumers-0.3.0.md` for the app.
+6. **Euler details** beyond §4: Φ = acos of the clamped R22; |sin Φ| > 1e-8 for the general branch; wrapped angles with
+   |angle| < 1e-12 snapped to 0; angles stored as Float and `crystalToLabMatrix` built from the Float-rounded angles.
