@@ -86,7 +86,8 @@ public struct ConventionalCell: Sendable, Equatable {
     /// Whether the Niggli reduction under this cell reached its conditions (`reduced.converged`). False for an invalid
     /// cell (`UnitCell.isValid`: this includes a cell flatter than V < 1e-6·a·b·c, which is where a shear of about 10^6
     /// lattice units lands), for a shear beyond 2⁴⁰ units, for a reduction that did not stop within its 2000 steps, and
-    /// for a cell whose axes differ so much (a billion to one and more) that the integer matrices of the route overflow.
+    /// for a cell whose axes differ so much (a billion to one and more) that the integer matrices of the route overflow, and
+    /// for a transformation whose determinant is beyond 64 (which a very loose `tolerance` can produce).
     /// Then the conventional route has no reduced basis to work on: `bravais` is `aP` and `transformation` the identity,
     /// which is NOT a finding about the lattice, `setting` says "not reducible", and
     /// `detectingSymmetry(conventional: true)` falls back to the detection in the file's own cell (what
@@ -107,7 +108,8 @@ extension UnitCell {
     /// primitive cell with 109.4712° reads hR below a tolerance of about 1e-5). An invalid cell, or one whose reduction does
     /// not converge, returns itself as `aP` with `reductionConverged == false`. A cell that is already conventional in
     /// another setting is re-labelled into this one (the file header, F2). A `tolerance` that is NaN, negative or infinite
-    /// is read as 0 (the metric must be preserved exactly), never as "every integer matrix is a symmetry".
+    /// is read as 0 (the metric must be preserved exactly), never as "every integer matrix is a symmetry"; at 0 the rounding
+    /// of an exact cubic cell's parameters can already read it as hR, so pass a real tolerance.
     public func conventionalCell(tolerance: Double = UnitCell.conventionalCellTolerance) -> ConventionalCell {
         LatticeConstruction.conventionalCell(of: self, tolerance: UnitCell.readAsToleranceOrZero(tolerance))
     }

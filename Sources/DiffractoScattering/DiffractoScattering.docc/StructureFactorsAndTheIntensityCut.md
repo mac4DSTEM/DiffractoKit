@@ -35,6 +35,11 @@ above the cut, and ``KinematicReflectionList/families`` the rings of the kept on
 Core `ReflectionFamily` and ``KinematicFamily/intensity``, the sum of |F|^2 over its members: the ring's
 kinematic weight, comparable between rings of one structure, not an absolute count.
 
+A structure that fails validation (a non-finite coordinate, an occupancy out of range, a close contact), an element the
+table lacks, an invalid cut or a non-finite F throws a ``KinematicError`` before any partial result is returned.
+Reflections kept by |F| alone although the detected operations forbid them (written coordinates that break the symmetry
+slightly) are named by ``KinematicReflectionList/keptButOperationAbsent``.
+
 ## Memory: `retainingAll`
 
 By default ``KinematicReflectionList/all`` holds every reflection before the cut, which for a large cell is most of the
@@ -50,8 +55,3 @@ A kinematic pattern cannot tell +c from -c on a polar structure. Without anomalo
 kinematic simulation of this kit and of py4DSTEM. No consumer may claim a polarity (which way a polar axis points, which
 of two enantiomorphs a crystal is) from a kinematic match, however good the match is; that needs dynamical diffraction or
 a measurement that is not centrosymmetric in intensity.
-
-A structure that fails validation (a non-finite coordinate, an occupancy out of range, a close contact), an element the
-table lacks, an invalid cut or a non-finite F throws a ``KinematicError`` before any partial result is returned.
-Reflections kept by |F| alone although the detected operations forbid them (written coordinates that break the symmetry
-slightly) are named by ``KinematicReflectionList/keptButOperationAbsent``.
