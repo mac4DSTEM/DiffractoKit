@@ -415,7 +415,7 @@ CONTROLS = [
     used(RE, "RingEvidence.passes(_:)", "public func passes(_ policy: Policy) -> Bool", r"cannot call value of non-function type|inaccessible due to 'package' protection level"),
     # RingCalibration.Policy
     decl(RC, "RingCalibration.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
-    library(RC, "RingCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    library(RC, "RingCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT, "RingCalibration+Fit.swift"),
     access(RC, "RingCalibration.Policy", "minimumOccupiedAngularBins", "public var minimumOccupiedAngularBins: Int"),
     access(RC, "RingCalibration.Policy", "maximumResidual", "public var maximumResidual: Double"),
     used(RC, "RingCalibration.Refusal.reason(policy:)", "public func reason(policy: RingCalibration.Policy)", r"cannot call value of non-function type|inaccessible due to 'package' protection level"),
