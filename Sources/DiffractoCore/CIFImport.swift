@@ -85,6 +85,11 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
     }
 }
 
+/// `localizedDescription` (what an app shows) is the same text as `description` (registration 0.0.4 section 5).
+extension CIFImportError: LocalizedError {
+    public var errorDescription: String? { description }
+}
+
 /// What a CIF read yields: the structure and what the file said about itself.
 public struct CIFDocument: Sendable, Equatable {
     public let structure: CrystalStructure

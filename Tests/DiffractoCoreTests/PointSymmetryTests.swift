@@ -16,7 +16,9 @@ struct PointSymmetryTests {
         (.monoclinic(uniqueAxis: .c), 4, .twoOverM),
         (.cubic, 48, .mThreeBarM),
         (.hexagonal, 24, .sixOverMmm),
-        (.tetragonal, 16, .fourOverMmm),
+        (.tetragonal(uniqueAxis: .c), 16, .fourOverMmm),
+        (.tetragonal(uniqueAxis: .a), 16, .fourOverMmm),
+        (.tetragonal(uniqueAxis: .b), 16, .fourOverMmm),
         (.rhombohedral, 12, .threeBarM),
         (.orthorhombic, 8, .mmm),
         (.triclinic, 2, .oneBar),
@@ -81,7 +83,7 @@ struct PointSymmetryTests {
             (PointSymmetry.holohedry(of: .triclinic), 2, "-1"),
             (PointSymmetry.holohedry(of: .orthorhombic), 8, "mmm"),
             (Self.fourOverM, 8, "4/m"),
-            (PointSymmetry.holohedry(of: .tetragonal), 16, "4/mmm"),
+            (PointSymmetry.holohedry(of: .tetragonal(uniqueAxis: .c)), 16, "4/mmm"),
             (Self.threeBar, 6, "-3"),
             (Self.threeBarM, 12, "-3m"),
             (Self.sixOverM, 12, "6/m"),
@@ -123,8 +125,8 @@ struct PointSymmetryTests {
         #expect(Self.fourOverM.orbit(of: MillerIndex(1, 2, 0)).count == 4)
         #expect(!(Self.fourOverM.orbit(of: MillerIndex(2, 1, 0)).contains(MillerIndex(1, 2, 0))))
         #expect(Self.fourOverM.orbit(of: MillerIndex(2, 1, 3)).count == 8)
-        #expect(PointSymmetry.holohedry(of: .tetragonal).orbit(of: MillerIndex(2, 1, 0)).count == 8)
-        #expect(PointSymmetry.holohedry(of: .tetragonal).orbit(of: MillerIndex(2, 1, 3)).count == 16)
+        #expect(PointSymmetry.holohedry(of: .tetragonal(uniqueAxis: .c)).orbit(of: MillerIndex(2, 1, 0)).count == 8)
+        #expect(PointSymmetry.holohedry(of: .tetragonal(uniqueAxis: .c)).orbit(of: MillerIndex(2, 1, 3)).count == 16)
     }
 
     /// The one canonical rule reproduces the apps' names (3.6). Mutant: the key without the non-negative count

@@ -29,6 +29,11 @@ public enum ReflectionListError: Error, Equatable, Sendable, CustomStringConvert
     }
 }
 
+/// `localizedDescription` (what an app shows) is the same text as `description` (registration 0.0.4 section 5).
+extension ReflectionListError: LocalizedError {
+    public var errorDescription: String? { description }
+}
+
 /// One (h, k, l) of the list.
 public struct Reflection: Sendable, Equatable {
     public let hkl: MillerIndex

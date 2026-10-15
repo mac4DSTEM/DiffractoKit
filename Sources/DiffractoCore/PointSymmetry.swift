@@ -50,7 +50,8 @@ public struct PointSymmetry: Sendable, Equatable {
         PointSymmetry(rotations: rotations + rotations.map(\.negated))
     }
 
-    /// The holohedry (the full Laue group of the lattice) of a metric family, in its conventional setting (section 3.4).
+    /// The holohedry (the full Laue group of the lattice) of a metric family (section 3.4): the conventional setting, with
+    /// the 4-fold of a tetragonal metric about its odd axis and the unique axis of a monoclinic one where the metric puts it.
     public static func holohedry(of family: UnitCell.MetricFamily) -> PointSymmetry {
         let c2x = IntegerMatrix([1, 0, 0], [0, -1, 0], [0, 0, -1])
         let c2y = IntegerMatrix([-1, 0, 0], [0, 1, 0], [0, 0, -1])
@@ -58,13 +59,21 @@ public struct PointSymmetry: Sendable, Equatable {
         let c4z = IntegerMatrix([0, -1, 0], [1, 0, 0], [0, 0, 1])
         let c3diag = IntegerMatrix([0, 0, 1], [1, 0, 0], [0, 1, 0])
         let c6z = IntegerMatrix([1, -1, 0], [1, 0, 0], [0, 0, 1])
+        // The 4-fold along a and along b (permuted c4z; the 2-fold perpendicular to it is c2y / c2z).
+        let c4x = IntegerMatrix([1, 0, 0], [0, 0, -1], [0, 1, 0])
+        let c4y = IntegerMatrix([0, 0, 1], [0, 1, 0], [-1, 0, 0])
         let c2aHex = IntegerMatrix([1, -1, 0], [0, -1, 0], [0, 0, -1])
         let c2rhombo = IntegerMatrix([0, -1, 0], [-1, 0, 0], [0, 0, -1])
         let generators: [IntegerMatrix]
         switch family {
         case .cubic: generators = [c4z, c3diag, .inversion]
         case .hexagonal: generators = [c6z, c2aHex, .inversion]
-        case .tetragonal: generators = [c4z, c2x, .inversion]
+        case .tetragonal(let axis):
+            switch axis {
+            case .a: generators = [c4x, c2y, .inversion]
+            case .b: generators = [c4y, c2z, .inversion]
+            case .c: generators = [c4z, c2x, .inversion]
+            }
         case .rhombohedral: generators = [c3diag, c2rhombo, .inversion]
         case .orthorhombic: generators = [c2x, c2y, .inversion]
         case .monoclinic(let axis):

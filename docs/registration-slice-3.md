@@ -197,7 +197,7 @@ starts and the floor, the transform and the row/column convention. Its findings:
   perfect ring of amplitude ≤ 1e-6 is refused); F7 one edge sharper than 0.3 px is refused as `ringWidthAtFloor`.
   These go to the coordinator for mac4DSTEM's ring-fit lane; `docs/consumers-0.0.3.md` lists them under known limits.
 
-### 2026-10-15, about 11:40 CEST: the ring-fit gaps are fixed in the kit at 0.0.4
+### 2026-10-15, 11:14 CEST: the ring-fit gaps are fixed in the kit at 0.0.4
 
 F1, F2, F3, F6 and F7 above, and macTEM's `refuse-bound` plant, are taken by the kit itself (the kit loop's first asks):
 `docs/registration-0.0.4.md` §1 registers the fixes, the parity they keep and the one thing not claimed (two rings

@@ -164,7 +164,8 @@ public struct UnitCell: Sendable, Equatable {
     public enum MetricFamily: Sendable, Equatable {
         case cubic
         case hexagonal
-        case tetragonal
+        /// a = b ≠ c (`uniqueAxis` c), a = c ≠ b (b) or b = c ≠ a (a), all angles 90°: the 4-fold lies along the odd axis.
+        case tetragonal(uniqueAxis: Axis)
         case rhombohedral
         case orthorhombic
         case monoclinic(uniqueAxis: Axis)
@@ -180,7 +181,11 @@ public struct UnitCell: Sendable, Equatable {
         let ra = angle(alphaDeg, 90), rb = angle(betaDeg, 90), rc = angle(gammaDeg, 90)
         if ab && ac && ra && rb && rc { return .cubic }
         if ab && ra && rb && angle(gammaDeg, 120) { return .hexagonal }
-        if ab && !ac && ra && rb && rc { return .tetragonal }
+        // Tetragonal about whichever axis is the odd one (registration 0.0.4 section 6): a = c ≠ b and b = c ≠ a were
+        // read orthorhombic, so the 4-fold was never tested. The hexagonal 6-fold along a or b is not handled here.
+        if ab && !ac && ra && rb && rc { return .tetragonal(uniqueAxis: .c) }
+        if ac && !ab && ra && rb && rc { return .tetragonal(uniqueAxis: .b) }
+        if bc && !ab && ra && rb && rc { return .tetragonal(uniqueAxis: .a) }
         if ab && ac && bc && same(alphaDeg, betaDeg) && same(alphaDeg, gammaDeg) && !ra { return .rhombohedral }
         if ra && rb && rc { return .orthorhombic }
         if rb && rc && !ra { return .monoclinic(uniqueAxis: .a) }

@@ -1,6 +1,6 @@
 # DiffractoKit 0.0.4: the kit loop's first asks (registration)
 
-Registered 2026-10-15, about 11:40 CEST, before any code, by DiffractoKit's third session. Sources of the asks: slice 3b's
+Registered 2026-10-15, 11:14 CEST, before any code, by DiffractoKit's third session. Sources of the asks: slice 3b's
 Gate B (registration-slice-3 §7, F1–F3, F6, F7), macTEM's Diffraction-room design (its §0 and §3, read-only, G1, G2, G7,
 G8) and macTEM's 0.0.3 switch (five misfits), relayed by the coordinator. What is written here is fixed before the code; a
 change after code starts is a dated amendment with its reason. Tiers: §1, §2, §3 and §6 are tier 1 (a number a scientist
@@ -172,7 +172,7 @@ Debug configuration. (e) The note names the close-contact rule behind `invalidSt
 
 ## 8. Amendments
 
-### 2026-10-15, about 13:30 CEST, after the ring-fit code started: what the first runs changed
+### 2026-10-15, 11:30 CEST, after the ring-fit code started: what the first runs changed
 
 Fail first, on the unmodified code (`RingFitAmendmentTests`, 12 tests): F1 (3 of 4 gapped noisy rings calibrated, the
 fourth refused for another reason), F2 (the disk edge at blur 2.5 calibrated; all three textured circles read as

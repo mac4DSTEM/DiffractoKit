@@ -1,0 +1,1177 @@
+{
+ "versions": {
+  "pymatgen_core": "2026.9.23",
+  "pymatgen": "2026.9.24",
+  "spglib": "2.8.0",
+  "numpy": "2.5.4",
+  "python": "3.14.7"
+ },
+ "symprec": 0.0001,
+ "k_max": 1.2,
+ "entries": [
+  {
+   "name": "rutile_TiO2",
+   "setting": "c",
+   "cell": {
+    "a": 4.5937,
+    "b": 4.5937,
+    "c": 2.9587,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.3048,
+      0.3048,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.19520000000000004,
+      0.8048,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.8048,
+      0.1952,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.6952,
+      0.6952,
+      0.0
+     ]
+    }
+   ],
+   "space_group_number": 136,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 16
+  },
+  {
+   "name": "rutile_TiO2",
+   "setting": "a",
+   "cell": {
+    "a": 2.9587,
+    "b": 4.5937,
+    "c": 4.5937,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.3048,
+      0.3048
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.19520000000000004,
+      0.8048
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.8048,
+      0.1952
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.6952,
+      0.6952
+     ]
+    }
+   ],
+   "space_group_number": 136,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 16
+  },
+  {
+   "name": "rutile_TiO2",
+   "setting": "b",
+   "cell": {
+    "a": 4.5937,
+    "b": 2.9587,
+    "c": 4.5937,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.3048,
+      0.0,
+      0.3048
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.8048,
+      0.5,
+      0.19520000000000004
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.1952,
+      0.5,
+      0.8048
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.6952,
+      0.0,
+      0.6952
+     ]
+    }
+   ],
+   "space_group_number": 136,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 16
+  },
+  {
+   "name": "anatase_TiO2",
+   "setting": "c",
+   "cell": {
+    "a": 3.7845,
+    "b": 3.7845,
+    "c": 9.5143,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.0,
+      0.75
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.5,
+      0.25
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.0,
+      0.5419
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.5,
+      0.29190000000000005
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.0,
+      0.2081
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.0,
+      0.9581
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.5,
+      0.0419
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.5,
+      0.4581
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.5,
+      0.7081
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.0,
+      0.7919
+     ]
+    }
+   ],
+   "space_group_number": 141,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 32
+  },
+  {
+   "name": "anatase_TiO2",
+   "setting": "a",
+   "cell": {
+    "a": 9.5143,
+    "b": 3.7845,
+    "c": 3.7845,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.75,
+      0.5,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.25,
+      0.0,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5419,
+      0.5,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.29190000000000005,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.2081,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.9581,
+      0.5,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0419,
+      0.0,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.4581,
+      0.0,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.7081,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.7919,
+      0.0,
+      0.0
+     ]
+    }
+   ],
+   "space_group_number": 141,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 32
+  },
+  {
+   "name": "anatase_TiO2",
+   "setting": "b",
+   "cell": {
+    "a": 3.7845,
+    "b": 9.5143,
+    "c": 3.7845,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.75,
+      0.5
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.25,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.5419,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.29190000000000005,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.2081,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.9581,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.0419,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.4581,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.7081,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.7919,
+      0.0
+     ]
+    }
+   ],
+   "space_group_number": 141,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 32
+  },
+  {
+   "name": "beta_Sn",
+   "setting": "c",
+   "cell": {
+    "a": 5.8318,
+    "b": 5.8318,
+    "c": 3.1818,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 50,
+     "frac": [
+      0.5,
+      0.0,
+      0.75
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.0,
+      0.5,
+      0.25
+     ]
+    }
+   ],
+   "space_group_number": 141,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 32
+  },
+  {
+   "name": "beta_Sn",
+   "setting": "a",
+   "cell": {
+    "a": 3.1818,
+    "b": 5.8318,
+    "c": 5.8318,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 50,
+     "frac": [
+      0.75,
+      0.5,
+      0.0
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.25,
+      0.0,
+      0.5
+     ]
+    }
+   ],
+   "space_group_number": 141,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 32
+  },
+  {
+   "name": "beta_Sn",
+   "setting": "b",
+   "cell": {
+    "a": 5.8318,
+    "b": 3.1818,
+    "c": 5.8318,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 50,
+     "frac": [
+      0.0,
+      0.75,
+      0.5
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 50,
+     "frac": [
+      0.5,
+      0.25,
+      0.0
+     ]
+    }
+   ],
+   "space_group_number": 141,
+   "point_group": "4/mmm",
+   "laue_class": "4/mmm",
+   "point_group_operations": 16,
+   "laue_group_order": 16,
+   "space_group_operations": 32
+  },
+  {
+   "name": "ortho_a_equals_c",
+   "setting": "c",
+   "cell": {
+    "a": 4.0,
+    "b": 5.0,
+    "c": 4.0,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.7,
+      0.2,
+      0.9
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.7,
+      0.8,
+      0.9
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.7,
+      0.8,
+      0.1
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.3,
+      0.8,
+      0.9
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.3,
+      0.2,
+      0.1
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.3,
+      0.2,
+      0.9
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.7,
+      0.2,
+      0.1
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.3,
+      0.8,
+      0.1
+     ]
+    }
+   ],
+   "space_group_number": 47,
+   "point_group": "mmm",
+   "laue_class": "mmm",
+   "point_group_operations": 8,
+   "laue_group_order": 8,
+   "space_group_operations": 8
+  },
+  {
+   "name": "ortho_a_equals_c",
+   "setting": "a",
+   "cell": {
+    "a": 4.0,
+    "b": 4.0,
+    "c": 5.0,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.9,
+      0.7,
+      0.2
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.9,
+      0.7,
+      0.8
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.1,
+      0.7,
+      0.8
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.9,
+      0.3,
+      0.8
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.1,
+      0.3,
+      0.2
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.9,
+      0.3,
+      0.2
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.1,
+      0.7,
+      0.2
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.1,
+      0.3,
+      0.8
+     ]
+    }
+   ],
+   "space_group_number": 47,
+   "point_group": "mmm",
+   "laue_class": "mmm",
+   "point_group_operations": 8,
+   "laue_group_order": 8,
+   "space_group_operations": 8
+  },
+  {
+   "name": "ortho_a_equals_c",
+   "setting": "b",
+   "cell": {
+    "a": 5.0,
+    "b": 4.0,
+    "c": 4.0,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 22,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.2,
+      0.9,
+      0.7
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.8,
+      0.9,
+      0.7
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.8,
+      0.1,
+      0.7
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.8,
+      0.9,
+      0.3
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.2,
+      0.1,
+      0.3
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.2,
+      0.9,
+      0.3
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.2,
+      0.1,
+      0.7
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.8,
+      0.1,
+      0.3
+     ]
+    }
+   ],
+   "space_group_number": 47,
+   "point_group": "mmm",
+   "laue_class": "mmm",
+   "point_group_operations": 8,
+   "laue_group_order": 8,
+   "space_group_operations": 8
+  },
+  {
+   "name": "cubic_SrTiO3",
+   "setting": "c",
+   "cell": {
+    "a": 3.905,
+    "b": 3.905,
+    "c": 3.905,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 38,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.0,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.5,
+      0.0
+     ]
+    }
+   ],
+   "space_group_number": 221,
+   "point_group": "m-3m",
+   "laue_class": "m-3m",
+   "point_group_operations": 48,
+   "laue_group_order": 48,
+   "space_group_operations": 48
+  },
+  {
+   "name": "cubic_SrTiO3",
+   "setting": "a",
+   "cell": {
+    "a": 3.905,
+    "b": 3.905,
+    "c": 3.905,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 38,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.5,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.0,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.5,
+      0.5
+     ]
+    }
+   ],
+   "space_group_number": 221,
+   "point_group": "m-3m",
+   "laue_class": "m-3m",
+   "point_group_operations": 48,
+   "laue_group_order": 48,
+   "space_group_operations": 48
+  },
+  {
+   "name": "cubic_SrTiO3",
+   "setting": "b",
+   "cell": {
+    "a": 3.905,
+    "b": 3.905,
+    "c": 3.905,
+    "alpha": 90.0,
+    "beta": 90.0,
+    "gamma": 90.0
+   },
+   "sites": [
+    {
+     "z": 38,
+     "frac": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "z": 22,
+     "frac": [
+      0.5,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.0,
+      0.5,
+      0.5
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.5,
+      0.0
+     ]
+    },
+    {
+     "z": 8,
+     "frac": [
+      0.5,
+      0.0,
+      0.5
+     ]
+    }
+   ],
+   "space_group_number": 221,
+   "point_group": "m-3m",
+   "laue_class": "m-3m",
+   "point_group_operations": 48,
+   "laue_group_order": 48,
+   "space_group_operations": 48
+  }
+ ]
+}

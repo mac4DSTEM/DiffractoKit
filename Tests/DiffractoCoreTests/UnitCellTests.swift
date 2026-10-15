@@ -120,7 +120,11 @@ struct UnitCellTests {
     @Test func testMetricFamilyOfEachConstructor() {
         #expect(UnitCell.cubic(a: 4).metricFamily() == .cubic)
         #expect(UnitCell.hexagonal(a: 3, c: 5).metricFamily() == .hexagonal)
-        #expect(UnitCell.tetragonal(a: 3, c: 5).metricFamily() == .tetragonal)
+        #expect(UnitCell.tetragonal(a: 3, c: 5).metricFamily() == .tetragonal(uniqueAxis: .c))
+        // The odd axis carries the 4-fold wherever it is (registration 0.0.4 section 6).
+        #expect(UnitCell.orthorhombic(a: 3, b: 5, c: 3).metricFamily() == .tetragonal(uniqueAxis: .b))
+        #expect(UnitCell.orthorhombic(a: 5, b: 3, c: 3).metricFamily() == .tetragonal(uniqueAxis: .a))
+        #expect(UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily() == .orthorhombic)
         #expect(UnitCell.rhombohedral(a: 4, alphaDeg: 70).metricFamily() == .rhombohedral)
         #expect(UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily() == .orthorhombic)
         #expect(UnitCell.monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3).metricFamily() == .monoclinic(uniqueAxis: .b))

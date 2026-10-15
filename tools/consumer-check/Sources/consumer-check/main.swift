@@ -24,7 +24,9 @@ report.section("UnitCell") { r in
     r.equal("gLength equals 1/d", cell.gLength(MillerIndex(2, 0, -1)) * cell.d(MillerIndex(2, 0, -1)) > 0.999999999999, true)
     r.equal("cubic constructor", UnitCell.cubic(a: 4).metricFamily(), .cubic)
     r.equal("hexagonal constructor", UnitCell.hexagonal(a: 3, c: 5).metricFamily(), .hexagonal)
-    r.equal("tetragonal constructor", UnitCell.tetragonal(a: 3, c: 5).metricFamily(), .tetragonal)
+    r.equal("tetragonal constructor", UnitCell.tetragonal(a: 3, c: 5).metricFamily(), .tetragonal(uniqueAxis: .c))
+    r.equal("tetragonal along b", UnitCell.orthorhombic(a: 3, b: 5, c: 3).metricFamily(), .tetragonal(uniqueAxis: .b))
+    r.equal("tetragonal along a", UnitCell.orthorhombic(a: 5, b: 3, c: 3).metricFamily(), .tetragonal(uniqueAxis: .a))
     r.equal("orthorhombic constructor", UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily(), .orthorhombic)
     r.equal("rhombohedral constructor", UnitCell.rhombohedral(a: 4, alphaDeg: 70).metricFamily(), .rhombohedral)
     r.equal("triclinic constructor", UnitCell.triclinic(a: 4, b: 5, c: 6, alphaDeg: 80, betaDeg: 85, gammaDeg: 95).metricFamily(), .triclinic)
@@ -197,12 +199,6 @@ report.section("DiffractoScattering (slice 2)") { r in
 }
 
 runGeometryChecks(&report)
-
-report.section("Placeholder modules") { r in
-    r.equal("DiffractoScattering states its scope", DiffractoScattering.plannedScope.isEmpty, false)
-    r.equal("DiffractoGeometry states its scope", DiffractoGeometry.plannedScope.isEmpty, false)
-    r.equal("DiffractoOrientation states its scope", DiffractoOrientation.plannedScope.isEmpty, false)
-}
 
 exit(report.finish())
 

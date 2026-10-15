@@ -95,6 +95,11 @@ public enum KinematicError: Error, Equatable, Sendable, CustomStringConvertible 
     }
 }
 
+/// `localizedDescription` (what an app shows) is the same text as `description` (registration 0.0.4 section 5).
+extension KinematicError: LocalizedError {
+    public var errorDescription: String? { description }
+}
+
 /// A reflection of slice 1's list with its structure factor.
 public struct KinematicReflection: Sendable, Equatable {
     public let reflection: Reflection
