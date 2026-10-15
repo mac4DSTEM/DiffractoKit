@@ -3,11 +3,14 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
-## Unreleased (0.3.0)
+## 0.3.0 (unreleased: the owner tags it)
 
-Vector-matched phase mapping and the value types of an orientation result, in `DiffractoOrientation`.
+One release for two steps (there is no separate 0.2.0 tag): the generality pass, where every policy is a parameter with the
+previous value as its documented default, the platform floor is lowered and the docs stand alone (the default path is bit
+identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the value types of an orientation result in
+`DiffractoOrientation`.
 
-### Added
+### Added: phase mapping and orientation results (`DiffractoOrientation`)
 - `PhaseReferenceLibrary` (`build(phases:settings:)`, `Failure`, `lowIndexZoneAxes` (49 directions), `inPlaneSteps`,
   `projectedVectors`, `rotate`, `reflections(of:kMaxInvAngstrom:)`, `unsupportedElements(of:)`), `PhaseDefinition`,
   `ReferenceVector`, `PhaseOrientationReference` (`chanceMatchFraction`), `LatticeVector`, `OrientationRelationship`,
@@ -18,31 +21,13 @@ Vector-matched phase mapping and the value types of an orientation result, in `D
   `PeakCoordinates` (detector pixels with the origin subtracted in `Float`, or calibrated Å⁻¹).
 - `EulerAngles` (Bunge z-x-z as SciPy, from and to py4DSTEM's orientation matrix), `ZoneAxisFrame` (`detectorBasis(zoneAxis:)`,
   `matrix(detectorBasis:inPlaneAngle:)`), `OrientationResult`.
-- Every setting is a parameter with a documented default (the values tuned on the suite's and Thronsen et al.'s data); scans
+- Every setting is a parameter with a documented default (the values tuned on measured SPED scans and on Thronsen et al.'s dataset); scans
   are `[[SIMD2<Double>]]`; progress and cancellation are closures; `map(maximumWorkers:)`.
 - Regression tests: py4DSTEM f050d207 (`generate_diffraction_pattern` at λ → 0: hkl sets, |q| within 1.1e-15, the in-plane
   frame rotation per zone axis, intensities within py4DSTEM's complex64 precision), SciPy 1.18.1 Euler angles on 1000 rotations
   and the gimbal cases, NumPy closed forms, and the original Swift implementation bit for bit (about 1.68 million values).
 
-### Fixed (against the implementation it was ported from)
-- A rotation about the beam whose R22 rounds to 1 − 2⁻⁵³ (with R20 = R21 = 0) was lost by the Euler decomposition (both
-  angles 0); it is folded into φ1.
-- An exact score tie between two phases was broken by the process's hash seed; it goes to the lower phase index.
-
-### Migration
-For code moving from the app implementation: `Crystal` becomes `CrystalStructure` (`PhaseDefinition.crystal`); a structure the
-kit refuses throws `PhaseReferenceLibrary.Failure.structureRefused`; `BraggVectors` becomes `scan:scanWidth:scanHeight:` with
-`PeakCoordinates` (pass each peak's `Float` x, y as `SIMD2<Double>`; the pixel form reproduces the old arithmetic bit for bit);
-the cancellation token becomes `progress:` / `isCancelled:` closures; `ACOMOrientation` is `ZoneAxisFrame`; `fitZoneAxis`
-throws; a scan whose position count is not width × height gives nil (or `[]`) from every entry point, and an out-of-range
-`matrixEntryIndex` makes `map` return nil. No other number moves.
-
-## 0.2.0
-
-The generality pass: every policy a parameter with the previous value as its documented default, the platform floor lowered,
-the docs standing alone. The default path is bit identical to 0.1.1 (31,725 outputs compared).
-
-### Added
+### Added: the generality pass
 - Policy types, each `Sendable, Equatable` with a defaulted memberwise `init` and `static let default`:
   `ReflectionList.Policy` (k_max cap 4 Å⁻¹, reflection and enumeration caps 1e7 and 1e8, the ring rule 1e-9, absence 1e-9),
   `CrystalStructure.ValidationPolicy` (close contact 0.5 Å, split-site occupancy 0.02), `SymmetryDetection.Policy`,
@@ -70,9 +55,13 @@ the docs standing alone. The default path is bit identical to 0.1.1 (31,725 outp
 - A cell sheared by hundreds of units was silently left unreduced (slice 1b's review); a non-converged reduction is flagged.
 - NaN, negative or infinite metric tolerances and Niggli epsilons are read as documented (0, or unreduced and unconverged).
 - `RingIndexing.reach` answers NaN where `index` refuses the margin.
+- Against the phase-mapping implementation it was ported from:
+  - A rotation about the beam whose R22 rounds to 1 − 2⁻⁵³ (with R20 = R21 = 0) was lost by the Euler decomposition (both
+    angles 0); it is folded into φ1.
+  - An exact score tie between two phases was broken by the process's hash seed; it goes to the lower phase index.
 
 ### Migration
-Nothing is required: every new parameter defaults to the previous value. Notes for a caller who sets policies:
+**Policies.** Nothing is required: every new parameter defaults to the previous value. Notes for a caller who sets policies:
 `EllipseCalibration.Policy(angularBinCount:)` derives the degeneracy and sparse bounds, while setting `angularBinCount` on
 `.default` keeps 30 and 12; through `RingCalibration.fitRing` the calibration policy's evidence replaces the ellipse policy's,
 and loosening coverage needs both `RingCalibration.Policy.minimumOccupiedAngularBins` and the ellipse policy's
@@ -80,6 +69,14 @@ and loosening coverage needs both `RingCalibration.Policy.minimumOccupiedAngular
 10 GB). Error texts quote the default bounds. A kinematic pattern cannot tell +c from −c on a polar structure: no consumer may
 claim a polarity from a kinematic match. The app-specific notes of earlier releases are in git history
 (`docs/consumers-0.0.3.md` to `docs/consumers-0.3.0.md`; they leave the repository at the next lean pass and stay in git history).
+
+**Phase mapping.** An app that carried its own vector matching deletes it when it adopts the kit's (mac4DSTEM:
+`PhaseVectorMatching.swift`, `PhaseReferenceLibrary.swift`, `EulerAngles` and `ACOMOrientation`, and their tests). For code moving from the app implementation: `Crystal` becomes `CrystalStructure` (`PhaseDefinition.crystal`); a structure the
+kit refuses throws `PhaseReferenceLibrary.Failure.structureRefused`; `BraggVectors` becomes `scan:scanWidth:scanHeight:` with
+`PeakCoordinates` (pass each peak's `Float` x, y as `SIMD2<Double>`; the pixel form reproduces the old arithmetic bit for bit);
+the cancellation token becomes `progress:` / `isCancelled:` closures; `ACOMOrientation` is `ZoneAxisFrame`; `fitZoneAxis`
+throws; a scan whose position count is not width × height gives nil (or `[]`) from every entry point, and an out-of-range
+`matrixEntryIndex` makes `map` return nil. No other number moves.
 
 ## 0.1.1
 
