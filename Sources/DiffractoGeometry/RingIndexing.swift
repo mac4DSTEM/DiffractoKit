@@ -47,12 +47,15 @@ public enum RingIndexing {
     /// k's default: a Gaussian coverage factor of 3 (99.73 % for a correct standard uncertainty).
     public static let defaultCoverage: Double = 3
 
-    /// The least margin an accepted family has over the next: ln 19.
+    /// The least margin an accepted family has over the next: ln 19, the default of every `minimumMargin:` parameter
+    /// below. A policy of the suite, derived from the Gaussian model (the next family at most 1/19 as likely), not
+    /// measured: a larger margin names fewer rings, 0 accepts a family whatever the next one's likelihood (the
+    /// ambiguity within kσ_q still refuses).
     public static let minimumMargin: Double = log(19.0)
 
-    /// The reach in units of σ_q, √(k² + 2 ln 19): 3.86 at k = 3.
-    public static func reach(coverage k: Double) -> Double {
-        (k * k + 2 * minimumMargin).squareRoot()
+    /// The reach in units of σ_q, √(k² + 2 ln 19): 3.86 at k = 3, with the margin that was asked for.
+    public static func reach(coverage k: Double, minimumMargin margin: Double = minimumMargin) -> Double {
+        (k * k + 2 * margin).squareRoot()
     }
 
     /// A family judged against one measurement.
@@ -142,22 +145,26 @@ public enum RingIndexing {
     /// The decision against a kinematic list, with the k_max it was built to (Gate B on slice 3a, F7: a free k_max larger
     /// than the list's turns the beyondKMax guard off; this overload cannot be given one).
     public static func index(q: Double, sigma: Double, in list: KinematicReflectionList,
-                             coverage k: Double = defaultCoverage) throws(Refusal) -> Assignment {
-        try index(q: q, sigma: sigma, in: list.families, kMax: list.kMax, coverage: k)
+                             coverage k: Double = defaultCoverage,
+                             minimumMargin margin: Double = minimumMargin) throws(Refusal) -> Assignment {
+        try index(q: q, sigma: sigma, in: list.families, kMax: list.kMax, coverage: k, minimumMargin: margin)
     }
 
     public static func index(q: Double, sigma: Double, in families: [KinematicFamily], kMax: Double,
-                             coverage k: Double = defaultCoverage) throws(Refusal) -> Assignment {
-        try index(q: q, sigma: sigma, in: families.map(\.family), kMax: kMax, coverage: k)
+                             coverage k: Double = defaultCoverage,
+                             minimumMargin margin: Double = minimumMargin) throws(Refusal) -> Assignment {
+        try index(q: q, sigma: sigma, in: families.map(\.family), kMax: kMax, coverage: k, minimumMargin: margin)
     }
 
     /// The same over slice 1's rings (any list of families).
     public static func index(q: Double, sigma: Double, in families: [ReflectionFamily], kMax: Double,
-                             coverage k: Double = defaultCoverage) throws(Refusal) -> Assignment {
+                             coverage k: Double = defaultCoverage,
+                             minimumMargin margin: Double = minimumMargin) throws(Refusal) -> Assignment {
         guard q.isFinite, q > 0 else { throw .invalidInput("|q| must be a positive number of Å⁻¹") }
         guard sigma.isFinite, sigma > 0 else { throw .invalidInput("σ_q must be a positive number of Å⁻¹") }
         guard k.isFinite, k > 0 else { throw .invalidInput("the coverage factor must be a positive number") }
         guard kMax.isFinite, kMax > 0 else { throw .invalidInput("k_max must be a positive number of Å⁻¹") }
+        guard margin.isFinite, margin >= 0 else { throw .invalidInput("the minimum margin must be a number of at least 0") }
 
         let candidates = families
             .map { Candidate(family: $0, z: abs(q - $0.g) / sigma, deviation: $0.g / q - 1) }
@@ -165,7 +172,7 @@ public enum RingIndexing {
         let within = candidates.prefix { $0.z <= k }
         if within.count >= 2 { throw .ambiguous(Array(within)) }
 
-        let r = reach(coverage: k) * sigma
+        let r = reach(coverage: k, minimumMargin: margin) * sigma
         guard let best = within.first else {
             let nearest = candidates.first
             let reachEnd = q + max(r, nearest.map { abs(q - $0.family.g) } ?? 0)
@@ -173,10 +180,10 @@ public enum RingIndexing {
             throw .noneWithinTolerance(nearest: nearest)
         }
         let next = candidates.count > 1 ? candidates[1] : nil
-        let margin = next.map { ($0.z * $0.z - best.z * best.z) / 2 }
-        if let next, let margin, margin < minimumMargin { throw .ambiguous([best, next]) }
+        let measured = next.map { ($0.z * $0.z - best.z * best.z) / 2 }
+        if let next, let ratio = measured, ratio < margin { throw .ambiguous([best, next]) }
         let reachEnd = q + max(r, abs(q - best.family.g), next.map { abs(q - $0.family.g) } ?? 0)
         if reachEnd > kMax { throw .beyondKMax(reach: reachEnd, kMax: kMax) }
-        return Assignment(q: q, sigma: sigma, coverage: k, best: best, next: next, margin: margin)
+        return Assignment(q: q, sigma: sigma, coverage: k, best: best, next: next, margin: measured)
     }
 }

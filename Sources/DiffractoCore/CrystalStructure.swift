@@ -122,19 +122,21 @@ public struct CrystalStructure: Sendable, Equatable {
         metricAngleToleranceDeg: Double = SymmetryDetection.defaultMetricAngleToleranceDeg,
         tolerance: SymmetryDetection.Tolerance = .default,
         conventional: Bool = true,
-        search: SymmetryDetection.Search = .cellList
+        search: SymmetryDetection.Search = .cellList,
+        policy: SymmetryDetection.Policy = .default
     ) -> CrystalStructure {
         if conventional {
             return detectingInConventionalCell(
                 cell: cell, sites: sites, fileOperations: fileOperations, spaceGroupNumber: spaceGroupNumber, name: name,
                 coarsestHalfStep: coarsestHalfStep, metricLengthTolerance: metricLengthTolerance,
-                metricAngleToleranceDeg: metricAngleToleranceDeg, tolerance: tolerance, search: search)
+                metricAngleToleranceDeg: metricAngleToleranceDeg, tolerance: tolerance, search: search,
+                policy: policy)
         }
         let detection = SymmetryDetection.detect(
             sites: sites, cell: cell, coarsestHalfStep: coarsestHalfStep,
             extraCandidates: fileOperations?.map(\.rotation) ?? [], preferredOperations: fileOperations ?? [],
             metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg,
-            tolerance: tolerance, search: search)
+            tolerance: tolerance, search: search, policy: policy)
         return CrystalStructure(cell: cell, sites: sites, detection: detection, fileOperations: fileOperations,
                                 spaceGroupNumber: spaceGroupNumber, name: name)
     }
@@ -185,7 +187,30 @@ public struct CrystalStructure: Sendable, Equatable {
     /// Below the shortest interatomic contact known in any crystal (H–H in solid hydrogen, 0.74 Å).
     public static let closeContactLimit = 0.5
 
-    public var validationIssues: [ValidationIssue] {
+    /// The thresholds of the structure checks (DiffractoKit 0.2.0): the suite's choices, with `ValidationPolicy.default`
+    /// the set every release before used.
+    public struct ValidationPolicy: Sendable, Equatable {
+        /// Two sites closer than this (Å) are a close contact. Default 0.5. A limit that is not a positive number
+        /// (NaN, zero, negative) finds no contact.
+        public var closeContactLimit: Double
+        /// Two sites whose occupancies sum to no more than 1 + this are a split site, never a contact. Default 0.02
+        /// (sum 1.02). A tolerance that is NaN or negative is taken as 0.
+        public var splitSiteOccupancyTolerance: Double
+
+        public init(closeContactLimit: Double = CrystalStructure.closeContactLimit,
+                    splitSiteOccupancyTolerance: Double = 0.02) {
+            self.closeContactLimit = closeContactLimit
+            self.splitSiteOccupancyTolerance = splitSiteOccupancyTolerance
+        }
+
+        /// The suite's values.
+        public static let `default` = ValidationPolicy()
+    }
+
+    public var validationIssues: [ValidationIssue] { validationIssues(using: .default) }
+
+    /// `validationIssues` under the thresholds of `policy`.
+    public func validationIssues(using policy: ValidationPolicy) -> [ValidationIssue] {
         var issues: [ValidationIssue] = []
         func add(_ code: String, _ message: String) { issues.append(.init(code: code, message: message)) }
         for issue in cell.issues {
@@ -211,7 +236,7 @@ public struct CrystalStructure: Sendable, Equatable {
         }
         // An over-populated cell is the one modelling error that produces no visible symptom: site multiplicity
         // multiplies straight into the structure factors. The message states what was measured and stops there.
-        if let closest = shortestCloseContact {
+        if let closest = shortestCloseContact(using: policy) {
             add("atomic_sites_too_close",
                 String(format: "Two fully-occupied atomic sites are %.4f Å apart — closer than any real interatomic "
                        + "distance, so the cell holds more atoms than the structure has.", closest))
@@ -221,10 +246,15 @@ public struct CrystalStructure: Sendable, Equatable {
 
     public var isUsable: Bool { validationIssues.isEmpty }
 
+    public func isUsable(under policy: ValidationPolicy) -> Bool { validationIssues(using: policy).isEmpty }
+
     /// Shortest centre-to-centre distance (Å) between two sites that cannot both be occupied by a whole atom, when
     /// under `closeContactLimit`; nil when there is no such pair. Pairs whose occupancies sum to ≤ 1.02 are a split
     /// site and are skipped (the reference implementations' rule). Minimum image over the 27 neighbouring cells behind a per-axis prefilter.
-    public var shortestCloseContact: Double? {
+    public var shortestCloseContact: Double? { shortestCloseContact(using: .default) }
+
+    /// `shortestCloseContact` under the limit and the split-site rule of `policy`.
+    public func shortestCloseContact(using policy: ValidationPolicy) -> Double? {
         guard sites.count > 1 else { return nil }
         let lattice = cell.realLattice
         guard lattice.allSatisfy({ $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }),
@@ -233,7 +263,10 @@ public struct CrystalStructure: Sendable, Equatable {
         let faceAreas = [
             cross(lattice[1], lattice[2]), cross(lattice[2], lattice[0]), cross(lattice[0], lattice[1]),
         ].map { length($0) }
-        let limit = CrystalStructure.closeContactLimit
+        let limit = policy.closeContactLimit.isFinite && policy.closeContactLimit > 0 ? policy.closeContactLimit : 0
+        guard limit > 0 else { return nil }
+        let splitBound = 1 + (policy.splitSiteOccupancyTolerance.isFinite && policy.splitSiteOccupancyTolerance >= 0
+                              ? policy.splitSiteOccupancyTolerance : 0)
         let maxAxisDelta = faceAreas.map { area -> Double in
             let height = area > 0 ? cell.volume / area : 0
             return height > 0 ? min(0.5, limit / height) : 0.5
@@ -241,7 +274,7 @@ public struct CrystalStructure: Sendable, Equatable {
         var best = Double.infinity
         for i in 0..<sites.count {
             for j in (i + 1)..<sites.count {
-                guard sites[i].occupancy + sites[j].occupancy > 1 + 0.02 else { continue }
+                guard sites[i].occupancy + sites[j].occupancy > splitBound else { continue }
                 let p = sites[i].fractional, q = sites[j].fractional
                 guard fractionalAxisDelta(p.x, q.x) <= maxAxisDelta[0],
                       fractionalAxisDelta(p.y, q.y) <= maxAxisDelta[1],
@@ -279,6 +312,12 @@ public struct CrystalStructure: Sendable, Equatable {
     /// lattice, so the lists of the file's cell and of its conventional cell may differ by such a reflection (Gate B on
     /// 4876b18).
     public func reflections(kMax: Double) throws(ReflectionListError) -> ReflectionList {
-        try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax)
+        try reflections(kMax: kMax, policy: .default)
+    }
+
+    /// The same under the refusal bounds and tolerances of `policy` (DiffractoKit 0.2.0).
+    public func reflections(kMax: Double, policy: ReflectionList.Policy) throws(ReflectionListError) -> ReflectionList {
+        try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax,
+                           policy: policy)
     }
 }

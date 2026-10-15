@@ -113,22 +113,25 @@ public struct RingCalibration: Sendable, Equatable {
             }
         }
 
-        /// One sentence, for the person reading the result.
-        public var reason: String {
+        /// One sentence, for the person reading the result, with the suite's default bounds.
+        public var reason: String { reason(policy: .default) }
+
+        /// The same sentence naming the bounds of `policy` (what a refusal decided under that policy read).
+        public func reason(policy: RingCalibration.Policy) -> String {
             switch self {
             case .modelNotAsymmetricGaussian:
                 return "The fit fell back to the conic, whose radius is biased high by about 1.75 (s/R)² and is not offered; only the asymmetric-Gaussian ring's peak is."
             case .insufficientAngularCoverage(let bins):
-                if bins < RingCalibration.minimumOccupiedAngularBins {
-                    return "The ring signal covers only \(bins) of \(RingCalibration.angularBinCount) azimuthal bins; at least \(RingCalibration.minimumOccupiedAngularBins) are needed."
+                if bins < policy.minimumOccupiedAngularBins {
+                    return "The ring signal covers only \(bins) of \(policy.angularBinCount) azimuthal bins; at least \(policy.minimumOccupiedAngularBins) are needed."
                 }
                 return "The fit was accepted only because the caller asserted one ring in a sparse annulus, which a calibration does not accept."
             case .sigmaAtAnnulusWidth(let sigma, let width):
                 return String(format: "A ring sigma of %.1f px is not less than the annulus width of %.1f px, so the ring is not resolved inside the annulus and its peak is not trusted.", sigma, width)
             case .excessiveResidual(let residual):
-                return String(format: "The fit residual is %.3f, above the %.2f cap, so the model does not describe this ring.", residual, RingCalibration.maximumResidual)
+                return String(format: "The fit residual is %.3f, above the %.2f cap, so the model does not describe this ring.", residual, policy.maximumResidual)
             case .excessiveEllipticity(let ellipticity):
-                return String(format: "The ring's a/b − 1 is %.3f, above %.3f, where the mean of the semi-axes and their geometric mean differ by 0.1 %%, so the radius would depend on the convention.", ellipticity, RingCalibration.maximumEllipticity)
+                return String(format: "The ring's a/b − 1 is %.3f, above %.3f, where the mean of the semi-axes and their geometric mean differ by 0.1 %%, so the radius would depend on the convention.", ellipticity, policy.maximumEllipticity)
             case .noHighTension:
                 return "No high tension is stated, so the wavelength and the camera length are not computed; Δq in Å⁻¹ per pixel is still given."
             case .braggLimit(let ratio):
@@ -139,9 +142,9 @@ public struct RingCalibration: Sendable, Equatable {
                 return String(format: "The fitted ring radius of %.1f px lies outside the annulus from %.1f to %.1f px, so the fit describes something other than the ring in the annulus.", radius, inner, outer)
             case .notARingPeak(let innerDrop, let outerDrop):
                 func percent(_ drop: Double?) -> String { drop.map { String(format: "%.0f %%", 100 * $0) } ?? "nothing" }
-                return "The intensity about the fitted ring falls by \(percent(innerDrop)) of the ring's amplitude inside it and by \(percent(outerDrop)) outside it; a ring falls by at least \(Int(100 * RingEvidence.minimumDrop)) % on both sides, so this is an edge or a slope, not a ring."
+                return "The intensity about the fitted ring falls by \(percent(innerDrop)) of the ring's amplitude inside it and by \(percent(outerDrop)) outside it; a ring falls by at least \(Int(100 * policy.evidence.minimumDrop)) % on both sides, so this is an edge or a slope, not a ring."
             case .ringGeometryInconsistent(let centre, let ellipse):
-                return String(format: "Read sector by sector, the ring lies %.2f px off the fitted centre and %.2f px off the fitted ellipse (the bound is %.2f px), so the fit follows where the intensity is rather than where the ring is.", centre, ellipse, RingEvidence.maximumShift)
+                return String(format: "Read sector by sector, the ring lies %.2f px off the fitted centre and %.2f px off the fitted ellipse (the bound is %.2f px), so the fit follows where the intensity is rather than where the ring is.", centre, ellipse, policy.evidence.maximumShift)
             case .secondRingInAnnulus(let height):
                 return String(format: "The annulus holds a second ring (a peak of %.0f %% of the fitted ring's amplitude beyond it), so the fit may sit on either ring or between them; narrow the annulus to one ring.", 100 * height)
             }
@@ -197,7 +200,48 @@ public struct RingCalibration: Sendable, Equatable {
         public var ellipticity: Double { max(semiAxisA, semiAxisB) / min(semiAxisA, semiAxisB) - 1 }
     }
 
-    // MARK: Registered bounds
+    // MARK: Registered bounds, now the fields of `Policy` (0.2.0)
+
+    /// The calibration's refusal bounds: the suite's choices, with `Policy.default` the set every release before 0.2.0
+    /// used. `refusals` and `fitRefusals` under an invalid policy return `[.invalidInput]` alone.
+    public struct Policy: Sendable, Equatable {
+        /// The azimuthal bins the fit divides the annulus into (the ring fit's `angularBinCount`; keep the two equal: a
+        /// report with more occupied bins than this is refused as invalid). Default 36.
+        public var angularBinCount: Int
+        /// The fewest of them that must hold ring signal (a gap above about 60 degrees at 30 of 36). Default 30.
+        public var minimumOccupiedAngularBins: Int
+        /// The profile fit's cap on the normalised residual. Default 0.22.
+        public var maximumResidual: Double
+        /// The largest a/b - 1. Default 0.093: past it (a + b)/2 and the geometric mean differ by more than 0.1 %.
+        public var maximumEllipticity: Double
+        /// The ring-evidence bounds (the sectors, the peak, the geometry, the second ring).
+        public var evidence: RingEvidence.Policy
+
+        public init(angularBinCount: Int = RingCalibration.angularBinCount,
+                    minimumOccupiedAngularBins: Int = RingCalibration.minimumOccupiedAngularBins,
+                    maximumResidual: Double = RingCalibration.maximumResidual,
+                    maximumEllipticity: Double = RingCalibration.maximumEllipticity,
+                    evidence: RingEvidence.Policy = .default) {
+            self.angularBinCount = angularBinCount
+            self.minimumOccupiedAngularBins = minimumOccupiedAngularBins
+            self.maximumResidual = maximumResidual
+            self.maximumEllipticity = maximumEllipticity
+            self.evidence = evidence
+        }
+
+        /// The suite's values.
+        public static let `default` = Policy()
+
+        /// A bin count of 6 to 3600, an occupied-bin bound within it, a positive finite residual cap, a non-negative
+        /// finite ellipticity, and a valid evidence policy.
+        public var isValid: Bool {
+            let bins: Bool = angularBinCount >= 6 && angularBinCount <= 3600
+                && minimumOccupiedAngularBins >= 0 && minimumOccupiedAngularBins <= angularBinCount
+            let numbers: Bool = maximumResidual.isFinite && maximumResidual > 0
+                && maximumEllipticity.isFinite && maximumEllipticity >= 0
+            return bins && numbers && evidence.isValid
+        }
+    }
 
     /// The azimuthal bins the fit divides the annulus into, and the fewest that must hold signal (a gap above about
     /// 60°). The same numbers as the ring fit's own (slice 3b holds them equal in a test).
@@ -306,21 +350,22 @@ public struct RingCalibration: Sendable, Equatable {
     /// when the report carries the annulus's radii and the ring evidence, DiffractoKit 0.1.0), high tension; empty when
     /// none applies. A number that is not finite (or a count out of range) returns `[.invalidInput]` alone: a NaN would
     /// otherwise pass every comparison. A caller withholds Δq when any refusal's `withholdsDeltaQ` is true.
-    public static func refusals(_ fit: FitReport, highTensionVolts: Double?) -> [Refusal] {
+    public static func refusals(_ fit: FitReport, highTensionVolts: Double?, policy: Policy = .default) -> [Refusal] {
         guard highTensionVolts.map({ $0.isFinite && $0 > 0 }) ?? true else {
             return [.invalidInput("a fit number is not finite and positive, or the bin count is out of range")]
         }
-        var refused = fitRefusals(fit)
+        var refused = fitRefusals(fit, policy: policy)
         if refused.first?.name == "invalidInput" { return refused }
         if highTensionVolts == nil { refused.append(.noHighTension) }
         return refused
     }
 
     /// The refusals that come from the fit alone (everything but `.noHighTension`), in `refusals`' order.
-    static func fitRefusals(_ fit: FitReport) -> [Refusal] {
+    static func fitRefusals(_ fit: FitReport, policy: Policy = .default) -> [Refusal] {
+        guard policy.isValid else { return [.invalidInput("the calibration policy has a field outside its domain")] }
         let sigmas = [fit.innerSigma, fit.outerSigma].compactMap { $0 }
         let valid = fit.semiAxisA.isFinite && fit.semiAxisA > 0 && fit.semiAxisB.isFinite && fit.semiAxisB > 0
-            && (0...angularBinCount).contains(fit.occupiedAngularBins)
+            && (0...policy.angularBinCount).contains(fit.occupiedAngularBins)
             && fit.normalizedResidual.isFinite && fit.normalizedResidual >= 0
             && sigmas.allSatisfy { $0.isFinite && $0 > 0 }
             && fit.annulusWidth.isFinite && fit.annulusWidth > 0
@@ -331,25 +376,25 @@ public struct RingCalibration: Sendable, Equatable {
         if fit.model != .asymmetricGaussian { refused.append(.modelNotAsymmetricGaussian) }
         // The coverage is the fit's pre-fit count and, with the evidence, the sectors that hold the ring at the fit
         // (DiffractoKit 0.1.0: noise in a gap makes pixels bright, not a ring at the fitted radius).
-        let evidenceBins = fit.ringEvidence?.occupiedBins ?? angularBinCount
-        if fit.occupiedAngularBins < minimumOccupiedAngularBins || fit.sparseCoverage
-            || evidenceBins < RingEvidence.minimumOccupiedBins {
+        let evidenceBins = fit.ringEvidence?.occupiedBins ?? policy.angularBinCount
+        if fit.occupiedAngularBins < policy.minimumOccupiedAngularBins || fit.sparseCoverage
+            || evidenceBins < policy.evidence.minimumOccupiedBins {
             refused.append(.insufficientAngularCoverage(occupiedBins: min(fit.occupiedAngularBins, evidenceBins)))
         }
         if let widest = sigmas.max(), widest >= fit.annulusWidth {
             refused.append(.sigmaAtAnnulusWidth(sigma: widest, annulusWidth: fit.annulusWidth))
         }
-        if fit.normalizedResidual > maximumResidual { refused.append(.excessiveResidual(fit.normalizedResidual)) }
-        if fit.ellipticity > maximumEllipticity { refused.append(.excessiveEllipticity(fit.ellipticity)) }
+        if fit.normalizedResidual > policy.maximumResidual { refused.append(.excessiveResidual(fit.normalizedResidual)) }
+        if fit.ellipticity > policy.maximumEllipticity { refused.append(.excessiveEllipticity(fit.ellipticity)) }
         if let inner = fit.annulusInnerRadius, let outer = fit.annulusOuterRadius,
            !(fit.radius > inner && fit.radius < outer) {
             refused.append(.ringOutsideAnnulus(radius: fit.radius, inner: inner, outer: outer))
         }
         if let evidence = fit.ringEvidence {
-            if !evidence.isPeak { refused.append(.notARingPeak(innerDrop: evidence.innerDrop, outerDrop: evidence.outerDrop)) }
-            if !evidence.isSingleRing, let height = evidence.secondaryPeak { refused.append(.secondRingInAnnulus(height: height)) }
+            if !evidence.isPeak(policy.evidence) { refused.append(.notARingPeak(innerDrop: evidence.innerDrop, outerDrop: evidence.outerDrop)) }
+            if !evidence.isSingleRing(policy.evidence), let height = evidence.secondaryPeak { refused.append(.secondRingInAnnulus(height: height)) }
             // Undefined shifts come with fewer than 6 sectors holding the ring, which the coverage refusal names.
-            if !evidence.geometryHolds, let centre = evidence.centreShift, let ellipse = evidence.ellipseShift {
+            if !evidence.geometryHolds(policy.evidence), let centre = evidence.centreShift, let ellipse = evidence.ellipseShift {
                 refused.append(.ringGeometryInconsistent(centreShift: centre, ellipseShift: ellipse))
             }
         }

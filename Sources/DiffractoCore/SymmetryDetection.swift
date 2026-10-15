@@ -36,6 +36,41 @@ public enum SymmetryDetection {
     /// The conventional grid of space-group translations: halves, thirds, quarters, sixths, eighths.
     public static let translationGrid = 1.0 / 24
 
+    /// The tolerances of the permutation test that are not the position and metric tolerances (those are the
+    /// `tolerance:`, `metricLengthTolerance:` and `metricAngleToleranceDeg:` parameters) (DiffractoKit 0.2.0): the
+    /// suite's choices, with `Policy.default` the set every release before used. A value that is NaN or negative is taken
+    /// as 0: no occupancy difference allowed, no grid snapping, no precision-limited report.
+    public struct Policy: Sendable, Equatable {
+        /// Occupancies of two sites that differ by more than this are different species. Default 0.02.
+        public var occupancyTolerance: Double
+        /// The grid of conventional space-group translations (halves, thirds, quarters, sixths, eighths). Default 1/24.
+        public var translationGrid: Double
+        /// A translation moves to the grid only when it lies within this many of its own uncertainties of a grid point.
+        /// Default 3.
+        public var gridSnapFactor: Double
+        /// A rotation that fails the position tolerance is reported as `unresolved` when it passes at this multiple of the
+        /// coordinates' written half-step (precision-limited). Default 10.
+        public var precisionLimitFactor: Double
+
+        public init(occupancyTolerance: Double = SymmetryDetection.occupancyTolerance,
+                    translationGrid: Double = SymmetryDetection.translationGrid,
+                    gridSnapFactor: Double = 3, precisionLimitFactor: Double = 10) {
+            self.occupancyTolerance = occupancyTolerance
+            self.translationGrid = translationGrid
+            self.gridSnapFactor = gridSnapFactor
+            self.precisionLimitFactor = precisionLimitFactor
+        }
+
+        /// The suite's values.
+        public static let `default` = Policy()
+
+        var effectiveOccupancyTolerance: Double { occupancyTolerance.isFinite && occupancyTolerance >= 0 ? occupancyTolerance : 0 }
+        var effectiveGridSnapFactor: Double { gridSnapFactor.isFinite && gridSnapFactor >= 0 ? gridSnapFactor : 0 }
+        var effectivePrecisionLimitFactor: Double {
+            precisionLimitFactor.isFinite && precisionLimitFactor >= 0 ? precisionLimitFactor : 0
+        }
+    }
+
     /// How two positions are called the same site (slice 1b). `.fractional(5e-3)` is slice 1's rule and the default:
     /// the Euclidean distance in fractional coordinates, whatever the cell's size. `.cartesian(Å)` is spglib's sense:
     /// the minimum-image distance in Å, so a pseudo-symmetry of 0.013 Å reads as symmetry in a 50 Å cell at the
@@ -85,7 +120,7 @@ public enum SymmetryDetection {
         extraCandidates: [IntegerMatrix] = [], preferredOperations: [SymmetryOperation] = [],
         metricLengthTolerance: Double = defaultMetricLengthTolerance,
         metricAngleToleranceDeg: Double = defaultMetricAngleToleranceDeg,
-        tolerance: Tolerance = .default, search: Search = .cellList
+        tolerance: Tolerance = .default, search: Search = .cellList, policy: Policy = .default
     ) -> Result {
         let family = cell.metricFamily(lengthTolerance: metricLengthTolerance, angleToleranceDeg: metricAngleToleranceDeg)
         let holohedry = PointSymmetry.holohedry(of: family)
@@ -98,18 +133,19 @@ public enum SymmetryDetection {
         var operations: [SymmetryOperation] = []
         var unresolved: [IntegerMatrix] = []
         var uncertainty = 1e-9
-        let resolutionLimited = 10 * coarsestHalfStep
+        let resolutionLimited = policy.effectivePrecisionLimitFactor * coarsestHalfStep
         let matcher = PositionMatcher(cell: cell, tolerance: tolerance)
         let index = search == .cellList ? SiteIndex(sites: sites, window: matcher.window) : nil
         for rotation in candidates.rotations {
             let found = symmetryTranslations(of: rotation, sites: sites, matcher: matcher, index: index,
                                              coarsestHalfStep: coarsestHalfStep,
-                                             preferred: preferredOperations.filter { $0.rotation == rotation })
+                                             preferred: preferredOperations.filter { $0.rotation == rotation },
+                                             policy: policy)
             if found.isEmpty {
                 if resolutionLimited > matcher.fractionalBound {
                     let loose = PositionMatcher(cell: cell, tolerance: .fractional(resolutionLimited))
                     if !symmetryTranslations(of: rotation, sites: sites, matcher: loose, index: nil,
-                                             coarsestHalfStep: coarsestHalfStep, preferred: []).isEmpty {
+                                             coarsestHalfStep: coarsestHalfStep, preferred: [], policy: policy).isEmpty {
                         unresolved.append(rotation)
                     }
                 }
@@ -160,14 +196,17 @@ public enum SymmetryDetection {
     /// onto every compatible site, which is exhaustive: if the operation is a symmetry then R x₀ + t lands on some site.
     static func symmetryTranslations(of rotation: IntegerMatrix, sites: [AtomSite], matcher: PositionMatcher,
                                      index: SiteIndex?, coarsestHalfStep: Double,
-                                     preferred: [SymmetryOperation]) -> [(SIMD3<Double>, Double)] {
+                                     preferred: [SymmetryOperation],
+                                     policy: Policy = .default) -> [(SIMD3<Double>, Double)] {
+        let occupancyBound = policy.effectiveOccupancyTolerance
         let reference = sites[0]
         let rotatedReference = rotation.apply(reference.fractional)
         var found: [(SIMD3<Double>, Double)] = []
         for candidate in sites where candidate.z == reference.z
-            && abs(candidate.occupancy - reference.occupancy) <= occupancyTolerance {
+            && abs(candidate.occupancy - reference.occupancy) <= occupancyBound {
             let trial = wrapFractional(candidate.fractional - rotatedReference)
-            guard let assignment = permutation(rotation, trial, of: sites, matcher: matcher, index: index)
+            guard let assignment = permutation(rotation, trial, of: sites, matcher: matcher, index: index,
+                                               occupancyTolerance: occupancyBound)
             else { continue }
             // Least squares: the translation that best maps every site onto its target is the trial plus the mean
             // of the matched residuals; the spread of the residuals is the fit's own uncertainty.
@@ -187,12 +226,13 @@ public enum SymmetryDetection {
             if let exact = preferred.first(where: { SymmetryDetection.translationsEqual($0.translation, refined, 3 * u + 1e-9) }) {
                 options.append((exact.translationMod1, 0))
             }
-            let grid = snapped(refined, within: 3 * u)
+            let grid = snapped(refined, within: policy.effectiveGridSnapFactor * u, grid: policy.translationGrid)
             if grid.onGrid { options.append((grid.value, 0)) }
             options.append((refined, u))
             options.append((trial, max(u, abs(mean).max())))
             guard let (t, tu) = options.first(where: {
-                permutation(rotation, $0.0, of: sites, matcher: matcher, index: index) != nil
+                permutation(rotation, $0.0, of: sites, matcher: matcher, index: index,
+                            occupancyTolerance: occupancyBound) != nil
             }) else { continue }
             guard !found.contains(where: { translationsEqual($0.0, t, max(1e-6, 2 * u)) }) else { continue }
             found.append((t, tu))
@@ -201,9 +241,11 @@ public enum SymmetryDetection {
     }
 
     /// Each component moved to the nearest multiple of 1/24 when ALL three are within `within` of it.
-    static func snapped(_ t: SIMD3<Double>, within: Double) -> (value: SIMD3<Double>, onGrid: Bool) {
-        let grid = SIMD3((t.x / translationGrid).rounded(), (t.y / translationGrid).rounded(),
-                         (t.z / translationGrid).rounded()) * translationGrid
+    static func snapped(_ t: SIMD3<Double>, within: Double,
+                        grid step: Double = translationGrid) -> (value: SIMD3<Double>, onGrid: Bool) {
+        guard step.isFinite, step > 0 else { return (t, false) }
+        let grid = SIMD3((t.x / step).rounded(), (t.y / step).rounded(),
+                         (t.z / step).rounded()) * step
         let onGrid = abs(t - grid).max() <= within
         return (onGrid ? wrapFractional(grid) : t, onGrid)
     }
@@ -217,8 +259,12 @@ public enum SymmetryDetection {
     /// finite-tolerance matching is not an equivalence relation, so two distinct sites can both land within tolerance
     /// of the same target (the reference implementations' split-atom gold is at best tetragonal).
     static func permutation(_ rotation: IntegerMatrix, _ translation: SIMD3<Double>, of sites: [AtomSite],
-                            matcher: PositionMatcher, index: SiteIndex?) -> [Int]? {
-        guard let index else { return permutationReference(rotation, translation, of: sites, matcher: matcher) }
+                            matcher: PositionMatcher, index: SiteIndex?,
+                            occupancyTolerance: Double = occupancyTolerance) -> [Int]? {
+        guard let index else {
+            return permutationReference(rotation, translation, of: sites, matcher: matcher,
+                                        occupancyTolerance: occupancyTolerance)
+        }
         var claimed = [Bool](repeating: false, count: sites.count)
         var assignment: [Int] = []
         assignment.reserveCapacity(sites.count)
@@ -240,7 +286,8 @@ public enum SymmetryDetection {
 
     /// Slice 1's scan of every site for every image (the CPU reference path of the cell list).
     static func permutationReference(_ rotation: IntegerMatrix, _ translation: SIMD3<Double>, of sites: [AtomSite],
-                                     matcher: PositionMatcher) -> [Int]? {
+                                     matcher: PositionMatcher,
+                                     occupancyTolerance: Double = occupancyTolerance) -> [Int]? {
         var claimed = Set<Int>()
         var assignment: [Int] = []
         assignment.reserveCapacity(sites.count)

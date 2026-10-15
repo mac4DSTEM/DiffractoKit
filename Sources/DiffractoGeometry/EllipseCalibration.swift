@@ -173,14 +173,14 @@ public enum EllipseCalibration {
     // A pattern without impulses and with a range of at least 0.5 runs the reference implementations' arithmetic unchanged (the parity gate).
 
     /// Twice the robust range of the annulus values; 0 (no impulse test) when that range is 0.
-    static func impulseThreshold(_ values: [Double]) -> Double {
+    static func impulseThreshold(_ values: [Double], factor: Double = 2) -> Double {
         guard values.count >= 2 else { return 0 }
         let sorted = values.sorted()
         func rank(_ p: Double) -> Double {
             sorted[min(sorted.count - 1, max(0, Int((p * Double(sorted.count)).rounded(.up)) - 1))]
         }
         let range = rank(0.995) - rank(0.005)
-        return range.isFinite && range > 0 ? 2 * range : 0
+        return range.isFinite && range > 0 ? factor * range : 0
     }
 
     /// Whether the pixel (row `qx`, column `qy`) lies outside its finite 8-neighbours' range by more than `threshold`.
@@ -206,8 +206,8 @@ public enum EllipseCalibration {
     }
 
     /// The relative signal test (registration-0.0.4 §1.2).
-    static func hasSignal(dynamicRange: Double, maximum: Double) -> Bool {
-        dynamicRange.isFinite && dynamicRange >= .leastNormalMagnitude && dynamicRange > abs(maximum) * 1e-6
+    static func hasSignal(dynamicRange: Double, maximum: Double, relative: Double = 1e-6) -> Bool {
+        dynamicRange.isFinite && dynamicRange >= .leastNormalMagnitude && dynamicRange > abs(maximum) * relative
     }
 
     /// Throws `CancellationError` when the task is cancelled or the caller's closure says so (registration-0.0.4 §4).
@@ -249,20 +249,23 @@ public enum EllipseCalibration {
         centerQY: Double,
         innerRadius: Double,
         outerRadius: Double,
-        maximumResidual: Double = 0.2,
+        maximumResidual: Double? = nil,
         acceptSparseCoverage: Bool = false,
+        policy: Policy = .default,
         progress: (@Sendable (Double) -> Void)? = nil,
         isCancelled: (@Sendable () -> Bool)? = nil
     ) throws -> EllipseCalibrationFit {
         try fit1D(pattern: pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
-                  outerRadius: outerRadius, maximumResidual: maximumResidual, acceptSparseCoverage: acceptSparseCoverage,
-                  span: ProgressSpan(report: progress, start: 0, end: 1), isCancelled: isCancelled)
+                  outerRadius: outerRadius, maximumResidual: maximumResidual ?? policy.maximumConicResidual,
+                  acceptSparseCoverage: acceptSparseCoverage,
+                  span: ProgressSpan(report: progress, start: 0, end: 1), isCancelled: isCancelled, policy: policy)
     }
 
     /// The annulus pixels (inner < r ≤ outer when `includeOuter`, else inner < r < outer) about the start centre, row
     /// order, finite and not an isolated impulse (registration-0.0.4 §1.1), with the impulse threshold used.
     static func annulusPixels(_ pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
-                              innerRadius: Double, outerRadius: Double, includeOuter: Bool)
+                              innerRadius: Double, outerRadius: Double, includeOuter: Bool,
+                              impulseFactor: Double = 2)
         -> (pixels: [(qx: Int, qy: Int, value: Double)], threshold: Double) {
         var found: [(qx: Int, qy: Int, value: Double)] = []
         for qx in 0..<pattern.height {
@@ -276,15 +279,17 @@ public enum EllipseCalibration {
                 found.append((qx, qy, value))
             }
         }
-        let threshold = impulseThreshold(found.map(\.value))
+        let threshold = impulseThreshold(found.map(\.value), factor: impulseFactor)
         guard threshold > 0 else { return (found, threshold) }
         return (found.filter { !isImpulse(pattern, qx: $0.qx, qy: $0.qy, value: $0.value, threshold: threshold) }, threshold)
     }
 
     static func fit1D(
         pattern: DiffractionPattern, centerQX: Double, centerQY: Double, innerRadius: Double, outerRadius: Double,
-        maximumResidual: Double, acceptSparseCoverage: Bool, span: ProgressSpan, isCancelled: (@Sendable () -> Bool)?
+        maximumResidual: Double, acceptSparseCoverage: Bool, span: ProgressSpan, isCancelled: (@Sendable () -> Bool)?,
+        policy: Policy = .default
     ) throws -> EllipseCalibrationFit {
+        guard policy.isValid else { throw FitError.invalidInput(invalidPolicyDetail) }
         guard pattern.height > 2, pattern.width > 2,
               patternSizeIsConsistent(pattern),
               centerQX.isFinite, centerQY.isFinite,
@@ -303,16 +308,17 @@ public enum EllipseCalibration {
         var minimum = Double.greatestFiniteMagnitude
         var maximum = -Double.greatestFiniteMagnitude
         for pixel in annulusPixels(pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
-                                   outerRadius: outerRadius, includeOuter: true).pixels {
+                                   outerRadius: outerRadius, includeOuter: true,
+                                   impulseFactor: policy.impulseRangeFactor).pixels {
             samples.append(Sample(x: Double(pixel.qx), y: Double(pixel.qy), value: pixel.value))
             minimum = min(minimum, pixel.value)
             maximum = max(maximum, pixel.value)
         }
-        guard samples.count >= 20 else {
+        guard samples.count >= policy.minimumConicSamples else {
             throw FitError.invalidInput("the fitting annulus contains too few pixels")
         }
         var dynamicRange = maximum - minimum
-        guard hasSignal(dynamicRange: dynamicRange, maximum: maximum) else {
+        guard hasSignal(dynamicRange: dynamicRange, maximum: maximum, relative: policy.minimumRelativeSignal) else {
             throw FitError.insufficientSignal
         }
         // A range below 0.5 is brought into [0.5, 1) by an exact power of two (registration-0.0.4 §1.2): the conic's
@@ -372,8 +378,8 @@ public enum EllipseCalibration {
         // radii in one annulus — by the per-azimuthal-bin radius check below
         // the fit. Full coverage (>= five sixths of the bins) makes the flag
         // and that check inert: the default path is unchanged either way.
-        let angularBinCount = EllipseCalibration.angularBinCount
-        let strongThreshold = minimum + 0.2 * dynamicRange
+        let angularBinCount = policy.angularBinCount
+        let strongThreshold = minimum + policy.strongSignalFraction * dynamicRange
         var occupied = [Bool](repeating: false, count: angularBinCount)
         for sample in samples where sample.value >= strongThreshold {
             var angle = atan2(sample.y - centerQY, sample.x - centerQX)
@@ -382,11 +388,11 @@ public enum EllipseCalibration {
             occupied[index] = true
         }
         let occupiedCount = occupied.filter { $0 }.count
-        let degeneracyBound = EllipseCalibration.degeneracyBoundBins
+        let degeneracyBound = policy.degeneracyBoundBins
         let sparseCoverage: Bool
         if acceptSparseCoverage {
             // Pre-2026-09-14 rule, restored ONLY for the anyway path.
-            guard occupiedCount >= EllipseCalibration.sparseFloorBins else {
+            guard occupiedCount >= policy.sparseFloorBins else {
                 throw FitError.insufficientAngularCoverage(occupiedCount)
             }
             sparseCoverage = occupiedCount < degeneracyBound
@@ -491,7 +497,7 @@ public enum EllipseCalibration {
         else { throw FitError.invalidEllipse }
         let centerDistance = hypot(parameters[0] - centerQX, parameters[1] - centerQY)
         guard centerDistance <= max(outerRadius - innerRadius, 2),
-              ellipse.b / ellipse.a >= 0.2,
+              ellipse.b / ellipse.a >= 1 / policy.maximumAxisRatio,
               ellipse.a <= outerRadius * 1.5,
               ellipse.b >= max(1, innerRadius * 0.25) else {
             throw FitError.invalidEllipse
@@ -534,7 +540,7 @@ public enum EllipseCalibration {
                 minMeanRadius = min(minMeanRadius, meanRadius)
                 maxMeanRadius = max(maxMeanRadius, meanRadius)
             }
-            if minMeanRadius > 0, maxMeanRadius / minMeanRadius > 1.10 {
+            if minMeanRadius > 0, maxMeanRadius / minMeanRadius > policy.oneRingRatio {
                 throw FitError.moreThanOneRing(minRadius: minMeanRadius, maxRadius: maxMeanRadius)
             }
         }
@@ -559,24 +565,27 @@ public enum EllipseCalibration {
         centerQY: Double,
         innerRadius: Double,
         outerRadius: Double,
-        maximumConicResidual: Double = 0.2,
-        maximumProfileResidual: Double = 0.22,
+        maximumConicResidual: Double? = nil,
+        maximumProfileResidual: Double? = nil,
         acceptSparseCoverage: Bool = false,
         requireRingEvidence: Bool = false,
+        policy: Policy = .default,
         progress: (@Sendable (Double) -> Void)? = nil,
         isCancelled: (@Sendable () -> Bool)? = nil
     ) throws -> EllipseCalibrationFit {
         let span = ProgressSpan(report: progress, start: 0, end: 1)
         let fit = try fitBestAvailable(
             pattern: pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
-            outerRadius: outerRadius, maximumConicResidual: maximumConicResidual,
-            maximumProfileResidual: maximumProfileResidual, acceptSparseCoverage: acceptSparseCoverage,
-            requireRingEvidence: requireRingEvidence, span: span.sub(0, 0.97), isCancelled: isCancelled)
+            outerRadius: outerRadius, maximumConicResidual: maximumConicResidual ?? policy.maximumConicResidual,
+            maximumProfileResidual: maximumProfileResidual ?? policy.maximumProfileResidual,
+            acceptSparseCoverage: acceptSparseCoverage,
+            requireRingEvidence: requireRingEvidence, span: span.sub(0, 0.97), isCancelled: isCancelled, policy: policy)
         guard requireRingEvidence else { span(1); return fit }
         // DiffractoKit 0.1.0 (registration-0.0.4 §1.4): what the data say about the ring at the fit that is returned.
         try checkCancellation(isCancelled)
         let evidence = ringEvidence(pattern: pattern, fit: fit, centerQX: centerQX, centerQY: centerQY,
-                                    innerRadius: innerRadius, outerRadius: outerRadius)
+                                    innerRadius: innerRadius, outerRadius: outerRadius, policy: policy.evidence,
+                                    impulseRangeFactor: policy.impulseRangeFactor)
         span(1)
         return attaching(evidence, to: fit)
     }
@@ -584,7 +593,8 @@ public enum EllipseCalibration {
     static func fitBestAvailable(
         pattern: DiffractionPattern, centerQX: Double, centerQY: Double, innerRadius: Double, outerRadius: Double,
         maximumConicResidual: Double, maximumProfileResidual: Double, acceptSparseCoverage: Bool,
-        requireRingEvidence: Bool, span: ProgressSpan, isCancelled: (@Sendable () -> Bool)?
+        requireRingEvidence: Bool, span: ProgressSpan, isCancelled: (@Sendable () -> Bool)?,
+        policy: Policy = .default
     ) throws -> EllipseCalibrationFit {
         // A broad/asymmetric ring can legitimately exceed the strict conic
         // publication residual while still providing a useful profile seed.
@@ -592,9 +602,9 @@ public enum EllipseCalibration {
             pattern: pattern,
             centerQX: centerQX, centerQY: centerQY,
             innerRadius: innerRadius, outerRadius: outerRadius,
-            maximumResidual: max(0.4, maximumConicResidual),
+            maximumResidual: max(policy.profileSeedResidual, maximumConicResidual),
             acceptSparseCoverage: acceptSparseCoverage,
-            span: span.sub(0, 0.1), isCancelled: isCancelled
+            span: span.sub(0, 0.1), isCancelled: isCancelled, policy: policy
         )
         do {
             return try fitAmorphousRing(
@@ -602,7 +612,8 @@ public enum EllipseCalibration {
                 centerQX: centerQX, centerQY: centerQY,
                 innerRadius: innerRadius, outerRadius: outerRadius,
                 maximumResidual: maximumProfileResidual,
-                requireRingEvidence: requireRingEvidence, span: span.sub(0.1, 1), isCancelled: isCancelled
+                requireRingEvidence: requireRingEvidence, span: span.sub(0.1, 1), isCancelled: isCancelled,
+                policy: policy
             )
         } catch {
             if error is CancellationError { throw error }
@@ -633,22 +644,26 @@ public enum EllipseCalibration {
         centerQY: Double,
         innerRadius: Double,
         outerRadius: Double,
-        maximumResidual: Double = 0.22,
+        maximumResidual: Double? = nil,
         requireRingEvidence: Bool = false,
+        policy: Policy = .default,
         progress: (@Sendable (Double) -> Void)? = nil,
         isCancelled: (@Sendable () -> Bool)? = nil
     ) throws -> EllipseCalibrationFit {
         try fitAmorphousRing(pattern: pattern, initial: initial, centerQX: centerQX, centerQY: centerQY,
-                             innerRadius: innerRadius, outerRadius: outerRadius, maximumResidual: maximumResidual,
+                             innerRadius: innerRadius, outerRadius: outerRadius,
+                             maximumResidual: maximumResidual ?? policy.maximumProfileResidual,
                              requireRingEvidence: requireRingEvidence,
-                             span: ProgressSpan(report: progress, start: 0, end: 1), isCancelled: isCancelled)
+                             span: ProgressSpan(report: progress, start: 0, end: 1), isCancelled: isCancelled,
+                             policy: policy)
     }
 
     static func fitAmorphousRing(
         pattern: DiffractionPattern, initial: EllipseCalibrationFit, centerQX: Double, centerQY: Double,
         innerRadius: Double, outerRadius: Double, maximumResidual: Double, requireRingEvidence: Bool,
-        span: ProgressSpan, isCancelled: (@Sendable () -> Bool)?
+        span: ProgressSpan, isCancelled: (@Sendable () -> Bool)?, policy: Policy = .default
     ) throws -> EllipseCalibrationFit {
+        guard policy.isValid else { throw FitError.invalidInput(invalidPolicyDetail) }
         struct Sample {
             let x: Double
             let y: Double
@@ -666,7 +681,8 @@ public enum EllipseCalibration {
         var maximum = -Double.greatestFiniteMagnitude
         var globalMaximum = maximum
         let annulus = annulusPixels(pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
-                                    outerRadius: outerRadius, includeOuter: false)
+                                    outerRadius: outerRadius, includeOuter: false,
+                                    impulseFactor: policy.impulseRangeFactor)
         // The global maximum skips isolated impulses too (registration-0.0.4 §1.1); a pixel is tested only when it would
         // raise the maximum, so a pattern without impulses gives the reference implementations' maximum.
         for (index, value) in pattern.pixels.enumerated() where value.isFinite {
@@ -681,7 +697,8 @@ public enum EllipseCalibration {
             maximum = max(maximum, pixel.value)
         }
         var dynamicRange = maximum - minimum
-        guard samples.count >= 32, hasSignal(dynamicRange: dynamicRange, maximum: maximum) else {
+        guard samples.count >= policy.minimumProfileSamples,
+              hasSignal(dynamicRange: dynamicRange, maximum: maximum, relative: policy.minimumRelativeSignal) else {
             throw FitError.insufficientSignal
         }
         // Registration-0.0.4 §1.2: a range below 0.5 runs normalised by an exact power of two; I0, I1 and the background are
@@ -728,7 +745,7 @@ public enum EllipseCalibration {
         ]
 
         // The ring sigmas' floor: 0.25 px, the reference implementations' bound; lowered to 0.01 px only for the one-sided refit below.
-        var ringSigmaFloor = 0.25
+        var ringSigmaFloor = policy.ringWidthFloor
         func bounded(_ input: [Double]) -> [Double] {
             var p = input
             p[0] = min(intensityLimit, max(0, p[0]))
@@ -866,9 +883,9 @@ public enum EllipseCalibration {
             let centerResidual = median(firstResiduals) ?? 0
             let mad = median(firstResiduals.map { abs($0 - centerResidual) }) ?? 0
             if mad > 0 {
-                let threshold = 4 * 1.4826 * mad
+                let threshold = policy.robustCutMultiplier * mad
                 let inliers = allIndices.filter { abs(firstResiduals[$0] - centerResidual) <= threshold }
-                if inliers.count * 10 >= samples.count * 7, inliers.count < samples.count {
+                if inliers.count * 100 >= samples.count * policy.minimumInlierPercent, inliers.count < samples.count {
                     parameters = try optimize(parameters, indices: inliers, progress: progress.sub(0.5, 0.85))
                 }
             }
@@ -883,7 +900,7 @@ public enum EllipseCalibration {
                 throw FitError.excessiveResidual(residual)
             }
             guard hypot(parameters[6] - centerQX, parameters[7] - centerQY) <= centerLimit,
-                  parameters[8] / parameters[9] <= 5 else {
+                  parameters[8] / parameters[9] <= policy.maximumAxisRatio else {
                 throw FitError.invalidEllipse
             }
             // A ring sigma within 0.05 px of its 0.25 px floor is a fit that drained the ring into
@@ -892,7 +909,8 @@ public enum EllipseCalibration {
             // DiffractoKit 0.1.0 (registration-0.0.4 §1.5, slice 3b's F7): with `requireRingEvidence`, ONE sigma at the
             // floor is a sharp edge when the data hold the ring at this fit (its ring evidence passes); both at the
             // floor is still refused.
-            let atFloor = [parameters[3], parameters[4]].filter { $0 <= 0.25 + 0.05 }.count
+            let floorBound = policy.ringWidthFloor + policy.ringWidthFloorTolerance
+            let atFloor = [parameters[3], parameters[4]].filter { $0 <= floorBound }.count
             if atFloor == 2 || (atFloor == 1 && !requireRingEvidence) {
                 throw FitError.ringWidthAtFloor
             }
@@ -907,22 +925,27 @@ public enum EllipseCalibration {
             var parameters = refined, residual = refinedResidual
             if oneSidedFloor {
                 guard ringEvidence(pattern: pattern, fit: fitFrom(parameters, residual), centerQX: centerQX,
-                                   centerQY: centerQY, innerRadius: innerRadius, outerRadius: outerRadius).passes else {
+                                   centerQY: centerQY, innerRadius: innerRadius, outerRadius: outerRadius,
+                                   policy: policy.evidence,
+                                   impulseRangeFactor: policy.impulseRangeFactor).passes(policy.evidence) else {
                     throw FitError.ringWidthAtFloor
                 }
-                ringSigmaFloor = 0.01
-                defer { ringSigmaFloor = 0.25 }
+                ringSigmaFloor = policy.loweredRingWidthFloor
+                defer { ringSigmaFloor = policy.ringWidthFloor }
                 let lowered = try optimize(parameters, indices: allIndices, progress: progress.sub(0.85, 1))
                 let prediction = predictions(lowered, indices: allIndices)
                 let cost = zip(prediction, samples).reduce(0.0) { $0 + ($1.0 - $1.1.value) * ($1.0 - $1.1.value) }
                 let loweredResidual = sqrt(cost / Double(samples.count)) / dynamicRange
                 if loweredResidual.isFinite, loweredResidual <= residual,
-                   hypot(lowered[6] - centerQX, lowered[7] - centerQY) <= centerLimit, lowered[8] / lowered[9] <= 5 {
+                   hypot(lowered[6] - centerQX, lowered[7] - centerQY) <= centerLimit,
+                   lowered[8] / lowered[9] <= policy.maximumAxisRatio {
                     parameters = lowered
                     residual = loweredResidual
                 }
                 guard ringEvidence(pattern: pattern, fit: fitFrom(parameters, residual), centerQX: centerQX,
-                                   centerQY: centerQY, innerRadius: innerRadius, outerRadius: outerRadius).passes else {
+                                   centerQY: centerQY, innerRadius: innerRadius, outerRadius: outerRadius,
+                                   policy: policy.evidence,
+                                   impulseRangeFactor: policy.impulseRangeFactor).passes(policy.evidence) else {
                     throw FitError.ringWidthAtFloor
                 }
             }

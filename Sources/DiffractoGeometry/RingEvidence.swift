@@ -74,8 +74,66 @@ public struct RingEvidence: Sendable, Equatable {
         self.ellipseShiftError = ellipseShiftError
     }
 
-    // MARK: Registered bounds (registration-0.0.4 §1.3)
+    // MARK: Registered bounds (registration-0.0.4 §1.3), now the fields of `Policy` (0.2.0)
 
+    /// The bounds the ring evidence is measured and judged by (registration-0.0.4 §1.3): the suite's choices, with
+    /// `Policy.default` the set every release before 0.2.0 used. An invalid policy (`isValid` false) gives empty evidence
+    /// from `EllipseCalibration.ringEvidence` and `false` from every judgement below.
+    public struct Policy: Sendable, Equatable {
+        /// The fewest pixels a sector needs to be read. Default 8.
+        public var minimumSectorPixels: Int
+        /// A sector holds the ring when its amplitude is at least this fraction of the median sector amplitude. Default 0.5.
+        public var minimumAmplitudeFraction: Double
+        /// ... and at least this many standard errors. Default 3.
+        public var minimumSignificance: Double
+        /// The fewest sectors (of 36) that must hold the ring. Default 30, the same bound as the coverage rule.
+        public var minimumOccupiedBins: Int
+        /// The ring is a peak when the profile falls by at least this fraction of the amplitude on both sides. Default 0.25.
+        public var minimumDrop: Double
+        /// The centre and ellipse shifts fail beyond this many pixels ... Default 0.25.
+        public var maximumShift: Double
+        /// ... and this many standard errors. Default 4.
+        public var shiftSignificance: Double
+        /// A second peak of this height or more (a fraction of the amplitude) is another ring in the annulus. Default 0.25.
+        public var maximumSecondaryPeak: Double
+
+        public init(minimumSectorPixels: Int = RingEvidence.minimumSectorPixels,
+                    minimumAmplitudeFraction: Double = RingEvidence.minimumAmplitudeFraction,
+                    minimumSignificance: Double = RingEvidence.minimumSignificance,
+                    minimumOccupiedBins: Int = RingEvidence.minimumOccupiedBins,
+                    minimumDrop: Double = RingEvidence.minimumDrop,
+                    maximumShift: Double = RingEvidence.maximumShift,
+                    shiftSignificance: Double = RingEvidence.shiftSignificance,
+                    maximumSecondaryPeak: Double = RingEvidence.maximumSecondaryPeak) {
+            self.minimumSectorPixels = minimumSectorPixels
+            self.minimumAmplitudeFraction = minimumAmplitudeFraction
+            self.minimumSignificance = minimumSignificance
+            self.minimumOccupiedBins = minimumOccupiedBins
+            self.minimumDrop = minimumDrop
+            self.maximumShift = maximumShift
+            self.shiftSignificance = shiftSignificance
+            self.maximumSecondaryPeak = maximumSecondaryPeak
+        }
+
+        /// The suite's values.
+        public static let `default` = Policy()
+
+        /// At least 5 pixels per sector (the local fit has four parameters and needs one more), 0 to 36 occupied
+        /// sectors, non-negative finite fractions, shifts and significances.
+        public var isValid: Bool {
+            let counts: Bool = minimumSectorPixels >= 5 && minimumOccupiedBins >= 0
+                && minimumOccupiedBins <= RingEvidence.sectorCount
+            let fractions: Bool = minimumAmplitudeFraction.isFinite && minimumAmplitudeFraction >= 0
+                && minimumDrop.isFinite && minimumDrop >= 0
+                && maximumSecondaryPeak.isFinite && maximumSecondaryPeak >= 0
+            let shifts: Bool = maximumShift.isFinite && maximumShift >= 0
+                && shiftSignificance.isFinite && shiftSignificance >= 0
+                && minimumSignificance.isFinite && minimumSignificance >= 0
+            return counts && fractions && shifts
+        }
+    }
+
+    // The suite's values, which `Policy.default` takes (and which stay public as the documented defaults).
     public static let sectorCount = 36
     public static let minimumSectorPixels = 8
     public static let minimumAmplitudeFraction = 0.5
@@ -89,25 +147,38 @@ public struct RingEvidence: Sendable, Equatable {
     public static let maximumSecondaryPeak = 0.25
 
     /// Both drops at least `minimumDrop`.
-    public var isPeak: Bool {
-        guard let innerDrop, let outerDrop else { return false }
-        return innerDrop >= Self.minimumDrop && outerDrop >= Self.minimumDrop
+    public var isPeak: Bool { isPeak(.default) }
+
+    /// Both drops at least the policy's `minimumDrop`.
+    public func isPeak(_ policy: Policy) -> Bool {
+        guard policy.isValid, let innerDrop, let outerDrop else { return false }
+        return innerDrop >= policy.minimumDrop && outerDrop >= policy.minimumDrop
     }
 
     /// Neither shift beyond `maximumShift` and `shiftSignificance` standard errors; false when the shifts are undefined.
-    public var geometryHolds: Bool {
-        guard let centreShift, let centreShiftError, let ellipseShift, let ellipseShiftError else { return false }
+    public var geometryHolds: Bool { geometryHolds(.default) }
+
+    public func geometryHolds(_ policy: Policy) -> Bool {
+        guard policy.isValid, let centreShift, let centreShiftError, let ellipseShift, let ellipseShiftError else { return false }
         func exceeds(_ shift: Double, _ error: Double) -> Bool {
-            shift > Self.maximumShift && shift > Self.shiftSignificance * error
+            shift > policy.maximumShift && shift > policy.shiftSignificance * error
         }
         return !exceeds(centreShift, centreShiftError) && !exceeds(ellipseShift, ellipseShiftError)
     }
 
     /// No second peak of `maximumSecondaryPeak` or more in the annulus.
-    public var isSingleRing: Bool { (secondaryPeak ?? 0) < Self.maximumSecondaryPeak }
+    public var isSingleRing: Bool { isSingleRing(.default) }
+
+    public func isSingleRing(_ policy: Policy) -> Bool {
+        policy.isValid && (secondaryPeak ?? 0) < policy.maximumSecondaryPeak
+    }
 
     /// What a calibration requires: 30 sectors holding the ring, a peak, one ring in the annulus, and the geometry.
-    public var passes: Bool { occupiedBins >= Self.minimumOccupiedBins && isPeak && isSingleRing && geometryHolds }
+    public var passes: Bool { passes(.default) }
+
+    public func passes(_ policy: Policy) -> Bool {
+        occupiedBins >= policy.minimumOccupiedBins && isPeak(policy) && isSingleRing(policy) && geometryHolds(policy)
+    }
 }
 
 extension EllipseCalibration {
@@ -116,7 +187,9 @@ extension EllipseCalibration {
     /// (row `centerQX`, column `centerQY`) the fit was given. A measurement: it never throws and never changes the fit.
     public static func ringEvidence(pattern: DiffractionPattern, fit: EllipseCalibrationFit,
                                     centerQX: Double, centerQY: Double,
-                                    innerRadius: Double, outerRadius: Double) -> RingEvidence {
+                                    innerRadius: Double, outerRadius: Double,
+                                    policy: RingEvidence.Policy = .default,
+                                    impulseRangeFactor: Double = 2) -> RingEvidence {
         let sectors = RingEvidence.sectorCount
         let empty = RingEvidence(amplitude: 0, sectorAmplitudes: Array(repeating: nil, count: sectors),
                                  sectorAmplitudeErrors: Array(repeating: nil, count: sectors),
@@ -124,13 +197,15 @@ extension EllipseCalibration {
                                  innerDrop: nil, outerDrop: nil, radiusShift: nil, centreShift: nil,
                                  centreShiftError: nil, ellipseShift: nil, ellipseShiftError: nil)
         let a = fit.a, b = fit.b
+        guard policy.isValid, impulseRangeFactor.isFinite, impulseRangeFactor >= 0 else { return empty }
         guard patternSizeIsConsistent(pattern), pattern.width > 2, pattern.height > 2,
               a.isFinite, b.isFinite, a > 0, b > 0, fit.theta.isFinite, fit.centerQX.isFinite, fit.centerQY.isFinite,
               centerQX.isFinite, centerQY.isFinite, innerRadius >= 0, outerRadius > innerRadius,
               outerRadiusIsSane(outerRadius, pattern) else { return empty }
 
         let annulus = annulusPixels(pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
-                                    outerRadius: outerRadius, includeOuter: true).pixels
+                                    outerRadius: outerRadius, includeOuter: true,
+                                    impulseFactor: impulseRangeFactor).pixels
         guard !annulus.isEmpty else { return empty }
 
         // The ring's widths: the profile's sigmas, or for a conic the seed's half-maximum sigma.
@@ -189,7 +264,7 @@ extension EllipseCalibration {
         var shiftErrors = [Double?](repeating: nil, count: sectors)
         for sector in 0..<sectors {
             let rows = bySector[sector]
-            guard rows.count >= RingEvidence.minimumSectorPixels else { continue }
+            guard rows.count >= policy.minimumSectorPixels else { continue }
             let design = rows.map { row -> [Double] in
                 let s = shape(row.offset)
                 return [s.g, s.slope, 1, row.offset]
@@ -221,8 +296,8 @@ extension EllipseCalibration {
         var occupied = [Bool](repeating: false, count: sectors)
         for sector in 0..<sectors {
             guard let alpha = alphas[sector], let error = alphaErrors[sector] else { continue }
-            occupied[sector] = alpha >= RingEvidence.minimumAmplitudeFraction * amplitude
-                && alpha >= RingEvidence.minimumSignificance * error
+            occupied[sector] = alpha >= policy.minimumAmplitudeFraction * amplitude
+                && alpha >= policy.minimumSignificance * error
         }
         let occupiedBins = occupied.filter { $0 }.count
 

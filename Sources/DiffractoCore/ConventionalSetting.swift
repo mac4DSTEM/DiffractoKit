@@ -89,7 +89,8 @@ extension CrystalStructure {
     static func detectingInConventionalCell(
         cell: UnitCell, sites: [AtomSite], fileOperations: [SymmetryOperation]?, spaceGroupNumber: Int?, name: String?,
         coarsestHalfStep: Double, metricLengthTolerance: Double, metricAngleToleranceDeg: Double,
-        tolerance: SymmetryDetection.Tolerance, search: SymmetryDetection.Search
+        tolerance: SymmetryDetection.Tolerance, search: SymmetryDetection.Search,
+        policy: SymmetryDetection.Policy = .default
     ) -> CrystalStructure {
         let conventional = cell.conventionalCell(tolerance: metricLengthTolerance)
         let p = conventional.transformation
@@ -99,7 +100,7 @@ extension CrystalStructure {
                 sites: sites, cell: cell, coarsestHalfStep: coarsestHalfStep,
                 extraCandidates: fileOperations?.map(\.rotation) ?? [], preferredOperations: fileOperations ?? [],
                 metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg,
-                tolerance: tolerance, search: search)
+                tolerance: tolerance, search: search, policy: policy)
             let setting = ConventionalSetting(
                 conventionalCell: conventional, sites: sites, operations: detection.operations,
                 laueGroup: PointSymmetry.laueGroup(of: detection.operations),
@@ -140,7 +141,7 @@ extension CrystalStructure {
             sites: convSites, cell: conventional.cell, coarsestHalfStep: halfStep,
             extraCandidates: extraRotations, preferredOperations: convFileOperations,
             metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg,
-            tolerance: tolerance, search: search)
+            tolerance: tolerance, search: search, policy: policy)
 
         // Back to the file's cell: the centring translations become lattice translations and fall out as duplicates.
         var fileSetting: [SymmetryOperation] = []

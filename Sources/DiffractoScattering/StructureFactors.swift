@@ -134,15 +134,17 @@ extension CrystalStructure {
 
     /// The kinematic list (registration slice 2 §1): slice 1's reflections, F by `formFactor`, the cut, the rings.
     public func kinematicReflections(kMax: Double, cut: Double = StructureFactors.defaultCut,
-                                     formFactor: FormFactor = ElectronScatteringFactors.f)
+                                     formFactor: FormFactor = ElectronScatteringFactors.f,
+                                     policy: ReflectionList.Policy = .default,
+                                     validation: CrystalStructure.ValidationPolicy = .default)
         throws(KinematicError) -> KinematicReflectionList {
         guard cut.isFinite, cut >= 0 else { throw .invalidCut(cut) }
         let missing = Array(Set(sites.map(\.z).filter { formFactor($0, 0) == nil })).sorted()
         guard missing.isEmpty else { throw .unsupportedElements(missing) }
-        let issues = validationIssues
+        let issues = validationIssues(using: validation)
         guard issues.isEmpty else { throw .invalidStructure(issues.map(\.message)) }
         let list: ReflectionList
-        do { list = try reflections(kMax: kMax) } catch { throw .reflectionList(error) }
+        do { list = try reflections(kMax: kMax, policy: policy) } catch { throw .reflectionList(error) }
         var all: [KinematicReflection] = []
         all.reserveCapacity(list.reflections.count)
         for r in list.reflections {
@@ -159,7 +161,8 @@ extension CrystalStructure {
         }
         let kept = all.filter { $0.structureFactor.magnitude > cut }
         let rings = ReflectionList.families(of: kept.map(\.reflection), laueGroup: list.laueGroup,
-                                            millerBravais: list.usesMillerBravais)
+                                            millerBravais: list.usesMillerBravais,
+                                            familyTolerance: policy.familyTolerance)
         var byHKL: [MillerIndex: Double] = [:]
         for k in kept { byHKL[k.reflection.hkl] = k.structureFactor.intensity }
         let families = rings.map { family in

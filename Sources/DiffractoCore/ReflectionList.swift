@@ -65,6 +65,45 @@ public struct ReflectionFamily: Sendable, Equatable {
 }
 
 public struct ReflectionList: Sendable, Equatable {
+
+    /// The refusal bounds and tolerances of the list (DiffractoKit 0.2.0): the suite's choices, with `Policy.default` the
+    /// set every release before used. A cap that is not a positive number (NaN, zero, negative) refuses every list
+    /// (`invalidKMax` for `maximumKMax`, `cellTooLargeOrInvalid` for the counts); a tolerance that is NaN or negative is
+    /// taken as 0 (exact comparison: with `familyTolerance` 0 only equal |g| share a ring, with `absenceTolerance` 0 a
+    /// phase must be an integer to the last bit).
+    public struct Policy: Sendable, Equatable {
+        /// The largest k_max a list is built to (Å⁻¹). Default 4.
+        public var maximumKMax: Double
+        /// The most reflections a list is built to hold (estimated by (4/3)π k_max³ V). Default 10 million.
+        public var maximumReflections: Int
+        /// The most (h, k, l) the enumeration box may hold. Default 100 million.
+        public var maximumEnumeration: Int
+        /// Two reflections are one family (the ring rule) while their |g| differ by at most this, relative to the
+        /// family's first. Default 1e-9.
+        public var familyTolerance: Double
+        /// A reflection is absent when an operation's phase h·t lies further than this from an integer. Default 1e-9.
+        public var absenceTolerance: Double
+
+        public init(maximumKMax: Double = ReflectionList.maximumKMax,
+                    maximumReflections: Int = ReflectionList.maximumReflections,
+                    maximumEnumeration: Int = ReflectionList.maximumEnumeration,
+                    familyTolerance: Double = ReflectionList.familyTolerance,
+                    absenceTolerance: Double = 1e-9) {
+            self.maximumKMax = maximumKMax
+            self.maximumReflections = maximumReflections
+            self.maximumEnumeration = maximumEnumeration
+            self.familyTolerance = familyTolerance
+            self.absenceTolerance = absenceTolerance
+        }
+
+        /// The suite's values.
+        public static let `default` = Policy()
+
+        /// The tolerance used: `familyTolerance` when it is a number of at least 0, else 0.
+        var effectiveFamilyTolerance: Double { familyTolerance.isFinite && familyTolerance >= 0 ? familyTolerance : 0 }
+        var effectiveAbsenceTolerance: Double { absenceTolerance.isFinite && absenceTolerance >= 0 ? absenceTolerance : 0 }
+    }
+
     /// The largest k_max a list is built to (Å⁻¹): the index loops run for minutes far above it.
     public static let maximumKMax: Double = 4
     /// Two reflections are one family while their |g| differ by at most this, relative to the family's first.
@@ -79,6 +118,8 @@ public struct ReflectionList: Sendable, Equatable {
     public static let maximumEnumeration = 100_000_000
 
     public let kMax: Double
+    /// The policy the list was built under (its ring rule is the policy's `familyTolerance`).
+    public let policy: Policy
     /// Increasing |g|; equal |g| by descending lexicographic (h, k, l).
     public let reflections: [Reflection]
     /// The Laue group the families' orbits are named by.
@@ -92,15 +133,16 @@ public struct ReflectionList: Sendable, Equatable {
 
     /// The list for `cell` with the absences of `operations` and the orbits of `laueGroup`.
     public init(cell: UnitCell, operations: [SymmetryOperation], laueGroup: PointSymmetry, laueClass: LaueClass?,
-                kMax: Double) throws(ReflectionListError) {
-        guard kMax.isFinite, kMax > 0, kMax <= ReflectionList.maximumKMax else { throw .invalidKMax(kMax) }
+                kMax: Double, policy: Policy = .default) throws(ReflectionListError) {
+        guard kMax.isFinite, kMax > 0, kMax <= policy.maximumKMax else { throw .invalidKMax(kMax) }
         guard cell.isValid else { throw .cellTooLargeOrInvalid(estimatedReflections: .infinity) }
         let estimate = 4.0 / 3.0 * Double.pi * kMax * kMax * kMax * cell.volume
         let box = cell.realLattice.map { 2 * (kMax * length($0)).rounded(.up) + 1 }.reduce(1, *)
-        guard estimate.isFinite, box.isFinite, estimate <= Double(ReflectionList.maximumReflections),
-              box <= Double(ReflectionList.maximumEnumeration)
+        guard estimate.isFinite, box.isFinite, estimate <= Double(policy.maximumReflections),
+              box <= Double(policy.maximumEnumeration)
         else { throw .cellTooLargeOrInvalid(estimatedReflections: estimate) }
         self.kMax = kMax
+        self.policy = policy
         self.laueGroup = laueGroup
         self.laueClass = laueClass
         self.usesMillerBravais = (laueClass?.usesMillerBravais ?? false)
@@ -118,7 +160,7 @@ public struct ReflectionList: Sendable, Equatable {
                     let gLen = length(g)
                     if gLen > kMax { continue }
                     out.append(Reflection(hkl: hkl, g: g, gLength: gLen,
-                                          isAllowed: ReflectionList.isAllowed(hkl, by: operations)))
+                                          isAllowed: ReflectionList.isAllowed(hkl, by: operations, tolerance: policy.effectiveAbsenceTolerance)))
                 }
             }
         }
@@ -130,10 +172,12 @@ public struct ReflectionList: Sendable, Equatable {
     /// and a detected translation is the least-squares one, whose rounding error (ē − R ē, ē the sites' mean rounding)
     /// has h · (ē − R ē) = 0 exactly when h R = h: so a shifted or coarsely written cell gives the exact answer
     /// (Gate B amendment, 2026-10-15).
-    public static func isAllowed(_ hkl: MillerIndex, by operations: [SymmetryOperation]) -> Bool {
+    public static func isAllowed(_ hkl: MillerIndex, by operations: [SymmetryOperation],
+                                 tolerance: Double = 1e-9) -> Bool {
+        let bound = tolerance.isFinite && tolerance >= 0 ? tolerance : 0
         for op in operations where hkl.applying(op.rotation) == hkl {
             let phase = hkl.dot(op.translation)
-            if abs(phase - phase.rounded()) > 1e-9 { return false }
+            if abs(phase - phase.rounded()) > bound { return false }
         }
         return true
     }
@@ -163,13 +207,15 @@ public struct ReflectionList: Sendable, Equatable {
     /// reflection of the lattice.
     public func families(allowedOnly: Bool = true) -> [ReflectionFamily] {
         ReflectionList.families(of: allowedOnly ? allowed : reflections, laueGroup: laueGroup,
-                                millerBravais: usesMillerBravais)
+                                millerBravais: usesMillerBravais, familyTolerance: policy.familyTolerance)
     }
 
     /// The ring rule on any reflections in the list's order (increasing |g|): a reflection joins the current ring while
     /// |g| ≤ g₀(1 + `familyTolerance`); orbits and names by `laueGroup` (slice 2 applies it after the |F| cut).
     public static func families(of reflections: [Reflection], laueGroup: PointSymmetry,
-                                millerBravais: Bool) -> [ReflectionFamily] {
+                                millerBravais: Bool, familyTolerance: Double = ReflectionList.familyTolerance)
+        -> [ReflectionFamily] {
+        let ringTolerance = familyTolerance.isFinite && familyTolerance >= 0 ? familyTolerance : 0
         var families: [ReflectionFamily] = []
         var group: [Reflection] = []
         func close() {
@@ -185,7 +231,7 @@ public struct ReflectionList: Sendable, Equatable {
             group = []
         }
         for r in reflections {
-            if let first = group.first, r.gLength > first.gLength * (1 + ReflectionList.familyTolerance) { close() }
+            if let first = group.first, r.gLength > first.gLength * (1 + ringTolerance) { close() }
             group.append(r)
         }
         close()

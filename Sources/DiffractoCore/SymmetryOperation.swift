@@ -40,8 +40,14 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
 
     public static let identity = SymmetryOperation(rotation: .identity)
 
+    /// The default of `init(xyz:maximumMagnitude:)`: a number beyond it is unparsable.
+    public static let defaultMaximumMagnitude: Double = 1000
+
     /// Parses `"x,y,z"`, `"-x,-y,-z"`, `"1/2+x,1/2-y,z"`, `"x-y,x,-z+1/3"`, `"-X, Y+1/2, -Z"`, …
-    public init(xyz raw: String) throws(SymmetryOperationError) {
+    /// `maximumMagnitude` bounds every number in the text (default 1000, a policy: a larger one is unparsable, never a
+    /// trap); a bound that is NaN or negative is taken as 0, so every number but 0 is refused.
+    public init(xyz raw: String, maximumMagnitude: Double = SymmetryOperation.defaultMaximumMagnitude)
+        throws(SymmetryOperationError) {
         let components = raw.split(separator: ",", omittingEmptySubsequences: false)
             .map { $0.trimmingCharacters(in: .whitespaces) }
         guard components.count == 3, components.allSatisfy({ !$0.isEmpty }) else {
@@ -50,7 +56,7 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
         var rows: [SIMD3<Int>] = []
         var translation = SIMD3<Double>(0, 0, 0)
         for (axis, component) in components.enumerated() {
-            let (coefficients, constant) = try SymmetryOperation.parseComponent(component, raw: raw)
+            let (coefficients, constant) = try SymmetryOperation.parseComponent(component, raw: raw, bound: maximumMagnitude)
             var row = SIMD3<Int>(0, 0, 0)
             for i in 0..<3 {
                 let rounded = coefficients[i].rounded()
@@ -68,7 +74,7 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
 
     /// Parses one component (e.g. `"1/2+x"`) into the (x, y, z) coefficients and the constant.
     private static func parseComponent(
-        _ component: String, raw: String
+        _ component: String, raw: String, bound: Double
     ) throws(SymmetryOperationError) -> (SIMD3<Double>, Double) {
         let chars = Array(component.lowercased().replacingOccurrences(of: " ", with: ""))
         guard !chars.isEmpty else { throw .unparsable(raw) }
@@ -87,7 +93,7 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
             }
             let numericString = String(chars[numStart..<i])
             let hasNumeric = !numericString.isEmpty
-            let magnitude = hasNumeric ? try parseFraction(numericString, raw: raw) : 1.0
+            let magnitude = hasNumeric ? try parseFraction(numericString, raw: raw, bound: bound) : 1.0
 
             if i < chars.count, "xyz".contains(chars[i]) {
                 switch chars[i] {
@@ -110,14 +116,15 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
 
     /// `"1"`, `"0.5"`, `"1/2"`; an empty part (`"/2"`), a zero denominator, a non-finite value or a magnitude beyond
     /// 1000 (a garbled `1000000000000000000000x`) is unparsable, never a trap.
-    private static func parseFraction(_ text: String, raw: String) throws(SymmetryOperationError) -> Double {
+    private static func parseFraction(_ text: String, raw: String, bound: Double) throws(SymmetryOperationError) -> Double {
         let parts = text.split(separator: "/", omittingEmptySubsequences: false)
         var value: Double?
         if parts.count == 1 { value = Double(parts[0]) }
         if parts.count == 2, let numerator = Double(parts[0]), let denominator = Double(parts[1]), denominator != 0 {
             value = numerator / denominator
         }
-        guard let value, value.isFinite, abs(value) <= 1000 else { throw .unparsable(raw) }
+        let limit: Double = bound.isFinite && bound >= 0 ? bound : 0
+        guard let value, value.isFinite, abs(value) <= limit else { throw .unparsable(raw) }
         return value
     }
 

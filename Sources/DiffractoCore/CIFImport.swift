@@ -110,10 +110,64 @@ public struct CIFDocument: Sendable, Equatable {
 
 public enum CIFImport {
 
+    /// The thresholds of the import that are the suite's choices rather than the CIF grammar (DiffractoKit 0.2.0), with
+    /// `Policy.default` the set every release before used. A distance, cap or bound that is NaN or negative is taken as
+    /// 0 (merge nothing but coincident images, treat coordinates as exact, parse no number but 0); the tolerances of the
+    /// nested policies are described where they are declared.
+    public struct Policy: Sendable, Equatable {
+        /// Images of one site merge only within this distance (Å) as well as within the propagated rounding error, so a
+        /// coarse cell cannot collapse chemistry. Default 0.10.
+        public var maximumMergeDistance: Double
+        /// The floor under the propagated rounding error of the merge (fractional). Default 1e-6.
+        public var minimumMergeTolerance: Double
+        /// The cap on a written coordinate's rounding half-step (fractional). Default 1e-2.
+        public var maximumCoordinateHalfStep: Double
+        /// A cell angle within this of 90 degrees (or 120 for hexagonal axes) is called right when the centring of a
+        /// declared group is judged from the angles. Default 0.05.
+        public var rightAngleToleranceDeg: Double
+        /// The largest number a symmetry operation's text may hold. Default 1000.
+        public var maximumOperationMagnitude: Double
+        /// How two positions are called the same site in the symmetry detection. Default fractional 5e-3.
+        public var positionTolerance: SymmetryDetection.Tolerance
+        /// The metric family tolerances (relative on lengths, degrees on angles). Default 1e-9 both.
+        public var metricLengthTolerance: Double
+        public var metricAngleToleranceDeg: Double
+        /// The occupancy tolerance, translation grid and precision-limit factor of the symmetry detection.
+        public var symmetry: SymmetryDetection.Policy
+        /// The close-contact and split-site thresholds of the validation the import ends with.
+        public var validation: CrystalStructure.ValidationPolicy
+
+        public init(maximumMergeDistance: Double = 0.10, minimumMergeTolerance: Double = 1e-6,
+                    maximumCoordinateHalfStep: Double = 1e-2, rightAngleToleranceDeg: Double = 0.05,
+                    maximumOperationMagnitude: Double = SymmetryOperation.defaultMaximumMagnitude,
+                    positionTolerance: SymmetryDetection.Tolerance = .default,
+                    metricLengthTolerance: Double = SymmetryDetection.defaultMetricLengthTolerance,
+                    metricAngleToleranceDeg: Double = SymmetryDetection.defaultMetricAngleToleranceDeg,
+                    symmetry: SymmetryDetection.Policy = .default,
+                    validation: CrystalStructure.ValidationPolicy = .default) {
+            self.maximumMergeDistance = maximumMergeDistance
+            self.minimumMergeTolerance = minimumMergeTolerance
+            self.maximumCoordinateHalfStep = maximumCoordinateHalfStep
+            self.rightAngleToleranceDeg = rightAngleToleranceDeg
+            self.maximumOperationMagnitude = maximumOperationMagnitude
+            self.positionTolerance = positionTolerance
+            self.metricLengthTolerance = metricLengthTolerance
+            self.metricAngleToleranceDeg = metricAngleToleranceDeg
+            self.symmetry = symmetry
+            self.validation = validation
+        }
+
+        /// The suite's values.
+        public static let `default` = Policy()
+
+        func nonNegative(_ value: Double) -> Double { value.isFinite && value >= 0 ? value : 0 }
+    }
+
     /// Reads `cifText` into a validated structure. `fileBaseName` (the file name without its extension) is the
     /// display-name fallback when the `data_` block says nothing.
-    public static func read(_ cifText: String, fileBaseName: String = "") throws(CIFImportError) -> CIFDocument {
-        let parsed = try parse(cifText)
+    public static func read(_ cifText: String, fileBaseName: String = "",
+                            policy: Policy = .default) throws(CIFImportError) -> CIFDocument {
+        let parsed = try parse(cifText, policy: policy)
         let cell = UnitCell(a: parsed.a, b: parsed.b, c: parsed.c,
                             alphaDeg: parsed.alpha, betaDeg: parsed.beta, gammaDeg: parsed.gamma)
         let name = displayName(dataBlockName: parsed.dataBlockName, fileBaseName: fileBaseName)
@@ -121,8 +175,10 @@ public enum CIFImport {
         // file's loop may declare less than its atoms have.
         let structure = CrystalStructure.detectingSymmetry(
             cell: cell, sites: parsed.sites, fileOperations: parsed.operations,
-            spaceGroupNumber: parsed.spaceGroupNumber, name: name, coarsestHalfStep: parsed.coarsestHalfStep)
-        let issues = structure.validationIssues
+            spaceGroupNumber: parsed.spaceGroupNumber, name: name, coarsestHalfStep: parsed.coarsestHalfStep,
+            metricLengthTolerance: policy.metricLengthTolerance, metricAngleToleranceDeg: policy.metricAngleToleranceDeg,
+            tolerance: policy.positionTolerance, policy: policy.symmetry)
+        let issues = structure.validationIssues(using: policy.validation)
         guard issues.isEmpty else { throw .invalidStructure(issues.map(\.message)) }
         return CIFDocument(structure: structure, dataBlockName: parsed.dataBlockName, displayName: name,
                            declaredSpaceGroupSymbol: parsed.spaceGroupSymbol,
@@ -165,7 +221,7 @@ public enum CIFImport {
         let halfStep: SIMD3<Double>
     }
 
-    private static func parse(_ text: String) throws(CIFImportError) -> ParsedStructure {
+    private static func parse(_ text: String, policy: Policy) throws(CIFImportError) -> ParsedStructure {
         let tokens = tokenize(text)
 
         var dataBlockName: String?
@@ -313,12 +369,14 @@ public enum CIFImport {
             baseSites.append(BaseSite(
                 z: atomicNumber, label: label, occupancy: occupancy,
                 position: SIMD3(x, y, zCoord),
-                halfStep: SIMD3(coordinateHalfStep(xRaw), coordinateHalfStep(yRaw), coordinateHalfStep(zRaw))))
+                halfStep: SIMD3(coordinateHalfStep(xRaw, cap: policy.maximumCoordinateHalfStep),
+                                coordinateHalfStep(yRaw, cap: policy.maximumCoordinateHalfStep),
+                                coordinateHalfStep(zRaw, cap: policy.maximumCoordinateHalfStep))))
         }
 
         var ops: [SymmetryOperation] = []
         for raw in symmetryOps {
-            do { ops.append(try SymmetryOperation(xyz: raw)) } catch { throw .unsupportedSymmetryOperation(raw) }
+            do { ops.append(try SymmetryOperation(xyz: raw, maximumMagnitude: policy.maximumOperationMagnitude)) } catch { throw .unsupportedSymmetryOperation(raw) }
         }
 
         let sites: [AtomSite]
@@ -328,7 +386,8 @@ public enum CIFImport {
             // in). Fewer builds a smaller structure (rock salt without its F-centring is CsCl, still cubic m-3m).
             if let number = spaceGroupNumber,
                let required = requiredOperationCount(
-                   spaceGroup: number, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma) {
+                   spaceGroup: number, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma,
+                   rightAngleToleranceDeg: policy.rightAngleToleranceDeg) {
                 let listed = SymmetryOperation.distinctCount(ops)
                 if listed < required {
                     throw .incompleteSymmetryOperations(
@@ -337,7 +396,7 @@ public enum CIFImport {
                 }
             }
             let lattice = UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma).realLattice
-            sites = expand(baseSites, using: ops, latReal: lattice)
+            sites = expand(baseSites, using: ops, latReal: lattice, policy: policy)
             var distinct: [SymmetryOperation] = []
             for op in ops where !distinct.contains(where: { $0.isEquivalent(to: op) }) {
                 distinct.append(SymmetryOperation(rotation: op.rotation, translation: op.translationMod1))
@@ -446,7 +505,8 @@ public enum CIFImport {
     /// How far a written fractional coordinate may sit from its true value, judged from the literal text alone:
     /// `10⁻ᵈ` for d decimals (CIF writers truncate as often as they round, so a full ulp of the last decimal), 0 for
     /// a value exactly on a small dyadic rational (`0.2500` is ¼), capped at 1e-2.
-    public static func coordinateHalfStep(_ raw: String) -> Double {
+    public static func coordinateHalfStep(_ raw: String, cap: Double = 1e-2) -> Double {
+        let ceiling: Double = cap.isFinite && cap >= 0 ? cap : 0
         var text = raw
         if let parenIndex = text.firstIndex(of: "(") {
             text = String(text[text.startIndex..<parenIndex])
@@ -459,9 +519,9 @@ public enum CIFImport {
             if abs(scaled - scaled.rounded()) <= 1e-12 * max(1, abs(scaled)) { return 0 }
         }
 
-        guard let dot = text.firstIndex(of: ".") else { return 1e-2 }
+        guard let dot = text.firstIndex(of: ".") else { return ceiling }
         let decimals = text.distance(from: text.index(after: dot), to: text.endIndex)
-        return min(1e-2, pow(10, -Double(decimals)))
+        return min(ceiling, pow(10, -Double(decimals)))
     }
 
     // MARK: - Space-group order
@@ -498,18 +558,20 @@ public enum CIFImport {
     /// order, except for a centred group written in a cell that is not its conventional one (a primitive cell lists
     /// order / centring; rhombohedral axes a third), judged from the angles alone.
     public static func requiredOperationCount(
-        spaceGroup number: Int, alphaDeg: Double, betaDeg: Double, gammaDeg: Double
+        spaceGroup number: Int, alphaDeg: Double, betaDeg: Double, gammaDeg: Double,
+        rightAngleToleranceDeg: Double = 0.05
     ) -> Int? {
         guard let order = spaceGroupOrder(number) else { return nil }
         let centring = centredGroups.first(where: { $0.numbers.contains(number) })?.multiplicity ?? 1
         guard centring > 1 else { return order }
-        func right(_ angle: Double) -> Bool { abs(angle - 90) <= 0.05 }
+        let angleBound: Double = rightAngleToleranceDeg.isFinite && rightAngleToleranceDeg >= 0 ? rightAngleToleranceDeg : 0
+        func right(_ angle: Double) -> Bool { abs(angle - 90) <= angleBound }
         let conventional: Bool
         switch number {
         case 3...15:
             conventional = [alphaDeg, betaDeg, gammaDeg].filter(right).count >= 2
         case 143...194:
-            conventional = right(alphaDeg) && right(betaDeg) && abs(gammaDeg - 120) <= 0.05
+            conventional = right(alphaDeg) && right(betaDeg) && abs(gammaDeg - 120) <= angleBound
         default:
             conventional = right(alphaDeg) && right(betaDeg) && right(gammaDeg)
         }
@@ -559,9 +621,10 @@ public enum CIFImport {
     /// pair too far apart to be rounding but too close to be chemistry is left in place and refused by the
     /// close-contact rule rather than silently deleted.
     private static func expand(
-        _ baseSites: [BaseSite], using ops: [SymmetryOperation], latReal: [SIMD3<Double>]
+        _ baseSites: [BaseSite], using ops: [SymmetryOperation], latReal: [SIMD3<Double>], policy: Policy
     ) -> [AtomSite] {
-        let maxMergeDistance = 0.10
+        let maxMergeDistance = policy.nonNegative(policy.maximumMergeDistance)
+        let mergeFloor = policy.nonNegative(policy.minimumMergeTolerance)
         let usableLattice = latReal.allSatisfy { $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }
 
         struct Image {
@@ -587,9 +650,9 @@ public enum CIFImport {
                 let isDuplicate = kept.contains { existing in
                     guard existing.row == row else { return false }
                     let tolerance = existing.uncertainty + uncertainty
-                    guard fractionalAxisDelta(existing.position.x, mapped.x) <= max(tolerance.x, 1e-6),
-                          fractionalAxisDelta(existing.position.y, mapped.y) <= max(tolerance.y, 1e-6),
-                          fractionalAxisDelta(existing.position.z, mapped.z) <= max(tolerance.z, 1e-6)
+                    guard fractionalAxisDelta(existing.position.x, mapped.x) <= max(tolerance.x, mergeFloor),
+                          fractionalAxisDelta(existing.position.y, mapped.y) <= max(tolerance.y, mergeFloor),
+                          fractionalAxisDelta(existing.position.z, mapped.z) <= max(tolerance.z, mergeFloor)
                     else { return false }
                     guard usableLattice else { return true }
                     return CrystalStructure.minimumImageDistanceSquared(existing.position, mapped, latReal)

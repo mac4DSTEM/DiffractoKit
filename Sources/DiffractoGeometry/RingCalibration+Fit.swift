@@ -66,11 +66,13 @@ extension RingCalibration {
     public static func fit(pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
                             innerRadius: Double, outerRadius: Double,
                             d: Double, highTensionVolts: Double?, pixelPitchMM: Double?,
+                            policy: Policy = .default, ellipsePolicy: EllipseCalibration.Policy = .default,
                             progress: (@Sendable (Double) -> Void)? = nil,
                             isCancelled: (@Sendable () -> Bool)? = nil) throws -> RingFitCalibration {
         try validate(d: d, highTensionVolts: highTensionVolts, pixelPitchMM: pixelPitchMM)
         let ring = try fitRing(pattern: pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
-                               outerRadius: outerRadius, progress: progress, isCancelled: isCancelled)
+                               outerRadius: outerRadius, policy: policy, ellipsePolicy: ellipsePolicy,
+                               progress: progress, isCancelled: isCancelled)
         return try calibrating(ring, d: d, highTensionVolts: highTensionVolts, pixelPitchMM: pixelPitchMM)
     }
 
@@ -80,14 +82,19 @@ extension RingCalibration {
     /// fit and report.
     public static func fitRing(pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
                                 innerRadius: Double, outerRadius: Double,
+                                policy: Policy = .default, ellipsePolicy: EllipseCalibration.Policy = .default,
                                 progress: (@Sendable (Double) -> Void)? = nil,
                                 isCancelled: (@Sendable () -> Bool)? = nil) throws -> RingRadiusFit {
+        guard policy.isValid else { throw Refusal.invalidInput("the calibration policy has a field outside its domain") }
+        // One evidence policy: the ring evidence is measured and judged by the calibration policy's.
+        var fitPolicy = ellipsePolicy
+        fitPolicy.evidence = policy.evidence
         let fit: EllipseCalibrationFit
         do {
             fit = try EllipseCalibration.fitBestAvailable(
                 pattern: pattern, centerQX: centerQX, centerQY: centerQY,
                 innerRadius: innerRadius, outerRadius: outerRadius, acceptSparseCoverage: false,
-                requireRingEvidence: true, progress: progress, isCancelled: isCancelled)
+                requireRingEvidence: true, policy: fitPolicy, progress: progress, isCancelled: isCancelled)
         } catch EllipseCalibration.FitError.insufficientAngularCoverage(let bins) {
             return RingRadiusFit(fit: nil, report: nil, refusals: [.insufficientAngularCoverage(occupiedBins: bins)])
         }
@@ -98,7 +105,7 @@ extension RingCalibration {
             innerSigma: fit.profile?.innerSigma, outerSigma: fit.profile?.outerSigma,
             annulusWidth: outerRadius - innerRadius,
             annulusInnerRadius: innerRadius, annulusOuterRadius: outerRadius, ringEvidence: fit.ringEvidence)
-        return RingRadiusFit(fit: fit, report: report, refusals: fitRefusals(report))
+        return RingRadiusFit(fit: fit, report: report, refusals: fitRefusals(report, policy: policy))
     }
 
     /// The calibration of a fitted ring with d (Å), V (volts; nil when not stated) and the pixel pitch (mm; nil when not
