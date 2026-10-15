@@ -24,7 +24,7 @@ SET = "Sources/DiffractoCore/ConventionalSetting.swift"
 DET = "Sources/DiffractoCore/SymmetryDetection.swift"
 STR = "Sources/DiffractoCore/CrystalStructure.swift"
 
-NEW = "ReductionTests|ConventionalCellTests|ConventionalSymmetryTests|FastDetectionTests"
+NEW = "ReductionTests|ShearReductionTests|ConventionalCellTests|ConventionalSymmetryTests|FastDetectionTests"
 
 # id, file, old text (exactly once), new text, what it breaks
 MUTANTS = [
@@ -40,8 +40,12 @@ MUTANTS = [
      "A8: c -> a + b + c never taken"),
     ("niggli-A7-dropped", RED, "if abs(zeta) > a + eps ||", "if false && abs(zeta) > a + eps ||",
      "A7: the shear of b by a never taken"),
-    ("niggli-shear-sign", RED, "cols[2] = cols[2] &- (xi >= 0 ? 1 : -1) &* cols[1]; continue", "cols[2] = cols[2] &+ (xi >= 0 ? 1 : -1) &* cols[1]; continue",
+    ("niggli-shear-sign", RED, "cols[2] = cols[2] &- (xi >= 0 ? n : -n) &* cols[1]; continue", "cols[2] = cols[2] &+ (xi >= 0 ? n : -n) &* cols[1]; continue",
      "A5: the shear of c by b with the wrong sign"),
+    ("niggli-unit-shear-only", RED, "return max(1, Int(n))", "return 1",
+     "F1 (Gate B on 4876b18): the multiple shear reverted to the unit shear: a cell sheared by 1000 lattice units no longer reduces in the 2000-step cap"),
+    ("niggli-flag-always-converged", CON, "public var reductionConverged: Bool { reduced.converged }", "public var reductionConverged: Bool { true }",
+     "F1: the conventional cell does not say that the reduction failed (an aP that reads as a finding)"),
     ("niggli-handedness", RED, "if p.determinant < 0 { p = p.negated }", "",
      "the determinant -1 basis is not made right-handed"),
     # --- the conventional cell

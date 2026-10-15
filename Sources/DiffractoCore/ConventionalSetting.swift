@@ -25,6 +25,9 @@ public struct ConventionalSetting: Sendable, Equatable {
     public let translationUncertainty: Double
 
     public var cell: UnitCell { conventionalCell.cell }
+    /// False when the Niggli reduction did not converge (`ConventionalCell.reductionConverged`): the operations here are
+    /// then the detection in the file's own cell, and `bravais` (`aP`) says nothing about the lattice.
+    public var reductionConverged: Bool { conventionalCell.reductionConverged }
     public var bravais: BravaisLattice { conventionalCell.bravais }
     public var transformation: IntegerMatrix { conventionalCell.transformation }
 

@@ -23,7 +23,9 @@ public struct ReducedCell: Sendable, Equatable {
     public let transformation: IntegerMatrix
     /// ε in Å² that the comparisons used.
     public let epsilon: Double
-    /// Whether the algorithm stopped on its own conditions (false only on an invalid cell or after 2000 steps).
+    /// Whether the algorithm stopped on its own conditions (false only on an invalid cell, a shear beyond 2⁴⁰ lattice
+    /// units, or after 2000 steps; rounding in the six parameters can also keep a cell sheared by 1e5 or more lattice
+    /// units from settling). `ConventionalCell.reductionConverged` says what the conventional route does then.
     public let converged: Bool
     /// The number of steps (each one swap, sign change or shear) the reduction took.
     public let steps: Int
@@ -64,15 +66,24 @@ extension UnitCell {
                 if e[0] * e[1] * e[2] == -1, let z = s.firstIndex(of: 0) { e[z] = -1 }
             }
             if e != [1, 1, 1] { cols[1] = cols[1] &* e[2]; cols[2] = cols[2] &* e[1]; continue }
-            // A5, A6, A7: a shear that makes |ξ| ≤ B, |η| ≤ A, |ζ| ≤ A (with the boundary cases of the paper)
+            // A5, A6, A7: a shear that makes |ξ| ≤ B, |η| ≤ A, |ζ| ≤ A (with the boundary cases of the paper). The shear is
+            // by an integer MULTIPLE when the excess is large (`shearMultiple`: 1 up to 50 lengths, the paper's unit
+            // shear, so a cell that needs a few dozen shears reduces exactly as before), so a cell sheared by thousands of
+            // lattice units reduces in a few steps and not after thousands (Gate B on 4876b18, F1).
             if abs(xi) > b + eps || (abs(xi - b) <= eps && 2 * eta < zeta - eps) || (abs(xi + b) <= eps && zeta < -eps) {
-                cols[2] = cols[2] &- (xi >= 0 ? 1 : -1) &* cols[1]; continue
+                let n: Int = UnitCell.shearMultiple(abs(xi), b, eps)
+                if n < 0 { break }
+                cols[2] = cols[2] &- (xi >= 0 ? n : -n) &* cols[1]; continue
             }
             if abs(eta) > a + eps || (abs(eta - a) <= eps && 2 * xi < zeta - eps) || (abs(eta + a) <= eps && zeta < -eps) {
-                cols[2] = cols[2] &- (eta >= 0 ? 1 : -1) &* cols[0]; continue
+                let n: Int = UnitCell.shearMultiple(abs(eta), a, eps)
+                if n < 0 { break }
+                cols[2] = cols[2] &- (eta >= 0 ? n : -n) &* cols[0]; continue
             }
             if abs(zeta) > a + eps || (abs(zeta - a) <= eps && 2 * xi < eta - eps) || (abs(zeta + a) <= eps && eta < -eps) {
-                cols[1] = cols[1] &- (zeta >= 0 ? 1 : -1) &* cols[0]; continue
+                let n: Int = UnitCell.shearMultiple(abs(zeta), a, eps)
+                if n < 0 { break }
+                cols[1] = cols[1] &- (zeta >= 0 ? n : -n) &* cols[0]; continue
             }
             // A8: c → a + b + c when that shortens it
             let sum = xi + eta + zeta + a + b
@@ -89,6 +100,21 @@ extension UnitCell {
     }
 
     // MARK: Helpers shared with the conventional cell
+
+    /// How many times to shear in one step when the cross term `x` (ξ, η or ζ, in absolute value) exceeds the length
+    /// `len` (B or A) that bounds it: 1 while |x| ≤ 50·len (the paper's unit shear: every cell of the 2827 pinned ones
+    /// reduces by unit shears alone, bit for bit as before), else the number that leaves
+    /// |x| − 2·len·n in [len, 3·len), so the unit shears after it finish the job. Negative (stop, not converged) when
+    /// the multiple is not a number an Int basis can hold (a shear beyond 2⁴⁰, where the metric's rounding is larger
+    /// than ε anyway).
+    static func shearMultiple(_ x: Double, _ len: Double, _ eps: Double) -> Int {
+        if !(x <= 50 * len + eps) {
+            let n: Double = ((x - len) / (2 * len)).rounded(.down)
+            if !(n < 1.0995e12) { return -1 }
+            return max(1, Int(n))
+        }
+        return 1
+    }
 
     /// xᵀ G y.
     static func bilinear(_ g: [SIMD3<Double>], _ x: SIMD3<Int>, _ y: SIMD3<Int>) -> Double {

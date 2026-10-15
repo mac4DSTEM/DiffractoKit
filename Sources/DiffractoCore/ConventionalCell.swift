@@ -13,7 +13,19 @@
 //        The setting (the choices the International Tables leave open) is fixed here: monoclinic unique axis b with
 //        C centring and β ≥ 90°; orthorhombic centring on the (a, b) face; tetragonal and hexagonal unique axis c;
 //        hexagonal axes for rhombohedral lattices, obverse; right-handed. Among equivalent choices the one whose
-//        transformation is closest to the identity is taken, so a cell that is already conventional maps to itself.
+//        transformation is closest to the identity is taken. A cell already in this setting maps to itself
+//        (`transformation == .identity`), but a cell that is a conventional cell of its lattice in ANOTHER setting is
+//        re-labelled into this one: a monoclinic P cell (index 1) goes to unique axis b with a and c the shortest pair and
+//        β ≥ 90°, so a c-unique or a-unique monoclinic cell, or one whose a and c are not that pair, comes back with a
+//        permuted or sign-changed transformation (Gate B on 4876b18, F2). Read `transformation` and `setting`, not the
+//        family name, to know whether the cell moved.
+//
+//        Tolerances (Gate B on 4876b18, F3): the lattice symmetry here is decided by the relative `tolerance` alone
+//        (|RᵀGR − G|ᵢⱼ ≤ tolerance · √(Gᵢᵢ Gⱼⱼ), default 1e-9). `detectingSymmetry(metricLengthTolerance:)` is passed on as
+//        this tolerance; `metricAngleToleranceDeg` is not used by the conventional-cell route to find the cell or its
+//        Bravais lattice. A primitive body-centred cubic cell written with the angle 109.4712° (the exact one is
+//        109.47122063…°) is therefore a rhombohedral hR lattice at the default and reads Im-3m (cI) only from
+//        `metricLengthTolerance` ≈ 1e-5 up (spglib's default symprec of 1e-5 does).
 //
 
 import Foundation
@@ -55,7 +67,7 @@ public enum BravaisLattice: String, Sendable, Equatable, CaseIterable, CustomStr
 /// The conventional cell of a lattice.
 public struct ConventionalCell: Sendable, Equatable {
     /// The conventional cell, its parameters idealised to the family's constraints (the six parameters of the input
-    /// when the input already is the conventional cell).
+    /// when `transformation` is the identity).
     public let cell: UnitCell
     public let bravais: BravaisLattice
     /// P: the conventional basis vectors are the COLUMNS of P in terms of the input basis, x_input = P x_conventional
@@ -70,6 +82,19 @@ public struct ConventionalCell: Sendable, Equatable {
     public let setting: String
 
     public var centringMultiplicity: Int { transformation.determinant }
+
+    /// Whether the Niggli reduction under this cell reached its conditions (`reduced.converged`). False for an invalid
+    /// cell (`UnitCell.isValid`: this includes a cell flatter than V < 1e-6·a·b·c, which is where a shear of about 10^6
+    /// lattice units lands), for a shear beyond 2⁴⁰ units, and for a reduction that did not stop within its 2000 steps.
+    /// Then the conventional route has no reduced basis to work on: `bravais` is `aP` and `transformation` the identity,
+    /// which is NOT a finding about the lattice, `setting` says "not reducible", and
+    /// `detectingSymmetry(conventional: true)` falls back to the detection in the file's own cell (what
+    /// `conventional: false` does) and carries this flag in `ConventionalSetting.reductionConverged`. Read it before
+    /// trusting an `aP`. (A shear by any smaller number of lattice units reduces in a few dozen steps; the six
+    /// parameters of a cell sheared by k carry a relative rounding of about 1e-16·k², so the default symmetry
+    /// tolerance of 1e-9 reads a shear above about 1200 units as the lower family it is within rounding: pass a
+    /// larger `tolerance`.)
+    public var reductionConverged: Bool { reduced.converged }
 }
 
 extension UnitCell {
@@ -77,7 +102,10 @@ extension UnitCell {
     public static let conventionalCellTolerance = 1e-9
 
     /// The conventional cell of this lattice (the cell is taken as a primitive lattice) at a relative `tolerance` on the
-    /// metric (|RᵀGR − G|ᵢⱼ ≤ tolerance · √(Gᵢᵢ Gⱼⱼ)). An invalid cell returns itself as `aP`.
+    /// metric (|RᵀGR − G|ᵢⱼ ≤ tolerance · √(Gᵢᵢ Gⱼⱼ)); this is the only tolerance of the route (the file header, F3: a bcc
+    /// primitive cell with 109.4712° reads hR below a tolerance of about 1e-5). An invalid cell, or one whose reduction does
+    /// not converge, returns itself as `aP` with `reductionConverged == false`. A cell that is already conventional in
+    /// another setting is re-labelled into this one (the file header, F2).
     public func conventionalCell(tolerance: Double = UnitCell.conventionalCellTolerance) -> ConventionalCell {
         LatticeConstruction.conventionalCell(of: self, tolerance: tolerance)
     }

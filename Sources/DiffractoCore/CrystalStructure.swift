@@ -107,6 +107,14 @@ public struct CrystalStructure: Sendable, Equatable {
     /// code, or a file's expanded cell with its loop as `fileOperations` (whose rotations join the candidates).
     /// `coarsestHalfStep` is the written precision of the coordinates when known, used only to report an unresolved
     /// candidate.
+    ///
+    /// `metricLengthTolerance` (relative, default 1e-9) is the tolerance of the lattice-symmetry test that finds the
+    /// conventional cell and its Bravais lattice; `metricAngleToleranceDeg` has no effect on that route (it applies
+    /// to the metric family in the file's cell when `conventional` is false). A primitive bcc cell written with the angle
+    /// 109.4712° is a rhombohedral lattice at 1e-9 and reads Im-3m only from `metricLengthTolerance` ≈ 1e-5 (spglib's
+    /// default symprec reads it so). If the lattice cannot be reduced, `conventionalSetting.reductionConverged` is false
+    /// and the operations are those of the file's cell (see `ConventionalCell.reductionConverged`). `tolerance`:
+    /// `.cartesian(t)` finds operations only to about half of `t` (see `SymmetryDetection.Tolerance`).
     public static func detectingSymmetry(
         cell: UnitCell, sites: [AtomSite], fileOperations: [SymmetryOperation]? = nil,
         spaceGroupNumber: Int? = nil, name: String? = nil, coarsestHalfStep: Double = 0,
@@ -266,7 +274,10 @@ public struct CrystalStructure: Sendable, Equatable {
     // MARK: Reflections
 
     /// Every reflection with 0 < |g| ≤ `kMax` (Å⁻¹), with its systematic-absence flag from this structure's
-    /// operations, and its families by this structure's Laue group (registration 3.8, 3.9).
+    /// operations, and its families by this structure's Laue group (registration 3.8, 3.9). A reflection with |g|
+    /// exactly `kMax` is in or out by the last bit of |g|, which can differ by one ulp between two settings of the same
+    /// lattice, so the lists of the file's cell and of its conventional cell may differ by such a reflection (Gate B on
+    /// 4876b18).
     public func reflections(kMax: Double) throws(ReflectionListError) -> ReflectionList {
         try ReflectionList(cell: cell, operations: operations, laueGroup: laueGroup, laueClass: laueClass, kMax: kMax)
     }

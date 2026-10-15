@@ -23,6 +23,10 @@ public enum SymmetryDetection {
     public static let positionTolerance = 5e-3
     /// Occupancies are dimensionless and refined ones differ by thousandths between equivalent sites.
     public static let occupancyTolerance = 0.02
+    /// Through `CrystalStructure.detectingSymmetry(conventional: true)` (the default) only the LENGTH tolerance reaches the
+    /// lattice-symmetry test that finds the cell and its Bravais lattice; the angle tolerance has no effect there (Gate B
+    /// on 4876b18, F3), and spglib's symprec corresponds to a length tolerance of about 1e-5, not 1e-9: a bcc primitive
+    /// cell written with 109.4712° is hR at the default and Im-3m from 1e-5.
     /// The metric family is proposed at the ring rule's tolerance (1e-9 relative on lengths, 1e-9° on angles; the
     /// registration's 3.2 default): a rotation that is a symmetry then preserves every |g| to the 1e-9 the families are
     /// grouped by, so an orbit never splits across two rings (Gate B amendment, 2026-10-15; the reference implementations' 1e-3 / 0.05°
@@ -37,12 +41,20 @@ public enum SymmetryDetection {
     /// the minimum-image distance in Å, so a pseudo-symmetry of 0.013 Å reads as symmetry in a 50 Å cell at the
     /// fractional default and not at `.cartesian(1e-3)`. The default stays fractional until a measured comparison is
     /// registered.
+    ///
+    /// The Cartesian value is spglib's `symprec` in the sense that it is a distance in Å, but it is NOT the same
+    /// threshold: measured against spglib (Gate B on 4876b18, F4), an operation is kept here only while the displacement
+    /// that breaks it is below about HALF of `t`, and is lost at displacements of 0.5 to 0.9 `t`, where spglib with
+    /// `symprec = t` still finds it up to 1.0 to 1.1 `t`. The set of operations is also closed under composition at this
+    /// bound (`closedSubset`). Roughly, `.cartesian(2 * s)` here corresponds to spglib's symprec `s`, and the
+    /// proposed `1e-3` to a symprec of about 5e-4 Å. The default is unchanged.
     public enum Tolerance: Sendable, Equatable {
         case fractional(Double)
         case cartesian(Double)
 
         public static let `default`: Tolerance = .fractional(SymmetryDetection.positionTolerance)
-        /// 10 × spglib's default symprec of 1e-4 Å: the value proposed for a Cartesian default.
+        /// 10 × spglib's default symprec of 1e-4 Å: the value proposed for a Cartesian default (its effective bound on a
+        /// displacement is about half of it, see `Tolerance`).
         public static let proposedCartesian: Tolerance = .cartesian(1e-3)
     }
 

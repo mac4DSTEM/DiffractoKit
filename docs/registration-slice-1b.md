@@ -112,3 +112,43 @@ and writes what moves for the apps in `docs/consumers-0.1.1.md`.
 
 0.1.0 is tagged (7348b92) without slice 1b. The port is back on `main` (`git cherry-pick bc99fa0`) with the consumer-check
 extension prepared for it, and goes to its one Gate B refuter (§4) before the 0.1.1 tag.
+
+### 2026-10-15: Gate B on 4876b18 (the one refuter of §4) and what was done
+
+**What held** (the refuter's own scripts, an independent oracle each time): 4500 cells at the reduction's boundary; 11,300
+Bravais names against spglib; 932 + 1200 structures (operations in both settings); 3255 CIFs; and the cell list bit equal to
+the brute-force scan on 4800 cases. Four findings, one wrong in class (F1), three of wording.
+
+- **F1, tier 1 (wrong class, silent): fixed.** `niggliReduced` sheared by unit steps under a 2000-step cap, so a cell sheared
+  by more than about 300 to 1000 lattice units (cubic a = 4 under c + k(a + b), k ≥ 1000; primitive NaCl with b + 1200 a) ended
+  `converged = false` and the conventional route returned `aP` / identity with no sign that it had failed. Fix, in the
+  order of the rule: `ShearReductionTests` first, red on 4876b18's reduction (cubic: 82 failed expectations over k = 1 to
+  10^4 and four shears, the 1200 steps and the cap; primitive NaCl: cF read aP); then the reduction shears by an integer
+  MULTIPLE once the cross term exceeds 50 lengths (`UnitCell.shearMultiple`: n = ⌊(|x| − len) / (2 len)⌋, which leaves the
+  remainder to the paper's unit shears; no multiple above 2⁴⁰, which stops the reduction as not converged), so any shear
+  reduces in a few dozen steps (k = 10^5: 6 to 70). Below 50 lengths the steps are the paper's, so the 2827 pinned cells
+  give the same transformation, reduced cell and conventional cell **bit for bit and with the same step counts** (checked
+  by dumping the bit patterns of the old and new reduction and comparing). When a reduction still does not converge (an invalid
+  cell, which includes a cell flatter than V < 1e-6·abc, which is where a shear of 10^6 lattice units lands), the result
+  says so: `ConventionalCell.reductionConverged` (and `ConventionalSetting.reductionConverged`), the `setting` text says
+  "not reducible", and `detectingSymmetry(conventional: true)` falls back to the detection in the file's own cell, as
+  `conventional: false` does. Green: cubic and NaCl-primitive shears k up to 10^5 are cP / cF in at most 100 steps (the
+  default tolerance of 1e-9 up to k = 1200; a larger shear is read at 1e-5, because the six parameters of a cell sheared by
+  k carry a relative rounding of about 1e-16·k², which is a property of the parameters and not of the reduction); k = 10^5
+  and 10^6 are never an unflagged aP; the flat cell falls back to the file setting with the flag. Mutants: the multiple
+  shear reverted to the unit shear (`niggli-unit-shear-only`) is red in 2 tests, the flag fixed to "converged"
+  (`niggli-flag-always-converged`) in 2; `niggli-shear-sign` was re-pointed at the new text and is red in 12 (29 mutants in
+  the file now; the other 26 were not re-run for this amendment, their texts are unchanged). Full suite 306 / 306.
+- **F2, wording: corrected.** The header of `ConventionalCell.swift` said a cell already conventional maps to itself. It does
+  so only when it is in the setting fixed here; a monoclinic P cell is re-labelled (unique axis b, a and c the shortest pair, β ≥ 90°),
+  so a c- or a-unique cell comes back permuted. The header and the `cell` property say what the code does and point to
+  `transformation` and `setting`.
+- **F3, wording: documented.** `metricAngleToleranceDeg` has no effect on the conventional-cell route (only
+  `metricLengthTolerance` decides the lattice symmetry there); a bcc primitive cell written with 109.4712° reads hR unless
+  `metricLengthTolerance` ≥ 1e-5 (spglib's default reads Im-3m): in the headers of `ConventionalCell.swift`,
+  `SymmetryDetection`'s default tolerances and `detectingSymmetry`. An exact-k_max reflection can be in one setting's
+  list and out of the other's, by one ulp of |g|: `reflections(kMax:)`.
+- **F4, wording: documented, default unchanged.** `.cartesian(t)` is a distance in Å as spglib's symprec is, but its
+  effective bound is about t/2 (operations are lost at displacements of 0.5 to 0.9 t, where spglib keeps them to 1.0 to 1.1 t;
+  `closedSubset` uses the same bound): `SymmetryDetection.Tolerance` says so, and that `proposedCartesian` (1e-3) behaves as a
+  symprec of about 5e-4 Å. Not done: the cause of the factor is not established, and no number was changed.

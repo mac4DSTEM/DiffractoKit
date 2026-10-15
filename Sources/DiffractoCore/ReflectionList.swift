@@ -10,7 +10,9 @@ import Foundation
 import simd
 
 public enum ReflectionListError: Error, Equatable, Sendable, CustomStringConvertible {
-    /// k_max must be finite, positive and at most `ReflectionList.maximumKMax` Å⁻¹.
+    /// k_max must be finite, positive and at most `ReflectionList.maximumKMax` Å⁻¹. (A reflection with |g| equal to k_max
+    /// is in or out by the last bit of |g|, which can differ by one ulp between two settings of the same lattice: the
+    /// lists of a file's cell and of its conventional cell may differ by such a reflection; Gate B on 4876b18.)
     case invalidKMax(Double)
     /// The cell is not a valid lattice (`UnitCell.issues`), or so large that the list would exceed
     /// `ReflectionList.maximumReflections` (about (4/3)π k_max³ V reflections; 255 bytes each).
