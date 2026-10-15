@@ -173,8 +173,10 @@ struct AbsurdCellTests {
     /// A cell axis a billion times shorter than the others is refused by the import (two sites a few thousandths of an
     /// Å apart) or flagged as not reduced; it never traps (the integer matrix products of the conventional route
     /// overflowed). One that is a trillion times longer imports and says its reduction did not converge.
-    /// RED UNDER: the checked integer products of the conventional route replaced by the trapping `multiplied(by:)`
-    /// (the first case traps).
+    /// RED UNDER: the checked conjugation by the transformation (`IntegerMatrix.conjugating`, `conjugatedBy`) replaced by the
+    /// trapping `multiplied(by:)` (the first case traps there: a transformation with entries of 4.7e9 meets the file's
+    /// operations). The other checked products of the route (the candidate loop, the plane reduction, the adjugate, the
+    /// shears) are defence in depth for cells that no test case reaches.
     @Test func anAbsurdCifNeverTraps() throws {
         for a in ["1e-9", "1e-7", "1e-5", "1e-3", "1e-12", "1e-15", "1e-300"] {
             do {
@@ -213,7 +215,7 @@ struct AbsurdCellTests {
     /// A Niggli epsilon that is NaN, negative or infinite is refused like an invalid cell: unreduced and not converged,
     /// never "converged" on a cell that needs reducing. A sheared cell reduces at the default and at 0.
     /// RED UNDER: the epsilon guard of `niggliReduced` removed (NaN reports converged with the identity on the sheared
-    /// cell).
+    /// cell); the tolerance sanitising of `conventionalCell(tolerance:)` removed (NaN reads the cubic cell as aP).
     @Test func anInvalidNiggliEpsilonIsNotReportedAsReduced() {
         let hex = UnitCell(a: 4, b: 4, c: 7, alphaDeg: 90, betaDeg: 90, gammaDeg: 120)
         // a cell that needs a reduction: b' = b + 3a of the hexagonal cell, a' = a
@@ -230,9 +232,14 @@ struct AbsurdCellTests {
         }
         #expect(needs.niggliReduced(relativeEpsilon: 1e-5).converged)
         // the tolerance of the conventional route: NaN, negative and infinite read as 0
+        // (at 0 the cubic cell reads hR because cos 90° is not exactly 0; nonsense is "every matrix is a symmetry": aP)
+        #expect(UnitCell.cubic(a: 4).conventionalCell(tolerance: 0).bravais == .hR)
+        #expect(UnitCell.tetragonal(a: 3, c: 5).conventionalCell(tolerance: 0).bravais == .mC)
         for bad in [Double.nan, -1, .infinity] {
             #expect(needs.conventionalCell(tolerance: bad) == needs.conventionalCell(tolerance: 0), "\(bad)")
             #expect(hex.conventionalCell(tolerance: bad) == hex.conventionalCell(tolerance: 0), "\(bad)")
+            #expect(UnitCell.cubic(a: 4).conventionalCell(tolerance: bad) == UnitCell.cubic(a: 4).conventionalCell(tolerance: 0), "\(bad)")
+            #expect(UnitCell.tetragonal(a: 3, c: 5).conventionalCell(tolerance: bad).bravais == .mC, "\(bad)")
         }
     }
 }
