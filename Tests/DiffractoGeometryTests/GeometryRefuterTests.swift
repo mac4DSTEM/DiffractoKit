@@ -69,3 +69,37 @@ struct GeometryRefuterTests {
         #expect(throws: Never.self) { try RingIndexing.index(q: q, sigma: sigma, in: list.families, kMax: 4) }
     }
 }
+
+/// The Gate B refuter's two traps on slice 3b (704e5b0): an unbounded outer radius and an overflowing pattern size are
+/// refused as invalid input, never trapped. Mutants: either guard removed.
+struct EllipseRefuterTests {
+    static func pattern() -> DiffractionPattern {
+        let n = 64
+        var pixels = [Float](repeating: 0, count: n * n)
+        for r in 0..<n { for c in 0..<n {
+            let d = (Double(r - 32) * Double(r - 32) + Double(c - 32) * Double(c - 32)).squareRoot()
+            pixels[r * n + c] = Float(exp(-(d - 20) * (d - 20) / 8))
+        } }
+        return DiffractionPattern(width: n, height: n, pixels: pixels)
+    }
+
+    @Test func testUnboundedOuterRadiusIsInvalidInput() {
+        let p = Self.pattern()
+        for outer in [Double.infinity, 1e19, 1e9, 2 * (2.0 * 64 * 64).squareRoot() + 1] {
+            #expect(throws: EllipseCalibration.FitError.self) {
+                try EllipseCalibration.fitBestAvailable(pattern: p, centerQX: 32, centerQY: 32, innerRadius: 12, outerRadius: outer)
+            }
+            do { _ = try EllipseCalibration.fit1D(pattern: p, centerQX: 32, centerQY: 32, innerRadius: 12, outerRadius: outer) }
+            catch { guard case EllipseCalibration.FitError.invalidInput = error else { Issue.record("\(outer): \(error)"); continue } }
+        }
+        #expect(throws: Never.self) {
+            try EllipseCalibration.fitBestAvailable(pattern: p, centerQX: 32, centerQY: 32, innerRadius: 12, outerRadius: 28)
+        }
+    }
+
+    @Test func testOverflowingPatternSizeIsInvalidInput() {
+        let huge = DiffractionPattern(width: Int.max / 2 + 1, height: 3, pixels: [])
+        do { _ = try EllipseCalibration.fit1D(pattern: huge, centerQX: 1, centerQY: 1, innerRadius: 1, outerRadius: 2); Issue.record("admitted") }
+        catch { guard case EllipseCalibration.FitError.invalidInput = error else { Issue.record("\(error)"); return } }
+    }
+}

@@ -174,3 +174,25 @@ itself.
   has no `../data/README.md` manifest line yet; disabled with that reason. Its floor-guard claim is held synthetically.
 - The parity set alone does not reach the floor, the residual cap or the outer boundary; the dedicated unit tests do (9 of 9
   mutants red in the lane's copy).
+
+### 2026-10-15, after Gate B on 3b (refuter on 704e5b0): no port defect; two traps fixed; five gaps that are the apps' to register
+
+The refuter held the kit bit identical to mac4DSTEM 7d6fdbd1's compiled code (-O and -O -wmo) on about 940 (ring, call)
+pairs of its own (160 new rings: noise, gaps, spots, outliers, non-rings), against SciPy `least_squares` (conic: centre
+≤ 3.2e-7 px; profile on noise-free rings ≤ 6.5e-10 px), its own recount of the coverage bins (461 of 461), ADR 069's two
+starts and the floor, the transform and the row/column convention. Its findings:
+
+- **F4, F5, fixed (DEVIATION from the apps, only on inputs the apps' code trapped on):** an infinite or huge outer radius
+  trapped in `Int(...)` or allocated gigabytes; a width × height that overflows trapped. Now `invalidInput`: the outer
+  radius must be finite and at most twice the pattern's diagonal; the size check cannot overflow. No annulus inside a
+  pattern is affected, and the parity set is unchanged.
+- **F1, F2, F3, F6, F7, recorded — the apps' science, not changed here.** Changing them would break the registered bit
+  identity, so each is an UPSTREAM finding for mac4DSTEM (and macTEM's `RingCalibration.fit`) to register:
+  F1 noise in an angular gap marks bins occupied, so a ring with a 90°–120° gap and Gaussian or Poisson noise is
+  calibrated with no refusal (centre 0.7–2.7 px, R −0.9 to −3.5 %); F2 things that are not one ring are fitted and
+  calibrated (a central blob with R outside the annulus, a bright-disk edge at −10 to −18 %, two rings 1–4 px apart at +2
+  to +7 %, a cos² azimuthal modulation read as 4.6 % ellipticity) — the annulus guard that would catch the first was
+  refuted upstream and never landed; F3 one hot pixel (≥ 5× the ring peak) refuses a perfect ring as
+  `insufficientAngularCoverage(1)`, a strongly negative one moves the fit; F6 `insufficientSignal` is scale-dependent (a
+  perfect ring of amplitude ≤ 1e-6 is refused); F7 one edge sharper than 0.3 px is refused as `ringWidthAtFloor`.
+  These go to the coordinator for mac4DSTEM's ring-fit lane; `docs/consumers-0.0.3.md` lists them under known limits.

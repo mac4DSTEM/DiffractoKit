@@ -144,6 +144,21 @@ public enum EllipseCalibration {
     /// move it, and the coefficient is the Gaussian's. A caller applies only
     /// b/a and θ (`EllipseTransform`), so a and b are not a
     /// calibrated ring radius (`archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`).
+    /// width × height equals the pixel count, without an Int overflow trap (Gate B on slice 3b, F5: a width of
+    /// Int.max/2 + 1 trapped in the product). DEVIATION from the apps: they multiply unchecked.
+    static func patternSizeIsConsistent(_ pattern: DiffractionPattern) -> Bool {
+        let (count, overflow) = pattern.height.multipliedReportingOverflow(by: pattern.width)
+        return !overflow && pattern.pixels.count == count
+    }
+
+    /// The outer radius is finite and at most twice the pattern's diagonal: beyond that no pixel is added, and an infinite
+    /// or huge radius trapped in `Int(...)` or allocated gigabytes of bins (Gate B on slice 3b, F4). DEVIATION from the
+    /// apps, which check only outer > inner; no annulus inside the pattern is affected.
+    static func outerRadiusIsSane(_ outerRadius: Double, _ pattern: DiffractionPattern) -> Bool {
+        let diagonal = (Double(pattern.width) * Double(pattern.width) + Double(pattern.height) * Double(pattern.height)).squareRoot()
+        return outerRadius.isFinite && outerRadius <= 2 * diagonal
+    }
+
     public static func fit1D(
         pattern: DiffractionPattern,
         centerQX: Double,
@@ -154,9 +169,9 @@ public enum EllipseCalibration {
         acceptSparseCoverage: Bool = false
     ) throws -> EllipseCalibrationFit {
         guard pattern.height > 2, pattern.width > 2,
-              pattern.pixels.count == pattern.height * pattern.width,
+              patternSizeIsConsistent(pattern),
               centerQX.isFinite, centerQY.isFinite,
-              innerRadius >= 0, outerRadius > innerRadius,
+              innerRadius >= 0, outerRadius > innerRadius, outerRadiusIsSane(outerRadius, pattern),
               maximumResidual > 0 else {
             throw FitError.invalidInput("dimensions, center, or fit radii are invalid")
         }
@@ -479,8 +494,8 @@ public enum EllipseCalibration {
             let value: Double
         }
         guard pattern.height > 2, pattern.width > 2,
-              pattern.pixels.count == pattern.height * pattern.width,
-              innerRadius >= 0, outerRadius > innerRadius,
+              patternSizeIsConsistent(pattern),
+              innerRadius >= 0, outerRadius > innerRadius, outerRadiusIsSane(outerRadius, pattern),
               maximumResidual > 0 else {
             throw FitError.invalidInput("dimensions or profile bounds are invalid")
         }
