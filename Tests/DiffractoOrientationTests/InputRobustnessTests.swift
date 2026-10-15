@@ -119,7 +119,11 @@ import DiffractoOrientation
         let result = PhaseVectorMatcher.classify(
             vectors: [SIMD2(0.2, 0.0), SIMD2(0.0, 0.2), SIMD2(0.3, 0.1)], library: lib, settings: PhaseVectorSettings(),
             matrixEntry: nil, candidateEntryIndices: [-1, 9_999], scratch: PhaseVectorMatcher.Scratch(capacity: 64))
-        #expect(result.verdict != .indexed)
+        #expect(result.verdict == .noData && result.entryIndex == -1)
+        let known = PhaseVectorMatcher.classifyKnownVariants(
+            vectors: [SIMD2(0.2, 0.0), SIMD2(0.0, 0.2), SIMD2(0.3, 0.1)], library: lib, settings: PhaseVectorSettings(),
+            matrixEntry: nil, candidateEntryIndices: [-1, 9_999])
+        #expect(known.verdict == .noData && known.entryIndex == -1)
     }
 
     /// A cancelled build is an error, not a library that silently lacks phases.

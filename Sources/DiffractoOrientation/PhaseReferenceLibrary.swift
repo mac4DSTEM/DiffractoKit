@@ -5,8 +5,8 @@
 //        docs/registration-slice-4.md, section 1).
 //
 //  Method: Thronsen, Hjelen, Holmestad et al., "Studying GPB zones and precipitates in Al-Cu-Li with scanning precession
-//  electron diffraction", Ultramicroscopy 255 (2024) 113861, CC BY 4.0 (attribution in NOTICE). The method and the paper's
-//  Table 2 structures are reusable under that licence. This implementation is written from the published description; no code
+//  electron diffraction", Ultramicroscopy 255 (2024) 113861, CC BY 4.0 (attribution in NOTICE). The method is
+//  reusable under that licence. This implementation is written from the published description; no code
 //  was copied from the authors' notebook (their repository carries no licence), and every parameter default below is derived
 //  here.
 //
