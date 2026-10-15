@@ -2,7 +2,7 @@
 //  SymmetryDetection.swift
 //  Role: the operations of a structure from its sites, found by testing every element of the metric's holohedry
 //        (and any rotation a file's loop names) on the sites (registration section 3.4b, amended 2026-10-14: always
-//        run, also after a file's expansion). The permutation test is mac4DSTEM 7448401b's `CIFImport.isSymmetry`
+//        run, also after a file's expansion). The permutation test is reference commit 7448401b's `CIFImport.isSymmetry`
 //        (candidate translations from site 0 onto every compatible site, targets distinct, positions within a FIXED
 //        5e-3 fractional, occupancies within 0.02), generalised from two generators of two families to the whole
 //        holohedry of seven, and extended to keep every translation that works, so a centred cell yields its centring
@@ -18,14 +18,14 @@ import Foundation
 import simd
 
 public enum SymmetryDetection {
-    /// Fractional-coordinate agreement required to call two sites the same (the apps' reasoning: ≈10δ for 3-decimal
+    /// Fractional-coordinate agreement required to call two sites the same (the reference implementations' reasoning: ≈10δ for 3-decimal
     /// data, an order of magnitude below real symmetry breaking; fixed on purpose so a file cannot widen its own gate).
     public static let positionTolerance = 5e-3
     /// Occupancies are dimensionless and refined ones differ by thousandths between equivalent sites.
     public static let occupancyTolerance = 0.02
     /// The metric family is proposed at the ring rule's tolerance (1e-9 relative on lengths, 1e-9° on angles; the
     /// registration's 3.2 default): a rotation that is a symmetry then preserves every |g| to the 1e-9 the families are
-    /// grouped by, so an orbit never splits across two rings (Gate B amendment, 2026-10-15; the apps' 1e-3 / 0.05°
+    /// grouped by, so an orbit never splits across two rings (Gate B amendment, 2026-10-15; the reference implementations' 1e-3 / 0.05°
     /// called a cell with c/a = 1.0005 cubic and split its rings).
     public static let defaultMetricLengthTolerance = 1e-9
     public static let defaultMetricAngleToleranceDeg = 1e-9
@@ -122,7 +122,7 @@ public enum SymmetryDetection {
 
     /// The operations a space group can be made of: the set is closed under composition (mod lattice translations,
     /// within `positionTolerance`). Pseudo-symmetry within the fractional tolerance can pass single operations whose
-    /// products do not pass (the apps' split-atom gold: 40 operations, rotations of m-3m, not a group); an operation
+    /// products do not pass (the reference implementations' split-atom gold: 40 operations, rotations of m-3m, not a group); an operation
     /// that composes out of the set is dropped and the test repeated until the set is closed (2026-10-15). Sets above
     /// `closureCheckLimit` operations are returned as found (a 500-atom symmetric supercell has 24000).
     public static let closureCheckLimit = 2048
@@ -203,7 +203,7 @@ public enum SymmetryDetection {
 
     /// The target of each site when p ↦ R p + t permutes the set, else nil. Surjectivity is checked, not argued:
     /// finite-tolerance matching is not an equivalence relation, so two distinct sites can both land within tolerance
-    /// of the same target (the apps' split-atom gold is at best tetragonal).
+    /// of the same target (the reference implementations' split-atom gold is at best tetragonal).
     static func permutation(_ rotation: IntegerMatrix, _ translation: SIMD3<Double>, of sites: [AtomSite],
                             matcher: PositionMatcher, index: SiteIndex?) -> [Int]? {
         guard let index else { return permutationReference(rotation, translation, of: sites, matcher: matcher) }

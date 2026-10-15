@@ -191,7 +191,7 @@ func runGeometryChecks(_ report: inout Report) {
                 try RingIndexing.index(q: g111, sigma: sigma, in: rings, kMax: 1.2) == hit, true)
         r.equal("a Reflection list's own families index too",
                 try RingIndexing.index(q: g111, sigma: sigma, in: try gold.reflections(kMax: 1.2).families(), kMax: 1.2).best.family.name, "{1 1 1}")
-        // The apps' macTEM T1 plant: a ring at 3 sigma exactly is accepted, at 3.01 sigma refused as none-within-tolerance.
+        // The reference implementation's T1 plant: a ring at 3 sigma exactly is accepted, at 3.01 sigma refused as none-within-tolerance.
         func verdict(_ q: Double, _ s: Double) -> String {
             refusal { () throws(RingIndexing.Refusal) in _ = try RingIndexing.index(q: q, sigma: s, in: list) }?.name ?? "accepted"
         }
@@ -223,7 +223,7 @@ func runGeometryChecks(_ report: inout Report) {
 
     report.section("ZoneAxis") { r in
         r.equal("49 low-index axes", ZoneAxis.lowIndex.count, 49)
-        r.equal("the first and last axes (mac4DSTEM's order)", ZoneAxis.lowIndex.first == ZoneAxis(-1, -1, -1) && ZoneAxis.lowIndex.last == ZoneAxis(0, 0, -1), true)
+        r.equal("the first and last axes (the reference implementation's order)", ZoneAxis.lowIndex.first == ZoneAxis(-1, -1, -1) && ZoneAxis.lowIndex.last == ZoneAxis(0, 0, -1), true)
         r.equal("axes are distinct", Set(ZoneAxis.lowIndex).count, 49)
         r.equal("description", ZoneAxis(1, 1, 0).description, "[1 1 0]")
         let beta = 105.3
@@ -302,7 +302,7 @@ func runGeometryChecks(_ report: inout Report) {
     report.section("EllipseCalibration and RingCalibration.fit on a planted ring") { r in
         let size = 128, R = 40.0, s = 2.0, cr = 63.4, cc = 64.2
         let pattern = plantedRing(size: size, centerRow: cr, centerColumn: cc, radius: R, sigma: s)
-        // The registered band is 1 % on the radius, 0.01 on b/a, 1 px on the centre (mac4DSTEM EllipseNoisyRingTests).
+        // The registered band is 1 % on the radius, 0.01 on b/a, 1 px on the centre (reference EllipseNoisyRingTests).
         let best = try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: 60, centerQY: 60, innerRadius: 28, outerRadius: 52)
         r.equal("the profile model is used on a clean ring", best.model, .asymmetricGaussian)
         r.near("the clean ring's radius is recovered within 1 %", (best.a + best.b) / 2, R, 0.01 * R)

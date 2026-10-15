@@ -1,7 +1,7 @@
 //
 //  main.swift
 //  Role: uses DiffractoCore's public API from a package that depends on DiffractoKit by path (so `package` access
-//        does not apply) and checks it against values a reader can verify by hand: the β″ cell of the apps, the
+//        does not apply) and checks it against values a reader can verify by hand: the β″ cell of the reference implementations, the
 //        monoclinic rings, cubic gold's eight families; DiffractoGeometry's checks are in GeometryChecks.swift. Exits non-zero on any failed check. `run.sh` builds it in Debug.
 //
 

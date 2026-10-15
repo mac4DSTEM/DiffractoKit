@@ -1,9 +1,9 @@
 //
 //  CrystalStructure.swift
 //  Role: a cell with its atoms, its symmetry operations (from a file, or detected from the atoms), its Laue group
-//        and class, and the validation the apps' `CrystalModel` applies (mac4DSTEM 7448401b `CrystalModel.swift`:
+//        and class, and the validation the reference implementations' `CrystalModel` applies (reference commit 7448401b `CrystalModel.swift`:
 //        cell, basis, occupancies, finite coordinates, the 0.5 Å close contact). No app type: nothing here is a
-//        "model", an id, a source or a provenance dictionary; those stay in the apps.
+//        "model", an id, a source or a provenance dictionary; those stay in the reference implementations.
 //
 
 import Foundation
@@ -166,7 +166,7 @@ public struct CrystalStructure: Sendable, Equatable {
         }.joined(separator: " ")
     }
 
-    // MARK: Validation (the apps' CrystalModel.validationIssues, without the app-only checks)
+    // MARK: Validation (the reference implementations' CrystalModel.validationIssues, without the app-only checks)
 
     public struct ValidationIssue: Sendable, Equatable, CustomStringConvertible {
         public let code: String
@@ -215,7 +215,7 @@ public struct CrystalStructure: Sendable, Equatable {
 
     /// Shortest centre-to-centre distance (Å) between two sites that cannot both be occupied by a whole atom, when
     /// under `closeContactLimit`; nil when there is no such pair. Pairs whose occupancies sum to ≤ 1.02 are a split
-    /// site and are skipped (the apps' rule). Minimum image over the 27 neighbouring cells behind a per-axis prefilter.
+    /// site and are skipped (the reference implementations' rule). Minimum image over the 27 neighbouring cells behind a per-axis prefilter.
     public var shortestCloseContact: Double? {
         guard sites.count > 1 else { return nil }
         let lattice = cell.realLattice

@@ -101,7 +101,7 @@ struct UnitCellTests {
         }
     }
 
-    /// macTEM's S2c hand anchors for β″ (d in Å). Mutant: β read from α (d(200) becomes a/2).
+    /// the reference implementation's S2c hand anchors for β″ (d in Å). Mutant: β read from α (d(200) becomes a/2).
     @Test func testBetaDoublePrimeHandAnchors() {
         let cell = Fixtures.betaDoublePrimeCell
         let anchors: [(MillerIndex, Double)] = [

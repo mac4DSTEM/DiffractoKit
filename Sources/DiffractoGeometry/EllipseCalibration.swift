@@ -5,7 +5,7 @@
 //        asymmetric ("Janus") Gaussian ring model; `fitBestAvailable` chains them. Slice 3b of DiffractoKit
 //        (docs/registration-slice-3.md section 2).
 //
-//  SEED: mac4DSTEM 7d6fdbd1 `mac4DSTEM/Core/Analysis/EllipseCalibration.swift` (853 lines), ported verbatim in arithmetic
+//  SEED: reference commit 7d6fdbd1 `Core/Analysis/EllipseCalibration.swift` (853 lines), ported verbatim in arithmetic
 //  (every constant, every boundary, operation order): coverage 36 / 30 / 12 azimuthal bins, residual caps 0.2 / 0.4 / 0.22,
 //  the one-ring ratio 1.10, the MAD cut 4 * 1.4826 and 70 % inliers, axis ratio 0.2 and 5, and ADR 069's two starts and its
 //  0.30 px ring-width floor guard. NOT ported, because they never landed there: the annulus guard (`ringOutsideAnnulus`)
@@ -141,7 +141,7 @@ public enum EllipseCalibration {
     /// Coordinates deliberately stay in py4DSTEM order (qx=row, qy=column).
     ///
     /// RADIUS BIAS, a property of the port, not a deviation (2026-10-12,
-    /// macTEM's report): the objective's minimum lies OUTSIDE a ring's peak.
+    /// the reference implementation's report): the objective's minimum lies OUTSIDE a ring's peak.
     /// For a Gaussian ring of width s at radius R, no background, an annulus
     /// many s wide, (a + b)/2 = R (1 + 1.75 (s/R)²) — the r dr measure, the
     /// conic's r² and the squared intensity (R_f² = ∫r⁵I² dr / ∫r³I² dr).
@@ -162,15 +162,15 @@ public enum EllipseCalibration {
 
     // MARK: Impulses, scale and cancellation (DiffractoKit 0.1.0, registration-0.0.4 §1.1, §1.2, §4)
     //
-    // DEVIATION from the apps (7d6fdbd1), on inputs their code refused or that hold an isolated impulse only:
+    // DEVIATION from the reference implementations (7d6fdbd1), on inputs their code refused or that hold an isolated impulse only:
     // - an annulus pixel outside the range of its finite in-pattern 8-neighbours (at least 3) by more than twice the
     //   annulus's robust range (P99.5 − P0.5, nearest rank) is skipped like a non-finite pixel (slice 3b's F3: one hot
     //   pixel refused a perfect ring as insufficientAngularCoverage(1));
-    // - the signal test is relative (range above |maximum| × 1e-6 and at least the least normal double; the apps' floor of
+    // - the signal test is relative (range above |maximum| × 1e-6 and at least the least normal double; the reference implementations' floor of
     //   1 made it absolute: slice 3b's F6), and a range below 0.5 is brought into [0.5, 1) by an exact power of two
     //   before the optimisers run, so their absolute floors act on the normalised problem (amended 2026-10-15 from
     //   "below 1 into [1, 2)": a unit ring's Float maximum lies just below 1, and that rule rescaled the parity rings).
-    // A pattern without impulses and with a range of at least 0.5 runs the apps' arithmetic unchanged (the parity gate).
+    // A pattern without impulses and with a range of at least 0.5 runs the reference implementations' arithmetic unchanged (the parity gate).
 
     /// Twice the robust range of the annulus values; 0 (no impulse test) when that range is 0.
     static func impulseThreshold(_ values: [Double]) -> Double {
@@ -229,7 +229,7 @@ public enum EllipseCalibration {
     }
 
     /// width × height equals the pixel count, without an Int overflow trap (Gate B on slice 3b, F5: a width of
-    /// Int.max/2 + 1 trapped in the product). DEVIATION from the apps: they multiply unchecked.
+    /// Int.max/2 + 1 trapped in the product). DEVIATION from the reference implementations: they multiply unchecked.
     static func patternSizeIsConsistent(_ pattern: DiffractionPattern) -> Bool {
         let (count, overflow) = pattern.height.multipliedReportingOverflow(by: pattern.width)
         return !overflow && pattern.pixels.count == count
@@ -474,7 +474,7 @@ public enum EllipseCalibration {
                 // until the candidate equals the point, and with `converged`
                 // set only on an accepted step the 100-pass cap threw
                 // didNotConverge AT the optimum: 12 of 84 clean planted rings
-                // (macTEM's report, `docs/archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`).
+                // (the reference implementation's report, `docs/archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`).
                 // A step this small that roundoff will not let lower the cost is
                 // converged; the fit returns the last accepted point. py4DSTEM's
                 // `leastsq` (MINPACK) tests its xtol whether or not the step is
@@ -668,7 +668,7 @@ public enum EllipseCalibration {
         let annulus = annulusPixels(pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
                                     outerRadius: outerRadius, includeOuter: false)
         // The global maximum skips isolated impulses too (registration-0.0.4 §1.1); a pixel is tested only when it would
-        // raise the maximum, so a pattern without impulses gives the apps' maximum.
+        // raise the maximum, so a pattern without impulses gives the reference implementations' maximum.
         for (index, value) in pattern.pixels.enumerated() where value.isFinite {
             let v = Double(value)
             if v > globalMaximum, isImpulse(pattern, qx: index / pattern.width, qy: index % pattern.width, value: v,
@@ -727,7 +727,7 @@ public enum EllipseCalibration {
             max(1, initial.a), max(1, initial.b), 1,
         ]
 
-        // The ring sigmas' floor: 0.25 px, the apps' bound; lowered to 0.01 px only for the one-sided refit below.
+        // The ring sigmas' floor: 0.25 px, the reference implementations' bound; lowered to 0.01 px only for the one-sided refit below.
         var ringSigmaFloor = 0.25
         func bounded(_ input: [Double]) -> [Double] {
             var p = input

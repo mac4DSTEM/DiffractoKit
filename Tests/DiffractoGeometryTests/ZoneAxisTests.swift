@@ -15,7 +15,7 @@ import DiffractoGeometry
 
 struct ZoneAxisTests {
 
-    /// mac4DSTEM 7d6fdbd1 `PhaseReferenceLibrary.lowIndexZoneAxes`, compiled from its source and printed (49, in order).
+    /// reference commit 7d6fdbd1 `PhaseReferenceLibrary.lowIndexZoneAxes`, compiled from its source and printed (49, in order).
     private static let appsLowIndex: [(Int, Int, Int)] = [
         (-1, -1, -1), (-2, -2, -1), (-1, -1, 0), (-2, -2, 1), (-1, -1, 1), (-2, -1, -2), (-2, -1, -1), (-2, -1, 0),
         (-2, -1, 1), (-2, -1, 2), (-1, 0, -1), (-2, 0, -1), (-1, 0, 0), (-2, 0, 1), (-1, 0, 1), (-2, 1, -2),
@@ -52,7 +52,7 @@ struct ZoneAxisTests {
 
     // MARK: The 49 axes
 
-    /// 49 axes, distinct, equal by value and in order to mac4DSTEM's; each coprime, |u|,|v|,|w| <= 2, one of each +- pair,
+    /// 49 axes, distinct, equal by value and in order to the reference implementation's; each coprime, |u|,|v|,|w| <= 2, one of each +- pair,
     /// none zero; the rule rebuilt here (u, v, w from -2 to 2, reduced by the true gcd with the floor at the end, the first of
     /// a +- pair kept) gives the same list. Mutants: the gcd floored inside (50 axes, [0 0 2] beside [0 0 1]), both of a +-
     /// pair kept (98), the range -2...2 changed.
@@ -60,7 +60,7 @@ struct ZoneAxisTests {
         let axes = ZoneAxis.lowIndex
         #expect(axes.count == 49)
         #expect(Set(axes).count == 49)
-        #expect(axes.map { [$0.u, $0.v, $0.w] } == Self.appsLowIndex.map { [$0.0, $0.1, $0.2] }, "by value, in the apps' order")
+        #expect(axes.map { [$0.u, $0.v, $0.w] } == Self.appsLowIndex.map { [$0.0, $0.1, $0.2] }, "by value, in the reference implementations' order")
         for a in axes {
             let g = Self.gcd(Self.gcd(abs(a.u), abs(a.v)), abs(a.w))
             #expect(g == 1, "\(a) is not primitive")
@@ -109,7 +109,7 @@ struct ZoneAxisTests {
     }
 
     /// Cubic: the Cartesian axis is (u, v, w)/|(u, v, w)| for every one of the 49. A zero axis has no direction (nil), as
-    /// mac4DSTEM's `cartesianZoneAxis`.
+    /// the reference implementation's `cartesianZoneAxis`.
     @Test func testCubicAxesAreTheCartesianTripleAndZeroHasNoDirection() throws {
         let cell = UnitCell.cubic(a: 4.0782)
         for z in ZoneAxis.lowIndex {

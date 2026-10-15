@@ -49,13 +49,13 @@ struct SymmetryDetectionTests {
         #expect(structure.laueClass == .mThreeBarM)
     }
 
-    /// Magnesium's 6₃ screw carries a translation; the structure is still 6/mmm (the apps' reason to allow t ≠ 0).
+    /// Magnesium's 6₃ screw carries a translation; the structure is still 6/mmm (the reference implementations' reason to allow t ≠ 0).
     @Test func testMagnesiumIsP63OverMmc() {
         let sites = [AtomSite(z: 12, fractional: [0, 0, 0]), AtomSite(z: 12, fractional: [2.0 / 3, 1.0 / 3, 0.5])]
         let structure = CrystalStructure.detectingSymmetry(cell: .hexagonal(a: 3.2094, c: 5.2108), sites: sites)
         #expect(structure.operations.count == 24)
         #expect(structure.laueClass == .sixOverMmm)
-        // With an atom at the origin (the apps' cell, not ITA's origin on the 6₃ axis) the screw is
+        // With an atom at the origin (the reference implementations' cell, not ITA's origin on the 6₃ axis) the screw is
         // (x−y+⅔, x+⅓, z+½): a 6-fold rotation part with a half translation along c.
         let c6 = IntegerMatrix([1, -1, 0], [1, 0, 0], [0, 0, 1])
         let screws = structure.operations.filter { $0.rotation == c6 }
@@ -74,7 +74,7 @@ struct SymmetryDetectionTests {
         #expect(structure.laueClass == .mThreeBarM)
     }
 
-    /// The apps' bijection fixture (mac4DSTEM `CIFSymmetryBijectionTests`): FCC gold plus two extra Au at
+    /// The reference implementations' bijection fixture (reference `CIFSymmetryBijectionTests`): FCC gold plus two extra Au at
     /// (0.004, 0, 0) and (0, 0.004, 0), inside the 5e-3 tolerance of the origin atom but 0.0057 from each other and
     /// from where the 3-fold sends them. No translation makes the 3-fold a permutation of these six sites, so the cell
     /// is not cubic; a matcher that lets two sites share one target says it is. Mutant: the target-distinct guard
@@ -96,7 +96,7 @@ struct SymmetryDetectionTests {
         #expect(split.laueClass != .mThreeBarM)
     }
 
-    /// A metrically cubic cell (a = c) whose atoms carry only a 4-fold along c: 4/mmm, not m-3m (the apps refused it).
+    /// A metrically cubic cell (a = c) whose atoms carry only a 4-fold along c: 4/mmm, not m-3m (the reference implementations refused it).
     @Test func testTetragonalAtomsInACubicMetricAre4OverMmm() {
         let sites = [AtomSite(z: 22, fractional: [0, 0, 0]), AtomSite(z: 8, fractional: [0.5, 0.5, 0]),
                      AtomSite(z: 8, fractional: [0.5, 0.5, 0.5])]

@@ -1,7 +1,7 @@
 //
 //  CIFImport.swift
 //  Role: the subset of CIF that defines a structure (cell, the atom-site loop, the symmetry-operation loop), read into
-//        a `CrystalStructure`. Ported from mac4DSTEM 7448401b `CIFImport.swift` (registration section 3.7): the
+//        a `CrystalStructure`. Ported from reference commit 7448401b `CIFImport.swift` (registration section 3.7): the
 //        tokenizer, the `(3)` uncertainty suffix, the element symbol rule, the written-precision half-step, the
 //        expansion that merges images within the propagated half-step AND 0.10 Å, and the refusals that protect the
 //        structure. Generalised: every crystal system is admitted; a file without operations has its symmetry

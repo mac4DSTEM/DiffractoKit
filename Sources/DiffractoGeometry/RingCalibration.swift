@@ -2,7 +2,7 @@
 //  RingCalibration.swift
 //  Role: the calibration a diffraction ring of known d gives (Δq in 1/Å per pixel, and the camera length) as closed forms,
 //        and the decision of when a ring is NOT to be calibrated from. Slice 3a of DiffractoKit
-//        (docs/registration-slice-3.md); ported from macTEM 9482831 `RingCalibration.swift` with every formula, constant,
+//        (docs/registration-slice-3.md); ported from reference commit 9482831 `RingCalibration.swift` with every formula, constant,
 //        NaN rule, refusal order and message kept. The fit that fills a `FitReport` is slice 3b, not here.
 //
 //  THE FORMULAS (exact; nothing here is a small-angle form):

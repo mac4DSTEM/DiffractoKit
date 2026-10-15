@@ -3,12 +3,12 @@
 //  DiffractoKit slice 3b (docs/registration-slice-3.md section 3): `EllipseCalibration` on small clean patterns planted here, in
 //  Swift, with their truth known: the constants, the input guards, the annulus boundaries, the coverage bound and the "fit
 //  anyway" path, the one-ring check, the 0.30 px ring-width floor guard (ADR 069), the profile residual cap, a clean circle's
-//  radius on both paths, and the row / column convention on a non-square pattern. The noisy plants of the apps are
-//  EllipseNoisyRingTests, the stop-rule rings EllipseStopRuleTests, the bit identity with the apps' compiled code
+//  radius on both paths, and the row / column convention on a non-square pattern. The noisy plants of the reference implementations are
+//  EllipseNoisyRingTests, the stop-rule rings EllipseStopRuleTests, the bit identity with the reference implementations' compiled code
 //  EllipseAppsParityTests.
 //
 //  Written for the kit (the seed has these checks only as tools/ellipse-calibration-test, a scientific harness); the numbers
-//  marked "measured" were measured on mac4DSTEM 7d6fdbd1's own EllipseCalibration compiled -O (and equal the kit's, which
+//  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equal the kit's, which
 //  EllipseAppsParityTests proves bit for bit).
 //
 //  Every test names under "RED UNDER" the production mutation that turns it red.
@@ -139,7 +139,7 @@ struct EllipseCalibrationTests {
 
     // MARK: The annulus boundaries
 
-    /// The conic's annulus is `inner < r <= outer` and the profile's `inner < r < outer` (kept for bit identity with the apps,
+    /// The conic's annulus is `inner < r <= outer` and the profile's `inner < r < outer` (kept for bit identity with the reference implementations,
     /// registration section 2). On a lattice centred on a pixel the radii 10 and 20 are hit exactly by pixels such as (6, 8) and
     /// (12, 16), so the counts differ by exactly the pixels on the boundaries; the expected counts are worked in integers.
     /// RED UNDER: `<=` for `<` or `<` for `<=` at either outer boundary; `>=` for `>` at the inner one.
@@ -170,7 +170,7 @@ struct EllipseCalibrationTests {
 
     // MARK: Coverage
 
-    /// A ring with a 120 degree arc missing (a plant of the apps-parity set: 128 px, R 40, eps 2 %, theta 30 degrees) holds 25 of
+    /// A ring with a 120 degree arc missing (a plant of the parity set: 128 px, R 40, eps 2 %, theta 30 degrees) holds 25 of
     /// 36 bins (measured): refused by default with that count, fitted on the "anyway" path and MARKED `sparseCoverage`, with its centre
     /// 0.89 px from the plant's (measured; a gapped conic carries a centre shift, which is why the one-ring check and the caller's
     /// assertion exist) and b/a within 0.0012 of the plant's.
@@ -307,7 +307,7 @@ struct EllipseCalibrationTests {
 
     /// A clean circular ring of width s about a known centre, on both paths: the conic's objective puts its radius at
     /// R (1 + 1.75 (s/R)^2) (a property of the objective, registered in the header: +0.4375 % at R 30, s 3), the profile fit
-    /// recovers R and its width s; a/b is 1 on both. Plant: the apps' stop-rule ring 1 (96 px, R 30, s 3).
+    /// recovers R and its width s; a/b is 1 on both. Plant: the reference implementations' stop-rule ring 1 (96 px, R 30, s 3).
     /// RED UNDER: the profile model's radius taken from the conic; the profile's sigmas swapped with the central one.
     @Test func testACleanCircleGivesTheBiasedRadiusOnTheConicAndTheTrueRadiusOnTheProfile() throws {
         let plant = EllipsePlant(size: 96, radius: 30, eps: 0, thetaDegrees: 0, gap: 0, noise: 0, seed: 1)
@@ -328,7 +328,7 @@ struct EllipseCalibrationTests {
 
     // MARK: Row and column
 
-    /// qx is the ROW and qy the COLUMN, on a pattern that is not square. The ring of the apps' reference harness
+    /// qx is the ROW and qy the COLUMN, on a pattern that is not square. The ring of the reference implementations' reference harness
     /// ("non_square_rotated": 72 rows by 110 columns, centre (34.5, 58.25), a 24, b 17, theta 0.42 rad, s 1.1 px) is found with
     /// its centre in (row, column) order; the same pattern TRANSPOSED (110 rows by 72 columns, centre (58.25, 34.5)) gives the axes
     /// unchanged and theta' = pi/2 - theta (the major axis direction (cos theta, sin theta) in (row, column) becomes
@@ -375,10 +375,10 @@ struct EllipseCalibrationTests {
     }
 
     /// The 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing; the pixels are
-    /// the apps-parity set's) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
+    /// the parity set's) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
     /// weighted-conic objective, tools/slice-3b/sweep.py: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad (not on a circle,
     /// where it is undefined), the same pixel and bin counts, and the centre within 0.05 px of the plant (0.1 px for the rings with an arc missing, see below). These are the bands of
-    /// mac4DSTEM tools/ellipse-calibration-test (measured there: 1.1e-7 px, 6.4e-10, 1.7e-8 rad). This pins the OBJECTIVE: an
+    /// reference tools/ellipse-calibration-test (measured there: 1.1e-7 px, 6.4e-10, 1.7e-8 rad). This pins the OBJECTIVE: an
     /// unweighted or sqrt-weighted variant lands on a different minimum and fails here.
     /// RED UNDER: the residual weighted by sqrt(value) or not at all; the Jacobian wrong; a different start; the annulus boundary.
     @Test func testCleanSweepEqualsSciPysOptimum() throws {
@@ -400,7 +400,7 @@ struct EllipseCalibrationTests {
             let theta = p.eps == 0 ? 0 : Self.angleError(fit.theta, ring.optimumTheta)
             worstPlant = max(worstPlant, toPlant); worstCentre = max(worstCentre, centre)
             worstAxes = max(worstAxes, axes); worstTheta = max(worstTheta, theta)
-            // The apps' clause is 0.05 px on rings of R 80-200. A conic fitted to a ring with a 60 degree arc missing sits off the
+            // The reference implementations' clause is 0.05 px on rings of R 80-200. A conic fitted to a ring with a 60 degree arc missing sits off the
             // plant by an amount that grows as R shrinks (the objective, not the port: SciPy's optimum agrees to 7e-8 px); on these
             // R 32-52 rings it is 0.055-0.094 px (measured), so a gapped ring is held to 0.1 px and an unbroken one to 0.05 px.
             #expect(toPlant < (p.gap == 0 ? 0.05 : 0.1), "\(ring.name): centre \(toPlant) px from the plant")
@@ -412,7 +412,7 @@ struct EllipseCalibrationTests {
     }
 }
 
-/// The plant parameters and start of a case of Fixtures/slice-3b-apps.json (the apps-parity dump), for the sweep test.
+/// The plant parameters and start of a case of Fixtures/slice-3b-apps.json (the parity dump), for the sweep test.
 private struct ParityPlant: Decodable {
     struct Plant: Decodable {
         let kind: String, name: String

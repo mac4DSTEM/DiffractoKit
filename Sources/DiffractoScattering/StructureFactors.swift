@@ -1,10 +1,10 @@
 //
 //  StructureFactors.swift
 //  Role: kinematic structure factors F(hkl) = (1/V) Σ_sites f(Z, |g|²) · occ · exp(2πi (h x + k y + l z)) in Å⁻² (f in Å
-//        over V in Å³; py4DSTEM's and the apps' "A" label names f's unit, not F's: Gate B, 2026-10-15), and the
+//        over V in Å³; py4DSTEM's and the reference implementations' "A" label names f's unit, not F's: Gate B, 2026-10-15), and the
 //        reflection list after the |F| cut with its rings (registration docs/registration-slice-2.md §1, §3.2, §3.3).
-//        The loop is mac4DSTEM 7d6fdbd1's `Crystal.reflections(kMax:tolerance:)`, in the same order of operations, so
-//        the numbers can be bit identical to the apps'; the enumeration and the ring rule are slice 1's.
+//        The loop is reference commit 7d6fdbd1's `Crystal.reflections(kMax:tolerance:)`, in the same order of operations, so
+//        the numbers can be bit identical to the reference implementations'; the enumeration and the ring rule are slice 1's.
 //
 
 import Foundation
@@ -35,7 +35,7 @@ public struct StructureFactor: Sendable, Equatable {
 
 public enum StructureFactors {
 
-    /// The apps' |F| cut-off (Å⁻²): a reflection is kept when |F| > cut. A fixed number against a quantity that scales as
+    /// The reference implementations' |F| cut-off (Å⁻²): a reflection is kept when |F| > cut. A fixed number against a quantity that scales as
     /// 1/V: a large cell keeps fewer reflections at the same cut (registration slice 2 §7).
     public static let defaultCut = 1e-4
 
@@ -47,7 +47,7 @@ public enum StructureFactors {
                 formFactor: formFactor)
     }
 
-    /// The loop, in the apps' order: |g| = length(g), g² = |g|·|g|; per site f, phase = 2π(hx + ky + lz),
+    /// The loop, in the reference implementations' order: |g| = length(g), g² = |g|·|g|; per site f, phase = 2π(hx + ky + lz),
     /// Re += f·occ·cos, Im += f·occ·sin; then ÷ V.
     static func compute(_ hkl: MillerIndex, g: SIMD3<Double>, sites: [AtomSite], volume: Double,
                         formFactor: FormFactor) -> StructureFactor? {
@@ -125,7 +125,7 @@ public struct KinematicReflectionList: Sendable, Equatable {
     public let families: [KinematicFamily]
 
     /// Kept reflections that the detected space-group operations forbid: their |F| is non-zero only because the sites'
-    /// written coordinates break the symmetry slightly (⅓ written as 0.333 gives |F| up to 3e-4 in magnesium). The apps
+    /// written coordinates break the symmetry slightly (⅓ written as 0.333 gives |F| up to 3e-4 in magnesium). The reference implementations
     /// keep them by |F| alone and so does the list; this names them so a caller can tell (Gate B F4, 2026-10-15).
     public var keptButOperationAbsent: [KinematicReflection] { kept.filter { !$0.reflection.isAllowed } }
 }

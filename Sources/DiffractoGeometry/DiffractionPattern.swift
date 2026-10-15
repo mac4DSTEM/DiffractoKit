@@ -3,8 +3,8 @@
 //  Role: the three-field pattern the ring and ellipse fit reads: width, height and row-major Float32 pixels. Slice 3b of
 //        DiffractoKit (docs/registration-slice-3.md section 2).
 //
-//  SEED: mac4DSTEM 7d6fdbd1 `mac4DSTEM/Core/Data/DiffractionPattern.swift`, only the 3-field struct (its display helpers
-//  `FloatImage`, `RGBAImage`, the log contrast and the -1 masked-pixel sentinel are presentation and stay in the apps). The
+//  SEED: reference commit 7d6fdbd1 `Core/Data/DiffractionPattern.swift`, only the 3-field struct (its display helpers
+//  `FloatImage`, `RGBAImage`, the log contrast and the -1 masked-pixel sentinel are presentation and stay in the reference implementations). The
 //  seed names its fields `qy` (the ROW count) and `qx` (the COLUMN count); here they are `height` and `width`. The fit's
 //  coordinates keep py4DSTEM's order: `qx` is the ROW index and `qy` the COLUMN index, so the pixel at row r and column c is
 //  `pixels[r * width + c]` and a seed `DiffractionPattern(qy: rows, qx: columns, pixels:)` is `DiffractionPattern(width:

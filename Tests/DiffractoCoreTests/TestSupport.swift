@@ -1,7 +1,7 @@
 //
 //  TestSupport.swift
 //  Role: the fixtures directory (read by #filePath, not as resources), the β″ CIF text rebuilt from the pinned
-//        generator's values (tools/crystal-structures/make_beta_double_prime.py, verbatim from mac4DSTEM 7448401b; the
+//        generator's values (tools/crystal-structures/make_beta_double_prime.py, verbatim from reference commit 7448401b; the
 //        pins carry its sha256), and the pins file written by tools/slice-1/pins.py (registration section 4).
 //
 
@@ -69,7 +69,7 @@ enum Fixtures {
         return lines.joined(separator: "\n") + "\n"
     }
 
-    /// The β″ cell as the apps' `Crystal.betaDoublePrime` builds it in code: the six sites expanded by hand under C2/m
+    /// The β″ cell as the reference implementations' `Crystal.betaDoublePrime` builds it in code: the six sites expanded by hand under C2/m
     /// (22 atoms), for the detection tests (no CIF, no operations).
     static var betaDoublePrimeSites: [AtomSite] {
         func fourI(_ z: Int, _ x: Double, _ zc: Double) -> [AtomSite] {

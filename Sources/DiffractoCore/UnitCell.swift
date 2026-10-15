@@ -2,7 +2,7 @@
 //  UnitCell.swift
 //  Role: a, b, c, α, β, γ and everything the metric alone determines: the real and reciprocal lattices, the metric
 //        tensors, the volume, d(hkl) and g(hkl), the crystal family of the metric at a stated tolerance. Ported from
-//        mac4DSTEM 7448401b `Crystal.swift` (the py4DSTEM / VESTA convention: a along x, b in the xy plane; reciprocal
+//        reference commit 7448401b `Crystal.swift` (the py4DSTEM / VESTA convention: a along x, b in the xy plane; reciprocal
 //        vectors without 2π, |g| in Å⁻¹, d = 1/|g| in Å) and generalised to the seven systems; registration
 //        docs/registration-slice-1.md sections 3.1 and 3.2.
 //
@@ -138,7 +138,7 @@ public struct UnitCell: Sendable, Equatable {
         }
     }
 
-    /// The apps' `CrystalModel.validationIssues` for the cell part, in that order.
+    /// The reference implementations' `CrystalModel.validationIssues` for the cell part, in that order.
     public var issues: [Issue] {
         var out: [Issue] = []
         if [a, b, c].contains(where: { !$0.isFinite || $0 <= 0 }) { out.append(.invalidLengths) }
@@ -173,7 +173,7 @@ public struct UnitCell: Sendable, Equatable {
     }
 
     /// Lengths equal within `lengthTolerance` (relative), angles within `angleToleranceDeg` (degrees). The defaults
-    /// are macTEM's indexing tolerance (1e-9); a CIF reader that wants the apps' 1e-3 / 0.05° passes them.
+    /// are the reference implementation's indexing tolerance (1e-9); a CIF reader that wants the reference implementations' 1e-3 / 0.05° passes them.
     public func metricFamily(lengthTolerance: Double = 1e-9, angleToleranceDeg: Double = 1e-9) -> MetricFamily {
         func same(_ x: Double, _ y: Double) -> Bool { abs(x - y) <= lengthTolerance * max(abs(x), abs(y)) }
         func angle(_ x: Double, _ target: Double) -> Bool { abs(x - target) <= angleToleranceDeg }
@@ -194,7 +194,7 @@ public struct UnitCell: Sendable, Equatable {
         return .triclinic
     }
 
-    // MARK: - Small linear-algebra helpers (row-vector matrices), as the apps'
+    // MARK: - Small linear-algebra helpers (row-vector matrices), as the reference implementations'
 
     static let identity3: [SIMD3<Double>] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 
@@ -237,14 +237,14 @@ public struct UnitCell: Sendable, Equatable {
     }
 }
 
-/// Minimum-image separation along one fractional axis, in [0, 0.5] (the apps' `axisDelta`).
+/// Minimum-image separation along one fractional axis, in [0, 0.5] (the reference implementations' `axisDelta`).
 public func fractionalAxisDelta(_ x: Double, _ y: Double) -> Double {
     var d = abs(x - y).truncatingRemainder(dividingBy: 1)
     if d > 0.5 { d = 1 - d }
     return d
 }
 
-/// Wraps fractional coordinates into [0, 1), snapping values within 1e-9 of 0 or 1 to 0 (the apps' `wrap`).
+/// Wraps fractional coordinates into [0, 1), snapping values within 1e-9 of 0 or 1 to 0 (the reference implementations' `wrap`).
 public func wrapFractional(_ v: SIMD3<Double>) -> SIMD3<Double> {
     func wrapAxis(_ value: Double) -> Double {
         var m = value.truncatingRemainder(dividingBy: 1)

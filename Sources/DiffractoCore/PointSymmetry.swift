@@ -4,7 +4,7 @@
 //        group of a structure, the orbit of a reflection and its canonical form and name. Registration
 //        docs/registration-slice-1.md sections 3.4 (the holohedry generators), 3.5 (the Laue class of a group) and 3.6
 //        (orbits: (h k l) R; the canonical form is the orbit member greatest under (number of non-negative indices,
-//        lexicographic), the one rule that reproduces the apps' cubic, hexagonal and monoclinic names).
+//        lexicographic), the one rule that reproduces the reference implementations' cubic, hexagonal and monoclinic names).
 //
 
 import Foundation

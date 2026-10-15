@@ -4,7 +4,7 @@
 //  pins tools/slice-3/ring-pins.py writes (Fixtures/slice-3-ring-pins.json): the closed forms evaluated in 60-digit decimal
 //  arithmetic, 320 cases, the refusal decision from the registered thresholds (68 plants), the Bragg limit (18 plants) and the
 //  radius (10 plants). Band 1e-12 relative, the registration's; a difference is a failure of the port, never a band to widen.
-//  Ported from macTEM 9482831 tools/ring-calibration-parity/main.swift. The fixture is read by #filePath (the Fixtures folder
+//  Ported from reference commit 9482831 tools/ring-calibration-parity/main.swift. The fixture is read by #filePath (the Fixtures folder
 //  is excluded from the target).
 //
 

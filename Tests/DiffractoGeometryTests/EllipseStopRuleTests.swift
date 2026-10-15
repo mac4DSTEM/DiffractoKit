@@ -1,12 +1,12 @@
 //
 //  EllipseStopRuleTests.swift
-//  DiffractoKit slice 3b: `EllipseCalibration.fit1D`'s Levenberg-Marquardt loop (mac4DSTEM 2026-10-12) once tested convergence only
+//  DiffractoKit slice 3b: `EllipseCalibration.fit1D`'s Levenberg-Marquardt loop (the reference implementation 2026-10-12) once tested convergence only
 //  after an ACCEPTED step. At the optimum the cost change of a step is roundoff, every step was refused, damping grew until the
 //  candidate equalled the point, and the 100-pass cap threw `didNotConverge` on about one clean ring in seven
-//  (mac4DSTEM `archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`). Ported from mac4DSTEM 7d6fdbd1
+//  (reference `archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`). Ported from reference commit 7d6fdbd1
 //  `EllipseStopRuleTests.swift` (one test, same name, same four rings, same bands).
 //
-//  These four rings are clean 96 x 96 plants the old rule refused (the apps scanned 675 such plants, 111 of them refused, with
+//  These four rings are clean 96 x 96 plants the old rule refused (the reference implementations scanned 675 such plants, 111 of them refused, with
 //  this same renderer; the refusal depends on roundoff, so the set is a property of this renderer and this arithmetic, and the
 //  check below is that they FIT). Ground truth is analytic: the plant's centre and ellipse, and the objective's own minimum on a
 //  ring of width s, R (1 + 1.75 (s/R)^2) for the mean radius (an r dr measure, the conic's r^2, the squared intensity; first

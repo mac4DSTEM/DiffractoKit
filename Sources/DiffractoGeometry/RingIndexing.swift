@@ -1,7 +1,7 @@
 //
 //  RingIndexing.swift
 //  Role: the (hkl) family a measured |q| belongs to, against a ring list (slice 2's `KinematicFamily`, or slice 1's
-//        `ReflectionFamily`), and the decision of when it is NOT to be named. The decision is macTEM 9482831
+//        `ReflectionFamily`), and the decision of when it is NOT to be named. The decision is reference commit 9482831
 //        `DSpacingIndexing.index` (ADR 022, S2c ADR 024), generalised: the list is slice 1's family rule over any
 //        crystal system (registration docs/registration-slice-3.md §1, "RingIndexing"), so the lattice, orbit and
 //        family-construction code of the seed is not ported and `unsupportedLattice` / `unsupportedElement` cannot occur
@@ -30,7 +30,7 @@
 //  does not mean the ring IS that family: a ring of no listed family (a support film, another phase) is accepted whenever
 //  it falls inside one window; an understated σ_q gives confident wrong names in dense cells; a lone spot is not a ring.
 //  The decision is `validation: "none"`: parity with a NumPy reading of the rule only, chance acceptance and real σ_q
-//  unmeasured (macTEM's T3 and T5 numbers stand).
+//  unmeasured (the reference implementation's T3 and T5 numbers stand).
 //
 
 import Foundation

@@ -3,7 +3,7 @@
 //  Role: the detector-distortion correction a fitted ellipse (a, b, theta) defines, applied to a detector offset, and its
 //        exact inverse. Slice 3b of DiffractoKit (docs/registration-slice-3.md section 2).
 //
-//  SEED: mac4DSTEM 7d6fdbd1 `mac4DSTEM/Core/Data/Calibration.swift`, `hasEllipse`, `acceptedEllipse`, `ellipseTransform`,
+//  SEED: reference commit 7d6fdbd1 `Core/Data/Calibration.swift`, `hasEllipse`, `acceptedEllipse`, `ellipseTransform`,
 //  `ellipseCorrectedOffset` and `ellipseUncorrectedOffset` only (about 50 lines; none of that type's provenance machinery).
 //  The formulas are py4DSTEM `BraggVectors.cal._transform(..., ellipse=True)`'s matrix in the native (qx = row, qy = column)
 //  frame:

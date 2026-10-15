@@ -2,13 +2,13 @@
 //  ElectronScatteringFactors.swift
 //  Role: electron scattering factors f_e(Z, g²) by the Lobato & Van Dyck parameterisation (Acta Cryst. A70, 636–649,
 //        2014), the table py4DSTEM ships (`py4DSTEM/process/utils/scattering_factors.txt` at f050d207, sha256 be845d1d…;
-//        registration docs/registration-slice-2.md §2, §3.1). The 103 rows are mac4DSTEM 7d6fdbd1's
+//        registration docs/registration-slice-2.md §2, §3.1). The 103 rows are reference commit 7d6fdbd1's
 //        `ScatteringFactors.swift` table, carried by a script, not by hand; a test holds every parameter to the fetched
 //        file bit for bit.
 //
 //        f_e(g²) = Σ_{i<5} a_i (2 + b_i g²) / (1 + b_i g²)², g² = |g|² in Å⁻² (no 2π), f_e in Å (py4DSTEM's "A").
 //        DEVIATION from py4DSTEM `single_atom_scatter.electron_scattering_factor`: its "VA" units (volt-Å³) are not
-//        ported, as in the apps.
+//        ported, as in the reference implementations.
 //
 
 import Foundation
@@ -128,7 +128,7 @@ public enum ElectronScatteringFactors {
     public static func isSupported(z: Int) -> Bool { z >= 1 && z <= maximumAtomicNumber }
 
     /// f_e(Z, g²) in Å, g² = |g|² in Å⁻²; nil for an element outside the table or a g² that is not a finite number ≥ 0
-    /// (callers fail loudly, never score 0). The arithmetic is the apps' (`ScatteringFactors.electronScatteringFactor`),
+    /// (callers fail loudly, never score 0). The arithmetic is the reference implementations' (`ScatteringFactors.electronScatteringFactor`),
     /// in the same order.
     public static func f(z: Int, gSquared: Double) -> Double? {
         guard isSupported(z: z), gSquared.isFinite, gSquared >= 0 else { return nil }

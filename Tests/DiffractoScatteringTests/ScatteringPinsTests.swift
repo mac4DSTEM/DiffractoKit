@@ -2,7 +2,7 @@
 //  ScatteringPinsTests.swift
 //  The kit against the pins written BEFORE its code (registration docs/registration-slice-2.md §4.1–4.4 and amendments 1–5):
 //    slice-2-pins.json  tools/slice-2/pins.py: NumPy from the definitions, pymatgen's Laue group and X-ray pattern
-//    slice-2-apps.json  tools/slice-2/apps-parity: mac4DSTEM 7d6fdbd1's Crystal.reflections, compiled -O
+//    slice-2-apps.json  tools/slice-2/apps-parity: reference commit 7d6fdbd1's Crystal.reflections, compiled -O
 //  Public API only (DiffractoScattering and DiffractoCore). A failure is a failure of the port, never a tolerance to widen.
 //
 
@@ -344,13 +344,13 @@ struct ScatteringPinsTests {
         #expect(worst <= 1e-6, "\(name): worst relative difference \(worst) at \(worstAt)")
     }
 
-    // MARK: 4.4 the apps, bit for bit (amendment 1)
+    // MARK: 4.4 the reference implementations, bit for bit (amendment 1)
 
-    /// The apps' `Crystal.reflections(kMax:tolerance: 1e-4)` (mac4DSTEM 7d6fdbd1, -O): the kept sets equal, and per kept
+    /// The reference implementations' `Crystal.reflections(kMax:tolerance: 1e-4)` (reference commit 7d6fdbd1, -O): the kept sets equal, and per kept
     /// reflection the Double bit patterns of |g|, Re F and |F|² equal; Im F bit-equal where |Im F| ≥ 1e-15 and within 1e-15
-    /// below that (amendment 1). β″ is built from the CIF here, so its site order differs from the apps' hand list and a
+    /// below that (amendment 1). β″ is built from the CIF here, so its site order differs from the reference implementations' hand list and a
     /// summation-order difference is expected: for it, Re F and Im F are held to 1e-12 relative of max(|F|, 1e-4) (Im F also
-    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| bit for bit (registration 4.4 as amended 2026-10-15: the measured worst is 2.7e-13; bit identity is the apps-site-list test).
+    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| bit for bit (registration 4.4 as amended 2026-10-15: the measured worst is 2.7e-13; bit identity is the reference-site-list test).
     @Test(arguments: ScatteringFixtures.appsCaseIndices)
     func testAppsBitForBit(_ index: Int) throws {
         let c = try ScatteringFixtures.apps().cases[index]
@@ -360,8 +360,8 @@ struct ScatteringPinsTests {
         #expect(fails.isEmpty, "\(c.preset)@\(c.kMax): \(stats); first: \(fails.prefix(4))")
     }
 
-    /// The cause of the β″ differences above: built from the apps' own site list (same order, same coordinates) the kit is
-    /// bit identical to the apps like every other preset.
+    /// The cause of the β″ differences above: built from the reference implementations' own site list (same order, same coordinates) the kit is
+    /// bit identical to the reference implementations like every other preset.
     @Test(arguments: [8, 9])
     func testAppsBetaDoublePrimeFromTheAppsSiteListIsBitIdentical(_ index: Int) throws {
         let c = try ScatteringFixtures.apps().cases[index]
@@ -386,7 +386,7 @@ private func compareToApps(_ c: AppsCase, _ s: CrystalStructure, summationOrderT
     var kept: [MillerIndex: StructureFactor] = [:]
     for k in list.kept { kept[k.reflection.hkl] = k.structureFactor }
     var worstRe = 0.0, worstIm = 0.0, worstI = 0.0, worstG = 0.0
-    if kept.count != c.count { fails.append("kept \(kept.count) vs the apps' \(c.count)") }
+    if kept.count != c.count { fails.append("kept \(kept.count) vs the reference implementations' \(c.count)") }
     var appsSet = Set<MillerIndex>()
     for r in c.reflections {
         let hkl = MillerIndex(r.h, r.k, r.l)
@@ -414,7 +414,7 @@ private func compareToApps(_ c: AppsCase, _ s: CrystalStructure, summationOrderT
             }
         }
     }
-    for hkl in kept.keys where !appsSet.contains(hkl) { fails.append("\(hkl) kept by the kit, not by the apps") }
+    for hkl in kept.keys where !appsSet.contains(hkl) { fails.append("\(hkl) kept by the kit, not by the reference implementations") }
     let stats = "worst over \(c.count): Re/floor \(worstRe), Im/floor (|Im| >= 1e-15) \(worstIm), |F|² relative \(worstI), |g| relative \(worstG); failing checks \(fails.count)"
     return (fails, stats)
 }

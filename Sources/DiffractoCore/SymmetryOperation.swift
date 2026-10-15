@@ -1,7 +1,7 @@
 //
 //  SymmetryOperation.swift
 //  Role: one affine operation on fractional coordinates, p' = R p + t, with R an integer matrix and t a translation;
-//        parsed from and printed as the CIF `x,y,z` grammar. The parser is mac4DSTEM 7448401b's
+//        parsed from and printed as the CIF `x,y,z` grammar. The parser is reference commit 7448401b's
 //        `CIFImport.parseSymmetryOperation` (registration section 3.3), with one addition: a rotation coefficient that
 //        is not an integer is refused, since no space-group operation has one in any setting.
 //
@@ -97,7 +97,7 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
                 }
                 i += 1
                 // A term ends at a sign or at the end: `xy`, `x2` and `x.5` are refused, not read as x + y, x + 2,
-                // x + 0.5 (mac4DSTEM 7d6fdbd1's rule, its refuter RF5, 2026-10-15).
+                // x + 0.5 (reference commit 7d6fdbd1's rule, its refuter RF5, 2026-10-15).
                 if i < chars.count, chars[i] != "+", chars[i] != "-" { throw .unparsable(raw) }
             } else if hasNumeric {
                 constant += sign * magnitude
@@ -154,7 +154,7 @@ public struct SymmetryOperation: Sendable, Hashable, CustomStringConvertible {
 
     /// The number of distinct operations: rotation exact, translation mod 1 to 1e-3 (the finest genuine translation
     /// is 1/12 apart), so duplicated rows cannot pad an incomplete list. A garbled coefficient (1e21) is clamped,
-    /// not trapped, and counts as its own operation (the apps' rule).
+    /// not trapped, and counts as its own operation (the reference implementations' rule).
     public static func distinctCount(_ ops: [SymmetryOperation]) -> Int {
         func quantised(_ value: Double, scale: Double) -> Int {
             guard value.isFinite else { return Int.max }

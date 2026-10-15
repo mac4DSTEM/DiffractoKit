@@ -1,9 +1,9 @@
 //
 //  RingFitCalibrationTests.swift
 //  DiffractoKit slice 3b: the fit-driven calibration (`RingCalibration.fit`) on rings planted here, in Swift, with their truth
-//  known. Ported from macTEM 9482831 macTEMTests/RingFitCalibrationTests.swift (8 tests, same names, same plant, same bands),
-//  RUN ON THE KIT'S FIT, which is mac4DSTEM 7d6fdbd1's `EllipseCalibration` (ADR 069: two starts and the 0.30 px floor guard);
-//  macTEM's own copy there is the pre-ADR-069 file. No number of these eight moved: every assertion holds as macTEM wrote it
+//  known. Ported from reference commit 9482831 Tests/RingFitCalibrationTests.swift (8 tests, same names, same plant, same bands),
+//  RUN ON THE KIT'S FIT, which is reference commit 7d6fdbd1's `EllipseCalibration` (ADR 069: two starts and the 0.30 px floor guard);
+//  the reference implementation's own copy there is the pre-ADR-069 file. No number of these eight moved: every assertion holds as the reference implementation wrote it
 //  (registration section 2 said they might; the measured values are in tools/slice-3b/README.md).
 //
 //  The plant is the one tools/ring-fit-parity's plants.py draws: a Gaussian ring on an elliptical coordinate,
@@ -79,7 +79,7 @@ struct RingFitCalibrationTests {
     /// whole chain is the closed forms of slice 3a applied to the fitted radius.
     /// RED UNDER: the radius handed to `calibrate` taken as `fit.a` (1.0 % off at 2 % ellipticity); the d argument
     /// ignored for a fixed one. (Swapping the START centre's row and column is not caught: the fit converges from that
-    /// 5 px-off start to the same ring; measured by macTEM 2026-10-13.)
+    /// 5 px-off start to the same ring; measured by the reference implementation 2026-10-13.)
     @Test func testAPlantedRingCalibratesToItsTruth() throws {
         let p = Self.plant
         let result = try Self.fit(Self.render(p))

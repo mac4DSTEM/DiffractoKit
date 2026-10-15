@@ -223,9 +223,9 @@ struct RingIndexingPinsTests {
         #expect(bad.isEmpty, "\(bad.count) of \(checked) differ, first: \(bad.prefix(5))")
     }
 
-    /// macTEM's registered T1 counts (accepted as own, accepted as another, ambiguous, beyondKMax, none) per u over its six
+    /// the reference implementation's registered T1 counts (accepted as own, accepted as another, ambiguous, beyondKMax, none) per u over its six
     /// lists, and beta'' accepted per u (2584, 508, 184, 58, 25), reproduced from the Swift decision on the kit's rings.
-    @Test func testT1CountsReproduceMacTEMsRegisteredPrediction() throws {
+    @Test func testT1CountsReproduceReferenceRegisteredPrediction() throws {
         let pins = try IndexPinFixtures.pins()
         let registered: [Double: [Int]] = [1e-4: [711, 0, 0, 36, 0], 1e-3: [691, 0, 20, 36, 0], 3e-3: [647, 0, 64, 36, 0],
                                            1e-2: [408, 0, 309, 30, 0], 3e-2: [131, 19, 572, 11, 14]]
@@ -252,7 +252,7 @@ struct RingIndexingPinsTests {
                 if name != "beta''", verdictIndex < 5 { six[u, default: [0, 0, 0, 0, 0]][verdictIndex] += 1 }
             }
         }
-        for (u, want) in registered { #expect(six[u] == want, "u \(u): \(String(describing: six[u])), macTEM registered \(want)") }
+        for (u, want) in registered { #expect(six[u] == want, "u \(u): \(String(describing: six[u])), reference registered \(want)") }
         for (u, want) in beta { #expect(betaAccepted[u] == want, "beta'' u \(u): \(String(describing: betaAccepted[u])), registered \(want)") }
     }
 

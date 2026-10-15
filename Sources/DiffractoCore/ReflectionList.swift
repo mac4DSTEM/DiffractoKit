@@ -1,9 +1,9 @@
 //
 //  ReflectionList.swift
 //  Role: every (h, k, l) with 0 < |g| ≤ k_max, its d, whether the space-group operations allow it, and the rings
-//        (families) the list falls into. The enumeration is mac4DSTEM 7448401b `Crystal.reflections` without the
+//        (families) the list falls into. The enumeration is reference commit 7448401b `Crystal.reflections` without the
 //        structure factor (the per-axis index bound, DEVIATION of 2026-09-14, complete for oblique cells); the absence
-//        rule is registration 3.8; the family rule is macTEM a58c84c `DSpacingIndexing.families` (ADR 022), 3.9.
+//        rule is registration 3.8; the family rule is reference commit a58c84c `DSpacingIndexing.families` (ADR 022), 3.9.
 //
 
 import Foundation

@@ -1,7 +1,7 @@
 //
 //  ScatteringTruthTests.swift
 //  Planted truth for slice 2 (registration docs/registration-slice-2.md §5), independent of every oracle: exact
-//  extinctions, closed forms of F, the apps' ring counts after the |F| cut, the weak cut, and f_e's own shape.
+//  extinctions, closed forms of F, the reference implementations' ring counts after the |F| cut, the weak cut, and f_e's own shape.
 //
 
 import Foundation
@@ -30,7 +30,7 @@ enum Presets {
     }
     static var magnesium: CrystalStructure { hcp(12, a: 3.2094, c: 5.2108) }
     static var idealHCP: CrystalStructure { hcp(12, a: 3.2094, c: 3.2094 * (8.0 / 3.0).squareRoot()) }
-    /// macTEM's crystal-parity occupancy case: Au 0.6 / Cu 0.4 on the origin, Cu on the faces, a = 3.75 Å.
+    /// the reference implementation's crystal-parity occupancy case: Au 0.6 / Cu 0.4 on the origin, Cu on the faces, a = 3.75 Å.
     static var cu3AuOcc: CrystalStructure {
         structure(.cubic(a: 3.75), [AtomSite(z: 79, fractional: [0, 0, 0], occupancy: 0.6),
                                     AtomSite(z: 29, fractional: [0, 0, 0], occupancy: 0.4)]
@@ -129,7 +129,7 @@ struct ScatteringTruthTests {
         }
     }
 
-    /// The apps' ring counts after the cut (k_max 1.2 Å⁻¹): Au 8, Al 8, Si 10, Mg 24, ideal hcp 23, β″ 417 rings and
+    /// The reference implementations' ring counts after the cut (k_max 1.2 Å⁻¹): Au 8, Al 8, Si 10, Mg 24, ideal hcp 23, β″ 417 rings and
     /// 1442 reflections. Mutants: families on the uncut list (Si 12, Mg 25); the cut at 1e-3; the cut ≥ instead of >.
     @Test func testRingCountsAfterTheCut() throws {
         let cases: [(String, CrystalStructure, Int)] = [
@@ -153,7 +153,7 @@ struct ScatteringTruthTests {
         #expect(dropped == [MillerIndex(3, 3, 3), MillerIndex(14, 0, 1)], "\(dropped)")
     }
 
-    /// β″ at 1.6 and 2.0 Å⁻¹: 953 and 1805 rings (macTEM's S2c predictions).
+    /// β″ at 1.6 and 2.0 Å⁻¹: 953 and 1805 rings (the reference implementation's S2c predictions).
     @Test func testBetaDoublePrimeRingsAtHigherKMax() throws {
         let s = Presets.betaDoublePrime
         #expect(try s.kinematicReflections(kMax: 1.6).families.count == 953)
@@ -176,7 +176,7 @@ struct ScatteringTruthTests {
         }
     }
 
-    /// The weak cut (macTEM's case): Cu on (0,0,0) and on (½,½,½) at occupancy q, q solved so (1 0 0) has |F| = 2.5e-4;
+    /// The weak cut (the reference implementation's case): Cu on (0,0,0) and on (½,½,½) at occupancy q, q solved so (1 0 0) has |F| = 2.5e-4;
     /// the h + k + l odd reflections straddle 1e-4, each on the side (1 − q) f_e / V puts it. Mutant: the cut at 1e-3.
     @Test func testWeakCutStraddlesTheCut() throws {
         let a = 3.0

@@ -1,7 +1,7 @@
 //
 //  RingFitAmendmentTests.swift
 //  DiffractoKit 0.1.0: the ring-fit amendment (docs/registration-0.0.4.md §1). Each slice 3b Gate B gap (registration-slice-3
-//  §7, F1, F2, F3, F6, F7) and macTEM's `refuse-bound` plant, on plants rendered here with fresh parameters and seeds (not
+//  §7, F1, F2, F3, F6, F7) and the reference implementation's `refuse-bound` plant, on plants rendered here with fresh parameters and seeds (not
 //  the refuter's). Every test names under "RED UNDER" the production mutation that turns it red
 //  (tools/kit-0.0.4/mutants-ringfit.py).
 //
@@ -104,7 +104,7 @@ struct RingFitAmendmentTests {
     /// The same rings without the gap are still calibrated (the evidence does not refuse noise on a whole ring). The radius
     /// band is 1 %: at noise 0.4 of the peak the profile's radius trades against its asymmetry (σ_in 3.27, σ_out 2.76 fitted
     /// on a symmetric 3 px ring) and reads +0.78 %, before and after 0.1.0 (registration-0.0.4 §1.8 amendment; a radius
-    /// uncertainty is macTEM's ask G3).
+    /// uncertainty is the reference implementation's ask G3).
     /// RED UNDER: the significance bound raised (alpha >= 30 SE).
     @Test(arguments: [(0.30, UInt64(11)), (0.40, UInt64(14))])
     func theSameNoisyRingWithoutAGapIsCalibrated(noise: Double, seed: UInt64) throws {
@@ -322,11 +322,11 @@ struct RingFitAmendmentTests {
         #expect(result?.calibration == nil)
     }
 
-    // MARK: macTEM's refuse-bound plant (its ring-fit-parity line 37)
+    // MARK: the reference implementation's refuse-bound plant (its ring-fit-parity line 37)
 
     /// A 3 px ring at R 120 on a 1/r^3 background at the ring's peak, annulus +-20 px: the fit reads the ring and the kit
     /// calibrates it (Δq within 0.05 %); `sigmaAtAnnulusWidth` was the plant's wrong expectation (registration-0.0.4 §1.7).
-    @Test func macTEMsRefuseBoundPlantIsCalibrated() throws {
+    @Test func referenceRefuseBoundPlantIsCalibrated() throws {
         let scene = Scene(rows: 320, cols: 316, row0: 158.41, col0: 160.27)
         let pattern = Self.render(scene) { dr, dc in
             let r = max((dr * dr + dc * dc).squareRoot(), 1)

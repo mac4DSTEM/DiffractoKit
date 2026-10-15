@@ -1,7 +1,7 @@
 //
 //  CIFImportTests.swift
 //  Planted truth for the importer (registration 5.3, 5.4): cell contents the files' formulas state, Laue classes by
-//  the structure, absences by the operations, the apps' family counts and names, and the refusals. β″ first.
+//  the structure, absences by the operations, the reference implementations' family counts and names, and the refusals. β″ first.
 //
 
 import Foundation
@@ -42,8 +42,8 @@ struct CIFImportTests {
         for r in list.reflections { #expect(r.isAllowed == ((r.hkl.h + r.hkl.k) % 2 == 0), "\(r.hkl)") }
     }
 
-    /// The registered predictions: 1448 allowed reflections and 419 families at k_max 1.2 Å⁻¹ (macTEM's S2c record:
-    /// gemmi's 1448; the apps' 1442 is after the |F| cut, slice 2's), and the first ten families by name, d and
+    /// The registered predictions: 1448 allowed reflections and 419 families at k_max 1.2 Å⁻¹ (the reference implementation's S2c record:
+    /// gemmi's 1448; the reference implementations' 1442 is after the |F| cut, slice 2's), and the first ten families by name, d and
     /// multiplicity. Mutants: the family tolerance at 1e-4 or 0; the multiplicity as the orbit count.
     @Test func testBetaDoublePrimePredictedListAndFamilies() throws {
         let s = try CIFImport.read(Fixtures.betaDoublePrimeCIF).structure
@@ -86,7 +86,7 @@ struct CIFImportTests {
         #expect(a.map(\.multiplicity) == b.map(\.multiplicity))
     }
 
-    // MARK: The apps' fixtures, general expectations
+    // MARK: The reference implementations' fixtures, general expectations
 
     private func read(_ file: String) throws -> CIFDocument {
         try CIFImport.read(try Fixtures.text(file), fileBaseName: file)
@@ -123,7 +123,7 @@ struct CIFImportTests {
     }
 
     /// Silicon: Fd-3m; {2 0 0}, {4 2 0}, {6 0 0} absent by the operations; {2 2 2} and {4 4 2} allowed by them (their
-    /// structure factor is zero by the basis, slice 2's), so 12 allowed families at 1.2 where the apps list 10.
+    /// structure factor is zero by the basis, slice 2's), so 12 allowed families at 1.2 where the reference implementations list 10.
     @Test func testSiliconAbsencesAndFamilies() throws {
         let s = try read("silicon_Fd-3m.cif").structure
         #expect(s.sites.count == 8)
@@ -145,12 +145,12 @@ struct CIFImportTests {
         #expect(ring.orbits == [MillerIndex(5, 1, 1), MillerIndex(3, 3, 3)])
     }
 
-    @Test func testMagnesiumFamiliesMatchMacTEM() throws {
+    @Test func testMagnesiumFamiliesMatchReference() throws {
         let s = try read("magnesium_P63mmc.cif").structure
         #expect(s.sites.count == 2)
         #expect(s.laueClass == .sixOverMmm)
         #expect(!ReflectionList.isAllowed(MillerIndex(0, 0, 1), by: s.operations), "the 6₃ screw: 000l with l odd")
-        // 25 symmetry-allowed rings: macTEM's 24 plus {3 0 -3 1}, allowed by P6₃/mmc's operations and zero by the basis
+        // 25 symmetry-allowed rings: the reference implementation's 24 plus {3 0 -3 1}, allowed by P6₃/mmc's operations and zero by the basis
         // (amendment 5; slice 2's |F| cut removes it, as Si's {2 2 2}).
         let families = try s.reflections(kMax: 1.2).families()
         #expect(families.count == 25)
@@ -171,7 +171,7 @@ struct CIFImportTests {
         #expect(doc.structure.laueClass == .mThreeBarM)
     }
 
-    /// Trigonal structures in hexagonal axes import with their own Laue class, -3m, not 6/mmm (the apps refused them).
+    /// Trigonal structures in hexagonal axes import with their own Laue class, -3m, not 6/mmm (the reference implementations refused them).
     @Test func testTrigonalInHexagonalAxesIsThreeBarM() throws {
         let quartz = try read("alpha_quartz_P3221.cif").structure
         #expect(quartz.sites.count == 9)

@@ -1,7 +1,7 @@
 //
 //  ElectronWavelength.swift
-//  Role: the one electron wavelength of the suite, the relativistic de Broglie wavelength at an accelerating voltage.
-//        Slice 3a (docs/registration-slice-3.md section 1). Ported from macTEM 9482831 `RingCalibration.wavelengthAngstroms`
+//  Role: the one electron wavelength of the kit, the relativistic de Broglie wavelength at an accelerating voltage.
+//        Slice 3a (docs/registration-slice-3.md section 1). Ported from reference commit 9482831 `RingCalibration.wavelengthAngstroms`
 //        with the same arithmetic order, so the results are bit identical.
 //
 //  λ = hc / √(eV (2 m₀c² + eV)),  V in volts, λ in Å.
@@ -19,7 +19,7 @@
 
 import Foundation
 
-/// The relativistic electron wavelength (CODATA 2018 constants). The one wavelength of the suite.
+/// The relativistic electron wavelength (CODATA 2018 constants). The one wavelength of the kit.
 public enum ElectronWavelength {
     /// Planck constant, J s (exact).
     public static let planckConstant = 6.626_070_15e-34
@@ -38,7 +38,7 @@ public enum ElectronWavelength {
     public static func angstroms(volts: Double) -> Double {
         guard volts.isFinite, volts > 0 else { return .nan }
         // Above about 1.3e154 V the product overflows and λ would read 0, a plausible-looking number (Gate B on slice
-        // 3a, F1): NaN instead. The arithmetic below the guard is macTEM's, unchanged.
+        // 3a, F1): NaN instead. The arithmetic below the guard is the reference implementation's, unchanged.
         let product = volts * (2 * electronRestEnergyEV + volts)
         guard product.isFinite else { return .nan }
         return planckTimesLightEVAngstroms / product.squareRoot()

@@ -2,7 +2,7 @@
 //  ZoneAxis.swift
 //  Role: zone-axis primitives (registration docs/registration-slice-3.md §1, "ZoneAxis"): the 49 low-index beam
 //        directions, a direction [u v w] as a Cartesian unit vector of a cell, the detector basis of a beam direction,
-//        and the projection of a reflection list onto it with the excitation error. Seeds, read at mac4DSTEM 7d6fdbd1
+//        and the projection of a reflection list onto it with the excitation error. Seeds, read at reference commit 7d6fdbd1
 //        by `git show`: `PhaseReferenceLibrary.lowIndexZoneAxes` and `cartesianZoneAxis`, `ACOMOrientation.detectorBasis`
 //        (Core/Analysis/OrientationResult.swift), `OrientationPlan.project` (Core/Crystal/OrientationPlan.swift).
 //        Units: Å⁻¹ without 2π, as the rest of the kit.
@@ -25,7 +25,7 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
 
     public var description: String { "[\(u) \(v) \(w)]" }
 
-    /// Low-index beam directions: |u|, |v|, |w| ≤ 2, coprime, one of each ± pair, in the order of mac4DSTEM 7d6fdbd1
+    /// Low-index beam directions: |u|, |v|, |w| ≤ 2, coprime, one of each ± pair, in the order of reference commit 7d6fdbd1
     /// `PhaseReferenceLibrary.lowIndexZoneAxes` (u, v, w each from −2 to 2, the first of a pair met kept): 49 of them,
     /// by value. Deliberately not reduced by crystal symmetry.
     public static let lowIndex: [ZoneAxis] = [
@@ -49,7 +49,7 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
     }
 
     /// The detector basis of a unit beam direction `n`: columns e₁, e₂, n, orthonormal and right-handed. The reference is
-    /// x unless |n.x| ≥ 0.9, then y; e₁ = normalize(n × reference), e₂ = n × e₁ (mac4DSTEM `ACOMOrientation.detectorBasis`).
+    /// x unless |n.x| ≥ 0.9, then y; e₁ = normalize(n × reference), e₂ = n × e₁ (reference `ACOMOrientation.detectorBasis`).
     /// `n` must be a unit vector (`cartesian(in:)` returns one); `isUnitDirection` says whether it is (Gate B on slice 3a,
     /// F4: a non-unit n gave a non-orthonormal or NaN basis silently).
     public static func detectorBasis(_ n: SIMD3<Double>) -> simd_double3x3 {
@@ -79,7 +79,7 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
     ///
     /// Without a wavelength the Ewald sphere is flat: s_g = g · n, odd under g → −g, exactly 0 on the zone law.
     /// With `wavelengthAngstroms` the sphere's curvature is included, s_g = g · n + (λ/2)|g|²: even in g, so g and −g
-    /// are excited differently (mac4DSTEM `OrientationPlan.project`).
+    /// are excited differently (reference `OrientationPlan.project`).
     ///
     /// THE SENSE OF n: the direction the beam TRAVELS (source to specimen). Then g · n + λ|g|²/2 = 0 is the Ewald condition
     /// |k₀ + g| = |k₀| with k₀ = n/λ exactly. A zone axis written pointing toward the source is −n here.

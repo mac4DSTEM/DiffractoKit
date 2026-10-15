@@ -290,7 +290,7 @@ struct RefuterRegressionTests {
     }
 
     /// F6: a cell 1e-4 from cubic (c/a − 1) with cubic fractional coordinates is tetragonal (4/mmm, 16 operations, as
-    /// spglib), so no orbit is split across two rings; at the apps' 1e-3 metric tolerance it read m-3m with every ring
+    /// spglib), so no orbit is split across two rings; at the reference implementations' 1e-3 metric tolerance it read m-3m with every ring
     /// named twice.
     @Test func testNearlyCubicCellIsTetragonalAndNoRingIsNamedTwice() throws {
         let cell = UnitCell.tetragonal(a: 3.905, c: 3.905 * (1 + 1e-4))

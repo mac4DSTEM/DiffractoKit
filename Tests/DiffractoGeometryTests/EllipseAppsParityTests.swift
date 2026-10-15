@@ -1,7 +1,7 @@
 //
 //  EllipseAppsParityTests.swift
 //  DiffractoKit slice 3b (docs/registration-slice-3.md sections 2 and 3, last item): the kit's `EllipseCalibration` against the
-//  apps' own compiled code, BIT FOR BIT. tools/slice-3b/apps-parity/run.sh fetches mac4DSTEM 7d6fdbd1's
+//  apps' own compiled code, BIT FOR BIT. tools/slice-3b/apps-parity/run.sh fetches reference commit 7d6fdbd1's
 //  `EllipseCalibration.swift` and `DiffractionPattern.swift` by `git show`, compiles them with swiftc -O beside a main.swift that
 //  renders the planted rings with the SplitMix64 + Box-Muller renderer of EllipseNoisyRingTests, runs `fit1D`, `fitAmorphousRing`
 //  and `fitBestAvailable` on each (six calls per ring: fit1D at the default 0.2 residual cap, at 0.4, at 0.4 with the anyway
@@ -11,7 +11,7 @@
 //  This test (1) renders the same plants here from the parameters in the dump and requires the Float pixels to hash to the dump's
 //  FNV-1a hash (so the renderer in this file IS the dump's), (2) runs the kit on them, (3) requires every Double equal in
 //  bitPattern, every integer, flag, model and fallback reason equal, and every thrown error equal (its payload's bits included).
-//  The ring sets: the three noisy plants of the apps' EllipseNoisyRingTests and four noisy 128 px rings (noise 0.3); the four
+//  The ring sets: the three noisy plants of the reference implementations' EllipseNoisyRingTests and four noisy 128 px rings (noise 0.3); the four
 //  EllipseStopRuleTests rings; 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc
 //  missing); four sparse rings (120, 150, 240 degree arcs missing and a noisy 90 degree one).
 //
@@ -48,8 +48,8 @@ private struct Dump: Decodable {
         let results: [String: Result]
     }
 
-    /// The apps' code compiled -O (the Release configuration, `tools/test.sh`) or -Onone (a debug `swift test`): the two differ in
-    /// the last bits of some profile fits, so each build of the kit is held bit for bit to the apps built the same way.
+    /// The reference implementations' code compiled -O (the Release configuration, `tools/test.sh`) or -Onone (a debug `swift test`): the two differ in
+    /// the last bits of some profile fits, so each build of the kit is held bit for bit to the reference implementations built the same way.
     #if DEBUG
     static let file = "slice-3b-apps-onone.json"
     #else
@@ -193,7 +193,7 @@ struct EllipseAppsParityTests {
                                                         innerRadius: inner, outerRadius: outer)
             }
         } else if c.results["profile"] != nil {
-            bad.append("\(c.plant.name): the apps ran the profile fit, the kit's wide conic threw")
+            bad.append("\(c.plant.name): the reference implementations ran the profile fit, the kit's wide conic threw")
         }
         judge("best") {
             try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: sx, centerQY: sy, innerRadius: inner, outerRadius: outer)
@@ -235,7 +235,7 @@ struct EllipseAppsParityTests {
         #expect(sparse > 0)
     }
 
-    /// The three noisy plants of the apps' EllipseNoisyRingTests and four strongly noisy 128 px rings (one argument each, so
+    /// The three noisy plants of the reference implementations' EllipseNoisyRingTests and four strongly noisy 128 px rings (one argument each, so
     /// the rings run side by side).
     @Test(arguments: EllipseAppsParityTests.indices("noisy"))
     func testNoisyPlantsAreBitIdenticalWithTheApps(_ index: Int) {
@@ -243,7 +243,7 @@ struct EllipseAppsParityTests {
         #expect(bad.isEmpty, "\(bad.joined(separator: "\n"))")
     }
 
-    /// The four rings of the apps' EllipseStopRuleTests.
+    /// The four rings of the reference implementations' EllipseStopRuleTests.
     @Test(arguments: EllipseAppsParityTests.indices("stoprule"))
     func testStopRuleRingsAreBitIdenticalWithTheApps(_ index: Int) {
         let bad = Self.run(Dump.cases[index])

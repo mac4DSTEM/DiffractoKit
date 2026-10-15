@@ -1,6 +1,6 @@
 //
 //  EllipseNoisyRingTests.swift
-//  DiffractoKit slice 3b (docs/registration-slice-3.md section 3): the profile ring fit on the three noisy plants of mac4DSTEM
+//  DiffractoKit slice 3b (docs/registration-slice-3.md section 3): the profile ring fit on the three noisy plants of reference commit
 //  7d6fdbd1 `EllipseNoisyRingTests` (same names, same plants, same bands), with the plant renderer (SplitMix64 + Box-Muller,
 //  Float pixels) ported into this file. The renderer is also the one tools/slice-3b/apps-parity/main.swift carries a copy of;
 //  EllipseAppsParityTests proves the two render the same pixels (FNV-1a hash of every case) before it compares any fit.
@@ -8,18 +8,18 @@
 //  The profile ring fit (`EllipseCalibration.fitAmorphousRing`, behind `fitBestAvailable`) is refined from py4DSTEM's start, both
 //  ring sigmas at max(1, ringWidth / 4), 10-17 px for a +-20 px annulus around a 3 px ring. On a noisy ring the 11-parameter LM
 //  from there can fall into a basin that carries no ring information, and the residual cap does not refuse it: noise inflates the
-//  normalised residual of any model (mac4DSTEM `archive/v5/ring-fit-two-start-gateD-2026-10-14.md`, and
+//  normalised residual of any model (reference `archive/v5/ring-fit-two-start-gateD-2026-10-14.md`, and
 //  `archive/v5/ring-sigma-start-gateD-2026-10-13.md` for the first step). A second start at the ring's half-maximum width escapes
 //  those basins, but alone it ends in a worse one on a 1/r^2 tail with noise. The fit therefore refines from both starts and keeps
 //  the lower-cost fit (ADR 069).
 //
-//  The first two rings are noisy 192 x 192 plants on which py4DSTEM's start was accepted wrong, found by the apps' scan of 2568
+//  The first two rings are noisy 192 x 192 plants on which py4DSTEM's start was accepted wrong, found by the reference implementations' scan of 2568
 //  plants (128-256 px square, R 40-100, ellipticity 0-3 %, a 60 degree gap or none, noise 0.03 and 0.10, a few seeds each; no data
 //  file) with this same renderer: it accepted a profile fit off by more than 1 % in (a + b) / 2 on 221 of them, all at noise 0.10;
 //  87 of the 221 are the dead ring (a ring sigma at its 0.25 px floor, I1 at 0), 130 the drifting kind (ring sigmas of 1-7 px, the
 //  centre 10-40 px off). The third ring has a 1/r^2 background (0.8 (R / r)^2 around the pattern centre, the central beam's tail)
 //  under noise 0.10, and guards the other side: py4DSTEM's start is right on it and a half-maximum start alone is not (10 of 626
-//  scanned tail plants ended more than 1 % off from the half-maximum start alone). These are the apps' scans; this file
+//  scanned tail plants ended more than 1 % off from the half-maximum start alone). These are the reference implementations' scans; this file
 //  re-runs only the three plants.
 //
 //  Neither fit may be refused or fall back to the conic: the profile model finds the ring on all three, and the tests assert the
@@ -144,7 +144,7 @@ struct EllipseNoisyRingTests {
     }
 
     /// A ring-less fit on a real pattern: the mean diffraction pattern of the Ni65Cu35 ROI6 cube
-    /// (`COPL_Ni65Cu35_C_ROI6_240911_..._bin_4_20240912.h5`, 200 x 200 positions of 32 x 32 px; float32 mean as the apps compute
+    /// (`COPL_Ni65Cu35_C_ROI6_240911_..._bin_4_20240912.h5`, 200 x 200 positions of 32 x 32 px; float32 mean as the reference implementations compute
     /// it), annulus [11.125, 14.125] px about the centroid of its brightest 1 % (15.001983, 15.162129). Without the floor guard
     /// the fit accepts a ring-less profile fit there (I1 0, a ring sigma at the 0.25 px floor, b/a 0.947, where the conic gives
     /// 0.989 and the wider annulus 0.970); with it, the fit falls back to the conic and says why.

@@ -2,7 +2,7 @@
 //  PointSymmetryTests.swift
 //  Planted truth for the groups (registration 5.2): the holohedry orders, closure, determinants and finite orders;
 //  the Laue class of each group by the 3.5 rule; orbit sizes at general and special positions; the canonical forms
-//  and names the apps use today (3.6). Group theory only; no reference code.
+//  and names the reference implementations use today (3.6). Group theory only; no reference code.
 //
 
 import Testing
@@ -96,7 +96,7 @@ struct PointSymmetryTests {
         }
     }
 
-    /// Special positions (5.2): the apps' multiplicities. Mutant: C₂ about a instead of b ({h0l} becomes 4).
+    /// Special positions (5.2): the reference implementations' multiplicities. Mutant: C₂ about a instead of b ({h0l} becomes 4).
     @Test func testSpecialOrbitSizes() {
         let mono = PointSymmetry.holohedry(of: .monoclinic(uniqueAxis: .b))
         #expect(mono.orbit(of: MillerIndex(2, 0, 1)).count == 2)
@@ -129,7 +129,7 @@ struct PointSymmetryTests {
         #expect(PointSymmetry.holohedry(of: .tetragonal(uniqueAxis: .c)).orbit(of: MillerIndex(2, 1, 3)).count == 16)
     }
 
-    /// The one canonical rule reproduces the apps' names (3.6). Mutant: the key without the non-negative count
+    /// The one canonical rule reproduces the reference implementations' names (3.6). Mutant: the key without the non-negative count
     /// (hexagonal {1 1 -2 0} becomes {2 -1 -1 0}); the sign of l not tied to h in 2/m.
     @Test func testCanonicalFormsAndNamesMatchTheApps() {
         let cubic = PointSymmetry.holohedry(of: .cubic)

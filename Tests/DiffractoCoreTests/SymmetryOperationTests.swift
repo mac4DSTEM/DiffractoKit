@@ -61,7 +61,7 @@ struct SymmetryOperationTests {
         }
         #expect(throws: (any Error).self) { try SymmetryOperation(xyz: "x,,z") }
         #expect(throws: (any Error).self) { try SymmetryOperation(xyz: "x+,y,z") }
-        // "x/2" is "x" then the fraction "/2" with an empty numerator: unparsable (the apps' parser read it as x + 2).
+        // "x/2" is "x" then the fraction "/2" with an empty numerator: unparsable (the reference implementations' parser read it as x + 2).
         do {
             let error = #expect(throws: SymmetryOperationError.self) { try SymmetryOperation(xyz: "x/2,y,z") }
             #expect(error == .unparsable("x/2,y,z"))
@@ -82,7 +82,7 @@ struct SymmetryOperationTests {
         #expect(throws: (any Error).self) { try SymmetryOperation(xyz: "x+1000000000000000000000,y,z") }
         #expect(throws: (any Error).self) { try SymmetryOperation(xyz: "x+inf,y,z") }
         #expect(throws: (any Error).self) { try SymmetryOperation(xyz: "x/0,y,z") }
-        // mac4DSTEM 7d6fdbd1's rule: empty fraction pieces, and a term that does not end at a sign or the end.
+        // reference commit 7d6fdbd1's rule: empty fraction pieces, and a term that does not end at a sign or the end.
         for raw in ["x+2/,y,z", "x+1//2,y,z", "xy,y,z", "x2,y,z", "x.5,y,z", "-y1/2,x,z", "1/2x,y,z"] {
             #expect(throws: (any Error).self, "\(raw)") { try SymmetryOperation(xyz: raw) }
         }
