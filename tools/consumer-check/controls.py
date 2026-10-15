@@ -53,6 +53,7 @@ SCAT = "Sources/DiffractoScattering/"
 GEO = "Sources/DiffractoGeometry/"
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 WITNESS = r"must be declared public because it matches a requirement in public protocol"
+DEFAULT_ARGUMENT = r"static property 'default' is package and cannot be referenced from a default argument value|is package and cannot be referenced from a default argument value"
 
 
 def module_of(rel):
@@ -91,6 +92,8 @@ PS = CORE + "PointSymmetry.swift"
 MI = CORE + "MillerIndex.swift"
 EL = CORE + "Element.swift"
 SD = CORE + "SymmetryDetection.swift"
+SOP = CORE + "SymmetryOperation.swift"
+EPOL = GEO + "EllipseCalibration+Policy.swift"
 LR = CORE + "LatticeReduction.swift"
 CC = CORE + "ConventionalCell.swift"
 CSET = CORE + "ConventionalSetting.swift"
@@ -349,6 +352,64 @@ CONTROLS = [
     access(ET, "EllipseTransform", "accepted", "public static func accepted("),
     access(ET, "EllipseTransform", "uncorrectedOffset", "public func uncorrectedOffset("),
     used(ET, "EllipseTransform.init", "public init?(a: Double?, b: Double?, theta: Double?) {"),
+
+    # ---- DiffractoKit 0.2.0: the Policy types (docs/registration-0.2.0.md), retainingAll, the tolerance domain -----------
+    # A `static let default` that a public initialiser uses as a default argument: the library refuses the edit.
+    # ReflectionList.Policy
+    decl(RL, "ReflectionList.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
+    library(RL, "ReflectionList.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    access(RL, "ReflectionList.Policy", "maximumKMax", "public var maximumKMax: Double"),
+    access(RL, "ReflectionList.Policy", "maximumReflections", "public var maximumReflections: Int"),
+    access(RL, "ReflectionList.Policy", "familyTolerance", "public var familyTolerance: Double"),
+    used(RL, "ReflectionList.Policy.init", "public init(maximumKMax: Double = ReflectionList.maximumKMax,"),
+    access(RL, "ReflectionList", "policy", "public let policy: Policy"),
+    # CrystalStructure.ValidationPolicy
+    decl(CS, "CrystalStructure.ValidationPolicy", "public struct ValidationPolicy: Sendable, Equatable {", "ValidationPolicy"),
+    library(CS, "CrystalStructure.ValidationPolicy.default", "public static let `default` = ValidationPolicy()", DEFAULT_ARGUMENT),
+    access(CS, "CrystalStructure.ValidationPolicy", "closeContactLimit", "public var closeContactLimit: Double"),
+    access(CS, "CrystalStructure", "isUsable", "public func isUsable(under policy"),
+    access(CS, "CrystalStructure", "shortestCloseContact", "public func shortestCloseContact(using policy"),
+    access(CS, "CrystalStructure", "validationIssues", "public func validationIssues(using policy"),
+    # SymmetryDetection.Policy, the tolerance's domain and refusal, SymmetryOperation(xyz:maximumMagnitude:)
+    decl(SD, "SymmetryDetection.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
+    library(SD, "SymmetryDetection.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    access(SD, "SymmetryDetection.Policy", "occupancyTolerance", "public var occupancyTolerance: Double"),
+    access(SD, "SymmetryDetection.Tolerance", "refusal", "public func refusal(for cell: UnitCell)"),
+    access(SD, "SymmetryDetection.Tolerance", "isValid", "public func isValid(for cell: UnitCell)"),
+    access(SD, "SymmetryDetection.Tolerance", "minimumWindow", "public static let minimumWindow"),
+    access(SD, "SymmetryDetection.Result", "refusal", "public let refusal: String?"),
+    access(CS, "CrystalStructure", "symmetryRefusal", "public let symmetryRefusal: String?"),
+    used(SOP, "SymmetryOperation.init(xyz:maximumMagnitude:)", "public init(xyz raw: String, maximumMagnitude"),
+    library(SOP, "SymmetryOperation.defaultMaximumMagnitude", "public static let defaultMaximumMagnitude: Double", DEFAULT_ARGUMENT),
+    # CIFImport.Policy
+    decl(CIF, "CIFImport.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
+    library(CIF, "CIFImport.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    access(CIF, "CIFImport.Policy", "positionTolerance", "public var positionTolerance: SymmetryDetection.Tolerance"),
+    access(CIF, "CIFImport.Policy", "maximumMergeDistance", "public var maximumMergeDistance: Double"),
+    # EllipseCalibration.Policy
+    decl(EPOL, "EllipseCalibration.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
+    library(EPOL, "EllipseCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    access(EPOL, "EllipseCalibration.Policy", "angularBinCount", "public var angularBinCount: Int"),
+    access(EPOL, "EllipseCalibration.Policy", "degeneracyBoundBins", "public var degeneracyBoundBins: Int"),
+    access(EPOL, "EllipseCalibration.Policy", "isValid", "public var isValid: Bool"),
+    access(EPOL, "EllipseCalibration.Policy", "evidence", "public var evidence: RingEvidence.Policy"),
+    used(EPOL, "EllipseCalibration.Policy.init", "public init(\n            angularBinCount: Int = 36,"),
+    # RingEvidence.Policy and its judgements
+    decl(RE, "RingEvidence.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
+    library(RE, "RingEvidence.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    access(RE, "RingEvidence.Policy", "minimumDrop", "public var minimumDrop: Double"),
+    access(RE, "RingEvidence.Policy", "isValid", "public var isValid: Bool"),
+    used(RE, "RingEvidence.isPeak(_:)", "public func isPeak(_ policy: Policy) -> Bool", "inaccessible due to 'package' protection level|cannot be used|no exact matches"),
+    used(RE, "RingEvidence.passes(_:)", "public func passes(_ policy: Policy) -> Bool", "inaccessible due to 'package' protection level|cannot be used|no exact matches"),
+    # RingCalibration.Policy
+    decl(RC, "RingCalibration.Policy", "public struct Policy: Sendable, Equatable {", "Policy"),
+    library(RC, "RingCalibration.Policy.default", "public static let `default` = Policy()", DEFAULT_ARGUMENT),
+    access(RC, "RingCalibration.Policy", "minimumOccupiedAngularBins", "public var minimumOccupiedAngularBins: Int"),
+    access(RC, "RingCalibration.Policy", "maximumResidual", "public var maximumResidual: Double"),
+    used(RC, "RingCalibration.Refusal.reason(policy:)", "public func reason(policy: RingCalibration.Policy)", "inaccessible due to 'package' protection level|no exact matches|cannot be used"),
+    # RingIndexing's minimum margin; kinematicReflections (retainingAll:, policy:, validation:)
+    library(RI, "RingIndexing.minimumMargin", "public static let minimumMargin: Double", DEFAULT_ARGUMENT),
+    used(SF, "CrystalStructure.kinematicReflections(retainingAll:)", "public func kinematicReflections(kMax: Double, cut: Double"),
 ]
 
 # What cannot be reverted from `public` to `package`, and why (printed, not counted).

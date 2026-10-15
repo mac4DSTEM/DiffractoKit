@@ -35,7 +35,7 @@ SFAC = SCAT + "StructureFactors.swift"
 # id, group, file, old text (exactly once), new text, what it breaks
 MUTANTS = [
     ("ellipse-coverage", "ring fit: coverage", EPOL,
-     "degeneracyBoundBins ?? angularBinCount * 5 / 6", "degeneracyBoundBins ?? angularBinCount * 2 / 3",
+     "degeneracyBoundBins ?? 5 * (angularBinCount / 6) + (angularBinCount % 6) * 5 / 6", "degeneracyBoundBins ?? angularBinCount * 2 / 3",
      "the full-coverage bound 30 of 36 becomes 24"),
     ("ellipse-one-ring", "ring fit: one-ring ratio", EPOL,
      "oneRingRatio: Double = 1.10,", "oneRingRatio: Double = 1.5,", "the one-ring ratio 1.10 becomes 1.5"),

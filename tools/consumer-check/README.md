@@ -29,6 +29,14 @@ the primitive file cell; rutile with its 4-fold axis along a: 4/mmm, 16 operatio
 displacement in a 30 Å cell: symmetric at the fractional 5e-3, not at the Cartesian 1e-3 Å; the cell list equals the brute-force
 scan). 530 checks in all, and 190 negative controls (144 at 0.0.4, 46 for slice 1b; 13 enum-case, conformance and parameter declarations are listed under `SKIPPED`).
 
+DiffractoKit 0.2.0 adds `PolicyChecks.swift`: every `Policy` type (`ReflectionList`, `CrystalStructure.ValidationPolicy`,
+`SymmetryDetection`, `CIFImport`, `EllipseCalibration`, `RingEvidence`, `RingCalibration`) with its `.default` read field by
+field, one non-default use whose outcome a reader verifies by hand (a 0.3 Å contact usable under a 0.2 Å limit, a 120 degree
+gap fitted under a coverage bound of 20 bins, occupancies 0.50 and 0.51 two species at tolerance 0), the refusals of an invalid
+value (a position tolerance outside its domain, an `Int.max` bin count, a NaN residual cap), `SymmetryOperation(xyz:maximumMagnitude:)`,
+`RingIndexing`'s `minimumMargin:` and `reach`, and `retainingAll:` (`kept` and `families` equal, `all` empty). Its negative
+controls revert each Policy type, its `default`, and the members the checks name from `public` to `package`.
+
 Negative controls (SpectroKit's `controls.py` pattern): `controls.py` copies the repository under `.build/consumer-check/mutants/`,
 checks that the unedited copy builds, then reverts ONE declaration from `public` to `package` at a time and requires the
 consumer build to fail with the compiler's protection-level diagnostic naming that symbol (one warm build directory, an
