@@ -119,6 +119,48 @@ struct RingFitAmendmentTests {
         #expect(result.report?.ringEvidence?.passes == true)
     }
 
+    /// A ring whose 120 degrees hold 0.35 of its amplitude (noise-free, so every sector is significant; above the pre-fit
+    /// coverage threshold of 0.2 of the range, so the fit runs) is not covered:
+    /// a sector holds the ring only at half the median amplitude (registration-0.0.4 §1.3).
+    /// RED UNDER: the occupancy fraction lowered from 0.5 to 0.05.
+    @Test func aRingWithAWeakSectorIsNotCovered() throws {
+        let pattern = Self.render { dr, dc in
+            Self.ring(dr, dc, radius: 42, epsilon: 0.01, thetaDeg: 15) * (Self.inGap(dr, dc, start: 200, width: 120) ? 0.35 : 1)
+        }
+        let result = try Self.calibrate(pattern, inner: 28, outer: 56)
+        #expect(result.calibration == nil, "calibrated; refusals \(Self.names(result))")
+        #expect(Self.names(result).contains("insufficientAngularCoverage"))
+        #expect((result.report?.ringEvidence?.occupiedBins ?? 36) < 30)
+    }
+
+    /// The refusals read the annulus's radii and the evidence: a radius outside (inner, outer) is `ringOutsideAnnulus`
+    /// (alone, with an evidence that passes), and nothing is added when the report carries neither (the 0.0.3 initializer).
+    /// RED UNDER: the annulus refusal removed.
+    @Test func theAnnulusRefusalReadsTheReportsRadii() {
+        let passing = RingEvidence(amplitude: 1, sectorAmplitudes: Array(repeating: 1, count: 36),
+                                   sectorAmplitudeErrors: Array(repeating: 0.01, count: 36),
+                                   sectorShifts: Array(repeating: 0, count: 36), occupiedBins: 36, innerDrop: 0.9,
+                                   outerDrop: 0.9, radiusShift: 0, centreShift: 0.01, centreShiftError: 0.01,
+                                   ellipseShift: 0.01, ellipseShiftError: 0.01)
+        #expect(passing.passes)
+        func report(_ inner: Double?, _ outer: Double?, _ evidence: RingEvidence?) -> RingCalibration.FitReport {
+            RingCalibration.FitReport(model: .asymmetricGaussian, semiAxisA: 40.2, semiAxisB: 39.8, occupiedAngularBins: 36,
+                                      sparseCoverage: false, normalizedResidual: 0.05, innerSigma: 3, outerSigma: 3,
+                                      annulusWidth: 20, annulusInnerRadius: inner, annulusOuterRadius: outer,
+                                      ringEvidence: evidence)
+        }
+        #expect(RingCalibration.refusals(report(42, 62, passing), highTensionVolts: 200_000)
+                == [.ringOutsideAnnulus(radius: 40, inner: 42, outer: 62)])
+        #expect(RingCalibration.refusals(report(30, 50, passing), highTensionVolts: 200_000).isEmpty)
+        #expect(RingCalibration.refusals(report(nil, nil, nil), highTensionVolts: 200_000).isEmpty)
+        let flat = RingEvidence(amplitude: 1, sectorAmplitudes: passing.sectorAmplitudes,
+                                sectorAmplitudeErrors: passing.sectorAmplitudeErrors, sectorShifts: passing.sectorShifts,
+                                occupiedBins: 36, innerDrop: 0.1, outerDrop: 0.9, radiusShift: 0, centreShift: 0.6,
+                                centreShiftError: 0.01, ellipseShift: 0.01, ellipseShiftError: 0.01)
+        #expect(RingCalibration.refusals(report(30, 50, flat), highTensionVolts: nil).map(\.name)
+                == ["notARingPeak", "ringGeometryInconsistent", "noHighTension"])
+    }
+
     // MARK: F2: things that are not one ring
 
     /// A bright disk's blurred edge is not a ring: its profile does not fall on the inner side. Slice 3b's F2 calibrated
@@ -134,8 +176,9 @@ struct RingFitAmendmentTests {
         #expect(result?.calibration == nil, "calibrated at R \(result?.report?.radius ?? .nan); refusals \(result.map(Self.names) ?? [])")
     }
 
-    /// A central blob is not a ring (its fitted R may lie outside the annulus, or its profile is monotonic).
-    /// RED UNDER: the annulus refusal and the peak test both removed.
+    /// A central blob is not a ring (its fitted R may lie outside the annulus, or its profile is monotonic). A guard test:
+    /// 0.0.3 refused these two blobs as well (by the fit's own checks); the refusal logic is held by
+    /// `theAnnulusRefusalReadsTheReportsRadii`.
     @Test(arguments: [9.0, 16.0])
     func aCentralBlobIsNotCalibrated(sigma: Double) throws {
         let pattern = Self.render { dr, dc in exp(-(dr * dr + dc * dc) / (2 * sigma * sigma)) }
