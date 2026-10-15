@@ -168,10 +168,13 @@ struct ConventionalSymmetryTests {
         #expect(cConv.operations.count == 36 && cConv.laueClass == .threeBarM && cConv.bravais == .hR)
         #expect(cConv.sites.count == 30 && abs(cConv.cell.a - 4.7602) <= 1e-9 && abs(cConv.cell.c - 12.9933) <= 1e-9)
         let cRings = try cConv.structure.reflections(kMax: 1.2).families()
-        #expect(cRings.first.map { $0.name.split(separator: " ").count } == 4, "Miller-Bravais names in the hexagonal axes: \(String(describing: cRings.first?.name))")
+        let cFirstNameWords: Int? = cRings.first.map { (f: ReflectionFamily) -> Int in f.name.split(separator: " ").count }
+        let cFirstName: String? = cRings.first?.name
+        #expect(cFirstNameWords == 4, "Miller-Bravais names in the hexagonal axes: \(String(describing: cFirstName))")
         // in the rhombohedral file cell the names keep three indices (slice 1, Gate B F4)
         let fileRings = try corundum.reflections(kMax: 1.2).families()
-        #expect(fileRings.first.map { $0.name.split(separator: " ").count } == 3)
+        let fileFirstNameWords: Int? = fileRings.first.map { (f: ReflectionFamily) -> Int in f.name.split(separator: " ").count }
+        #expect(fileFirstNameWords == 3)
         #expect(fileRings.map(\.multiplicity) == cRings.map(\.multiplicity))
 
         let skew = Self.named("triclinic_hexagonal_reduced")

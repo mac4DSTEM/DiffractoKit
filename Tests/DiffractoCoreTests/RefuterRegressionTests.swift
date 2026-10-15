@@ -126,9 +126,14 @@ struct RefuterRegressionTests {
     @Test func testCoSitedSpeciesAreNotMerged() throws {
         let s = try read("mixed_centred")
         #expect(s.sites.count == 12)
-        #expect(abs((s.sites.filter { $0.z == 26 }.reduce(0) { $0 + $1.occupancy }) - 4.0) <= 1e-12)
-        #expect(s.sites.filter { $0.z == 8 }.count == 4)
-        #expect(Set(s.sites.compactMap(\.label)) == ["Fe2", "Fe3", "O1"])
+        let ironSites: [AtomSite] = s.sites.filter { $0.z == 26 }
+        let ironOccupancy: Double = ironSites.reduce(0) { $0 + $1.occupancy }
+        #expect(abs(ironOccupancy - 4.0) <= 1e-12)
+        let oxygenSites: [AtomSite] = s.sites.filter { $0.z == 8 }
+        #expect(oxygenSites.count == 4)
+        let labels: Set<String> = Set(s.sites.compactMap(\.label))
+        let expectedLabels: Set<String> = ["Fe2", "Fe3", "O1"]
+        #expect(labels == expectedLabels)
     }
 
     /// F4: corundum in rhombohedral axes is -3c by its atoms (Laue -3m) and its rings are named in three indices; the

@@ -111,8 +111,13 @@ struct UnitCellTests {
         for (hkl, d) in anchors {
             #expect(abs(cell.d(hkl) - d) <= 6e-6, "\(hkl)")
         }
-        #expect(abs(cell.d(MillerIndex(2, 0, 0)) - (cell.a * sin(105.3 * .pi / 180) / 2)) <= 1e-12)
-        #expect(abs(cell.d(MillerIndex(0, 0, 1)) - (cell.c * sin(105.3 * .pi / 180))) <= 1e-12)
+        let sinBeta: Double = sin(105.3 * Double.pi / 180)
+        let d200: Double = cell.d(MillerIndex(2, 0, 0))
+        let d200Expected: Double = cell.a * sinBeta / 2
+        #expect(abs(d200 - d200Expected) <= 1e-12)
+        let d001: Double = cell.d(MillerIndex(0, 0, 1))
+        let d001Expected: Double = cell.c * sinBeta
+        #expect(abs(d001 - d001Expected) <= 1e-12)
         #expect(cell.d(MillerIndex(2, 0, 1)) != cell.d(MillerIndex(2, 0, -1)), "for β ≠ 90° these are two rings")
     }
 

@@ -31,7 +31,8 @@ struct ReductionTests {
         #expect(Self.pins.structures.count == 27)
         #expect(Self.pins.randomCells.count == 14 * 200)
         for name in BravaisLattice.allCases {
-            #expect(Self.pins.randomCells.filter { $0.intended == name.rawValue }.count == 200, "\(name)")
+            let ofThisLattice: Int = Self.pins.randomCells.filter { $0.intended == name.rawValue }.count
+            #expect(ofThisLattice == 200, "\(name)")
         }
     }
 

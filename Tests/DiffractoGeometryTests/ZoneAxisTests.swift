@@ -231,7 +231,9 @@ struct ZoneAxisTests {
         let a = 4.0782
         let list = try kept(IndexPresets.gold)
         let projected = ZoneAxis.project(list, onto: [0, 0, 1], sgMax: 1e-9)
-        #expect(projected.count == list.filter { $0.reflection.hkl.l == 0 }.count)
+        let inPlane: [KinematicReflection] = list.filter { (k: KinematicReflection) -> Bool in k.reflection.hkl.l == 0 }
+        let projectedCount: Int = projected.count
+        #expect(projectedCount == inPlane.count)
         let r200 = try #require(projected.first { $0.reflection.reflection.hkl == MillerIndex(2, 0, 0) })
         #expect(abs(r200.x) <= 1e-15 && abs(r200.y - -2 / a) <= 1e-14, "\(r200.x) \(r200.y)")
         let r020 = try #require(projected.first { $0.reflection.reflection.hkl == MillerIndex(0, 2, 0) })

@@ -58,7 +58,10 @@ struct TetragonalSettingTests {
         #expect(v["numpy"] == "2.5.4")
         #expect(Self.file.entries.count == 15, "five structures in three settings")
         for name in Self.tetragonalNames {
-            #expect(Set(Self.file.entries.filter { $0.name == name }.map(\.setting)) == ["a", "b", "c"])
+            let ofThisName = Self.file.entries.filter { $0.name == name }
+            let settings: Set<String> = Set(ofThisName.map(\.setting))
+            let expectedSettings: Set<String> = ["a", "b", "c"]
+            #expect(settings == expectedSettings)
         }
     }
 

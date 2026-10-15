@@ -28,15 +28,18 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
     /// Low-index beam directions: |u|, |v|, |w| ≤ 2, coprime, one of each ± pair, in the order of reference commit 7d6fdbd1
     /// `PhaseReferenceLibrary.lowIndexZoneAxes` (u, v, w each from −2 to 2, the first of a pair met kept): 49 of them,
     /// by value. Deliberately not reduced by crystal symmetry.
-    public static let lowIndex: [ZoneAxis] = [
-        (-1, -1, -1), (-2, -2, -1), (-1, -1, 0), (-2, -2, 1), (-1, -1, 1), (-2, -1, -2), (-2, -1, -1), (-2, -1, 0),
-        (-2, -1, 1), (-2, -1, 2), (-1, 0, -1), (-2, 0, -1), (-1, 0, 0), (-2, 0, 1), (-1, 0, 1), (-2, 1, -2),
-        (-2, 1, -1), (-2, 1, 0), (-2, 1, 1), (-2, 1, 2), (-1, 1, -1), (-2, 2, -1), (-1, 1, 0), (-2, 2, 1),
-        (-1, 1, 1), (-1, -2, -2), (-1, -2, -1), (-1, -2, 0), (-1, -2, 1), (-1, -2, 2), (-1, -1, -2), (-1, -1, 2),
-        (-1, 0, -2), (-1, 0, 2), (-1, 1, -2), (-1, 1, 2), (-1, 2, -2), (-1, 2, -1), (-1, 2, 0), (-1, 2, 1),
-        (-1, 2, 2), (0, -1, -1), (0, -2, -1), (0, -1, 0), (0, -2, 1), (0, -1, 1), (0, -1, -2), (0, -1, 2),
-        (0, 0, -1),
-    ].map { ZoneAxis($0.0, $0.1, $0.2) }
+    public static let lowIndex: [ZoneAxis] = {
+        let triples: [(Int, Int, Int)] = [
+            (-1, -1, -1), (-2, -2, -1), (-1, -1, 0), (-2, -2, 1), (-1, -1, 1), (-2, -1, -2), (-2, -1, -1), (-2, -1, 0),
+            (-2, -1, 1), (-2, -1, 2), (-1, 0, -1), (-2, 0, -1), (-1, 0, 0), (-2, 0, 1), (-1, 0, 1), (-2, 1, -2),
+            (-2, 1, -1), (-2, 1, 0), (-2, 1, 1), (-2, 1, 2), (-1, 1, -1), (-2, 2, -1), (-1, 1, 0), (-2, 2, 1),
+            (-1, 1, 1), (-1, -2, -2), (-1, -2, -1), (-1, -2, 0), (-1, -2, 1), (-1, -2, 2), (-1, -1, -2), (-1, -1, 2),
+            (-1, 0, -2), (-1, 0, 2), (-1, 1, -2), (-1, 1, 2), (-1, 2, -2), (-1, 2, -1), (-1, 2, 0), (-1, 2, 1),
+            (-1, 2, 2), (0, -1, -1), (0, -2, -1), (0, -1, 0), (0, -2, 1), (0, -1, 1), (0, -1, -2), (0, -1, 2),
+            (0, 0, -1),
+        ]
+        return triples.map { ZoneAxis($0.0, $0.1, $0.2) }
+    }()
 
     /// The beam direction as a Cartesian unit vector: u a₁ + v a₂ + w a₃ over the cell's real lattice rows, normalised.
     /// A zone axis is a real-space direction, not the Cartesian triple (u, v, w): the two agree only for a cubic cell.

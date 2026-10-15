@@ -450,7 +450,10 @@ struct RingCalibrationTests {
             .excessiveResidual(0.3), .excessiveEllipticity(0.12), .noHighTension, .braggLimit(lambdaOver2d: 1.003),
             .invalidInput("x"),
         ]
-        #expect(all.filter { !$0.withholdsDeltaQ }.map(\.name) == ["noHighTension", "braggLimit"])
+        let keepingDeltaQ: [RingCalibration.Refusal] = all.filter { (r: RingCalibration.Refusal) -> Bool in !r.withholdsDeltaQ }
+        let keepingNames: [String] = keepingDeltaQ.map(\.name)
+        let expectedNames: [String] = ["noHighTension", "braggLimit"]
+        #expect(keepingNames == expectedNames)
     }
 
     /// Every refusal carries a one-sentence reason (no line break, one full stop at the end and none inside, apart

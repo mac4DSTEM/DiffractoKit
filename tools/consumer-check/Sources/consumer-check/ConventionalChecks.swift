@@ -116,8 +116,13 @@ func runConventionalChecks(_ report: inout Report) {
         r.near("the conventional volume is four primitive volumes", conventional.cell.volume, 4 * primitive.volume, 1e-8)
         r.equal("four centring translations, the origin first", conventional.centringTranslations.count == 4
                 && conventional.centringTranslations[0] == SIMD3(0, 0, 0), true)
-        let faceCentres = Set(conventional.centringTranslations.map { t in
-            [t.x, t.y, t.z].map { Int(($0 * 2).rounded()) }.map { String($0) }.joined(separator: "") })
+        let faceCentreNames: [String] = conventional.centringTranslations.map { (t: SIMD3<Double>) -> String in
+            let coordinates: [Double] = [t.x, t.y, t.z]
+            let doubled: [Int] = coordinates.map { (c: Double) -> Int in Int((c * 2).rounded()) }
+            let digits: [String] = doubled.map { (i: Int) -> String in String(i) }
+            return digits.joined(separator: "")
+        }
+        let faceCentres: Set<String> = Set(faceCentreNames)
         r.equal("they are the face centres of the cube", faceCentres, ["000", "011", "101", "110"])
         r.equal("the reduced cell it came from is the Niggli one", conventional.reduced == primitive.niggliReduced(), true)
         r.equal("an already conventional cube maps to itself", UnitCell.cubic(a: 4).conventionalCell().transformation == .identity

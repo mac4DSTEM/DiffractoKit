@@ -59,7 +59,8 @@ struct RingCalibrationQTests {
         #expect(pins.tolerance <= band)
         #expect(pins.forward.count == 100)           // 5 V x 4 L x 5 R
         #expect(pins.inverse.count == 120)           // the q those give, and 20 at 0.99 of the Bragg limit
-        #expect(pins.inverse.filter { $0.kind == "bragg99" }.count == 20)
+        let bragg99: [QPins.Inverse] = pins.inverse.filter { (c: QPins.Inverse) -> Bool in c.kind == "bragg99" }
+        #expect(bragg99.count == 20)
         #expect(pins.identity.count == 320)
         #expect(pins.nan.count == 51)
         #expect(Set(pins.forward.map(\.kv)) == [60, 80, 120, 200, 300])

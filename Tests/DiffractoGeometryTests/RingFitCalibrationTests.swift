@@ -92,8 +92,14 @@ struct RingFitCalibrationTests {
         let truth = try RingCalibration.calibrate(radius: p.radius, d: Self.auD220, highTensionVolts: 200_000,
                                                   pixelPitchMM: 0.1)
         #expect(abs(calibration.deltaQ / truth.deltaQ - 1) <= 1e-3, "Δq")
-        #expect(abs(try #require(calibration.lengthPixels) / #require(truth.lengthPixels) - 1) <= 1e-3)
-        #expect(abs(try #require(calibration.lengthMillimetres) / #require(truth.lengthMillimetres) - 1) <= 1e-3)
+        let calibratedPixels: Double = try #require(calibration.lengthPixels)
+        let truthPixels: Double = try #require(truth.lengthPixels)
+        let pixelsRatio: Double = calibratedPixels / truthPixels - 1
+        #expect(abs(pixelsRatio) <= 1e-3)
+        let calibratedMillimetres: Double = try #require(calibration.lengthMillimetres)
+        let truthMillimetres: Double = try #require(truth.lengthMillimetres)
+        let millimetresRatio: Double = calibratedMillimetres / truthMillimetres - 1
+        #expect(abs(millimetresRatio) <= 1e-3)
         #expect(calibration.d == Self.auD220)
         #expect(calibration.highTensionVolts == 200_000)
     }

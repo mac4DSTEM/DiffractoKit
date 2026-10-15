@@ -63,8 +63,12 @@ struct CIFImportTests {
             #expect(families[i].orbits.count == 1, "family \(i): no accidental coincidence in β″")
         }
         #expect(families.allSatisfy { $0.orbits.count == 1 }, "β″ has no multi-orbit family at 1.2")
-        #expect(families.allSatisfy { $0.multiplicity == 2 || $0.multiplicity == 4 })
-        #expect(families.filter { $0.multiplicity == 2 }.count + families.filter { $0.multiplicity == 4 }.count == 419)
+        let multiplicityIsTwoOrFour: Bool = families.allSatisfy { (f: ReflectionFamily) -> Bool in f.multiplicity == 2 || f.multiplicity == 4 }
+        #expect(multiplicityIsTwoOrFour)
+        let twos: Int = families.filter { (f: ReflectionFamily) -> Bool in f.multiplicity == 2 }.count
+        let fours: Int = families.filter { (f: ReflectionFamily) -> Bool in f.multiplicity == 4 }.count
+        let twosAndFours: Int = twos + fours
+        #expect(twosAndFours == 419)
         // The lattice rings (absent ones included) are more.
         #expect(list.families(allowedOnly: false).count > 419)
         #expect(list.reflections.count == list.allowed.count + list.reflections.filter { !$0.isAllowed }.count)

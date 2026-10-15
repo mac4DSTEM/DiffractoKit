@@ -613,7 +613,9 @@ struct RingIndexingTests {
         let f110 = try family(l, containing: hkl(1, 1, 0))
         #expect(Set(f110.members) == [hkl(1, 1, 0), hkl(-1, 1, 0), hkl(-1, -1, 0), hkl(1, -1, 0)])
         #expect(l.count == 392)
-        #expect(l.map(\.multiplicity).reduce(0, +) == 1384)
+        let multiplicities1: [Int] = l.map(\.multiplicity)
+        let multiplicitySum1: Int = multiplicities1.reduce(0, +)
+        #expect(multiplicitySum1 == 1384)
     }
 
     /// The ring g is the list's own: the closed forms d(h00) = a sin(beta)/h, d(0k0) = b/k, d(00l) = c sin(beta)/l and
@@ -704,8 +706,11 @@ struct RingIndexingTests {
         #expect(b.name == "{1 1 0} + {0 1 1}")
         #expect(b.multiplicity == 8)
         #expect(l.count == 83)
-        #expect(l.filter { $0.orbits.count > 1 }.count == 62)
-        #expect(l.map(\.multiplicity).reduce(0, +) == 698)
+        let matching1: Int = l.filter { (x: ReflectionFamily) -> Bool in x.orbits.count > 1 }.count
+        #expect(matching1 == 62)
+        let multiplicities2: [Int] = l.map(\.multiplicity)
+        let multiplicitySum2: Int = multiplicities2.reduce(0, +)
+        #expect(multiplicitySum2 == 698)
     }
 
     /// beta = 90 deg + 1e-4 splits the (h,k,l)/(h,k,-l) pairs (402 rings, none with two orbits); + 1e-8 (past the 1e-9 deg
@@ -714,10 +719,12 @@ struct RingIndexingTests {
     @Test func testNearOrthorhombicSplitsAndMerges() throws {
         let split = try IndexPresets.rings(IndexPresets.mono(7.2, 4.9, 5.6, 90 + 1e-4))
         #expect(split.count == 402)
-        #expect(split.filter { $0.orbits.count > 1 }.count == 0)
+        let matching2: Int = split.filter { (x: ReflectionFamily) -> Bool in x.orbits.count > 1 }.count
+        #expect(matching2 == 0)
         let merged = try IndexPresets.rings(IndexPresets.mono(7.2, 4.9, 5.6, 90 + 1e-8))
         #expect(merged.count == 239)
-        #expect(merged.filter { $0.orbits.count > 1 }.count == 163)
+        let matching3: Int = merged.filter { (x: ReflectionFamily) -> Bool in x.orbits.count > 1 }.count
+        #expect(matching3 == 163)
     }
 
     /// beta'' through CIFImport: 22 sites, space group 12, 417 rings, 1442 reflections at k_max 1.2, 113 rings of
@@ -726,17 +733,24 @@ struct RingIndexingTests {
     @Test func testBetaDoublePrimeFromCIFText() throws {
         let s = IndexPresets.betaDoublePrime
         #expect(s.sites.count == 22)
-        #expect(s.sites.filter { $0.z == 12 }.count == 10)
-        #expect(s.sites.filter { $0.z == 14 }.count == 12)
+        let matching4: Int = s.sites.filter { (x: AtomSite) -> Bool in x.z == 12 }.count
+        #expect(matching4 == 10)
+        let matching5: Int = s.sites.filter { (x: AtomSite) -> Bool in x.z == 14 }.count
+        #expect(matching5 == 12)
         #expect(s.spaceGroupNumber == 12)
         #expect(s.cell.betaDeg == 105.3)
         #expect(s.cell.a == 15.16)
         let l = try IndexPresets.rings(s)
         #expect(l.count == 417)
-        #expect(l.map(\.multiplicity).reduce(0, +) == 1442)
-        #expect(l.filter { $0.multiplicity == 2 }.count == 113)
-        #expect(l.filter { $0.multiplicity == 4 }.count == 304)
-        #expect(l.filter { $0.orbits.count > 1 }.count == 0)
+        let multiplicities3: [Int] = l.map(\.multiplicity)
+        let multiplicitySum3: Int = multiplicities3.reduce(0, +)
+        #expect(multiplicitySum3 == 1442)
+        let matching6: Int = l.filter { (x: ReflectionFamily) -> Bool in x.multiplicity == 2 }.count
+        #expect(matching6 == 113)
+        let matching7: Int = l.filter { (x: ReflectionFamily) -> Bool in x.multiplicity == 4 }.count
+        #expect(matching7 == 304)
+        let matching8: Int = l.filter { (x: ReflectionFamily) -> Bool in x.orbits.count > 1 }.count
+        #expect(matching8 == 0)
     }
 
     // MARK: New in the kit: systems the reference implementation refused (no app truth: closed forms planted)
