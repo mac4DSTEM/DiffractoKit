@@ -75,6 +75,16 @@ MUTANTS = [
      "guard isSupported(z: z), gSquared.isFinite, gSquared >= 0 else { return nil }",
      "guard isSupported(z: z) else { return nil }",
      "ScatteringRefuterTests.testScatteringFactorDomain"),
+    # Gate B F5/F6 guards live in DiffractoCore; their tests are slice 2's (the mutated file itself is rewritten, so the
+    # debug build recompiles it).
+    ("Gate B F6: coplanar cells valid", "Sources/DiffractoCore/UnitCell.swift",
+     "if !volume.isFinite || volume <= 0 || volume < 1e-6 * a * b * c { out.append(.degenerateVolume) }",
+     "if !volume.isFinite || volume <= 0 { out.append(.degenerateVolume) }",
+     "ScatteringRefuterTests.testCoplanarCellIsInvalid"),
+    ("Gate B F5: no enumeration-box cap", "Sources/DiffractoCore/ReflectionList.swift",
+     "              box <= Double(ReflectionList.maximumEnumeration)",
+     "              box <= Double.infinity",
+     "ScatteringRefuterTests.testNeedleCellIsRefused"),
     ("ring intensity not summed (first member only)", SRC + "StructureFactors.swift",
      "KinematicFamily(family: family, intensity: family.members.reduce(0) { $0 + (byHKL[$1] ?? 0) })",
      "KinematicFamily(family: family, intensity: byHKL[family.members[0]] ?? 0)",
