@@ -267,3 +267,20 @@ The tag is the owner's. After it, `Package.swift` and the Xcode project pin `.ex
   1b is the lattice reduction); with the file's operation loop the rotations join the candidates and these cells agree.
 - Pseudo-symmetry within the 5e-3 fractional tolerance reads as symmetry (0.25 A in a 50 A cell); a Cartesian tolerance
   is a candidate for slice 1b.
+
+## Ring-fit findings the apps inherit (slice 3b Gate B, 2026-10-15)
+
+The kit's ring fit is mac4DSTEM 7d6fdbd1's, bit for bit, so the apps keep these behaviours whether or not they switch; they
+are recorded in `docs/registration-slice-3.md` §7 for mac4DSTEM's ring-fit lane to register (the kit does not change the
+apps' science on its own):
+
+1. A ring with a 90°–120° angular gap and modest noise passes the 30-of-36 coverage rule (noise marks the gap's bins) and is
+   calibrated with no refusal: centre 0.7–2.7 px, R −0.9 to −3.5 % on R = 40 px rings.
+2. Things that are not one ring are fitted and calibrated: a central blob (R outside the annulus), a bright-disk edge
+   (−10 to −18 %), two rings 1–4 px apart (+2 to +7 %), an azimuthally modulated circular ring (read as 4.6 % elliptic).
+3. One hot pixel of ≥ 5× the ring peak refuses a perfect ring as `insufficientAngularCoverage(1)`.
+4. `insufficientSignal` is scale-dependent: a ring of amplitude ≤ 1e-6 is refused.
+5. One ring edge sharper than 0.3 px is refused as `ringWidthAtFloor`.
+
+The kit refuses two inputs the apps' code traps on (an outer radius beyond twice the pattern diagonal or infinite; a
+pattern size whose product overflows): `invalidInput`, no other output changes.

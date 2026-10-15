@@ -39,6 +39,14 @@ MUTANTS = [
      "if let lambda = wavelengthAngstroms { guard lambda.isFinite, lambda >= 0 else { return [] } }",
      "_ = 0",
      "GeometryRefuterTests.testProjectRefusesBadDirectionsAndWavelengths"),
+    ("3b F4: outer radius unbounded", SRC + "EllipseCalibration.swift",
+     "return outerRadius.isFinite && outerRadius <= 2 * diagonal",
+     "return outerRadius.isFinite || diagonal > 0",
+     "EllipseRefuterTests.testUnboundedOuterRadiusIsInvalidInput"),
+    ("3b F5: unchecked pattern size product", SRC + "EllipseCalibration.swift",
+     "let (count, overflow) = pattern.height.multipliedReportingOverflow(by: pattern.width)\n        return !overflow && pattern.pixels.count == count",
+     "return pattern.pixels.count == pattern.height * pattern.width",
+     "EllipseRefuterTests.testOverflowingPatternSizeIsInvalidInput"),
     ("F7: the list overload with a free k_max of 4", SRC + "RingIndexing.swift",
      "try index(q: q, sigma: sigma, in: list.families, kMax: list.kMax, coverage: k)",
      "try index(q: q, sigma: sigma, in: list.families, kMax: 4, coverage: k)",
@@ -80,7 +88,7 @@ def main():
                 return 2
     print(f"mutants: {len(MUTANTS)} on commit {head}, scratch {SCRATCH}")
     # One warm build first, so each mutant run is an incremental rebuild.
-    base = run(["swift", "test", "--filter", "DiffractoGeometryTests"], cwd=SCRATCH)
+    base = run(["swift", "test", "--filter", "GeometryRefuterTests|EllipseRefuterTests|RingIndexing|ZoneAxis|RingCalibration"], cwd=SCRATCH)
     if base.returncode != 0:
         print("ABORT: the unmutated copy is not green")
         print(base.stdout[-3000:])
@@ -96,7 +104,7 @@ def main():
         touch_module()
         t0 = time.time()
         try:
-            result = run(["swift", "test", "--filter", "DiffractoGeometryTests"], cwd=SCRATCH, timeout=900)
+            result = run(["swift", "test", "--filter", "GeometryRefuterTests|EllipseRefuterTests|RingIndexing|ZoneAxis|RingCalibration"], cwd=SCRATCH, timeout=900)
         except subprocess.TimeoutExpired as e:   # a mutant that hangs the tests counts as caught, as a timeout
             result = subprocess.CompletedProcess(e.cmd, 124, stdout="(timeout)")
         open(path, "w").write(pristine[file])
