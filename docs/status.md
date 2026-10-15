@@ -13,7 +13,7 @@ What is live, one table; then the hand-off. Rules are in `CLAUDE.md`; the regist
 | Error texts (G8) | `LocalizedError` on `CIFImportError`, `KinematicError`, `ReflectionListError` | `registration-0.0.4.md` §5 |
 | Slice 1b | Ported and green (bc99fa0: Niggli reduction, conventional cell, both settings, Cartesian tolerance, cell-list detection; 27/27 mutants), then **reverted on `main` before the 0.1.0 tag** pending its Gate B refuter (owner: 1b is 0.1.x) | `registration-slice-1b.md` §6 |
 | Tests | Swift Testing throughout | `tools/test.sh` (the board row names the last stamp and counts) |
-| Consumer check | 404 checks through the public API, Debug, 0 warnings; 147/147 negative controls negative controls over every new 0.1.0 symbol and every type the apps use (`run.sh --controls`) | `tools/consumer-check/` |
+| Consumer check | 404 checks through the public API, Debug, 0 warnings; 147/147 negative controls over every new 0.1.0 symbol and every type the apps use (`run.sh --controls`) | `tools/consumer-check/` |
 | Parity | `docs/parity.md` against pymatgen, py4DSTEM and pyxem/diffsims/orix (held / partly / not held per row, each with its check) | |
 | Docs and CI | A standalone README with the first ten minutes, `Examples/diffracto-example`, `.spi.yml`, `.github/workflows/ci.yml` (runs on the owner's first push) | |
 | Consumers | `docs/consumers-0.1.0.md` (what each app changes to re-pin, the numbers that move, macTEM's two interims to delete); `docs/consumers-0.0.3.md` for the switch itself | |
