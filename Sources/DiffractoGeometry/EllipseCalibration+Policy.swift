@@ -16,13 +16,23 @@ extension EllipseCalibration {
     ///
     /// An invalid policy (see `isValid`) is refused by every fit that takes it with `FitError.invalidInput`, and gives
     /// empty ring evidence; it is never clamped silently.
+    ///
+    /// **The three bin counts.** `angularBinCount`, `degeneracyBoundBins` and `sparseFloorBins` are all counts of bins, and
+    /// `isValid` requires `1 <= sparseFloorBins <= degeneracyBoundBins <= angularBinCount` (with `angularBinCount` in
+    /// 6...3600). Only `init(angularBinCount:)` derives the other two from the first (5/6 and 1/3 of it, rounded towards
+    /// zero, with no overflow for any `Int`); a policy built from `.default` and then mutated keeps what it had, so
+    /// setting `angularBinCount` alone on `.default` keeps 30 and 12 (a count of 72 then asks for 30 of 72 bins, not 60),
+    /// and a count below 30 makes the policy invalid. Set the three together, or build the policy with
+    /// `Policy(angularBinCount:)` and change the others after.
     public struct Policy: Sendable, Equatable {
-        /// Azimuthal bins the coverage checks divide the annulus into. Default 36 (10° each).
+        /// Azimuthal bins the coverage checks divide the annulus into, 6 to 3600. Default 36 (10° each).
         public var angularBinCount: Int
-        /// The fewest occupied bins an annulus needs to be fitted without the caller's assertion of one ring. Default
-        /// `angularBinCount * 5 / 6` (30 of 36): a gap above about 60° refuses.
+        /// The fewest occupied bins (a count of the `angularBinCount` bins, at most `angularBinCount`) an annulus needs to
+        /// be fitted without the caller's assertion of one ring. Default `angularBinCount * 5 / 6` (30 of 36): a gap above
+        /// about 60° refuses.
         public var degeneracyBoundBins: Int
-        /// The fewest occupied bins even the `acceptSparseCoverage` path accepts. Default `angularBinCount / 3` (12 of 36).
+        /// The fewest occupied bins (a count, at least 1 and at most `degeneracyBoundBins`) even the `acceptSparseCoverage`
+        /// path accepts. Default `angularBinCount / 3` (12 of 36).
         public var sparseFloorBins: Int
         /// A sample is "strong" (counts as occupying its bin) from `minimum + strongSignalFraction * range`. Default 0.2.
         public var strongSignalFraction: Double
@@ -59,10 +69,14 @@ extension EllipseCalibration {
         /// The floor of the one-sided refit (one edge sharper than `ringWidthFloor`). Default 0.01.
         public var loweredRingWidthFloor: Double
         /// The ring-evidence bounds the profile fit reads when it keeps a ring with one sharp edge (its evidence must
-        /// pass), and with which `fitBestAvailable(requireRingEvidence: true)` measures the evidence it attaches.
+        /// pass), and with which `fitBestAvailable(requireRingEvidence: true)` measures the evidence it attaches. Through
+        /// `RingCalibration.fitRing` and `fit` this field is REPLACED by `RingCalibration.Policy.evidence` (one evidence
+        /// policy judges and measures), so an ellipse policy handed to them need not carry the evidence it should use, and
+        /// a value here (valid or not) is not read.
         public var evidence: RingEvidence.Policy
 
-        /// `degeneracyBoundBins` and `sparseFloorBins` follow the bin count (5/6 and 1/3 of it) unless given.
+        /// `degeneracyBoundBins` and `sparseFloorBins` follow the bin count (5/6 and 1/3 of it, rounded towards zero) unless
+        /// given. Any `Int` is accepted without a trap; a count outside 6...3600 gives a policy whose `isValid` is false.
         public init(
             angularBinCount: Int = 36,
             degeneracyBoundBins: Int? = nil,
@@ -85,7 +99,9 @@ extension EllipseCalibration {
             evidence: RingEvidence.Policy = .default
         ) {
             self.angularBinCount = angularBinCount
-            self.degeneracyBoundBins = degeneracyBoundBins ?? angularBinCount * 5 / 6
+            // n * 5 / 6 written as 5 * (n / 6) + (n % 6) * 5 / 6: the same value for every n (the quotient and the remainder
+            // of Swift's division have the sign of n, and 30 * (n / 6) is divisible by 6), with no overflow for any Int.
+            self.degeneracyBoundBins = degeneracyBoundBins ?? 5 * (angularBinCount / 6) + (angularBinCount % 6) * 5 / 6
             self.sparseFloorBins = sparseFloorBins ?? angularBinCount / 3
             self.strongSignalFraction = strongSignalFraction
             self.oneRingRatio = oneRingRatio
@@ -109,7 +125,7 @@ extension EllipseCalibration {
         public static let `default` = Policy()
 
         /// Whether every field is in its domain: a bin count of 6 to 3600 with 1 <= sparse floor <= degeneracy bound <=
-        /// the bin count; fractions in [0, 1); positive finite caps and floors (the lowered floor not above the floor);
+        /// the bin count (the three are bin counts: see the type's note); fractions in [0, 1); positive finite caps and floors (the lowered floor not above the floor);
         /// a ratio and an axis ratio of at least 1; an inlier percentage in 0...100; sample minimums that leave the
         /// fit determined (at least 6 for the five-parameter conic, 12 for the eleven-parameter profile).
         public var isValid: Bool {

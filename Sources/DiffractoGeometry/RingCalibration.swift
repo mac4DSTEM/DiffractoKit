@@ -204,6 +204,10 @@ public struct RingCalibration: Sendable, Equatable {
 
     /// The calibration's refusal bounds: the suite's choices, with `Policy.default` the set every release before 0.2.0
     /// used. `refusals` and `fitRefusals` under an invalid policy return `[.invalidInput]` alone.
+    ///
+    /// Through `fitRing` and `fit` this policy's `evidence` replaces the ellipse policy's, and the coverage rule is
+    /// applied by both policies: to loosen it, lower `minimumOccupiedAngularBins`, `evidence.minimumOccupiedBins` AND the
+    /// ellipse policy's `degeneracyBoundBins` (see `RingCalibration.fitRing`).
     public struct Policy: Sendable, Equatable {
         /// The azimuthal bins the fit divides the annulus into (the ring fit's `angularBinCount`; keep the two equal: a
         /// report with more occupied bins than this is refused as invalid). Default 36.

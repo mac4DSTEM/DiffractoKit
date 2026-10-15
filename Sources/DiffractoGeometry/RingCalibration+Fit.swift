@@ -60,6 +60,8 @@ extension RingCalibration {
     /// (mm; nil when not stated). Throws `Refusal.invalidInput` for an impossible d, V or pitch, and the fit's own error
     /// when no ring was fitted; a ring that was fitted but must not be calibrated from comes back with its refusals.
     /// Exactly `calibrating(fitRing(...), d:highTensionVolts:pixelPitchMM:)`, with d, V and the pitch checked first.
+    /// Two policies act: `policy` (the calibration's refusal bounds, with the evidence bounds) and `ellipsePolicy` (the
+    /// ellipse fit's own rules); see `fitRing` for how they combine.
     /// Synchronous and CPU-bound (0.1 s at R ≈ 100 px; tens of seconds for a band of ±90 px at R 600 px on a 2048² pattern):
     /// a caller on the main actor runs it from a `@concurrent` function, and may pass `progress` (0 to 1) and cancel the
     /// task or pass `isCancelled` (it then throws `CancellationError`).
@@ -80,6 +82,17 @@ extension RingCalibration {
     /// radius of any ring, before its family is known (the reference implementation's ask G1). Throws the fit's own error when no ring was
     /// fitted (and `CancellationError` when cancelled); a ring refused for coverage before fitting comes back with nil
     /// fit and report.
+    ///
+    /// **Two policies, one evidence.** `policy.evidence` REPLACES `ellipsePolicy.evidence`: the evidence is measured and
+    /// judged by the calibration policy's bounds, whatever the ellipse policy holds there (also when it holds an invalid
+    /// one). Every other field of `ellipsePolicy` is checked: an invalid one throws `EllipseCalibration.FitError.invalidInput`
+    /// (and an invalid `policy`, `Refusal.invalidInput`). The coverage rule is applied twice, once by each policy, so
+    /// loosening it through this call needs both: the ellipse fit refuses a ring before fitting it when fewer than
+    /// `ellipsePolicy.degeneracyBoundBins` bins are occupied (the refusal `insufficientAngularCoverage` with no fit),
+    /// and the calibration then refuses a fitted ring that holds fewer than `policy.minimumOccupiedAngularBins` bins or
+    /// whose evidence holds fewer than `policy.evidence.minimumOccupiedBins` sectors. Lowering only the calibration
+    /// policy's bounds changes nothing for a ring the ellipse fit refuses; lowering only the ellipse policy's lets the
+    /// fit run and the calibration's bounds refuse it.
     public static func fitRing(pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
                                 innerRadius: Double, outerRadius: Double,
                                 policy: Policy = .default, ellipsePolicy: EllipseCalibration.Policy = .default,

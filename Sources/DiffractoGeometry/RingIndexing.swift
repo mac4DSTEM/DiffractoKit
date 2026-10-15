@@ -53,9 +53,12 @@ public enum RingIndexing {
     /// ambiguity within kσ_q still refuses).
     public static let minimumMargin: Double = log(19.0)
 
-    /// The reach in units of σ_q, √(k² + 2 ln 19): 3.86 at k = 3, with the margin that was asked for.
+    /// The reach in units of σ_q, √(k² + 2 ln 19): 3.86 at k = 3, with the margin that was asked for. NaN for a coverage
+    /// that is not a finite positive number or a margin that is negative or not finite: the arguments `index` refuses with
+    /// `invalidInput`.
     public static func reach(coverage k: Double, minimumMargin margin: Double = minimumMargin) -> Double {
-        (k * k + 2 * margin).squareRoot()
+        guard k.isFinite, k > 0, margin.isFinite, margin >= 0 else { return .nan }
+        return (k * k + 2 * margin).squareRoot()
     }
 
     /// A family judged against one measurement.
