@@ -184,6 +184,9 @@ report.section("DiffractoScattering (slice 2)") { r in
     let fe = try unwrap(ElectronScatteringFactors.f(z: 79, gSquared: f111.gLength * f111.gLength))
     r.near("F(111) = 4 f_e / V", f111.real, 4 * fe / gold.cell.volume, 1e-12)
     r.near("|F| and |F|^2", f111.magnitude * f111.magnitude, f111.intensity, 1e-15)
+    let kept111 = try unwrap(list.kept.first)
+    r.near("a kept reflection carries its structure factor (all {1 1 1} members share F(111))", kept111.structureFactor.real, f111.real, 1e-12)
+    r.equal("the kept reflection's structure factor is for its own hkl", kept111.structureFactor.hkl, kept111.reflection.hkl)
     r.near("d", f111.d, 4.0782 / 3.0.squareRoot(), 1e-12)
     r.equal("imaginary part zero", abs(f111.imaginary) < 1e-15, true)
     r.equal("g vector", f111.g == gold.cell.gVector(MillerIndex(1, 1, 1)), true)
@@ -198,7 +201,40 @@ report.section("DiffractoScattering (slice 2)") { r in
     r.equal("cut refusal typed", refused, .invalidCut(-1))
 }
 
+report.section("0.0.4: LocalizedError on the three error types") { r in
+    let cif = CIFImportError.missingTag("_cell_length_b")
+    r.equal("CIFImportError.errorDescription", cif.errorDescription, "CIF is missing the required tag _cell_length_b.")
+    r.equal("CIFImportError.localizedDescription is the same text", cif.localizedDescription, cif.description)
+    r.equal("CIFImportError is a LocalizedError", (cif as any Error as? any LocalizedError)?.errorDescription, cif.description)
+    let list = ReflectionListError.invalidKMax(0)
+    r.equal("ReflectionListError.errorDescription", list.errorDescription?.hasPrefix("k_max must be a number of Å⁻¹ above 0"), true)
+    r.equal("ReflectionListError.localizedDescription is the same text", list.localizedDescription, list.description)
+    r.equal("ReflectionListError is a LocalizedError", (list as any Error as? any LocalizedError)?.errorDescription, list.description)
+    let kin = KinematicError.invalidCut(-1)
+    r.equal("KinematicError.errorDescription", kin.errorDescription?.hasPrefix("The |F| cut must be a finite number of Å⁻² at least 0"), true)
+    r.equal("KinematicError.localizedDescription is the same text", kin.localizedDescription, kin.description)
+    r.equal("KinematicError is a LocalizedError", (kin as any Error as? any LocalizedError)?.errorDescription, kin.description)
+    r.equal("KinematicError wraps the list refusal with its text", KinematicError.reflectionList(list).errorDescription, list.errorDescription)
+    var thrown: Error?
+    do { _ = try CIFImport.read("data_x\n_cell_length_a 1\n") } catch { thrown = error }
+    r.equal("a thrown CIF refusal speaks through Error.localizedDescription", thrown?.localizedDescription,
+            "CIF is missing the required tag _cell_length_b.")
+}
+
+report.section("0.0.4: tetragonal along a, b or c") { r in
+    r.equal("a = b != c is tetragonal along c", UnitCell.tetragonal(a: 4.593, c: 2.959).metricFamily(), .tetragonal(uniqueAxis: .c))
+    r.equal("a = c != b is tetragonal along b", UnitCell.orthorhombic(a: 3.7, b: 5.8, c: 3.7).metricFamily(), .tetragonal(uniqueAxis: .b))
+    r.equal("b = c != a is tetragonal along a", UnitCell.orthorhombic(a: 5.8, b: 3.7, c: 3.7).metricFamily(), .tetragonal(uniqueAxis: .a))
+    r.equal("the three settings are three different families", Set([UnitCell.MetricFamily.tetragonal(uniqueAxis: .a),
+            .tetragonal(uniqueAxis: .b), .tetragonal(uniqueAxis: .c)].map { "\($0)" }).count, 3)
+    r.equal("a = b = c stays cubic, all different stays orthorhombic",
+            UnitCell.orthorhombic(a: 3, b: 3, c: 3).metricFamily() == .cubic && UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily() == .orthorhombic, true)
+    r.equal("a looser length tolerance reads a 1 % difference as tetragonal",
+            UnitCell.orthorhombic(a: 3.0, b: 3.03, c: 5).metricFamily(lengthTolerance: 0.02, angleToleranceDeg: 0.05), .tetragonal(uniqueAxis: .c))
+}
+
 runGeometryChecks(&report)
+runGeometry004Checks(&report)
 
 exit(report.finish())
 

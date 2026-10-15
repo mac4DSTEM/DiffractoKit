@@ -65,8 +65,10 @@ public struct EllipseCalibrationFit: Sendable, Equatable {
     /// ring (`acceptSparseCoverage`). Inert (false) whenever coverage was
     /// already full. 2026-09-15.
     public let sparseCoverage: Bool
-    /// What the data say about the ring at this fit (`EllipseCalibration.ringEvidence`), measured when the fit was asked
-    /// for with `requireRingEvidence: true`; nil otherwise. DiffractoKit 0.0.4 (registration-0.0.4 §1.3, §1.4).
+    /// What the data say about the ring at this fit (`EllipseCalibration.ringEvidence`), attached by
+    /// `fitBestAvailable(..., requireRingEvidence: true)` (and so by `RingCalibration.fit` and `fitRing`); nil from every
+    /// other call, including `fitAmorphousRing`, whose flag only governs the one-sided floor. DiffractoKit 0.0.4
+    /// (registration-0.0.4 §1.3, §1.4).
     public let ringEvidence: RingEvidence?
 
     // Explicit so the memberwise initializer is `public` (synthesized ones are internal).

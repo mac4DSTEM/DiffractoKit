@@ -13,7 +13,7 @@ import DiffractoScattering
 import DiffractoGeometry
 
 /// A clean Gaussian ring of radius `radius` and width `sigma` (pixels) about (row, column) in a size x size pattern.
-private func plantedRing(size: Int, centerRow: Double, centerColumn: Double, radius: Double, sigma: Double,
+func plantedRing(size: Int, centerRow: Double, centerColumn: Double, radius: Double, sigma: Double,
                          keepAngle: ((Double) -> Bool)? = nil) -> DiffractionPattern {
     var pixels = [Float](repeating: 0, count: size * size)
     for row in 0..<size {
