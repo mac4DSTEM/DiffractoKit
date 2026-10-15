@@ -18,7 +18,16 @@ ellipse's offset (4, 3) corrected to (2, 3)).
 DiffractoKit 0.1.0 adds `Geometry004Checks.swift` and two sections of `main.swift`: `RingCalibration.q` / `radius`, `RingEvidence`
 (by hand and on a planted ring), `fitRing` / `calibrating` (equal to `fit`), `requireRingEvidence`, the three new refusals and
 `FitReport`'s new fields, `progress:` / `isCancelled:` on every fit, `LocalizedError` on the three error types, and the
-tetragonal settings. 397 checks in all.
+tetragonal settings. 397 checks at 0.0.4.
+
+Slice 1b adds `ConventionalChecks.swift`: `UnitCell.niggliReduced` / `ReducedCell` (fcc gold's primitive cell, a skewed basis of
+it, an invalid cell), `UnitCell.conventionalCell` / `ConventionalCell` / `BravaisLattice` (gold primitive -> cF with 4 centring
+translations, bcc -> cI, a C-centred monoclinic primitive cell -> mC with b the unique axis), `CrystalStructure.setting` /
+`conventionalSetting` / `ConventionalSetting` and its four conversions (gold: 192 operations in the conventional cell and 48 in
+the primitive file cell; rutile with its 4-fold axis along a: 4/mmm, 16 operations, the file's (1 0 0) the conventional
+(0 0 1)), and `detectingSymmetry(conventional:tolerance:search:)` with `SymmetryDetection.Tolerance` / `Search` (a 0.012 Å
+displacement in a 30 Å cell: symmetric at the fractional 5e-3, not at the Cartesian 1e-3 Å; the cell list equals the brute-force
+scan). 530 checks in all, and 190 negative controls (144 at 0.0.4, 46 for slice 1b; 13 enum-case, conformance and parameter declarations are listed under `SKIPPED`).
 
 Negative controls (SpectroKit's `controls.py` pattern): `controls.py` copies the repository under `.build/consumer-check/mutants/`,
 checks that the unedited copy builds, then reverts ONE declaration from `public` to `package` at a time and requires the

@@ -235,6 +235,7 @@ report.section("0.1.0: tetragonal along a, b or c") { r in
 
 runGeometryChecks(&report)
 runGeometry004Checks(&report)
+runConventionalChecks(&report)
 
 exit(report.finish())
 

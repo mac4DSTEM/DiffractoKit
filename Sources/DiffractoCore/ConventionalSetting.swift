@@ -124,11 +124,18 @@ extension CrystalStructure {
         let convFileOperations = (fileOperations ?? []).compactMap { probe.conventionalOperation(of: $0) }
         // The written half-step is a fractional error of the file's coordinates; in the conventional cell it grows by
         // the largest row sum of |P⁻¹|.
-        let det = Double(p.determinant)
-        let growth = p.adjugate.rows.map { (abs(Double($0.x)) + abs(Double($0.y)) + abs(Double($0.z))) / det }.max() ?? 1
+        // Typed locals: this call took 2.9 s to type-check in one expression (a CI runner times out at that).
+        let det: Double = Double(p.determinant)
+        var growth: Double = 1
+        for row in p.adjugate.rows {
+            let sum: Double = abs(Double(row.x)) + abs(Double(row.y)) + abs(Double(row.z))
+            growth = max(growth, sum / det)
+        }
+        let halfStep: Double = coarsestHalfStep * growth
+        let extraRotations: [IntegerMatrix] = convFileOperations.map(\.rotation)
         let detection = SymmetryDetection.detect(
-            sites: convSites, cell: conventional.cell, coarsestHalfStep: coarsestHalfStep * max(1, growth),
-            extraCandidates: convFileOperations.map(\.rotation), preferredOperations: convFileOperations,
+            sites: convSites, cell: conventional.cell, coarsestHalfStep: halfStep,
+            extraCandidates: extraRotations, preferredOperations: convFileOperations,
             metricLengthTolerance: metricLengthTolerance, metricAngleToleranceDeg: metricAngleToleranceDeg,
             tolerance: tolerance, search: search)
 

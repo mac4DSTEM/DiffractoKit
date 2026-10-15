@@ -91,6 +91,9 @@ PS = CORE + "PointSymmetry.swift"
 MI = CORE + "MillerIndex.swift"
 EL = CORE + "Element.swift"
 SD = CORE + "SymmetryDetection.swift"
+LR = CORE + "LatticeReduction.swift"
+CC = CORE + "ConventionalCell.swift"
+CSET = CORE + "ConventionalSetting.swift"
 SF = SCAT + "StructureFactors.swift"
 ESF = SCAT + "ElectronScatteringFactors.swift"
 EW = GEO + "ElectronWavelength.swift"
@@ -230,6 +233,65 @@ CONTROLS = [
     access(SD, "SymmetryDetection", "positionTolerance", "public static let positionTolerance"),
     access(SD, "SymmetryDetection", "detect", "public static func detect("),
 
+    # ---- slice 1b's new public symbols (docs/registration-slice-1b.md) -------------------------------------------------
+    # Niggli reduction: ReducedCell, UnitCell.niggliReduced / niggliRelativeEpsilon
+    decl(LR, "ReducedCell", "public struct ReducedCell: Sendable, Equatable {"),
+    access(LR, "ReducedCell", "cell", "public let cell: UnitCell\n    /// P with determinant +1"),
+    access(LR, "ReducedCell", "transformation", "public let transformation: IntegerMatrix\n    /// ε in Å²"),
+    access(LR, "ReducedCell", "epsilon", "public let epsilon: Double"),
+    access(LR, "ReducedCell", "converged", "public let converged: Bool"),
+    access(LR, "ReducedCell", "steps", "public let steps: Int"),
+    access(LR, "UnitCell", "niggliReduced", "public func niggliReduced("),
+    # the default argument of niggliReduced(relativeEpsilon:) uses the constant: the library refuses the edit
+    library(LR, "UnitCell.niggliRelativeEpsilon", "public static let niggliRelativeEpsilon",
+            r"static property 'niggliRelativeEpsilon' is package and cannot be referenced from a default argument value"),
+    # The conventional cell: BravaisLattice, ConventionalCell, UnitCell.conventionalCell / conventionalCellTolerance
+    decl(CC, "BravaisLattice", "public enum BravaisLattice: String, Sendable, Equatable, CaseIterable, CustomStringConvertible {"),
+    library(CC, "BravaisLattice.description", "public var description: String { rawValue }",
+            r"property 'description' " + WITNESS + r" 'CustomStringConvertible'"),
+    access(CC, "BravaisLattice", "centring", "public var centring: Character"),
+    access(CC, "BravaisLattice", "holohedryOrder", "public var holohedryOrder: Int"),
+    access(CC, "BravaisLattice", "centringMultiplicity", "public var centringMultiplicity: Int {\n        switch centring"),
+    decl(CC, "ConventionalCell", "public struct ConventionalCell: Sendable, Equatable {"),
+    access(CC, "ConventionalCell", "cell", "public let cell: UnitCell\n    public let bravais"),
+    access(CC, "ConventionalCell", "bravais", "public let bravais: BravaisLattice"),
+    access(CC, "ConventionalCell", "transformation", "public let transformation: IntegerMatrix\n    public let reduced"),
+    access(CC, "ConventionalCell", "reduced", "public let reduced: ReducedCell"),
+    access(CC, "ConventionalCell", "centringTranslations", "public let centringTranslations: [SIMD3<Double>]"),
+    access(CC, "ConventionalCell", "uniqueAxis", "public let uniqueAxis: UnitCell.Axis?"),
+    access(CC, "ConventionalCell", "setting", "public let setting: String\n\n    public var centringMultiplicity"),
+    access(CC, "ConventionalCell", "centringMultiplicity", "public var centringMultiplicity: Int { transformation.determinant }"),
+    access(CC, "UnitCell", "conventionalCell", "public func conventionalCell(tolerance"),
+    # the default argument of conventionalCell(tolerance:) uses the constant
+    library(CC, "UnitCell.conventionalCellTolerance", "public static let conventionalCellTolerance",
+            r"static property 'conventionalCellTolerance' is package and cannot be referenced from a default argument value"),
+    # ConventionalSetting: the type, its fields, the shortcuts, the structure and the four conversions
+    decl(CSET, "ConventionalSetting", "public struct ConventionalSetting: Sendable, Equatable {"),
+    access(CSET, "ConventionalSetting", "conventionalCell", "public let conventionalCell: ConventionalCell"),
+    access(CSET, "ConventionalSetting", "sites", "public let sites: [AtomSite]"),
+    access(CSET, "ConventionalSetting", "operations", "public let operations: [SymmetryOperation]"),
+    access(CSET, "ConventionalSetting", "laueGroup", "public let laueGroup: PointSymmetry"),
+    access(CSET, "ConventionalSetting", "laueClass", "public let laueClass: LaueClass?"),
+    access(CSET, "ConventionalSetting", "translationUncertainty", "public let translationUncertainty: Double"),
+    access(CSET, "ConventionalSetting", "cell", "public var cell: UnitCell { conventionalCell.cell }"),
+    access(CSET, "ConventionalSetting", "bravais", "public var bravais: BravaisLattice { conventionalCell.bravais }"),
+    access(CSET, "ConventionalSetting", "transformation", "public var transformation: IntegerMatrix { conventionalCell.transformation }"),
+    access(CSET, "ConventionalSetting", "structure", "public var structure: CrystalStructure {"),
+    access(CSET, "ConventionalSetting", "conventionalIndices", "public func conventionalIndices(of"),
+    access(CSET, "ConventionalSetting", "fileIndices", "public func fileIndices(ofConventional"),
+    access(CSET, "ConventionalSetting", "fileOperation", "public func fileOperation(of"),
+    access(CSET, "ConventionalSetting", "conventionalOperation", "public func conventionalOperation(of"),
+    # CrystalStructure.Setting, .setting, .conventionalSetting
+    decl(CS, "CrystalStructure.Setting", "public enum Setting: Sendable, Equatable {"),
+    access(CS, "CrystalStructure", "setting", "public let setting: Setting"),
+    access(CS, "CrystalStructure", "conventionalSetting", "public let conventionalSetting: ConventionalSetting?"),
+    # SymmetryDetection.Tolerance and .Search (public default arguments of detectingSymmetry and detect use both)
+    decl(SD, "SymmetryDetection.Tolerance", "public enum Tolerance: Sendable, Equatable {"),
+    library(SD, "SymmetryDetection.Tolerance.default", "public static let `default`: Tolerance",
+            r"static property 'default' is package and cannot be referenced from a default argument value", "CrystalStructure.swift"),
+    access(SD, "SymmetryDetection.Tolerance", "proposedCartesian", "public static let proposedCartesian: Tolerance"),
+    decl(SD, "SymmetryDetection.Search", "public enum Search: Sendable, Equatable {"),
+
     # ---- DiffractoScattering ----------------------------------------------------------------------------------------
     # StructureFactors.swift's public default arguments use ElectronScatteringFactors.f: the library refuses the edits
     library(ESF, "ElectronScatteringFactors", "public enum ElectronScatteringFactors {",
@@ -296,6 +358,12 @@ SKIPPED = [
     ("RingCalibration.Refusal.ringGeometryInconsistent", "an enum case takes its enum's access (the enum itself is controlled above)"),
     ("RingCalibration.Refusal.secondRingInAnnulus", "an enum case takes its enum's access (the enum itself is controlled above)"),
     ("UnitCell.MetricFamily.tetragonal(uniqueAxis:)", "an enum case takes its enum's access (the enum itself is controlled above)"),
+    ("BravaisLattice.aP ... cF", "enum cases take their enum's access (the enum itself is controlled above)"),
+    ("CrystalStructure.Setting.file / .conventional", "enum cases take their enum's access (the enum itself is controlled above)"),
+    ("SymmetryDetection.Tolerance.fractional / .cartesian", "enum cases take their enum's access (the enum itself is controlled above)"),
+    ("SymmetryDetection.Search.cellList / .bruteForce", "enum cases take their enum's access (the enum itself is controlled above)"),
+    ("CrystalStructure.detectingSymmetry(conventional:tolerance:search:)", "parameters have no access of their own; the function is controlled above (detectingSymmetry)"),
+    ("SymmetryDetection.detect(tolerance:search:)", "parameters have no access of their own; the function is controlled above (detect)"),
     ("CIFImportError: LocalizedError", "a protocol conformance has no access of its own; its witness errorDescription is controlled above"),
     ("ReflectionListError: LocalizedError", "a protocol conformance has no access of its own; its witness errorDescription is controlled above"),
     ("KinematicError: LocalizedError", "a protocol conformance has no access of its own; its witness errorDescription is controlled above"),
