@@ -411,7 +411,7 @@ struct Slice4G3Tests {
         "gimbal-Phi=1e-7-phi1=-2.5-phi2=2.0",
         "gimbal-Phi=1e-6-phi1=0.7-phi2=-1.1", "gimbal-Phi=1e-6-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-6-phi1=3.0-phi2=3.0",
         "gimbal-Phi=1e-5-phi1=0.7-phi2=-1.1", "gimbal-Phi=1e-5-phi1=-2.5-phi2=2.0",
-        // Since the gimbal fix (amendment 16:40) these fold into phi1 as SciPy does; only Phi's acos precision is left.
+        // Since the gimbal fix (amendment 16:26) these fold into phi1 as SciPy does; only Phi's acos precision is left.
         "gimbal-Phi=0-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-9-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-10-phi1=-2.5-phi2=2.0",
         "gimbal-Phi=5e-9-phi1=-2.5-phi2=2.0",
     ]
@@ -419,7 +419,7 @@ struct Slice4G3Tests {
     /// smallest non-zero value is 1.49e-8 (R22 = 1 - 2^-53), so a rotation at Phi = 0, pi or within 1e-8 of them is locked
     /// only when R22 is exactly +-1. Otherwise the unlocked formula is used: a valid but different split of the same
     /// rotation (phi1, phi2 as generated, Phi 1.5e-8), where SciPy puts everything in phi1. One row loses the rotation.
-    /// Fixed (amendment 16:40): the general branch now also needs R20, R21 to carry the angle, so every such row is locked.
+    /// Fixed (amendment 16:26): the general branch now also needs R20, R21 to carry the angle, so every such row is locked.
     static let lockNotDetectedRows: Set<String> = []
     /// The one random rotation whose round trip exceeds the registered 2e-7 (2.10e-7): three Float roundings.
     static let floatRoundTripRow = "random-579"
@@ -519,7 +519,7 @@ struct Slice4G3Tests {
                 else { failures.append("\(row.label): \(d)") }
             }
             // The rigorous Float bound: each matrix entry is 1-Lipschitz in each angle, so rounding three angles to Float
-            // moves it by at most the sum of half ulps (+1e-12 for the double arithmetic, + Phi's conditioning below). (The Phi = 0 row that lost its rotation before amendment 16:40 is held to it too.)
+            // moves it by at most the sum of half ulps (+1e-12 for the double arithmetic, + Phi's conditioning below). (The Phi = 0 row that lost its rotation before amendment 16:26 is held to it too.)
             // Phi = acos(R22) also carries its own conditioning error, about 2.3e-16 / sin Phi, capped by the resolution of
             // R22 near 1 (the acos of 1 - 2^-53 is 1.49e-8): allowed for here, it is finding 1.
             let sinPhi = abs(sin(Double(e.Phi)))
@@ -539,7 +539,7 @@ struct Slice4G3Tests {
         }
         #expect(Set(over.keys) == expected, "rows over 2e-7: \(over)")
         if !expected.isEmpty {
-            withKnownIssue("registered round trip 2e-7: three Float roundings can reach 2.1e-7 (random-579); (the Phi = 0 row that lost its rotation is fixed, amendment 16:40)") {
+            withKnownIssue("registered round trip 2e-7: three Float roundings can reach 2.1e-7 (random-579); (the Phi = 0 row that lost its rotation is fixed, amendment 16:26)") {
                 #expect(over.isEmpty)
             }
         }

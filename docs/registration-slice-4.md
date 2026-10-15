@@ -227,7 +227,7 @@ moves at least one position on the scans.
 6. **Euler details** beyond §4: Φ = acos of the clamped R22; |sin Φ| > 1e-8 for the general branch; wrapped angles with
    |angle| < 1e-12 snapped to 0; angles stored as Float and `crystalToLabMatrix` built from the Float-rounded angles.
 
-### 2026-10-15, 16:40 CEST: from the G2-G4 and G1 tests (both green; two fixes in the source, three recorded properties)
+### 2026-10-15, 16:26 CEST: from the G2-G4 and G1 tests (both green; two fixes in the source, three recorded properties)
 
 1. **Fix: a rotation about the beam lost at R22 = 1 − 2⁻⁵³** (a defect in the source). acos(1 − 2⁻⁵³) = 1.49e-8, so sin Φ is
    above the 1e-8 threshold while R20 = R21 = 0 can hold exactly; the general branch then took atan2(0, 0) for both angles and
