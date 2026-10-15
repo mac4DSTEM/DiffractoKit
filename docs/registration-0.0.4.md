@@ -169,3 +169,39 @@ fixed here (slice 1b's conventional cell removes both).
 names are removed. (b) The overflow rule stays as Gate B on 3a fixed it (λ NaN above about 1.3e154 V; L_px and Δq NaN on
 overflow), stated in the consumers note, whose item 15 is corrected. (c) The note states the -Onone cost in an app's
 Debug configuration. (e) The note names the close-contact rule behind `invalidStructure`.
+
+## 8. Amendments
+
+### 2026-10-15, about 13:30 CEST, after the ring-fit code started: what the first runs changed
+
+Fail first, on the unmodified code (`RingFitAmendmentTests`, 12 tests): F1 (3 of 4 gapped noisy rings calibrated, the
+fourth refused for another reason), F2 (the disk edge at blur 2.5 calibrated; all three textured circles read as
+ellipses), F3 (5×, 20×, 1000× hot pixels refused), F6 (2^−40 refused as `insufficientSignal`; 2^−3 not bit equal) and F7
+(σ_out 0.15 and 0.05 refused) red; the blob and macTEM's refuse-bound plant already as predicted (§1.7 held: calibrated,
+Δq within 0.05 %).
+
+- **§1.2, the normalisation.** "A range below 1 into [1, 2)" rescaled the parity rings (a unit ring's Float maximum lies
+  just below 1) and moved their profile fits by up to 1.7e6 ulps. Now: a range below 0.5 is brought into [0.5, 1); every
+  range of 0.5 or more runs the apps' arithmetic. Scale invariance is exact within the normalised regime (2^−40 equals
+  2^−3 bit for bit, intensities scaled by 2^−37 exactly) and within 1e-6 relative across regimes (the gate's band; the
+  Float pixels round s·v unlike v by up to 6e-8 relative, and the optimisers' step scales differ by less than 2 between
+  the regimes; measured 4.5e-9 rad in θ). The "within 1e-9 relative" of §1.2 was set before that was known.
+- **§1.3, the geometry fit's weights**: 1/(SE(t)² + 0.01²) (a noise-free sector has SE 0) and the covariance scaled by
+  max(1, χ²/(n − 5)), conservative toward acceptance. `ringEvidence` takes the start centre too (the annulus is about it):
+  `ringEvidence(pattern:fit:centerQX:centerQY:innerRadius:outerRadius:)`.
+- **§1.5, the one-sided floor.** Kept as registered, the fit of a ring with an edge sharper than the floor read R 0.12 px
+  (σ_out 0.15) and 0.24 px (σ_out 0.05) inside the plant: the 0.25 px floor cannot represent the edge and the peak moves
+  to compensate. So a one-sided-floor fit whose evidence passes is refined once more with that floor lowered to 0.01 px
+  (kept when its residual is not worse and its centre and axes pass the same guards), and its evidence must pass again.
+  Measured: R within 0.1 px of the plant for both. The floor of every other fit stays 0.25 px (bit identity).
+- **§1.7, the plant that must be refused.** σ 8 px in a 16 px annulus is not σ ≥ W; it is fitted and refused
+  (`ringGeometryInconsistent`). The plant is now σ 16 px in a 16 px annulus: refused, measured as
+  `ringGeometryInconsistent` too (the annulus shows ±0.5σ, so the fitted σ stays below 16 and `sigmaAtAnnulusWidth` does
+  not fire); the test accepts any of `sigmaAtAnnulusWidth`, `notARingPeak`, `ringGeometryInconsistent`.
+- **A finding, not a gap of the five:** at Gaussian noise 0.4 of the peak, a whole symmetric 3 px ring at R 42 is
+  calibrated with R +0.78 % (the profile trades its radius against its asymmetry: σ_in 3.27, σ_out 2.76 fitted), the same
+  before and after this amendment; the evidence cannot see it (the sectors agree with the fitted shape). The test's band
+  is 1 % with the reason; a radius standard uncertainty is macTEM's ask G3 (its slice 2), named in the consumers note.
+- **§4, cancellation** is checked once per optimiser iteration (both optimisers) and before each refinement, not per
+  Jacobian column: the columns now run in parallel. Measured identity: the parity rings with both closures equal the
+  apps bit for bit (`EllipseAppsParityTests`' `bestWithClosures`).

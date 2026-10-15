@@ -161,6 +161,18 @@ struct EllipseAppsParityTests {
                 if describe(error) != e { bad.append("\(label): kit threw \(describe(error)), apps threw \(e)") }
             }
         }
+        func judgeAgainst(_ expected: Dump.Result?, _ label: String, _ body: () throws -> EllipseCalibrationFit) {
+            guard let expected else { bad.append("\(label): nothing expected"); return }
+            do {
+                let fit = try body()
+                if let e = expected.error { bad.append("\(label): kit fitted, apps threw \(e)"); return }
+                guard let f = expected.fit else { bad.append("\(label): dump has neither fit nor error"); return }
+                bad += compare(label, fit, f)
+            } catch {
+                guard let e = expected.error else { bad.append("\(label): kit threw \(describe(error)), apps fitted"); return }
+                if describe(error) != e { bad.append("\(label): kit threw \(describe(error)), apps threw \(e)") }
+            }
+        }
         judge("fit1D") {
             try EllipseCalibration.fit1D(pattern: pattern, centerQX: sx, centerQY: sy, innerRadius: inner, outerRadius: outer)
         }
@@ -189,6 +201,13 @@ struct EllipseAppsParityTests {
         judge("bestSparse") {
             try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: sx, centerQY: sy, innerRadius: inner,
                                                     outerRadius: outer, acceptSparseCoverage: true)
+        }
+        // DiffractoKit 0.0.4 (registration-0.0.4 §4): progress and a never-cancelling closure change no bit of "best".
+        if c.results["best"] != nil {
+            judgeAgainst(c.results["best"], "\(c.plant.name) bestWithClosures") {
+                try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: sx, centerQY: sy, innerRadius: inner,
+                                                        outerRadius: outer, progress: { _ in }, isCancelled: { false })
+            }
         }
         return bad
     }

@@ -22,6 +22,13 @@
 //  ring was fitted at all, and reaches the caller as thrown. An impossible d, V or pixel pitch is the caller's mistake
 //  and throws `Refusal.invalidInput` before any fit runs.
 //
+//  THE SPLIT (DiffractoKit 0.0.4, registration-0.0.4 §2, macTEM's ask G1): `fitRing` fits the ring and decides the fit's
+//  own refusals with no spacing, so a caller can measure a ring before it knows which family it is; `calibrating` adds d, V
+//  and the pitch. `fit` is exactly `calibrating(fitRing(...), d:...)`. Since 0.0.4 the fit runs with
+//  `requireRingEvidence: true` (registration-0.0.4 §1.4): the report carries the ring evidence and the annulus's radii, so
+//  a ring outside its annulus, a profile that is not a peak, an inconsistent geometry and too few sectors holding the ring
+//  are refused by name, and one ring sigma at the 0.30 px floor is kept when the evidence passes.
+//
 //  ROW AND COLUMN: the fit's "qx" is the pattern's ROW and "qy" its COLUMN (py4DSTEM's order); a `DiffractionPattern` is
 //  built as `DiffractionPattern(width: columns, height: rows, pixels:)`.
 //
@@ -52,11 +59,66 @@ extension RingCalibration {
     /// and calibrates from it with d (Å), V (volts; nil when not stated, never defaulted) and the detector pixel pitch
     /// (mm; nil when not stated). Throws `Refusal.invalidInput` for an impossible d, V or pitch, and the fit's own error
     /// when no ring was fitted; a ring that was fitted but must not be calibrated from comes back with its refusals.
-    /// Synchronous and CPU-bound (a few hundred ms for a ring of R ≈ 100 px): a caller on the main actor runs it from a
-    /// `@concurrent` function.
+    /// Exactly `calibrating(fitRing(...), d:highTensionVolts:pixelPitchMM:)`, with d, V and the pitch checked first.
+    /// Synchronous and CPU-bound (0.1 s at R ≈ 100 px; tens of seconds for a band of ±90 px at R 600 px on a 2048² pattern):
+    /// a caller on the main actor runs it from a `@concurrent` function, and may pass `progress` (0 to 1) and cancel the
+    /// task or pass `isCancelled` (it then throws `CancellationError`).
     public static func fit(pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
                             innerRadius: Double, outerRadius: Double,
-                            d: Double, highTensionVolts: Double?, pixelPitchMM: Double?) throws -> RingFitCalibration {
+                            d: Double, highTensionVolts: Double?, pixelPitchMM: Double?,
+                            progress: (@Sendable (Double) -> Void)? = nil,
+                            isCancelled: (@Sendable () -> Bool)? = nil) throws -> RingFitCalibration {
+        try validate(d: d, highTensionVolts: highTensionVolts, pixelPitchMM: pixelPitchMM)
+        let ring = try fitRing(pattern: pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
+                               outerRadius: outerRadius, progress: progress, isCancelled: isCancelled)
+        return try calibrating(ring, d: d, highTensionVolts: highTensionVolts, pixelPitchMM: pixelPitchMM)
+    }
+
+    /// Fits the ring in the annulus about the start centre and decides the fit's own refusals, without a spacing: the
+    /// radius of any ring, before its family is known (macTEM's ask G1). Throws the fit's own error when no ring was
+    /// fitted (and `CancellationError` when cancelled); a ring refused for coverage before fitting comes back with nil
+    /// fit and report.
+    public static func fitRing(pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
+                                innerRadius: Double, outerRadius: Double,
+                                progress: (@Sendable (Double) -> Void)? = nil,
+                                isCancelled: (@Sendable () -> Bool)? = nil) throws -> RingRadiusFit {
+        let fit: EllipseCalibrationFit
+        do {
+            fit = try EllipseCalibration.fitBestAvailable(
+                pattern: pattern, centerQX: centerQX, centerQY: centerQY,
+                innerRadius: innerRadius, outerRadius: outerRadius, acceptSparseCoverage: false,
+                requireRingEvidence: true, progress: progress, isCancelled: isCancelled)
+        } catch EllipseCalibration.FitError.insufficientAngularCoverage(let bins) {
+            return RingRadiusFit(fit: nil, report: nil, refusals: [.insufficientAngularCoverage(occupiedBins: bins)])
+        }
+        let report = FitReport(
+            model: fit.model, semiAxisA: fit.a, semiAxisB: fit.b,
+            occupiedAngularBins: fit.occupiedAngularBins, sparseCoverage: fit.sparseCoverage,
+            normalizedResidual: fit.normalizedResidual,
+            innerSigma: fit.profile?.innerSigma, outerSigma: fit.profile?.outerSigma,
+            annulusWidth: outerRadius - innerRadius,
+            annulusInnerRadius: innerRadius, annulusOuterRadius: outerRadius, ringEvidence: fit.ringEvidence)
+        return RingRadiusFit(fit: fit, report: report, refusals: fitRefusals(report))
+    }
+
+    /// The calibration of a fitted ring with d (Å), V (volts; nil when not stated) and the pixel pitch (mm; nil when not
+    /// stated): the ring's refusals, `.noHighTension` when V is nil, and Δq and L unless a refusal withholds Δq. Throws
+    /// `Refusal.invalidInput` for an impossible d, V or pitch.
+    public static func calibrating(_ ring: RingRadiusFit, d: Double, highTensionVolts: Double?,
+                                   pixelPitchMM: Double?) throws -> RingFitCalibration {
+        try validate(d: d, highTensionVolts: highTensionVolts, pixelPitchMM: pixelPitchMM)
+        var refused = ring.refusals
+        let invalid = refused.first?.name == "invalidInput"
+        if highTensionVolts == nil, !invalid { refused.append(.noHighTension) }
+        guard let report = ring.report, !refused.contains(where: \.withholdsDeltaQ) else {
+            return RingFitCalibration(fit: ring.fit, report: ring.report, refusals: refused, calibration: nil)
+        }
+        let calibration = try calibrate(radius: report.radius, d: d, highTensionVolts: highTensionVolts,
+                                        pixelPitchMM: pixelPitchMM)
+        return RingFitCalibration(fit: ring.fit, report: report, refusals: refused, calibration: calibration)
+    }
+
+    static func validate(d: Double, highTensionVolts: Double?, pixelPitchMM: Double?) throws {
         guard d.isFinite, d > 0 else { throw Refusal.invalidInput("the ring spacing must be a positive number of Å") }
         if let volts = highTensionVolts, !(volts.isFinite && volts > 0) {
             throw Refusal.invalidInput("the high tension must be a positive number of volts")
@@ -64,30 +126,24 @@ extension RingCalibration {
         if let pitch = pixelPitchMM, !(pitch.isFinite && pitch > 0) {
             throw Refusal.invalidInput("the pixel pitch must be a positive number of millimetres")
         }
-
-        let fit: EllipseCalibrationFit
-        do {
-            fit = try EllipseCalibration.fitBestAvailable(
-                pattern: pattern, centerQX: centerQX, centerQY: centerQY,
-                innerRadius: innerRadius, outerRadius: outerRadius, acceptSparseCoverage: false)
-        } catch EllipseCalibration.FitError.insufficientAngularCoverage(let bins) {
-            var refused: [Refusal] = [.insufficientAngularCoverage(occupiedBins: bins)]
-            if highTensionVolts == nil { refused.append(.noHighTension) }
-            return RingFitCalibration(fit: nil, report: nil, refusals: refused, calibration: nil)
-        }
-
-        let report = FitReport(
-            model: fit.model, semiAxisA: fit.a, semiAxisB: fit.b,
-            occupiedAngularBins: fit.occupiedAngularBins, sparseCoverage: fit.sparseCoverage,
-            normalizedResidual: fit.normalizedResidual,
-            innerSigma: fit.profile?.innerSigma, outerSigma: fit.profile?.outerSigma,
-            annulusWidth: outerRadius - innerRadius)
-        let refused = refusals(report, highTensionVolts: highTensionVolts)
-        guard !refused.contains(where: \.withholdsDeltaQ) else {
-            return RingFitCalibration(fit: fit, report: report, refusals: refused, calibration: nil)
-        }
-        let calibration = try calibrate(radius: report.radius, d: d, highTensionVolts: highTensionVolts,
-                                        pixelPitchMM: pixelPitchMM)
-        return RingFitCalibration(fit: fit, report: report, refusals: refused, calibration: calibration)
     }
+}
+
+/// A ring fitted without a spacing (`RingCalibration.fitRing`): the fit (nil when the ring was refused before fitting),
+/// the numbers its refusals were decided on, and the fit's own refusals (never `.noHighTension`). `radius` is the ring's
+/// (a + b)/2 in pixels when a fit exists, whether or not a refusal applies: read it beside `refusals`.
+public struct RingRadiusFit: Sendable, Equatable {
+    public let fit: EllipseCalibrationFit?
+    public let report: RingCalibration.FitReport?
+    public let refusals: [RingCalibration.Refusal]
+
+    public init(fit: EllipseCalibrationFit?, report: RingCalibration.FitReport?, refusals: [RingCalibration.Refusal]) {
+        self.fit = fit
+        self.report = report
+        self.refusals = refusals
+    }
+
+    public var radius: Double? { report?.radius }
+    /// Whether the radius may be used as a measurement (no refusal withholds Δq).
+    public var isUsable: Bool { report != nil && !refusals.contains(where: \.withholdsDeltaQ) }
 }
