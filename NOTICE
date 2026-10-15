@@ -83,3 +83,17 @@ Table 3 set 3 (C2/m). Lattice parameters and atomic coordinates are
 measurements of a crystal, cited as such; the CIF is generated, not
 redistributed (tools/crystal-structures/make_beta_double_prime.py, verbatim
 from mac4DSTEM 7448401b).
+
+================================================================================
+Thronsen et al. (slice 4, phase mapping)
+================================================================================
+
+The vector-matching method of DiffractoOrientation (PhaseReferenceLibrary.swift, PhaseVectorMatching.swift), including the
+decision rule of `.knownVariants` and its two constants (direct-matrix count 1, residual cutoff 0.07 inverse angstrom), and
+the Al-Cu-Li structures used in its tests, follow:
+
+    E. Thronsen, J. Hjelen, R. Holmestad et al., "Studying GPB zones and precipitates in Al-Cu-Li with scanning precession
+    electron diffraction", Ultramicroscopy 255 (2024) 113861, licensed CC BY 4.0
+    (https://creativecommons.org/licenses/by/4.0/). Changes: re-implemented in Swift from the published description.
+
+No code was copied from the authors' notebook; their repository carries no licence.

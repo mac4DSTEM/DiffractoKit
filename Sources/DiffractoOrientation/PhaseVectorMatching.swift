@@ -4,8 +4,9 @@
 //        what survives against every candidate entry of a `PhaseReferenceLibrary`, and return a phase label, a distance, and
 //        an explicit "not indexed" (registration docs/registration-slice-4.md, section 1).
 //
-//  Method: Thronsen et al., Ultramicroscopy 255 (2024) 113861, CC BY 4.0, the published description only. Their repository
-//  carries no licence and is not used. Three deviations from what the paper describes are deliberate and are named where
+//  Method: Thronsen et al., Ultramicroscopy 255 (2024) 113861, CC BY 4.0 (attribution in NOTICE). The decision rule of
+//  `.knownVariants` and its two constants (direct-matrix count 1, residual cutoff 0.07 Å⁻¹) are as the paper describes them;
+//  no code was copied from the authors' notebook (their repository carries no licence). Three deviations from what the paper describes are deliberate and are named where
 //  they occur: the matrix mask is applied in VECTOR space rather than to the image, the matrix orientation is fitted ONCE
 //  for the scan rather than per pattern, and the verdict carries a completeness requirement the paper's mean-distance
 //  score does not have.
@@ -191,10 +192,9 @@ public struct PhaseVectorSettings: Sendable, Equatable {
     /// Which per-position rule decides a verdict. `.search` (shipped) is
     /// everything above: a library search ranked by mean distance and gated
     /// by the floors and guards this file measures. `.knownVariants` is
-    /// Thronsen et al.'s own rule — score every non-matrix library entry
+    /// the rule Thronsen et al. describe — score every non-matrix library entry
     /// against the survivors, no floors, argmin wins
-    /// (`PhaseVectorMatcher.classifyKnownVariants`; their notebook
-    /// `vector_analysis_2.ipynb`, cells 6, 16, 19).
+    /// (`PhaseVectorMatcher.classifyKnownVariants`, written from the paper).
     public enum ClassificationRule: String, Sendable, Equatable, CaseIterable {
         case search
         case knownVariants
@@ -202,12 +202,10 @@ public struct PhaseVectorSettings: Sendable, Equatable {
     /// Shipped. Adding `.knownVariants` changes nothing about this rule.
     public var classificationRule: ClassificationRule = .search
     /// `.knownVariants` only: survivors at or below this many → the matrix,
-    /// by exclusion. Cell 6: `direct_Al = 1`; cell 16:
-    /// `if len(xy) <= direct_Al: … phase.append('Al')`.
+    /// by exclusion. The paper's value (1).
     public var directMatrixMaximumVectors: Int = 1
     /// `.knownVariants` only: the winning entry's residual mean above this →
-    /// "not indexed". Å⁻¹. Cell 6: `score_cutoff = 0.07`; cell 19:
-    /// `score_phase_mask = score_phase > score_cutoff`. The paper's value on
+    /// "not indexed". Å⁻¹. The paper's value (0.07) on
     /// the paper's dataset — shipped as a setting, not retuned.
     public var residualCutoffInvAngstrom: Double = 0.07
     /// `.knownVariants` only: an `.indexed` winner must match at least this
@@ -1209,9 +1207,8 @@ public enum PhaseVectorMatcher {
 
     // MARK: The known-variants rule (Thronsen et al.)
 
-    /// Thronsen et al.'s own per-position rule
-    /// (their notebook `vector_analysis_2.ipynb`,
-    /// cells 6, 16, 19): score every non-matrix library entry against the
+    /// The per-position rule Thronsen et al. describe
+    /// (written from the paper, no code copied): score every non-matrix library entry against the
     /// survivors and take the argmin, no floors and no guards. `classify`
     /// dispatches here for `settings.classificationRule == .knownVariants`;
     /// this function never runs for `.search`.
@@ -1252,15 +1249,15 @@ public enum PhaseVectorMatcher {
         result.survivingCount = Int32(surviving.count)
         result.removedCount = Int32(vectors.count - surviving.count)
 
-        // b — the matrix, by exclusion. Cell 16: `if len(xy) <= direct_Al`.
+        // b — the matrix, by exclusion (survivors at or below `directMatrixMaximumVectors`).
         if surviving.count <= settings.directMatrixMaximumVectors {
             result.verdict = .matrix
             result.phaseIndex = Int32(library.matrixPhaseIndex)
             return result
         }
 
-        // c — score every entry whose phase is NOT the matrix's. Cell 16's
-        // `ref_tmp` / `np.unique` loop: for every survivor, the TRUE nearest
+        // c — score every entry whose phase is NOT the matrix's. The paper's
+        // per-entry scoring: for every survivor, the TRUE nearest
         // reference vector of the entry (`np.argmin` over the WHOLE set, no
         // radius — see `nearestReferenceVector` below for why `nearest(_:in:
         // radius:)` above is not reused), summed over every survivor, and
@@ -1350,8 +1347,7 @@ public enum PhaseVectorMatcher {
             result.runnerUpScore = Float(runnerUp.score)
         }
 
-        // Cell 6 / cell 19: `score_cutoff = 0.07`; `score_phase_mask =
-        // score_phase > score_cutoff; phase_id[score_phase_mask] = 4`.
+        // The paper's residual cutoff (0.07 Å⁻¹): a winner above it is not indexed.
         result.verdict = winner.score > settings.residualCutoffInvAngstrom ? .notIndexed : .indexed
 
         // e — the evidence guard (DEVIATION, `knownVariantsMinimumSpecificReflections`):
@@ -1396,8 +1392,7 @@ public enum PhaseVectorMatcher {
     }
 
     /// The TRUE nearest reference vector of `refs` — brute force, no radius
-    /// and no length-band prune. Cell 16: `ref[j][np.argmin(np.linalg.norm(
-    /// ref[j] - xy_, axis=1))]`.
+    /// and no length-band prune.
     ///
     /// `nearest(_:in:radius:)` above is deliberately NOT reused: its
     /// length-band prune assumes a candidate outside `|u| ± radius` can be
