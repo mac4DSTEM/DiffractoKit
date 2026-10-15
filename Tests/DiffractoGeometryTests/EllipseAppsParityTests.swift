@@ -202,7 +202,7 @@ struct EllipseAppsParityTests {
             try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: sx, centerQY: sy, innerRadius: inner,
                                                     outerRadius: outer, acceptSparseCoverage: true)
         }
-        // DiffractoKit 0.0.4 (registration-0.0.4 §4): progress and a never-cancelling closure change no bit of "best".
+        // DiffractoKit 0.1.0 (registration-0.0.4 §4): progress and a never-cancelling closure change no bit of "best".
         if c.results["best"] != nil {
             judgeAgainst(c.results["best"], "\(c.plant.name) bestWithClosures") {
                 try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: sx, centerQY: sy, innerRadius: inner,

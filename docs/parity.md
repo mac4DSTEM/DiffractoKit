@@ -1,7 +1,7 @@
 # Parity with pymatgen, py4DSTEM and pyxem / diffsims / orix
 
 A checklist of what DiffractoKit holds against the documented public API of the Python packages it is the Mac-native
-counterpart of, so that "complete" is a measured claim (suite ROADMAP, "Kits", phase 4). Started 2026-10-15 for 0.0.4
+counterpart of, so that "complete" is a measured claim (suite ROADMAP, "Kits", phase 4). Started 2026-10-15 for 0.1.0
 (`main` at 3a83d95); updated at every tag. It claims only what a test in this repository checks. A row is a Python
 function or a small group of them, not every method of the class.
 
@@ -26,7 +26,7 @@ is named. Counts are of rows.
 | py4DSTEM | 0 | 12 | 8 | 20 |
 | pyxem / diffsims / orix | 0 | 7 | 6 | 13 |
 
-The three counts are of rows in the tables below, as of 0.0.4 (`main` at 3a83d95). "Held" is the only state that means a test compares the kit with that package's own output; every "partly" row names its check.
+The three counts are of rows in the tables below, as of 0.1.0 (`main` at 3a83d95). "Held" is the only state that means a test compares the kit with that package's own output; every "partly" row names its check.
 
 ## The pins and references behind the rows
 

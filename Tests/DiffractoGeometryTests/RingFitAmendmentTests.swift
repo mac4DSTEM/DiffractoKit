@@ -1,6 +1,6 @@
 //
 //  RingFitAmendmentTests.swift
-//  DiffractoKit 0.0.4: the ring-fit amendment (docs/registration-0.0.4.md §1). Each slice 3b Gate B gap (registration-slice-3
+//  DiffractoKit 0.1.0: the ring-fit amendment (docs/registration-0.0.4.md §1). Each slice 3b Gate B gap (registration-slice-3
 //  §7, F1, F2, F3, F6, F7) and macTEM's `refuse-bound` plant, on plants rendered here with fresh parameters and seeds (not
 //  the refuter's). Every test names under "RED UNDER" the production mutation that turns it red
 //  (tools/kit-0.0.4/mutants-ringfit.py).
@@ -103,7 +103,7 @@ struct RingFitAmendmentTests {
 
     /// The same rings without the gap are still calibrated (the evidence does not refuse noise on a whole ring). The radius
     /// band is 1 %: at noise 0.4 of the peak the profile's radius trades against its asymmetry (σ_in 3.27, σ_out 2.76 fitted
-    /// on a symmetric 3 px ring) and reads +0.78 %, before and after 0.0.4 (registration-0.0.4 §1.8 amendment; a radius
+    /// on a symmetric 3 px ring) and reads +0.78 %, before and after 0.1.0 (registration-0.0.4 §1.8 amendment; a radius
     /// uncertainty is macTEM's ask G3).
     /// RED UNDER: the significance bound raised (alpha >= 30 SE).
     @Test(arguments: [(0.30, UInt64(11)), (0.40, UInt64(14))])
@@ -219,7 +219,7 @@ struct RingFitAmendmentTests {
         }
     }
 
-    /// A second ring inside the annulus never gives a wrong number (Gate B on 0.0.4, F1: such fits landed on the other ring
+    /// A second ring inside the annulus never gives a wrong number (Gate B on the 0.1.0 candidate, F1: such fits landed on the other ring
     /// or between the two, 1-2.3 % off): the calibration is refused by name, or reads the intended ring within 0.3 %.
     /// Measured: at 9 px (3σ) the dip between the rings is 0.23 of the amplitude, under the 0.25 bound, and the fit reads
     /// R 44.096 (0.2 %); at 14 and 24 px it is refused as secondRingInAnnulus.
@@ -438,7 +438,7 @@ struct RingFitSplitAndCancellationTests {
         }
         #expect(calls.values.count == 4)
 
-        // Monotone also through the one-sided-floor refit (Gate B on 0.0.4, F2: it reported backwards by up to 0.04).
+        // Monotone also through the one-sided-floor refit (Gate B on the 0.1.0 candidate, F2: it reported backwards by up to 0.04).
         let sharp = RingFitAmendmentTests.render { dr, dc in
             RingFitAmendmentTests.ring(dr, dc, radius: 40, sigmaIn: 3, sigmaOut: 0.1) }
         let sharpBox = Box()

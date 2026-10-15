@@ -1,7 +1,7 @@
-# DiffractoKit 0.0.4: what mac4DSTEM and macTEM change to re-pin
+# DiffractoKit 0.1.0: what mac4DSTEM and macTEM change to re-pin
 
-Written 2026-10-15 by DiffractoKit's third session, for mac4DSTEM's and macTEM's sessions. 0.0.4 is the kit loop's first
-tag: macTEM's Diffraction-room asks (G1, G2, G7, G8), the five misfits of macTEM's 0.0.3 switch, and the five ring-fit gaps
+Written 2026-10-15 by DiffractoKit's third session, for mac4DSTEM's and macTEM's sessions. 0.1.0 is the kit loop's first
+tag (prepared as 0.0.4; the owner made it 0.1.0 at 13:16, and the apps re-pin once, at 0.1.0, skipping 0.0.4): macTEM's Diffraction-room asks (G1, G2, G7, G8), the five misfits of macTEM's 0.0.3 switch, and the five ring-fit gaps
 slice 3b's refuter found in the apps' fit, fixed in the kit. Registered in `docs/registration-0.0.4.md` (with its dated
 amendments). The tag is the owner's; until it exists nothing here can be pinned. Read `docs/consumers-0.0.3.md` first: this
 note lists only what changed since 0.0.3.
@@ -14,25 +14,28 @@ note lists only what changed since 0.0.3.
 | macTEM | its **G2 interim** (exact q and its inverse in TEMCore, registered R3/R4) | `RingCalibration.q(radius:cameraLengthPixels:wavelengthAngstroms:)` and `radius(q:cameraLengthPixels:wavelengthAngstroms:)`, pinned against 60-digit decimal and NumPy |
 | macTEM | its `LocalizedError` wrappers of the kit's errors (`CrystalLoading`) | `CIFImportError`, `KinematicError`, `ReflectionListError` are `LocalizedError` |
 | macTEM | "cannot cancel" in the room (Remove drops the answer) | `progress:` and `isCancelled:` on every fit, and `Task` cancellation, throw `CancellationError` |
-| both | any `switch` over `RingCalibration.Refusal` | three new cases (below); a `switch` that lists every case no longer compiles |
+| both | any `switch` over `RingCalibration.Refusal` | four new cases (below); a `switch` that lists every case no longer compiles |
 | both | any reference to the enums `DiffractoGeometry`, `DiffractoScattering`, `DiffractoOrientation` | removed: they shadowed their modules |
 | both | any `.tetragonal` pattern or comparison | `UnitCell.MetricFamily.tetragonal(uniqueAxis:)` (below) |
 | mac4DSTEM | nothing is required; the ring-fit fixes reach it through the pin (below), and `requireRingEvidence: true` is its own lane's decision | |
 
 ## What numbers move
 
-1. **The calibration path refuses more (macTEM's `RingCalibration.fit`, and `fitRing`).** Since 0.0.4 the calibration runs
+1. **The calibration path refuses more (macTEM's `RingCalibration.fit`, and `fitRing`).** Since 0.1.0 the calibration runs
    the fit with `requireRingEvidence: true` and reads the data sector by sector about the fitted ellipse
-   (`EllipseCalibration.ringEvidence`, `RingEvidence`). Four refusals, each withholding Δq:
+   (`EllipseCalibration.ringEvidence`, `RingEvidence`). Five refusals, each withholding Δq:
    - `insufficientAngularCoverage(occupiedBins:)` now also when fewer than 30 of 36 sectors hold the ring AT THE FIT
      (slice 3b's F1: noise in a 90°–120° gap made the gap's bins "occupied"; such rings were calibrated with the centre
      0.7–2.7 px and R −0.9 to −3.5 % off). The payload is the smaller of the two counts.
    - `ringOutsideAnnulus(radius:inner:outer:)` (new): (a + b)/2 not inside the annulus (a central blob).
    - `notARingPeak(innerDrop:outerDrop:)` (new): the profile about the fit does not fall by a quarter of the ring's
      amplitude on both sides (a bright-disk edge, which 0.0.3 calibrated at −10 to −18 %).
+   - `secondRingInAnnulus(height:)` (new, after Gate B): the pooled profile holds a second peak of a quarter of the
+     ring's amplitude inside the annulus (a neighbouring ring pulled 13 of 14 such fits onto itself or between the two).
    - `ringGeometryInconsistent(centreShift:ellipseShift:)` (new): the sectors put the ring more than 0.25 px and 4
      standard errors off the fitted centre or ellipse (a textured circle read as a 4.6 % ellipse; F1's centre bias).
-   Order: model, coverage, sigma, residual, ellipticity, outside the annulus, not a peak, geometry, high tension.
+   Order: model, coverage, sigma, residual, ellipticity, outside the annulus, not a peak, second ring, geometry, high
+   tension.
    Measured on the kit's sets: the 35 parity rings, macTEM's eight `RingFitCalibrationTests` plants, clean and noisy
    whole rings (noise to 0.4 of the peak) and macTEM's `refuse-bound` plant are still calibrated; the F1 and F2 plants are
    refused. **macTEM re-runs its `ring-fit-parity` and S3-b harnesses at the re-pin:** a ring 0.0.3 calibrated may now be
@@ -51,18 +54,18 @@ note lists only what changed since 0.0.3.
    the same pattern scaled up. Ranges of 0.5 and more fit bit for bit as in 0.0.3.
 5. **Not refused, and stated:** two rings closer than about twice their width are one broadened ring to the fit (its R lies
    between them); at Gaussian noise 0.4 of the ring's peak a whole 3 px ring at R 42 px reads R +0.78 % (the profile
-   trades radius against asymmetry), the same as in 0.0.3. A radius standard uncertainty is macTEM's ask G3, not in 0.0.4.
+   trades radius against asymmetry), the same as in 0.0.3. A radius standard uncertainty is macTEM's ask G3, not in 0.1.0.
 
 Nothing else moves: the closed forms, the indexing, the crystal, CIF and scattering numbers are 0.0.3's bit for bit, and
 `EllipseCalibration`'s default path is bit identical to mac4DSTEM `7d6fdbd1` on the 35 parity rings at -O and -Onone, with
 and without the new closures.
 
-## After the tag: Gate B on the 0.0.4 commit (f3933d2)
+## Gate B on the frozen candidate (f3933d2)
 
-The tag `0.0.4` is commit f3933d2. Its refuter (registration-0.0.4 §8, "Gate B on f3933d2") found one wrong acceptance and
-one wrong progress report, both fixed on `main` after the tag and shipped in 0.1.0 (the apps take 0.1.0, owner 13:10):
+The candidate was frozen at f3933d2. Its refuter (registration-0.0.4 §8, "Gate B on f3933d2") found one wrong acceptance
+and one wrong progress report, both fixed before the tag (67f8d22) and in 0.1.0:
 a second ring inside the annulus could pull the calibration onto the other ring or between the two (now refused as
-`secondRingInAnnulus(height:)`), and progress could step back through the one-sided refit. Also recorded there: a ring on
+`secondRingInAnnulus(height:)`, listed after `notARingPeak`), and progress could step back through the one-sided refit. Also recorded there: a ring on
 a steep 1/r² tail or a composite background is refused (conservative); an exponential outer tail reads R up to −2.1 % and
 a flat-top ring of width 14 px reads R at its outer edge (accepted: the evidence reads the data at the fitted shape); the
 impulse rule acts on a one-pixel spike anywhere in the pattern (a one-pixel central beam moves a fit by ≤ 1.1e-4 px) and
@@ -85,7 +88,7 @@ on isolated high counts of a sparse Poisson ring (R by ≤ 0.005 px).
   `FitReport(annulusInnerRadius:annulusOuterRadius:ringEvidence:)` (defaulted; the 0.0.3 initializer still compiles).
 - `progress: (@Sendable (Double) -> Void)?` and `isCancelled: (@Sendable () -> Bool)?` on `fit1D`, `fitAmorphousRing`,
   `fitBestAvailable`, `RingCalibration.fit` and `fitRing`; a cancelled `Task` or a `true` from the closure throws
-  `CancellationError` at the next optimiser iteration. No speedup in 0.0.4: the fit's cost is 0.0.3's (macTEM's
+  `CancellationError` at the next optimiser iteration. No speedup in 0.1.0: the fit's cost is 0.0.3's (macTEM's
   66 s at ±90 px on 2048² stands); a parallel Jacobian is a later lane.
 - `LocalizedError` on `CIFImportError`, `KinematicError`, `ReflectionListError` (`errorDescription` is the description).
 - **Tetragonal along a or b (a number moves).** A cell with a = c ≠ b or b = c ≠ a (90°) was read orthorhombic, so its
@@ -102,12 +105,12 @@ on isolated high counts of a sparse Poisson ring (R by ≤ 0.005 px).
 
 ## The consumer check
 
-`tools/consumer-check` (a separate package, the public API only, Debug, 0 warnings) passes 397 checks (288 at 0.0.3),
-each new 0.0.4 symbol with a real call and a checked result. Its negative controls (`run.sh --controls`,
+`tools/consumer-check` (a separate package, the public API only, Debug, 0 warnings) passes 404 checks (288 at 0.0.3),
+each new 0.1.0 symbol with a real call and a checked result. Its negative controls (`run.sh --controls`,
 `controls.py`, SpectroKit's pattern) revert one declaration at a time from `public` to `package` in a copy and require the
-consumer build to fail with the protection-level diagnostic naming it: 144 of 144 caught, covering every new 0.0.4 symbol
-and every type (with at least one member) that the 0.0.3 note's mapping tables name. Seven declarations cannot be made
-`package` and are listed with the reason in `controls.py`: the three new `Refusal` cases, `MetricFamily.tetragonal`, and
+consumer build to fail with the protection-level diagnostic naming it: 147 of 147 caught, covering every new 0.1.0 symbol
+and every type (with at least one member) that the 0.0.3 note's mapping tables name. Eight declarations cannot be made
+`package` and are listed with the reason in `controls.py`: the four new `Refusal` cases, `MetricFamily.tetragonal`, and
 the three `LocalizedError` conformances (their `errorDescription` witnesses are controlled).
 
 ## Corrections to the 0.0.3 note

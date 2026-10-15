@@ -1,6 +1,6 @@
 //
 //  Geometry004Checks.swift
-//  Role: the public API DiffractoKit 0.0.4 adds to DiffractoGeometry, used from outside the package with a real call and a
+//  Role: the public API DiffractoKit 0.1.0 adds to DiffractoGeometry, used from outside the package with a real call and a
 //        result a reader verifies by hand: q(radius:...) and its inverse, the ring evidence, `fitRing` / `calibrating`
 //        and their equality with `fit`, `requireRingEvidence`, the three new refusals, `FitReport`'s new fields, and
 //        `progress:` / `isCancelled:` on every fit. `runGeometry004Checks` is called from main.swift.
@@ -35,7 +35,7 @@ func runGeometry004Checks(_ report: inout Report) {
     let d = 2.3546, volts = 200_000.0
     let lambda = ElectronWavelength.angstroms(volts: volts)
 
-    report.section("0.0.4: RingCalibration.q and radius") { r in
+    report.section("0.1.0: RingCalibration.q and radius") { r in
         let twoTheta = RingCalibration.twoTheta(wavelengthAngstroms: lambda, d: d)
         let lengthPx = RingCalibration.cameraLengthPixels(radius: 150, twoTheta: twoTheta)
         // For the calibrating ring's own (R, L_px, lambda), q = 2 sin(theta) / lambda = 1 / d (Bragg's law).
@@ -57,17 +57,18 @@ func runGeometry004Checks(_ report: inout Report) {
         r.equal("radius of a zero q is NaN", RingCalibration.radius(q: 0, cameraLengthPixels: 100, wavelengthAngstroms: lambda).isNaN, true)
     }
 
-    report.section("0.0.4: RingEvidence by hand and the new refusals") { r in
+    report.section("0.1.0: RingEvidence by hand and the new refusals") { r in
         r.equal("registered bounds", RingEvidence.sectorCount == 36 && RingEvidence.minimumSectorPixels == 8
                 && RingEvidence.minimumAmplitudeFraction == 0.5 && RingEvidence.minimumSignificance == 3
                 && RingEvidence.minimumOccupiedBins == 30 && RingEvidence.minimumDrop == 0.25
                 && RingEvidence.maximumShift == 0.25 && RingEvidence.shiftSignificance == 4, true)
         func evidence(bins: Int = 36, inner: Double? = 0.9, outer: Double? = 0.9, centre: Double? = 0.05, centreError: Double? = 0.02,
-                      ellipse: Double? = 0.05, ellipseError: Double? = 0.02) -> RingEvidence {
+                      ellipse: Double? = 0.05, ellipseError: Double? = 0.02, secondary: Double? = nil) -> RingEvidence {
             RingEvidence(amplitude: 100, sectorAmplitudes: Array(repeating: 100, count: 36),
                          sectorAmplitudeErrors: Array(repeating: 1, count: 36), sectorShifts: Array(repeating: 0, count: 36),
                          occupiedBins: bins, innerDrop: inner, outerDrop: outer, radiusShift: 0, centreShift: centre,
-                         centreShiftError: centreError, ellipseShift: ellipse, ellipseShiftError: ellipseError)
+                         centreShiftError: centreError, ellipseShift: ellipse, ellipseShiftError: ellipseError,
+                         secondaryPeak: secondary)
         }
         let good = evidence()
         r.equal("the fields are the ones given", good.amplitude == 100 && good.sectorAmplitudes.count == 36 && good.sectorAmplitudeErrors.count == 36
@@ -123,6 +124,17 @@ func runGeometry004Checks(_ report: inout Report) {
             r.equal("ringGeometryInconsistent carries its shifts", centre == 0.6 && ellipse == 0.05, true)
         } else { r.check("ringGeometryInconsistent carries its shifts", false) }
 
+        let twoRings = RingCalibration.refusals(fitReport(evidence: evidence(secondary: 0.6)), highTensionVolts: volts)
+        r.equal("a second peak of 0.6 A is secondRingInAnnulus", twoRings, [.secondRingInAnnulus(height: 0.6)])
+        let secondary: Double? = evidence(secondary: 0.6).secondaryPeak
+        r.equal("secondaryPeak is the one given", secondary == 0.6, true)
+        r.equal("a second peak below the bound is one ring", evidence(secondary: 0.2).isSingleRing, true)
+        r.equal("the second-peak bound is 0.25", RingEvidence.maximumSecondaryPeak, 0.25)
+        let second = RingCalibration.Refusal.secondRingInAnnulus(height: 0.6)
+        r.equal("secondRingInAnnulus is named, withholds Δq and says why", second.name == "secondRingInAnnulus", true)
+        r.equal("secondRingInAnnulus withholds Δq", second.withholdsDeltaQ, true)
+        r.equal("secondRingInAnnulus says why", second.reason.contains("a peak of 60 % of the fitted ring's amplitude"), true)
+
         let fewSectors = RingCalibration.refusals(fitReport(evidence: evidence(bins: 20)), highTensionVolts: volts)
         r.equal("20 sectors holding the ring is a coverage refusal at 20", fewSectors, [.insufficientAngularCoverage(occupiedBins: 20)])
 
@@ -137,7 +149,7 @@ func runGeometry004Checks(_ report: inout Report) {
         r.equal("Refusal's localizedDescription is its reason", all[0].localizedDescription == all[0].reason, true)
     }
 
-    report.section("0.0.4: ring evidence on a planted ring, requireRingEvidence") { r in
+    report.section("0.1.0: ring evidence on a planted ring, requireRingEvidence") { r in
         let best = try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: 60, centerQY: 60, innerRadius: 28, outerRadius: 52,
                                                            requireRingEvidence: true)
         let plain = try EllipseCalibration.fitBestAvailable(pattern: pattern, centerQX: 60, centerQY: 60, innerRadius: 28, outerRadius: 52)
@@ -199,7 +211,7 @@ func runGeometry004Checks(_ report: inout Report) {
         r.equal("a central blob is not calibrated from", blobRing == nil || blobRing?.isUsable == false, true)
     }
 
-    report.section("0.0.4: fitRing, calibrating, FitReport on a planted ring") { r in
+    report.section("0.1.0: fitRing, calibrating, FitReport on a planted ring") { r in
         let ring = try RingCalibration.fitRing(pattern: pattern, centerQX: 60, centerQY: 60, innerRadius: 28, outerRadius: 52)
         let fit = try unwrap(ring.fit)
         let rep = try unwrap(ring.report)
@@ -243,7 +255,7 @@ func runGeometry004Checks(_ report: inout Report) {
         r.equal("RingRadiusFit is Equatable", ring == ring && ring != sparse, true)
     }
 
-    report.section("0.0.4: progress and isCancelled") { r in
+    report.section("0.1.0: progress and isCancelled") { r in
         let always: @Sendable () -> Bool = { true }
         let never: @Sendable () -> Bool = { false }
         // progress: monotone within [0, 1], ending at 1.

@@ -1,6 +1,6 @@
 //
 //  RingCalibration+Q.swift
-//  Role: the exact scattering vector q of a pixel radius on a flat detector, and its inverse. DiffractoKit 0.0.4
+//  Role: the exact scattering vector q of a pixel radius on a flat detector, and its inverse. DiffractoKit 0.1.0
 //        (docs/registration-0.0.4.md section 3, G2), added to the closed forms of `RingCalibration.swift` without touching
 //        them.
 //

@@ -67,7 +67,7 @@ public struct EllipseCalibrationFit: Sendable, Equatable {
     public let sparseCoverage: Bool
     /// What the data say about the ring at this fit (`EllipseCalibration.ringEvidence`), attached by
     /// `fitBestAvailable(..., requireRingEvidence: true)` (and so by `RingCalibration.fit` and `fitRing`); nil from every
-    /// other call, including `fitAmorphousRing`, whose flag only governs the one-sided floor. DiffractoKit 0.0.4
+    /// other call, including `fitAmorphousRing`, whose flag only governs the one-sided floor. DiffractoKit 0.1.0
     /// (registration-0.0.4 §1.3, §1.4).
     public let ringEvidence: RingEvidence?
 
@@ -150,7 +150,7 @@ public enum EllipseCalibration {
     /// move it, and the coefficient is the Gaussian's. A caller applies only
     /// b/a and θ (`EllipseTransform`), so a and b are not a
     /// calibrated ring radius (`archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`).
-    /// The fit with its ring evidence attached (DiffractoKit 0.0.4).
+    /// The fit with its ring evidence attached (DiffractoKit 0.1.0).
     static func attaching(_ evidence: RingEvidence?, to fit: EllipseCalibrationFit) -> EllipseCalibrationFit {
         EllipseCalibrationFit(
             centerQX: fit.centerQX, centerQY: fit.centerQY, a: fit.a, b: fit.b, theta: fit.theta,
@@ -160,7 +160,7 @@ public enum EllipseCalibration {
             sparseCoverage: fit.sparseCoverage, ringEvidence: evidence)
     }
 
-    // MARK: Impulses, scale and cancellation (DiffractoKit 0.0.4, registration-0.0.4 §1.1, §1.2, §4)
+    // MARK: Impulses, scale and cancellation (DiffractoKit 0.1.0, registration-0.0.4 §1.1, §1.2, §4)
     //
     // DEVIATION from the apps (7d6fdbd1), on inputs their code refused or that hold an isolated impulse only:
     // - an annulus pixel outside the range of its finite in-pattern 8-neighbours (at least 3) by more than twice the
@@ -573,7 +573,7 @@ public enum EllipseCalibration {
             maximumProfileResidual: maximumProfileResidual, acceptSparseCoverage: acceptSparseCoverage,
             requireRingEvidence: requireRingEvidence, span: span.sub(0, 0.97), isCancelled: isCancelled)
         guard requireRingEvidence else { span(1); return fit }
-        // DiffractoKit 0.0.4 (registration-0.0.4 §1.4): what the data say about the ring at the fit that is returned.
+        // DiffractoKit 0.1.0 (registration-0.0.4 §1.4): what the data say about the ring at the fit that is returned.
         try checkCancellation(isCancelled)
         let evidence = ringEvidence(pattern: pattern, fit: fit, centerQX: centerQX, centerQY: centerQY,
                                     innerRadius: innerRadius, outerRadius: outerRadius)
@@ -889,7 +889,7 @@ public enum EllipseCalibration {
             // A ring sigma within 0.05 px of its 0.25 px floor is a fit that drained the ring into
             // the background and the central Gaussian: a, b and the centre then
             // carry no ring information (`archive/v5/ring-fit-two-start-gateD-2026-10-14.md`).
-            // DiffractoKit 0.0.4 (registration-0.0.4 §1.5, slice 3b's F7): with `requireRingEvidence`, ONE sigma at the
+            // DiffractoKit 0.1.0 (registration-0.0.4 §1.5, slice 3b's F7): with `requireRingEvidence`, ONE sigma at the
             // floor is a sharp edge when the data hold the ring at this fit (its ring evidence passes); both at the
             // floor is still refused.
             let atFloor = [parameters[3], parameters[4]].filter { $0 <= 0.25 + 0.05 }.count

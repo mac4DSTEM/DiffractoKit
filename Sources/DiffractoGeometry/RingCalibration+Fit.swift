@@ -22,9 +22,9 @@
 //  ring was fitted at all, and reaches the caller as thrown. An impossible d, V or pixel pitch is the caller's mistake
 //  and throws `Refusal.invalidInput` before any fit runs.
 //
-//  THE SPLIT (DiffractoKit 0.0.4, registration-0.0.4 §2, macTEM's ask G1): `fitRing` fits the ring and decides the fit's
+//  THE SPLIT (DiffractoKit 0.1.0, registration-0.0.4 §2, macTEM's ask G1): `fitRing` fits the ring and decides the fit's
 //  own refusals with no spacing, so a caller can measure a ring before it knows which family it is; `calibrating` adds d, V
-//  and the pitch. `fit` is exactly `calibrating(fitRing(...), d:...)`. Since 0.0.4 the fit runs with
+//  and the pitch. `fit` is exactly `calibrating(fitRing(...), d:...)`. Since 0.1.0 the fit runs with
 //  `requireRingEvidence: true` (registration-0.0.4 §1.4): the report carries the ring evidence and the annulus's radii, so
 //  a ring outside its annulus, a profile that is not a peak, an inconsistent geometry and too few sectors holding the ring
 //  are refused by name, and one ring sigma at the 0.30 px floor is kept when the evidence passes.

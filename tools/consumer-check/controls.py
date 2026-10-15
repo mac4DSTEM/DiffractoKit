@@ -124,7 +124,7 @@ CONTROLS = [
     used(RCF, "RingRadiusFit.init", "public init(fit: EllipseCalibrationFit?, report: RingCalibration.FitReport?, refusals: [RingCalibration.Refusal]) {"),
     access(RCF, "RingRadiusFit", "radius", "public var radius: Double? { report?.radius }"),
     access(RCF, "RingRadiusFit", "isUsable", "public var isUsable: Bool"),
-    # The three new refusal cases (enum cases) are SKIPPED; their name and reason are existing members; errorDescription is
+    # The four new refusal cases (enum cases) are SKIPPED; their name and reason are existing members; errorDescription is
     # the LocalizedError witness.
     # FitReport's new init parameters and fields
     access(RC, "RingCalibration.FitReport", "annulusInnerRadius", "public var annulusInnerRadius: Double?"),
@@ -135,6 +135,9 @@ CONTROLS = [
     # RingEvidence: the type, every field, the init, the bounds, the predicates
     decl(RE, "RingEvidence", "public struct RingEvidence: Sendable, Equatable {"),
     access(RE, "RingEvidence", "amplitude", "public let amplitude: Double"),
+    access(RE, "RingEvidence", "secondaryPeak", "public let secondaryPeak: Double?"),
+    access(RE, "RingEvidence", "maximumSecondaryPeak", "public static let maximumSecondaryPeak = 0.25"),
+    access(RE, "RingEvidence", "isSingleRing", "public var isSingleRing: Bool"),
     access(RE, "RingEvidence", "sectorAmplitudes", "public let sectorAmplitudes: [Double?]"),
     access(RE, "RingEvidence", "sectorAmplitudeErrors", "public let sectorAmplitudeErrors: [Double?]"),
     access(RE, "RingEvidence", "sectorShifts", "public let sectorShifts: [Double?]"),
@@ -291,6 +294,7 @@ SKIPPED = [
     ("RingCalibration.Refusal.ringOutsideAnnulus", "an enum case takes its enum's access: it cannot be declared package on its own"),
     ("RingCalibration.Refusal.notARingPeak", "an enum case takes its enum's access (the enum itself is controlled above)"),
     ("RingCalibration.Refusal.ringGeometryInconsistent", "an enum case takes its enum's access (the enum itself is controlled above)"),
+    ("RingCalibration.Refusal.secondRingInAnnulus", "an enum case takes its enum's access (the enum itself is controlled above)"),
     ("UnitCell.MetricFamily.tetragonal(uniqueAxis:)", "an enum case takes its enum's access (the enum itself is controlled above)"),
     ("CIFImportError: LocalizedError", "a protocol conformance has no access of its own; its witness errorDescription is controlled above"),
     ("ReflectionListError: LocalizedError", "a protocol conformance has no access of its own; its witness errorDescription is controlled above"),

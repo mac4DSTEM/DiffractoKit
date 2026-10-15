@@ -201,7 +201,7 @@ report.section("DiffractoScattering (slice 2)") { r in
     r.equal("cut refusal typed", refused, .invalidCut(-1))
 }
 
-report.section("0.0.4: LocalizedError on the three error types") { r in
+report.section("0.1.0: LocalizedError on the three error types") { r in
     let cif = CIFImportError.missingTag("_cell_length_b")
     r.equal("CIFImportError.errorDescription", cif.errorDescription, "CIF is missing the required tag _cell_length_b.")
     r.equal("CIFImportError.localizedDescription is the same text", cif.localizedDescription, cif.description)
@@ -221,7 +221,7 @@ report.section("0.0.4: LocalizedError on the three error types") { r in
             "CIF is missing the required tag _cell_length_b.")
 }
 
-report.section("0.0.4: tetragonal along a, b or c") { r in
+report.section("0.1.0: tetragonal along a, b or c") { r in
     r.equal("a = b != c is tetragonal along c", UnitCell.tetragonal(a: 4.593, c: 2.959).metricFamily(), .tetragonal(uniqueAxis: .c))
     r.equal("a = c != b is tetragonal along b", UnitCell.orthorhombic(a: 3.7, b: 5.8, c: 3.7).metricFamily(), .tetragonal(uniqueAxis: .b))
     r.equal("b = c != a is tetragonal along a", UnitCell.orthorhombic(a: 5.8, b: 3.7, c: 3.7).metricFamily(), .tetragonal(uniqueAxis: .a))

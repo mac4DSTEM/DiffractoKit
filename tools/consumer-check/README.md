@@ -15,7 +15,7 @@ a q at Au {111}'s g with σ = 1e-3 q accepted as {1 1 1}, β″'s [0 0 1] = (cos
 rendered by `GeometryChecks.swift` and recovered inside the apps' bands (radius 1 %, b/a 0.01, centre 1 px), and a 2:1
 ellipse's offset (4, 3) corrected to (2, 3)).
 
-DiffractoKit 0.0.4 adds `Geometry004Checks.swift` and two sections of `main.swift`: `RingCalibration.q` / `radius`, `RingEvidence`
+DiffractoKit 0.1.0 adds `Geometry004Checks.swift` and two sections of `main.swift`: `RingCalibration.q` / `radius`, `RingEvidence`
 (by hand and on a planted ring), `fitRing` / `calibrating` (equal to `fit`), `requireRingEvidence`, the three new refusals and
 `FitReport`'s new fields, `progress:` / `isCancelled:` on every fit, `LocalizedError` on the three error types, and the
 tetragonal settings. 397 checks in all.
@@ -23,7 +23,7 @@ tetragonal settings. 397 checks in all.
 Negative controls (SpectroKit's `controls.py` pattern): `controls.py` copies the repository under `.build/consumer-check/mutants/`,
 checks that the unedited copy builds, then reverts ONE declaration from `public` to `package` at a time and requires the
 consumer build to fail with the compiler's protection-level diagnostic naming that symbol (one warm build directory, an
-incremental build per control). The controls are one per new 0.0.4 public symbol plus one per public type the apps use
+incremental build per control). The controls are one per new 0.1.0 public symbol plus one per public type the apps use
 (`docs/consumers-0.0.3.md`) and members of it the check calls. An enum case and a protocol conformance cannot be reverted to
 `package`: `controls.py` lists them under `SKIPPED` with the reason. `controls.py <root> --dry` checks that every edit target
 occurs exactly once without building.

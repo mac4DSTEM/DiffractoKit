@@ -73,7 +73,7 @@ public struct RingCalibration: Sendable, Equatable {
         /// A number that is not finite and positive (or a count outside its range): the caller's mistake, not data.
         case invalidInput(String)
         /// The fitted radius (a + b)/2 lies outside the annulus the fit was given: the ring term fitted something other
-        /// than the ring the caller drew (DiffractoKit 0.0.4, registration-0.0.4 §1.4; slice 3b's F2, a central blob).
+        /// than the ring the caller drew (DiffractoKit 0.1.0, registration-0.0.4 §1.4; slice 3b's F2, a central blob).
         case ringOutsideAnnulus(radius: Double, inner: Double, outer: Double)
         /// The data's profile about the fit does not fall by a quarter of the ring's amplitude on both sides: an edge or a
         /// slope, not a ring (registration-0.0.4 §1.3; slice 3b's F2, a disk edge). nil where a side had no pixels.
@@ -165,10 +165,10 @@ public struct RingCalibration: Sendable, Equatable {
         public var outerSigma: Double?
         /// outerRadius − innerRadius of the annulus the fit was given, pixels.
         public var annulusWidth: Double
-        /// The annulus's radii (DiffractoKit 0.0.4): with them, a radius outside the annulus is refused. nil skips that.
+        /// The annulus's radii (DiffractoKit 0.1.0): with them, a radius outside the annulus is refused. nil skips that.
         public var annulusInnerRadius: Double?
         public var annulusOuterRadius: Double?
-        /// The fit's ring evidence (DiffractoKit 0.0.4, `EllipseCalibration.ringEvidence`): with it, too few sectors
+        /// The fit's ring evidence (DiffractoKit 0.1.0, `EllipseCalibration.ringEvidence`): with it, too few sectors
         /// holding the ring, no peak and an inconsistent geometry are refused. nil skips those.
         public var ringEvidence: RingEvidence?
 
@@ -303,7 +303,7 @@ public struct RingCalibration: Sendable, Equatable {
 
     /// Every registered refusal that applies to a fit's numbers and the stated V (volts, nil when none), in the order
     /// model, coverage, sigma, residual, ellipticity, outside the annulus, not a peak, geometry (the last three only
-    /// when the report carries the annulus's radii and the ring evidence, DiffractoKit 0.0.4), high tension; empty when
+    /// when the report carries the annulus's radii and the ring evidence, DiffractoKit 0.1.0), high tension; empty when
     /// none applies. A number that is not finite (or a count out of range) returns `[.invalidInput]` alone: a NaN would
     /// otherwise pass every comparison. A caller withholds Δq when any refusal's `withholdsDeltaQ` is true.
     public static func refusals(_ fit: FitReport, highTensionVolts: Double?) -> [Refusal] {
@@ -330,7 +330,7 @@ public struct RingCalibration: Sendable, Equatable {
         var refused: [Refusal] = []
         if fit.model != .asymmetricGaussian { refused.append(.modelNotAsymmetricGaussian) }
         // The coverage is the fit's pre-fit count and, with the evidence, the sectors that hold the ring at the fit
-        // (DiffractoKit 0.0.4: noise in a gap makes pixels bright, not a ring at the fitted radius).
+        // (DiffractoKit 0.1.0: noise in a gap makes pixels bright, not a ring at the fitted radius).
         let evidenceBins = fit.ringEvidence?.occupiedBins ?? angularBinCount
         if fit.occupiedAngularBins < minimumOccupiedAngularBins || fit.sparseCoverage
             || evidenceBins < RingEvidence.minimumOccupiedBins {
