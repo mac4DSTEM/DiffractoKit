@@ -93,4 +93,15 @@ import DiffractoCore
         #expect(doc.structure.laueClass == .mThreeBarM, "a = \(a)")
         }
     }
+
+    /// The metric test is per entry: in an elongated cell a rotation that swaps the short axes is refused, and in a
+    /// monoclinic cell the 2-fold about the unique axis is kept.
+    @Test func preservesMetricIsPerEntryAndHasTheRightConvention() throws {
+        let long = UnitCell(a: 1.0, b: 1.2, c: 30, alphaDeg: 90, betaDeg: 90, gammaDeg: 90)
+        let swap = try SymmetryOperation(xyz: "y,x,z").rotation
+        #expect(!SymmetryDetection.preservesMetric(swap, of: long))
+        let mono = UnitCell(a: 5, b: 6, c: 7, alphaDeg: 90, betaDeg: 100, gammaDeg: 90)
+        #expect(SymmetryDetection.preservesMetric(try SymmetryOperation(xyz: "-x,y,-z").rotation, of: mono))
+        #expect(!SymmetryDetection.preservesMetric(try SymmetryOperation(xyz: "-x,-y,z").rotation, of: mono))
+    }
 }

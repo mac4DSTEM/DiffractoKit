@@ -234,19 +234,17 @@ public enum SymmetryDetection {
     }
 
     /// Does the rotation (acting on fractional coordinates as x' = R x) leave the cell's metric unchanged, to a relative
-    /// 1e-3 of its largest entry? Loose on purpose: a file's cell is written to a few digits (a primitive bcc cell at
+    /// 1e-3 of each entry's own scale (√(Gᵢᵢ Gⱼⱼ))? Loose on purpose: a file's cell is written to a few digits (a primitive bcc cell at
     /// 109.4712 degrees), and this only turns away rotations that are not lattice symmetries at all.
-    static func preservesMetric(_ rotation: IntegerMatrix, of cell: UnitCell) -> Bool {
+    package static func preservesMetric(_ rotation: IntegerMatrix, of cell: UnitCell) -> Bool {
         let g = cell.metricTensor
         let r = rotation.rows.map { SIMD3<Double>(Double($0.x), Double($0.y), Double($0.z)) }
         let gm = [g[0], g[1], g[2]]
-        var scale = 0.0
-        for i in 0..<3 { for j in 0..<3 { scale = max(scale, abs(gm[i][j])) } }
         for i in 0..<3 {
             for j in 0..<3 {
                 var value = 0.0
                 for k in 0..<3 { for l in 0..<3 { value += r[k][i] * gm[k][l] * r[l][j] } }
-                if abs(value - gm[i][j]) > 1e-3 * scale { return false }
+                if abs(value - gm[i][j]) > 1e-3 * (gm[i][i] * gm[j][j]).squareRoot() { return false }
             }
         }
         return true

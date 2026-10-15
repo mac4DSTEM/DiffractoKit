@@ -10,7 +10,7 @@ reproduces, and against what, are in `docs/parity.md`.
   permutations of x, y, z written for a 60° rhombohedral primitive cell of MgO) gave `-1` or `-3m` instead of `m-3m`. Such a
   rotation was tested only against the atoms, passed as an operation, and the closure of the set then dropped the others. A
   file's rotation now joins the candidates only if it preserves the cell's metric (to a relative 1e-3); the lattice bounds the
-  class and the atoms decide it. Reflections are unchanged on every pinned structure.
+  class and the atoms decide it. Reflections are unchanged on every pinned structure; `SymmetryDetection.Result.candidates` no longer lists such a rotation.
 - Not a change: hcp written in a cell with γ = 60° is read as 6/mmm (it is hcp); 0.1.0's 2/m was the metric not being recognised.
 
 ## 0.3.0
