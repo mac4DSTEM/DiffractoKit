@@ -117,7 +117,8 @@ public struct KinematicFamily: Sendable, Equatable {
 public struct KinematicReflectionList: Sendable, Equatable {
     public let kMax: Double
     public let cut: Double
-    /// Every reflection of slice 1's list (allowed or absent), in its order, with F.
+    /// Every reflection of slice 1's list (allowed or absent), in its order, with F. EMPTY when the list was built with
+    /// `retainingAll: false` (`CrystalStructure.kinematicReflections`): `kept` and `families` are then the same values.
     public let all: [KinematicReflection]
     /// |F| > cut, in the same order.
     public let kept: [KinematicReflection]
@@ -133,16 +134,28 @@ public struct KinematicReflectionList: Sendable, Equatable {
 extension CrystalStructure {
 
     /// The kinematic list (registration slice 2 §1): slice 1's reflections, F by `formFactor`, the cut, the rings.
+    ///
+    /// **Memory (`retainingAll`).** By default the list keeps every reflection before the cut in `all` (and the Core list
+    /// it came from is held while it is built): a 30 Å cell at k_max 2.5 Å⁻¹ peaks at some hundreds of megabytes, and the
+    /// 1e7-reflection limit at several gigabytes. With `retainingAll: false` the structure factor of each reflection is
+    /// computed as it is enumerated and only the reflections above the cut are kept: `all` is EMPTY, the pre-cut list is
+    /// never held, and `kept` and `families` are bit for bit the values the default gives. Everything else is the same,
+    /// the refusals included (for a form factor that fails at several reflections, the one named is the first in the
+    /// list's order, as in the default).
     public func kinematicReflections(kMax: Double, cut: Double = StructureFactors.defaultCut,
                                      formFactor: FormFactor = ElectronScatteringFactors.f,
                                      policy: ReflectionList.Policy = .default,
-                                     validation: CrystalStructure.ValidationPolicy = .default)
+                                     validation: CrystalStructure.ValidationPolicy = .default,
+                                     retainingAll: Bool = true)
         throws(KinematicError) -> KinematicReflectionList {
         guard cut.isFinite, cut >= 0 else { throw .invalidCut(cut) }
         let missing = Array(Set(sites.map(\.z).filter { formFactor($0, 0) == nil })).sorted()
         guard missing.isEmpty else { throw .unsupportedElements(missing) }
         let issues = validationIssues(using: validation)
         guard issues.isEmpty else { throw .invalidStructure(issues.map(\.message)) }
+        if !retainingAll {
+            return try keptKinematicReflections(kMax: kMax, cut: cut, formFactor: formFactor, policy: policy)
+        }
         let list: ReflectionList
         do { list = try reflections(kMax: kMax, policy: policy) } catch { throw .reflectionList(error) }
         var all: [KinematicReflection] = []
@@ -169,5 +182,52 @@ extension CrystalStructure {
             KinematicFamily(family: family, intensity: family.members.reduce(0) { $0 + (byHKL[$1] ?? 0) })
         }
         return KinematicReflectionList(kMax: kMax, cut: cut, all: all, kept: kept, families: families)
+    }
+
+    /// `kinematicReflections(retainingAll: false)`: the same reflections enumerated by `ReflectionList.enumerate`, F computed
+    /// as each one is met, only those above the cut kept, then put in the list's order (`ReflectionList.ordered`).
+    private func keptKinematicReflections(kMax: Double, cut: Double, formFactor: FormFactor,
+                                          policy: ReflectionList.Policy) throws(KinematicError) -> KinematicReflectionList {
+        do { try ReflectionList.checkBounds(cell: cell, kMax: kMax, policy: policy) } catch { throw .reflectionList(error) }
+        let absenceTolerance = policy.effectiveAbsenceTolerance
+        let volume = cell.volume
+        let sites = self.sites
+        var kept: [KinematicReflection] = []
+        // The default path throws at the first failing reflection in the list's order; this one meets them in the
+        // enumeration's order, so it keeps the earliest in the list's order and throws it at the end.
+        var failure: (gLength: Double, hkl: MillerIndex, error: KinematicError)?
+        ReflectionList.enumerate(cell: cell, kMax: kMax) { hkl, g, gLen in
+            func record(_ error: KinematicError) {
+                if let current = failure {
+                    // the list's order: by |g|, and within a tie (the list's `orderTolerance`) by descending (h, k, l)
+                    let tied = abs(gLen - current.gLength) <= ReflectionList.orderTolerance * max(gLen, current.gLength)
+                    let earlier = tied ? hkl > current.hkl : gLen < current.gLength
+                    if !earlier { return }
+                }
+                failure = (gLen, hkl, error)
+            }
+            guard let f = StructureFactors.compute(hkl, g: g, sites: sites, volume: volume, formFactor: formFactor) else {
+                let gSq = gLen * gLen
+                record(.unsupportedElements(Array(Set(sites.map(\.z).filter { formFactor($0, gSq) == nil })).sorted()))
+                return
+            }
+            guard f.real.isFinite, f.imaginary.isFinite else { record(.nonFiniteStructureFactor(hkl)); return }
+            guard f.magnitude > cut else { return }
+            let reflection = Reflection(hkl: hkl, g: g, gLength: gLen,
+                                        isAllowed: ReflectionList.isAllowed(hkl, by: operations, tolerance: absenceTolerance))
+            kept.append(KinematicReflection(reflection: reflection, structureFactor: f))
+        }
+        if let failure { throw failure.error }
+        let ordered = ReflectionList.ordered(kept, by: { $0.reflection })
+        let rings = ReflectionList.families(
+            of: ordered.map(\.reflection), laueGroup: laueGroup,
+            millerBravais: ReflectionList.usesMillerBravais(laueClass: laueClass, cell: cell),
+            familyTolerance: policy.familyTolerance)
+        var byHKL: [MillerIndex: Double] = [:]
+        for k in ordered { byHKL[k.reflection.hkl] = k.structureFactor.intensity }
+        let families = rings.map { family in
+            KinematicFamily(family: family, intensity: family.members.reduce(0) { $0 + (byHKL[$1] ?? 0) })
+        }
+        return KinematicReflectionList(kMax: kMax, cut: cut, all: [], kept: ordered, families: families)
     }
 }

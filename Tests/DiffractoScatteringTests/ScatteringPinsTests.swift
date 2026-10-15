@@ -418,3 +418,75 @@ private func compareToApps(_ c: AppsCase, _ s: CrystalStructure, summationOrderT
     let stats = "worst over \(c.count): Re/floor \(worstRe), Im/floor (|Im| >= 1e-15) \(worstIm), |F|² relative \(worstI), |g| relative \(worstG); failing checks \(fails.count)"
     return (fails, stats)
 }
+
+// MARK: - retainingAll: false (registration 0.2.0, ask 1)
+
+extension ScatteringPinsTests {
+
+    /// The 20 pinned structures at k_max 1.2 and 2.0: `retainingAll: false` gives `kept` and `families` bit for bit equal to
+    /// the default's, with `all` empty and the same count of kept reflections as the pins.
+    /// RED UNDER: the streaming path keeping a different set (the cut `>=`, the order not restored, the ring rule skipped).
+    @Test(arguments: ScatteringFixtures.structureNames)
+    func testRetainingAllFalseGivesTheSameKeptAndFamilies(_ name: String) throws {
+        let s = try ScatteringFixtures.build(try ScatteringFixtures.pin(name))
+        for kMax in [1.2, 2.0] {
+            let full = try s.kinematicReflections(kMax: kMax)
+            let lean = try s.kinematicReflections(kMax: kMax, retainingAll: false)
+            #expect(lean.all.isEmpty)
+            #expect(!full.all.isEmpty)
+            #expect(lean.kept == full.kept, "\(name) at \(kMax)")
+            #expect(lean.families == full.families, "\(name) at \(kMax)")
+            #expect(lean.kMax == full.kMax && lean.cut == full.cut)
+            #expect(lean.keptButOperationAbsent == full.keptButOperationAbsent)
+            #expect(try s.kinematicReflections(kMax: kMax, retainingAll: true) == full)
+        }
+    }
+
+    /// A 30 Å cubic cell at k_max 2.5 (about 1.7 million reflections before the cut): the same equality.
+    /// RED UNDER: as above.
+    @Test func testRetainingAllFalseOnAThirtyAngstromCell() throws {
+        let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
+        let s = CrystalStructure.detectingSymmetry(cell: .cubic(a: 30), sites: fcc.map { AtomSite(z: 79, fractional: $0) })
+        let full = try s.kinematicReflections(kMax: 2.5)
+        let lean = try s.kinematicReflections(kMax: 2.5, retainingAll: false)
+        #expect(full.all.count > 1_000_000)
+        #expect(lean.all.isEmpty)
+        #expect(lean.kept.count == full.kept.count && lean.kept.count > 10_000)
+        #expect(lean.kept == full.kept)
+        #expect(lean.families == full.families)
+    }
+
+    /// The refusals are the same in both modes: an invalid cut, an unsupported element, a form factor that fails at some
+    /// reflections (the same reflection is named), a non-finite F, a k_max over the cap, a cell too large.
+    /// RED UNDER: the streaming path throwing the first failure it meets instead of the first in the list's order.
+    @Test func testRetainingAllFalseRefusesAsTheDefaultDoes() throws {
+        let s = try ScatteringFixtures.build(try ScatteringFixtures.pin("Au"))
+        func outcome(_ retaining: Bool, cut: Double = StructureFactors.defaultCut, kMax: Double = 1.2,
+                     formFactor: @escaping FormFactor = ElectronScatteringFactors.f,
+                     policy: ReflectionList.Policy = .default) -> KinematicError? {
+            do throws(KinematicError) {
+                _ = try s.kinematicReflections(kMax: kMax, cut: cut, formFactor: formFactor, policy: policy, retainingAll: retaining)
+                return nil
+            } catch { return error }
+        }
+        func both(cut: Double = StructureFactors.defaultCut, kMax: Double = 1.2, formFactor: @escaping FormFactor = ElectronScatteringFactors.f,
+                  policy: ReflectionList.Policy = .default) -> [KinematicError?] {
+            [true, false].map { outcome($0, cut: cut, kMax: kMax, formFactor: formFactor, policy: policy) }
+        }
+        let cut = both(cut: -1)
+        #expect(cut[0] == .invalidCut(-1) && cut[1] == cut[0])
+        let kMax = both(kMax: 9)
+        #expect(kMax[0] != nil && kMax[1] == kMax[0])
+        let cap = both(policy: ReflectionList.Policy(maximumReflections: 10))
+        #expect(cap[0] != nil && cap[1] == cap[0])
+        // f is missing beyond g^2 = 0.5, for gold, at several reflections: both name the elements, from the first
+        let missing: FormFactor = { z, g2 in g2 > 0.5 ? nil : ElectronScatteringFactors.f(z: z, gSquared: g2) }
+        let gaps = both(formFactor: missing)
+        #expect(gaps[0] == .unsupportedElements([79]) && gaps[1] == gaps[0])
+        // F is NaN beyond g^2 = 0.5: the first reflection of the list in that region is named in both modes
+        let nan: FormFactor = { z, g2 in g2 > 0.5 ? Double.nan : ElectronScatteringFactors.f(z: z, gSquared: g2) }
+        let nans = both(formFactor: nan)
+        if case .nonFiniteStructureFactor? = nans[0] {} else { Issue.record("expected a non-finite refusal, got \(String(describing: nans[0]))") }
+        #expect(nans[1] == nans[0])
+    }
+}

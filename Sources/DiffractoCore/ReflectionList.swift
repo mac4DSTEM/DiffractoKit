@@ -24,8 +24,10 @@ public enum ReflectionListError: Error, Equatable, Sendable, CustomStringConvert
             return "k_max must be a number of Å⁻¹ above 0 and at most \(ReflectionList.maximumKMax); \(k) is not."
         case .cellTooLargeOrInvalid(let n):
             return n.isFinite
-                ? String(format: "This cell at this k_max holds about %.3g reflections, more than the %d a list is built to; "
-                         + "lower k_max.", n, ReflectionList.maximumReflections)
+                ? String(format: "This cell at this k_max holds about %.3g reflections, or needs a wider range of indices, than a "
+                         + "list is built to by default (1e7 reflections, %d indices); lower k_max, or build a larger "
+                         + "list by setting ReflectionList.Policy.maximumReflections (and maximumEnumeration).",
+                         n, ReflectionList.maximumEnumeration)
                 : "The cell is not a valid finite lattice, so no reflection list can be built."
         }
     }
@@ -47,6 +49,13 @@ public struct Reflection: Sendable, Equatable {
     public var d: Double { 1 / gLength }
     /// False when an operation (R, t) with (h k l) R = (h k l) has (h k l) · t not an integer: a systematic absence.
     public let isAllowed: Bool
+
+    package init(hkl: MillerIndex, g: SIMD3<Double>, gLength: Double, isAllowed: Bool) {
+        self.hkl = hkl
+        self.g = g
+        self.gLength = gLength
+        self.isAllowed = isAllowed
+    }
 }
 
 /// A ring: the reflections of one |g|.
@@ -101,7 +110,7 @@ public struct ReflectionList: Sendable, Equatable {
 
         /// The tolerance used: `familyTolerance` when it is a number of at least 0, else 0.
         var effectiveFamilyTolerance: Double { familyTolerance.isFinite && familyTolerance >= 0 ? familyTolerance : 0 }
-        var effectiveAbsenceTolerance: Double { absenceTolerance.isFinite && absenceTolerance >= 0 ? absenceTolerance : 0 }
+        package var effectiveAbsenceTolerance: Double { absenceTolerance.isFinite && absenceTolerance >= 0 ? absenceTolerance : 0 }
     }
 
     /// The largest k_max a list is built to (Å⁻¹): the index loops run for minutes far above it.
@@ -134,6 +143,27 @@ public struct ReflectionList: Sendable, Equatable {
     /// The list for `cell` with the absences of `operations` and the orbits of `laueGroup`.
     public init(cell: UnitCell, operations: [SymmetryOperation], laueGroup: PointSymmetry, laueClass: LaueClass?,
                 kMax: Double, policy: Policy = .default) throws(ReflectionListError) {
+        try ReflectionList.checkBounds(cell: cell, kMax: kMax, policy: policy)
+        self.kMax = kMax
+        self.policy = policy
+        self.laueGroup = laueGroup
+        self.laueClass = laueClass
+        self.usesMillerBravais = ReflectionList.usesMillerBravais(laueClass: laueClass, cell: cell)
+
+        var out: [Reflection] = []
+        let absenceTolerance = policy.effectiveAbsenceTolerance
+        ReflectionList.enumerate(cell: cell, kMax: kMax) { hkl, g, gLen in
+            out.append(Reflection(hkl: hkl, g: g, gLength: gLen,
+                                  isAllowed: ReflectionList.isAllowed(hkl, by: operations, tolerance: absenceTolerance)))
+        }
+        self.reflections = ReflectionList.ordered(out)
+    }
+
+    // MARK: Shared with the kinematic list (DiffractoScattering) so that its streaming path enumerates the same set
+
+    /// The refusals of `init`: k_max within the policy's cap, a valid cell, the estimated count and the index range within
+    /// the policy's bounds. Nothing is enumerated.
+    package static func checkBounds(cell: UnitCell, kMax: Double, policy: Policy) throws(ReflectionListError) {
         guard kMax.isFinite, kMax > 0, kMax <= policy.maximumKMax else { throw .invalidKMax(kMax) }
         guard cell.isValid else { throw .cellTooLargeOrInvalid(estimatedReflections: .infinity) }
         let estimate = 4.0 / 3.0 * Double.pi * kMax * kMax * kMax * cell.volume
@@ -141,16 +171,20 @@ public struct ReflectionList: Sendable, Equatable {
         guard estimate.isFinite, box.isFinite, estimate <= Double(policy.maximumReflections),
               box <= Double(policy.maximumEnumeration)
         else { throw .cellTooLargeOrInvalid(estimatedReflections: estimate) }
-        self.kMax = kMax
-        self.policy = policy
-        self.laueGroup = laueGroup
-        self.laueClass = laueClass
-        self.usesMillerBravais = (laueClass?.usesMillerBravais ?? false)
+    }
+
+    /// Whether orbit names print four Miller–Bravais indices (see `usesMillerBravais`).
+    package static func usesMillerBravais(laueClass: LaueClass?, cell: UnitCell) -> Bool {
+        (laueClass?.usesMillerBravais ?? false)
             && cell.metricFamily(lengthTolerance: SymmetryDetection.defaultMetricLengthTolerance,
                                  angleToleranceDeg: SymmetryDetection.defaultMetricAngleToleranceDeg) == .hexagonal
+    }
 
+    /// Calls `body` with every (h, k, l) with 0 < |g| <= `kMax`, its g and |g|, in the enumeration's order (h, then k, then l
+    /// ascending), which is not the list's order (`ordered`). Holds nothing: the cell must have passed `checkBounds`.
+    package static func enumerate(cell: UnitCell, kMax: Double,
+                                  _ body: (MillerIndex, SIMD3<Double>, Double) throws -> Void) rethrows {
         let tile = cell.realLattice.map { max(0, Int((kMax * length($0)).rounded(.up))) }
-        var out: [Reflection] = []
         for h in -tile[0]...tile[0] {
             for k in -tile[1]...tile[1] {
                 for l in -tile[2]...tile[2] {
@@ -159,12 +193,10 @@ public struct ReflectionList: Sendable, Equatable {
                     let g = cell.gVector(hkl)
                     let gLen = length(g)
                     if gLen > kMax { continue }
-                    out.append(Reflection(hkl: hkl, g: g, gLength: gLen,
-                                          isAllowed: ReflectionList.isAllowed(hkl, by: operations, tolerance: policy.effectiveAbsenceTolerance)))
+                    try body(hkl, g, gLen)
                 }
             }
         }
-        self.reflections = ReflectionList.ordered(out)
     }
 
     /// The general reflection condition (registration 3.8): absent when an operation (R, t) with (h k l) R = (h k l)
@@ -184,18 +216,25 @@ public struct ReflectionList: Sendable, Equatable {
 
     /// Increasing |g|; within a run of |g| tied to `orderTolerance`, descending lexicographic (h, k, l).
     static func ordered(_ reflections: [Reflection]) -> [Reflection] {
-        var sorted = reflections.sorted { lhs, rhs in
-            if lhs.gLength != rhs.gLength { return lhs.gLength < rhs.gLength }
-            return lhs.hkl > rhs.hkl
+        ordered(reflections, by: { $0 })
+    }
+
+    /// The same order over any elements that carry a reflection (the kinematic list orders its kept reflections with it).
+    package static func ordered<T>(_ items: [T], by reflection: (T) -> Reflection) -> [T] {
+        var sorted = items.sorted { lhs, rhs in
+            let l = reflection(lhs), r = reflection(rhs)
+            if l.gLength != r.gLength { return l.gLength < r.gLength }
+            return l.hkl > r.hkl
         }
         var start = 0
         while start < sorted.count {
             var end = start + 1
-            let g0 = sorted[start].gLength
-            while end < sorted.count, sorted[end].gLength - g0 <= orderTolerance * max(g0, sorted[end].gLength) {
+            let g0 = reflection(sorted[start]).gLength
+            while end < sorted.count,
+                  reflection(sorted[end]).gLength - g0 <= orderTolerance * max(g0, reflection(sorted[end]).gLength) {
                 end += 1
             }
-            if end - start > 1 { sorted[start..<end].sort { $0.hkl > $1.hkl } }
+            if end - start > 1 { sorted[start..<end].sort { reflection($0).hkl > reflection($1).hkl } }
             start = end
         }
         return sorted
