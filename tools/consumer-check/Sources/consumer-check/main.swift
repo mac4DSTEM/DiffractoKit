@@ -2,7 +2,7 @@
 //  main.swift
 //  Role: uses DiffractoCore's public API from a package that depends on DiffractoKit by path (so `package` access
 //        does not apply) and checks it against values a reader can verify by hand: the β″ cell of the apps, the
-//        monoclinic rings, cubic gold's eight families. Exits non-zero on any failed check. `run.sh` builds it in Debug.
+//        monoclinic rings, cubic gold's eight families; DiffractoGeometry's checks are in GeometryChecks.swift. Exits non-zero on any failed check. `run.sh` builds it in Debug.
 //
 
 import Foundation
@@ -195,6 +195,8 @@ report.section("DiffractoScattering (slice 2)") { r in
     do { _ = try gold.kinematicReflections(kMax: 1.2, cut: -1) } catch let e as KinematicError { refused = e } catch {}
     r.equal("cut refusal typed", refused, .invalidCut(-1))
 }
+
+runGeometryChecks(&report)
 
 report.section("Placeholder modules") { r in
     r.equal("DiffractoScattering states its scope", DiffractoScattering.plannedScope.isEmpty, false)
