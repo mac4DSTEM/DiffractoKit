@@ -98,3 +98,12 @@ read here (the parsing comparisons SKCIFParser and Gemmi stay a separate tier-2 
   to the brute-force scan bit for bit on 69 fixtures. Mutants 27 / 27 red. The Cartesian default stays fractional (5e-3);
   `.cartesian(1e-3 Å)` is offered as `proposedCartesian`. What moves for the apps is in `docs/consumers-0.1.0.md` (slice 1b
   ships at 0.1.0, not 0.0.4).
+
+### 2026-10-15, about 14:30 CEST: held back from 0.1.0
+
+The owner decided (13:16) that the frozen 0.0.4 candidate is DiffractoKit 0.1.0 and slice 1b is 0.1.x. Its code
+(commit bc99fa0, the port above) had already landed on `main` and has no Gate B refuter yet, so it is reverted on `main`
+before the 0.1.0 tag and this registration and its amendment stay. The 0.1.x session restores it with
+`git revert <the revert commit>` (or `git cherry-pick bc99fa0`), runs its one Gate B refuter (§4: the reduction near its
+ε, centred cells with atoms on special positions), extends the consumer check (a prepared patch is named in the hand-off),
+and writes what moves for the apps in `docs/consumers-0.1.1.md`.
