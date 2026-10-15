@@ -442,6 +442,23 @@ extension ScatteringPinsTests {
         }
     }
 
+    /// The cut stays strict in the streaming path: at |F| = 1e-4 exactly (the pinned cut-edge cell) nothing is kept, and one
+    /// step below the edge keeps what the default keeps.
+    /// RED UNDER: the streaming cut `>=`.
+    @Test func testRetainingAllFalseKeepsTheCutStrict() throws {
+        let ce = try ScatteringFixtures.pins().cutEdge
+        let c = ce.cell
+        let s = CrystalStructure.detectingSymmetry(
+            cell: UnitCell(a: c[0], b: c[1], c: c[2], alphaDeg: c[3], betaDeg: c[4], gammaDeg: c[5]),
+            sites: [AtomSite(z: 1, fractional: [0, 0, 0])])
+        let unit: FormFactor = { _, _ in 1 }
+        let lean = try s.kinematicReflections(kMax: 1.2, formFactor: unit, retainingAll: false)
+        #expect(lean.kept.isEmpty && lean.all.isEmpty)
+        let below = try s.kinematicReflections(kMax: 1.2, cut: 1e-4 * (1 - 1e-9), formFactor: unit, retainingAll: false)
+        let full = try s.kinematicReflections(kMax: 1.2, cut: 1e-4 * (1 - 1e-9), formFactor: unit)
+        #expect(below.kept.count > 0 && below.kept == full.kept && below.families == full.families)
+    }
+
     /// A 30 Å cubic cell at k_max 2.5 (about 1.7 million reflections before the cut): the same equality.
     /// RED UNDER: as above.
     @Test func testRetainingAllFalseOnAThirtyAngstromCell() throws {

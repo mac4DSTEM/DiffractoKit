@@ -80,6 +80,12 @@ public struct ReflectionList: Sendable, Equatable {
     /// (`invalidKMax` for `maximumKMax`, `cellTooLargeOrInvalid` for the counts); a tolerance that is NaN or negative is
     /// taken as 0 (exact comparison: with `familyTolerance` 0 only equal |g| share a ring, with `absenceTolerance` 0 a
     /// phase must be an integer to the last bit).
+    ///
+    /// **The caps are the protection.** `maximumKMax`, `maximumReflections` and `maximumEnumeration` are what keep a list
+    /// within the memory and time a caller expects. Removing them (an infinite `maximumKMax`, the two counts at `Int.max`)
+    /// removes that protection: a list at k_max 100 was measured to reach 10 GB resident in 85 s before it was stopped.
+    /// Raise a cap to what the machine can hold, not to infinity; the kinematic list's `retainingAll: false` holds far less
+    /// than the default for the same reflections.
     public struct Policy: Sendable, Equatable {
         /// The largest k_max a list is built to (Å⁻¹). Default 4.
         public var maximumKMax: Double

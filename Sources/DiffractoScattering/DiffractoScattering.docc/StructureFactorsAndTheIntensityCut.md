@@ -35,6 +35,22 @@ above the cut, and ``KinematicReflectionList/families`` the rings of the kept on
 Core `ReflectionFamily` and ``KinematicFamily/intensity``, the sum of |F|^2 over its members: the ring's
 kinematic weight, comparable between rings of one structure, not an absolute count.
 
+## Memory: `retainingAll`
+
+By default ``KinematicReflectionList/all`` holds every reflection before the cut, which for a large cell is most of the
+memory the call uses (a 30 angstrom cell at k_max 2.5 holds about 1.7 million). Pass `retainingAll: false` to
+`kinematicReflections` to compute F as each reflection is enumerated and keep only those above the cut: `all` is then empty,
+the list before the cut is never held, and ``KinematicReflectionList/kept`` and ``KinematicReflectionList/families`` are
+exactly the values the default gives.
+
+## Polarity cannot be read from a kinematic pattern
+
+A kinematic pattern cannot tell +c from -c on a polar structure. Without anomalous scattering, |F(hkl)|^2 equals
+|F(-h-k-l)|^2 (Friedel's law), so a structure and its inversion give the same intensities, and so does every
+kinematic simulation of this kit and of py4DSTEM. No consumer may claim a polarity (which way a polar axis points, which
+of two enantiomorphs a crystal is) from a kinematic match, however good the match is; that needs dynamical diffraction or
+a measurement that is not centrosymmetric in intensity.
+
 A structure that fails validation (a non-finite coordinate, an occupancy out of range, a close contact), an element the
 table lacks, an invalid cut or a non-finite F throws a ``KinematicError`` before any partial result is returned.
 Reflections kept by |F| alone although the detected operations forbid them (written coordinates that break the symmetry
