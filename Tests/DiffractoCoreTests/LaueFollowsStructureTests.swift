@@ -74,4 +74,23 @@ import DiffractoCore
         let doc = try CIFImport.read(text, fileBaseName: "mgo_prim")
         #expect(doc.structure.laueClass == .mThreeBarM)
     }
+
+    /// A file that lists the 48 signed permutations of x, y, z literally (written in the primitive basis) for the
+    /// 60-degree cell: not all of them are symmetries of that lattice, but the atoms and the lattice (an fcc lattice)
+    /// have the full cubic group, so the class is m-3m.
+    @Test func literalSignedPermutationsInAPrimitiveCellStillGiveTheStructuresClass() throws {
+        var ops: [String] = []
+        for p in [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]] {
+            for s in 0..<8 {
+                let names = ["x", "y", "z"]
+                ops.append((0..<3).map { axis in (s >> axis) & 1 == 1 ? "-\(names[p[axis]])" : names[p[axis]] }.joined(separator: ","))
+            }
+        }
+        for a in [4.212, 4.212 / 2.0.squareRoot()] {
+        let text = cif(name: "MgOliteral", a: a, b: a, c: a, alpha: 60, beta: 60, gamma: 60, ops: ops,
+                       atoms: [("Mg", 0, 0, 0), ("O", 0.5, 0.5, 0.5)])
+        let doc = try CIFImport.read(text, fileBaseName: "t")
+        #expect(doc.structure.laueClass == .mThreeBarM, "a = \(a)")
+        }
+    }
 }

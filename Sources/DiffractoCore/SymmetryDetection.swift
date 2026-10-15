@@ -182,8 +182,12 @@ public enum SymmetryDetection {
         }
         let family = cell.metricFamily(lengthTolerance: metricLengthTolerance, angleToleranceDeg: metricAngleToleranceDeg)
         let holohedry = PointSymmetry.holohedry(of: family)
-        let candidates = extraCandidates.isEmpty
-            ? holohedry : PointSymmetry(rotations: holohedry.rotations + extraCandidates)
+        // A file's rotation joins the candidates only if it preserves the cell's metric: the lattice bounds the class, and a
+        // rotation that is not a lattice symmetry, found to map the atoms onto themselves, would be reported as an
+        // operation and break the closure of the set (every operation but the identity would then be dropped).
+        let usableExtras = extraCandidates.filter { preservesMetric($0, of: cell) }
+        let candidates = usableExtras.isEmpty
+            ? holohedry : PointSymmetry(rotations: holohedry.rotations + usableExtras)
         guard !sites.isEmpty else {
             return Result(candidates: candidates, operations: [.identity], unresolvedRotations: [],
                           translationUncertainty: 1e-9)
@@ -227,6 +231,25 @@ public enum SymmetryDetection {
         if !closed.contains(where: { $0.isIdentity }) { closed.insert(.identity, at: 0) }
         return Result(candidates: candidates, operations: closed, unresolvedRotations: unresolved,
                       translationUncertainty: uncertainty)
+    }
+
+    /// Does the rotation (acting on fractional coordinates as x' = R x) leave the cell's metric unchanged, to a relative
+    /// 1e-3 of its largest entry? Loose on purpose: a file's cell is written to a few digits (a primitive bcc cell at
+    /// 109.4712 degrees), and this only turns away rotations that are not lattice symmetries at all.
+    static func preservesMetric(_ rotation: IntegerMatrix, of cell: UnitCell) -> Bool {
+        let g = cell.metricTensor
+        let r = rotation.rows.map { SIMD3<Double>(Double($0.x), Double($0.y), Double($0.z)) }
+        let gm = [g[0], g[1], g[2]]
+        var scale = 0.0
+        for i in 0..<3 { for j in 0..<3 { scale = max(scale, abs(gm[i][j])) } }
+        for i in 0..<3 {
+            for j in 0..<3 {
+                var value = 0.0
+                for k in 0..<3 { for l in 0..<3 { value += r[k][i] * gm[k][l] * r[l][j] } }
+                if abs(value - gm[i][j]) > 1e-3 * scale { return false }
+            }
+        }
+        return true
     }
 
     /// The operations a space group can be made of: the set is closed under composition (mod lattice translations,

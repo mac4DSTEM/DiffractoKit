@@ -3,7 +3,17 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
-## 0.3.0 (unreleased: the owner tags it)
+## 0.3.1 (unreleased: the owner tags it)
+
+### Fixed
+- Symmetry detection: a CIF whose operation loop lists rotations that are not symmetries of the cell's lattice (the 48 signed
+  permutations of x, y, z written for a 60° rhombohedral primitive cell of MgO) gave `-1` or `-3m` instead of `m-3m`. Such a
+  rotation was tested only against the atoms, passed as an operation, and the closure of the set then dropped the others. A
+  file's rotation now joins the candidates only if it preserves the cell's metric (to a relative 1e-3); the lattice bounds the
+  class and the atoms decide it. Reflections are unchanged on every pinned structure.
+- Not a change: hcp written in a cell with γ = 60° is read as 6/mmm (it is hcp); 0.1.0's 2/m was the metric not being recognised.
+
+## 0.3.0
 
 One release for two steps (there is no separate 0.2.0 tag): the generality pass, where every policy is a parameter with the
 previous value as its documented default, the platform floor is lowered and the docs stand alone (the default path is bit
