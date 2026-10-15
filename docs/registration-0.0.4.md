@@ -205,3 +205,11 @@ ellipses), F3 (5×, 20×, 1000× hot pixels refused), F6 (2^−40 refused as `in
 - **§4, cancellation** is checked once per optimiser iteration (both optimisers) and before each refinement, not per
   Jacobian column: the columns now run in parallel. Measured identity: the parity rings with both closures equal the
   apps bit for bit (`EllipseAppsParityTests`' `bestWithClosures`).
+
+### 2026-10-15, about 12:45 CEST, after G2's code: the underflow rule
+
+`q` and `radius` also return NaN when the result underflows to 0 (a positive R or q below about 1e-300 relative to L or
+1/λ), not only on overflow: zero is not the q of a ring. The pins plant it. Measured against the 60-digit truth: q 8.2e-16,
+radius 3.3e-15 on the grid and 4.5e-14 at 0.99 of the Bragg limit, round trip 5.7e-16, the 1/d identity on slice 3a's 320
+cases 5.5e-16 (band 1e-12); the truth computed two ways (algebraic and series) agreeing to 1e-50. The inverse's last check is
+`isFinite && != 0` so the Bragg guard is seen by its own test (its mutant stayed green with `> 0`). Mutants 6 of 6 red.
