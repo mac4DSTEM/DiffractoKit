@@ -15,6 +15,16 @@ reproduces, and against what, are in `docs/parity.md`.
   native keys throw a named refusal. Invalid rotations, poles and sampling counts are refused explicitly.
 - Pinned pymatgen point-group operations, SciPy minimum-angle fixtures, py4DSTEM colour fixtures and original-source
   native colours/samples; generator, seed and measured tolerances in `docs/parity.md` (P17–P19).
+- ACOM matcher (`DiffractoOrientation`): `ACOMTemplateLibrary` (template library of the apps' simplified polar-correlation
+  route: fundamental-zone beam directions of any Laue class, polar images with radial kernel, azimuthal blur, per-ring mean
+  subtraction and unit norm, per-ring azimuthal FFT) and `ACOMMatcher` (best template, in-plane angle, score, runner-up
+  reliability and the mirror pass, result as `OrientationResult`), with `ACOMTemplateSettings`, `ACOMReflection`, `ACOMPeak`,
+  `ACOMError`. `ACOMExcitationModel` chooses the excitation error: `.flat`, `.appCurvature` (the apps' sign) or `.py4DSTEM`
+  (py4DSTEM's `excitation_errors`). This is not py4DSTEM's SO(3) correlogram; docs/parity.md says what is compared. Pinned (P21)
+  to a NumPy transcription of the app source (m-3m, 6/mmm, 2/m) and, for the spots and planted orientations, to py4DSTEM
+  f050d207 run (spots 5e-15 relative). Measured: with `.py4DSTEM` the route is within 4 degrees of the truth on 17 of 18 planted
+  patterns; one 2/m pattern returns a different beam direction (127 degrees).
+- Dependency: ImagoKit 0.1.1 (exact), for `FFT1D` (ImagoFFT), used by DiffractoOrientation only.
 
 ### Conventions
 - py4DSTEM's direction-family reduction is not ported (returns families, not a rotation). Neither the minimum-angle
