@@ -10,6 +10,16 @@ vectors against them to map phases over a scan (`PhaseVectorMatcher`), and holds
 result: Euler angles in py4DSTEM's and SciPy's convention (`EulerAngles`), the detector frame of a zone axis
 (`ZoneAxisFrame`) and one position's orientation result (`OrientationResult`).
 
+## ACOM template matching
+
+``ACOMTemplateLibrary`` builds, from a crystal's kinematic reflections, a polar template for every beam direction sampled in
+the fundamental zone of its Laue class; ``ACOMMatcher`` correlates a measured pattern's peaks with all of them (the in-plane
+rotation from one FFT along the azimuth, a second pass for the mirror half of the zone) and returns an ``OrientationResult``.
+This is the simplified route of the suite's apps, not py4DSTEM's SO(3) correlogram (there is no sub-pixel refinement, shell
+grouping or multi-match). Choose the excitation error with ``ACOMExcitationModel``: `.py4DSTEM(wavelengthAngstrom:)` for patterns
+in py4DSTEM's orientation convention, `.appCurvature` for the apps', `.flat` when the in-plane angle may be ambiguous by a half
+turn. docs/parity.md (P25) lists what is pinned to the app source and to py4DSTEM.
+
 ## Polarity
 
 A kinematic pattern cannot tell +c from -c on a polar structure. Without anomalous scattering |F(hkl)|^2 equals

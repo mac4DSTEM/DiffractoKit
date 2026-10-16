@@ -11,7 +11,10 @@
 //    - `EulerAngles` (py4DSTEM's orientation matrix to and from SciPy's Bunge angles), `ZoneAxisFrame` (the detector frame of
 //      a zone axis) and `OrientationResult` (one position's orientation result).
 //
-//  Template matching remains planned (slice 5). CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
+//    - `ACOMTemplateLibrary` and `ACOMMatcher` (+ `ACOMTemplateSettings`, `ACOMExcitationModel`, `ACOMReflection`, `ACOMPeak`,
+//      `ACOMError`): the apps' simplified polar-correlation ACOM route (docs/parity.md P25); not py4DSTEM's SO(3) correlogram.
+//
+//  py4DSTEM's SO(3) correlogram matcher and pyxem's template matching are not ported (slice 5); the ACOM route above is the apps' simplified one. CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
 //  native direction sampling and explicit IPFColorKey conventions (docs/orientation-symmetry.md).
-//  Depends on DiffractoCore and DiffractoScattering.
+//  Depends on DiffractoCore, DiffractoScattering and ImagoKit's ImagoFFT (FFT1D, for the ring FFTs).
 //
