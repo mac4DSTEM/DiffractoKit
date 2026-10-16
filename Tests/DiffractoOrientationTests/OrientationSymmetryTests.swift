@@ -59,6 +59,7 @@ struct OrientationSymmetryTests {
             let laue = try #require(LaueClass(rawValue: p.symbol))
             let ops = CrystalOrientationSymmetry(laueClass: laue).operators
             #expect(ops.count == laue.order / 2)
+            #expect(p.operators.count == ops.count, "\(p.symbol): pymatgen proper-operation count")
             for op in ops {
                 #expect(abs(simd_determinant(op) - 1) < 2e-14)
                 #expect(gap(op.transpose * op, matrix_identity_double3x3) < 2e-14)
