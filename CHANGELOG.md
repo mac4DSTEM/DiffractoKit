@@ -3,6 +3,15 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.4.1 (2026-10-16)
+
+Dependency range only; no API, source or number changes.
+
+- ImagoKit is now `.upToNextMinor(from: "0.2.0")` (was `exact: "0.2.0"`), so an app that pins exact kit tags resolves one ImagoKit.
+
+### Migration
+None for consumers of 0.4.0 beyond re-pinning to 0.4.1. A consumer may now use any ImagoKit 0.2.x.
+
 ## 0.4.0 (2026-10-16)
 
 Orientation symmetry for all eleven Laue classes, the ACOM matcher, the Materials Project cell import, and the pieces
@@ -45,7 +54,7 @@ non-lattice rotations) is included in this tag.
   rotation nor the native direction fold substitutes for Python's family array. See `docs/orientation-symmetry.md`.
 - Additive API; no package dependency, matcher, UI or orientation-map container added.
 
-## 0.3.1 (unreleased: the owner tags it)
+## 0.3.1 (2026-10-15)
 
 ### Fixed
 - Symmetry detection: a CIF whose operation loop lists rotations that are not symmetries of the cell's lattice (the 48 signed

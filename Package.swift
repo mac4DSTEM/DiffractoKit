@@ -28,8 +28,8 @@ let package = Package(
         .library(name: "DiffractoOrientation", targets: ["DiffractoOrientation"]),
     ],
     dependencies: [
-        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation only); exact, as the suite pins its kits.
-        .package(url: "https://github.com/mac4DSTEM/ImagoKit", exact: "0.2.0"),
+        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation only); a minor range, so the apps (which pin exact tags) resolve one ImagoKit.
+        .package(url: "https://github.com/mac4DSTEM/ImagoKit", .upToNextMinor(from: "0.2.0")),
     ],
     targets: [
         // Slice 1 (docs/registration-slice-1.md): cells of the seven systems, symmetry operations and Laue groups, CIF

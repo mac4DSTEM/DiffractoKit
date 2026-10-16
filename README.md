@@ -27,7 +27,7 @@ One SwiftPM product per module; a module imports only the ones above it in this 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.4.0"),
+    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.4.1"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
