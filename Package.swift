@@ -33,7 +33,7 @@ let package = Package(
     ],
     targets: [
         // Slice 1 (docs/registration-slice-1.md): cells of the seven systems, symmetry operations and Laue groups, CIF
-        // import, the reflection list with systematic absences, orbits and families. Foundation and simd only.
+        // import, the reflection list with systematic absences, orbits and families. Foundation, simd and CryptoKit (the CIF bytes hash).
         .target(name: "DiffractoCore", swiftSettings: settings),
         // Slice 2 (docs/registration-slice-2.md): electron scattering factors (Lobato–Van Dyck, py4DSTEM's table),
         // structure factors and the kinematic ring list after the |F| cut.
@@ -42,8 +42,8 @@ let package = Package(
         // zone axes (3a); the ring and ellipse fit (3b).
         .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
         // Slice 4 (docs/registration-slice-4.md): the reference library and the vector matcher of phase mapping, and the
-        // value types of an orientation result (Euler angles, the zone-axis frame). Later: symmetry reduction and template
-        // matching against pyxem / orix (slice 5).
+        // value types of an orientation result (Euler angles, the zone-axis frame). The apps' ACOM template matcher; later: py4DSTEM's
+        // SO(3) correlogram and pyxem / orix template matching (slice 5).
         .target(name: "DiffractoOrientation",
                 dependencies: ["DiffractoCore", "DiffractoScattering",
                                .product(name: "ImagoFFT", package: "ImagoKit")],

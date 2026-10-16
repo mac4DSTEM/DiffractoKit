@@ -7,7 +7,7 @@
 //
 //  This is NOT py4DSTEM's `crystal_ACOM`: there is no SO(3) correlogram, no shell grouping and no sub-pixel refinement. The
 //  principle is the same (a polar template per beam direction, the in-plane rotation recovered by a 1D FFT along the azimuth),
-//  and docs/parity.md (P20 in its ACOM row) says which quantities are compared with py4DSTEM and which are not. The route is
+//  and docs/parity.md (P25) says which quantities are compared with py4DSTEM and which are not. The route is
 //  held to the apps' output; `ACOMExcitationModel.py4DSTEM` is this kit's option that follows py4DSTEM's excitation error.
 //
 //  What a library holds is Float, as the apps' plan: the images and their FFTs are Float32, the deposition weights Double.

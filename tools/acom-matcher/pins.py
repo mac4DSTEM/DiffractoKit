@@ -1,4 +1,4 @@
-"""DiffractoKit ACOM matcher: the pin generator (docs/parity.md row P20).
+"""DiffractoKit ACOM matcher: the pin generator (docs/parity.md row P25).
 
     tools/memcap.sh --gb 4 -- References/CuboKit/py4dstem-venv/bin/python -I -B tools/acom-matcher/pins.py
 
@@ -7,7 +7,7 @@ f050d207 = 0.14.19, NumPy, SciPy; versions are written into the fixture). Nothin
 
 Two kinds of pin, as docs/parity.md says:
 
-  APP ROUTE ("transcription of the app source at mac4DSTEM c809679c"): app_route.py is a NumPy transcription of the apps'
+  APP ROUTE ("transcription of the app source at mac4DSTEM c809679c; the three files' content is identical at dc9bdaa6, see the SHA-256s in the fixture"): app_route.py is a NumPy transcription of the apps'
   OrientationPlan / OrientationMatcher (polar image, ring FFTs, correlation, mirror pass, runner-up, orientation matrix). Per
   crystal (m-3m Al, 6/mmm Mg, 2/m monoclinic) it pins the plan's beam directions and one template (image and spots), and for
   planted patterns (the apps' own excitation model, jittered peaks, a Q calibration) the experimental polar image, the ring

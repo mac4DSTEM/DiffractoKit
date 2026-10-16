@@ -18,7 +18,7 @@ rotation from one FFT along the azimuth, a second pass for the mirror half of th
 This is the simplified route of the suite's apps, not py4DSTEM's SO(3) correlogram (there is no sub-pixel refinement, shell
 grouping or multi-match). Choose the excitation error with ``ACOMExcitationModel``: `.py4DSTEM(wavelengthAngstrom:)` for patterns
 in py4DSTEM's orientation convention, `.appCurvature` for the apps', `.flat` when the in-plane angle may be ambiguous by a half
-turn. docs/parity.md (P21) lists what is pinned to the app source and to py4DSTEM.
+turn. docs/parity.md (P25) lists what is pinned to the app source and to py4DSTEM.
 
 ## Polarity
 

@@ -1,6 +1,6 @@
 //
 //  ACOMMatcherTests.swift
-//  Role: the ACOM template library and matcher (docs/parity.md P20). Pins from tools/acom-matcher/pins.py:
+//  Role: the ACOM template library and matcher (docs/parity.md P25). Pins from tools/acom-matcher/pins.py:
 //        (1) the apps' route, a NumPy TRANSCRIPTION of the app source (OrientationPlan, OrientationMatcher at mac4DSTEM c809679c):
 //            beam directions, template images and spots, polar images, ring FFTs, every template's score, the winner, the
 //            runner-up, the in-plane angle and the orientation matrix, for m-3m, 6/mmm and 2/m;

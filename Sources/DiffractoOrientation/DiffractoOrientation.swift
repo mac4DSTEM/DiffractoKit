@@ -12,9 +12,9 @@
 //      a zone axis) and `OrientationResult` (one position's orientation result).
 //
 //    - `ACOMTemplateLibrary` and `ACOMMatcher` (+ `ACOMTemplateSettings`, `ACOMExcitationModel`, `ACOMReflection`, `ACOMPeak`,
-//      `ACOMError`): the apps' simplified polar-correlation ACOM route (docs/parity.md P21); not py4DSTEM's SO(3) correlogram.
+//      `ACOMError`): the apps' simplified polar-correlation ACOM route (docs/parity.md P25); not py4DSTEM's SO(3) correlogram.
 //
-//  The py4DSTEM/pyxem orientation matcher is not ported (slice 5). CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
+//  py4DSTEM's SO(3) correlogram matcher and pyxem's template matching are not ported (slice 5); the ACOM route above is the apps' simplified one. CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
 //  native direction sampling and explicit IPFColorKey conventions (docs/orientation-symmetry.md).
 //  Depends on DiffractoCore, DiffractoScattering and ImagoKit's ImagoFFT (FFT1D, for the ring FFTs).
 //

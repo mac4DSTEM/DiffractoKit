@@ -238,6 +238,7 @@ runGeometry004Checks(&report)
 runConventionalChecks(&report)
 runPolicyChecks(&report)
 runACOMChecks(&report)
+runMacTEMPiecesChecks(&report)
 
 exit(report.finish())
 
