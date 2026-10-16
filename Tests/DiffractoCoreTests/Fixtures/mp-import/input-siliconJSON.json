@@ -1,0 +1,143 @@
+{
+  "data": [
+    {
+      "deprecated": false,
+      "formula_pretty": "Si",
+      "last_updated": "2020-01-01T00:00:00.000000",
+      "material_id": "mp-149",
+      "structure": {
+        "lattice": {
+          "a": 5.431,
+          "alpha": 90,
+          "b": 5.431,
+          "beta": 90,
+          "c": 5.431,
+          "gamma": 90
+        },
+        "sites": [
+          {
+            "abc": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "label": "Si1",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.5,
+              0.5,
+              0.0
+            ],
+            "label": "Si2",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.5,
+              0.0,
+              0.5
+            ],
+            "label": "Si3",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.0,
+              0.5,
+              0.5
+            ],
+            "label": "Si4",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.25,
+              0.25,
+              0.25
+            ],
+            "label": "Si5",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.75,
+              0.75,
+              0.25
+            ],
+            "label": "Si6",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.75,
+              0.25,
+              0.75
+            ],
+            "label": "Si7",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.25,
+              0.75,
+              0.75
+            ],
+            "label": "Si8",
+            "species": [
+              {
+                "element": "Si",
+                "occu": 1.0
+              }
+            ]
+          }
+        ]
+      },
+      "symmetry": {
+        "crystal_system": "cubic",
+        "hall": "F 4d 2 3 -1d",
+        "number": 227,
+        "point_group": "m-3m",
+        "symbol": "Fd-3m"
+      }
+    }
+  ],
+  "errors": [],
+  "fixture_provenance": "Synthetic app test, mac4DSTEM c809679c MaterialsProjectImportTests.swift; not an MP snapshot"
+}

@@ -1,0 +1,55 @@
+{
+  "data": [
+    {
+      "formula_pretty": "Mg",
+      "material_id": "mp-153",
+      "structure": {
+        "lattice": {
+          "a": 3.209,
+          "alpha": 90,
+          "b": 3.209,
+          "beta": 90,
+          "c": 5.211,
+          "gamma": 120
+        },
+        "sites": [
+          {
+            "abc": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "species": [
+              {
+                "element": "Mg",
+                "occu": 1.0
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.6666666667,
+              0.3333333333,
+              0.5
+            ],
+            "species": [
+              {
+                "element": "Mg",
+                "occu": 1.0
+              }
+            ]
+          }
+        ]
+      },
+      "symmetry": {
+        "crystal_system": "hexagonal",
+        "hall": "-P 6c 2c",
+        "number": 194,
+        "point_group": "6/mmm",
+        "symbol": "P6_3/mmc"
+      }
+    }
+  ],
+  "errors": [],
+  "fixture_provenance": "Synthetic app test, mac4DSTEM c809679c MaterialsProjectImportTests.swift; not an MP snapshot"
+}
