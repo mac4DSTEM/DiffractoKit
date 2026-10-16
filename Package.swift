@@ -27,6 +27,10 @@ let package = Package(
         .library(name: "DiffractoGeometry", targets: ["DiffractoGeometry"]),
         .library(name: "DiffractoOrientation", targets: ["DiffractoOrientation"]),
     ],
+    dependencies: [
+        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation only); exact, as the suite pins its kits.
+        .package(url: "https://github.com/mac4DSTEM/ImagoKit", exact: "0.1.1"),
+    ],
     targets: [
         // Slice 1 (docs/registration-slice-1.md): cells of the seven systems, symmetry operations and Laue groups, CIF
         // import, the reflection list with systematic absences, orbits and families. Foundation and simd only.
@@ -40,7 +44,10 @@ let package = Package(
         // Slice 4 (docs/registration-slice-4.md): the reference library and the vector matcher of phase mapping, and the
         // value types of an orientation result (Euler angles, the zone-axis frame). Later: symmetry reduction and template
         // matching against pyxem / orix (slice 5).
-        .target(name: "DiffractoOrientation", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
+        .target(name: "DiffractoOrientation",
+                dependencies: ["DiffractoCore", "DiffractoScattering",
+                               .product(name: "ImagoFFT", package: "ImagoKit")],
+                swiftSettings: settings),
         // The README's first ten minutes as a program (no product: `swift run diffracto-example`, or `swift build --product
         // diffracto-example`).
         .executableTarget(name: "diffracto-example",
