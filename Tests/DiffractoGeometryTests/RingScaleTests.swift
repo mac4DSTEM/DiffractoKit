@@ -76,7 +76,7 @@ struct RingScaleTests {
     }
 
     @Test func fitVersusFileIsTheRelativeDifference() {
-        #expect(RingScale.fitVersusFile(fitDeltaQ: 0.0105, fileDeltaQ: 0.01) - 0.05 < 1e-15)
+        #expect(abs(RingScale.fitVersusFile(fitDeltaQ: 0.0105, fileDeltaQ: 0.01) - 0.05) < 1e-15)
         #expect(RingScale.fitVersusFile(fitDeltaQ: 0.01, fileDeltaQ: 0.01) == 0)
         #expect(RingScale.fitVersusFile(fitDeltaQ: 0.005, fileDeltaQ: 0.01) == -0.5)
         for bad in [0.0, -1, .nan, .infinity] {

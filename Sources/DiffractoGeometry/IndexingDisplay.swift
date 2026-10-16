@@ -22,11 +22,14 @@ public struct DisplayedIndexing: Sendable, Equatable {
     public let sigmaQ: Double
     /// "accepted", or the kit's refusal name: "invalidInput", "ambiguous", "beyondKMax", "noneWithinTolerance".
     public let verdict: String
+    /// The accepted assignment, nil when refused.
     public let assignment: RingIndexing.Assignment?
+    /// Why the indexing was refused, nil when accepted.
     public let refusal: RingIndexing.Refusal?
 
     /// The kit's own wording of the refusal, nil when accepted.
     public var refusalText: String? { refusal?.reason }
+    /// True when the indexing was accepted.
     public var isAccepted: Bool { assignment != nil }
     /// The label the kit gives the product: "none: ...".
     public var validation: String { RingIndexing.validation }
@@ -47,7 +50,9 @@ public struct DisplayedIndexing: Sendable, Equatable {
     /// True when the odds exceed 10⁶ : 1, where the room shows `oddsCapLabel` and not a number.
     public var oddsBeyondCap: Bool { odds.map { $0 > DisplayedIndexing.oddsCap } ?? false }
 
+    /// Odds above this show as `oddsCapLabel`.
     public static let oddsCap = 1e6
+    /// The label shown beyond the cap.
     public static let oddsCapLabel = "> 10⁶ : 1"
 
     /// "n : 1" with three significant digits, or `oddsCapLabel` beyond the cap; "—" where there is no next family to compare with.
