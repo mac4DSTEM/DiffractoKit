@@ -29,7 +29,7 @@ let package = Package(
     ],
     targets: [
         // Slice 1 (docs/registration-slice-1.md): cells of the seven systems, symmetry operations and Laue groups, CIF
-        // import, the reflection list with systematic absences, orbits and families. Foundation and simd only.
+        // import, the reflection list with systematic absences, orbits and families. Foundation, simd and CryptoKit (the CIF bytes hash).
         .target(name: "DiffractoCore", swiftSettings: settings),
         // Slice 2 (docs/registration-slice-2.md): electron scattering factors (Lobato–Van Dyck, py4DSTEM's table),
         // structure factors and the kinematic ring list after the |F| cut.

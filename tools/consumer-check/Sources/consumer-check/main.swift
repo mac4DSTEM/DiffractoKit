@@ -237,6 +237,7 @@ runGeometryChecks(&report)
 runGeometry004Checks(&report)
 runConventionalChecks(&report)
 runPolicyChecks(&report)
+runMacTEMPiecesChecks(&report)
 
 exit(report.finish())
 
