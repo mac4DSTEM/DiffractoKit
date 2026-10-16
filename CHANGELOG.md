@@ -3,7 +3,16 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
-## Unreleased
+## 0.4.0 (2026-10-16)
+
+Orientation symmetry for all eleven Laue classes, the ACOM matcher, the Materials Project cell import, and the pieces
+macTEM's rooms use (crystal loading, ring overlay, indexing display, ring scale).
+
+### Migration
+Additive: no existing signature or number changes, so a consumer of 0.3.1 recompiles unchanged. The one change to the
+package graph is a new dependency, ImagoKit 0.2.0 (exact), for `FFT1D` (ImagoFFT), used by `DiffractoOrientation` only;
+an app that also pins ImagoKit must pin 0.2.0 (0.2.0 is additive over 0.1.1). The 0.3.1 fix (symmetry detection of
+non-lattice rotations) is included in this tag.
 
 ### Added
 - `RingScale` (DiffractoGeometry): |q| of a ring radius and the radius of a |q| under a `RingCalibration` (the exact closed forms with a beam energy, the linear Δq·R without one), the linear helper `RingScale.linear(radius:deltaQ:)` and `fitVersusFile`, ported from macTEM; the app's forms agree with `RingCalibration.q`/`radius` (P24). macTEM's `fileScale` is not ported (the kit has no `CalibrationUnitConversion`).
@@ -29,7 +38,7 @@ reproduces, and against what, are in `docs/parity.md`.
   to a NumPy transcription of the app source (m-3m, 6/mmm, 2/m) and, for the spots and planted orientations, to py4DSTEM
   f050d207 run (spots 5e-15 relative). Measured: with `.py4DSTEM` the route is within 4 degrees of the truth on 17 of 18 planted
   patterns; one 2/m pattern returns a different beam direction (127 degrees).
-- Dependency: ImagoKit 0.1.1 (exact), for `FFT1D` (ImagoFFT), used by DiffractoOrientation only.
+- Dependency: ImagoKit 0.2.0 (exact), for `FFT1D` (ImagoFFT), used by DiffractoOrientation only.
 
 ### Conventions
 - py4DSTEM's direction-family reduction is not ported (returns families, not a rotation). Neither the minimum-angle

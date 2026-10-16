@@ -20,14 +20,14 @@ One SwiftPM product per module; a module imports only the ones above it in this 
 | `DiffractoCore` | `UnitCell` (all seven crystal systems: real and reciprocal lattice, metric, volume, d and g of an hkl, the angle between planes), `SymmetryOperation` and `PointSymmetry` (the eleven Laue classes, `LaueClass`, `CrystalSystem`), symmetry found from the atom sites (`SymmetryDetection`, `CrystalStructure`), `CIFImport` (CIF text to `CrystalStructure`, with named refusals), `ReflectionList` (every hkl up to a k_max with its systematic-absence flag), orbits and families (rings) with their names | slice 1, `docs/registration-slice-1.md`; slice 1b (Niggli reduction, the conventional cell, a Cartesian tolerance) is registered, not written |
 | `DiffractoScattering` | `ElectronScatteringFactors` (Lobato and Van Dyck, the table of py4DSTEM, Z = 1 to 103), `StructureFactors` (F(hkl) in A^-2), `CrystalStructure.kinematicReflections(kMax:)`: the reflections after an \|F\| cut, and their rings with the summed \|F\|^2 | slice 2, `docs/registration-slice-2.md` |
 | `DiffractoGeometry` | `ElectronWavelength` (relativistic, CODATA 2018), `RingCalibration` (camera length, reciprocal-space pixel size from one ring of known d, with the refusals that say when a ring must not be calibrated from; `fit` runs the whole chain on a pattern), `EllipseCalibration` and `EllipseTransform` (the ring and detector-ellipse fit, py4DSTEM's model), `RingIndexing` (which family a measured \|q\| belongs to, and when it must not be named), `ZoneAxis` (beam directions, the detector basis, excitation errors) | slice 3, `docs/registration-slice-3.md`; 0.0.4 amendments in `docs/registration-0.0.4.md` |
-| `DiffractoOrientation` | Phase reference libraries and vector matching, Euler angles and orientation-result values; `CrystalOrientationSymmetry` (minimum-angle reduction for all 11 Laue classes), direction sampling and explicit `.py4DSTEM` / `.native` IPF colour keys | symmetry: unreleased; [conventions](docs/orientation-symmetry.md), parity P17–P19 |
+| `DiffractoOrientation` | Phase reference libraries and vector matching, Euler angles and orientation-result values; `CrystalOrientationSymmetry` (minimum-angle reduction for all 11 Laue classes), direction sampling and explicit `.py4DSTEM` / `.native` IPF colour keys | symmetry: 0.4.0; [conventions](docs/orientation-symmetry.md), parity P17–P19 |
 
 ## Install
 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.2.0"),
+    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.4.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
