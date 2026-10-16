@@ -6,6 +6,8 @@ reproduces, and against what, are in `docs/parity.md`.
 ## Unreleased
 
 ### Added
+- `RingScale` (DiffractoGeometry): |q| of a ring radius and the radius of a |q| under a `RingCalibration` (the exact closed forms with a beam energy, the linear Δq·R without one), the linear helper `RingScale.linear(radius:deltaQ:)` and `fitVersusFile`, ported from macTEM; the app's forms agree with `RingCalibration.q`/`radius` (P24). macTEM's `fileScale` is not ported (the kit has no `CalibrationUnitConversion`).
+- `IndexingDisplay.index` and `DisplayedIndexing` (DiffractoGeometry): the numbers a room shows for `RingIndexing`'s decision (sigma_q from a percent tolerance, delta %, |dd|/d, z, margin, odds and the "> 10⁶ : 1" cap text), ported from macTEM; the decision is untouched (P23).
 - `RingOverlay` and `RingEllipse` (DiffractoGeometry): a ring fit as an image-coordinate ellipse (x = column, y = row), the drawing polyline, the predicted ring of another family, and the point-to-ellipse distance, ported from macTEM (P22).
 - `CrystalLoading.load(bytes:fileName:)` and `LoadedCrystal`: a CIF from bytes with the app's rules (5 MiB cap, strict UTF-8, `CIFImport`, lower-case hex SHA-256 of the bytes), ported from macTEM; refusals `CrystalLoading.Refusal.tooLarge`/`.notUTF8`, importer errors unchanged (P21).
 - `CellStandardisation.standardise`: the app's primitive-to-conventional conversion of a centred cell (fixed ITA matrices for F, I, C, A, B, R) with its guards, its F conversion pinned to pymatgen `SpacegroupAnalyzer` standard cells (P20; I by a closed form). The reference route is `CrystalStructure.detectingSymmetry(...).conventionalSetting`.
