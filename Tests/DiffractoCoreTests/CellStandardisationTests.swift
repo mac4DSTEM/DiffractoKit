@@ -83,17 +83,52 @@ struct CellStandardisationTests {
         #expect(Self.pins.cases.count == 3)
     }
 
-    /// The app's route: the lattice and the sites equal pymatgen's conventional standard cell (lengths and angles to
-    /// 1e-12 relative, sites to 1e-9 fractional).
+    /// The app's route on pymatgen's own primitive cells (real F-centred primitives for Al and Si, a P cell for Mg): the
+    /// conversion must run (`.conventional(centring: "F")`, four times the sites) and give pymatgen's conventional
+    /// standard cell: lengths and angles to 1e-9 (absolute below 1), sites to 1e-9 fractional modulo one rigid origin
+    /// shift.
     @Test(arguments: pins.cases) func appRouteMatchesPymatgenConventional(_ c: Pins.Case) throws {
-        let (rows, _, sites, doc) = Self.load(c)
-        let r = try CellStandardisation.standardise(latticeRows: rows, sites: sites, symbol: doc.symmetry.symbol,
-                                                    crystalSystem: doc.symmetry.crystal_system)
+        let rows = c.primitive.lattice.map { SIMD3($0[0], $0[1], $0[2]) }
+        let sites = c.primitive.sites.map {
+            AtomSite(z: Element.atomicNumber(forSymbol: $0.species.keys.first!)!, fractional: SIMD3($0.abc[0], $0.abc[1], $0.abc[2]))
+        }
+        let system = c.spaceGroupNumber >= 195 ? "cubic" : "hexagonal"
+        let r = try CellStandardisation.standardise(latticeRows: rows, sites: sites, symbol: c.spaceGroupSymbol, crystalSystem: system)
+        if c.spaceGroupSymbol.hasPrefix("F") {
+            #expect(r.outcome == .conventional(centring: "F"), "\(c.input)")
+            #expect(r.sites.count == 4 * sites.count)
+        } else {
+            #expect(r.outcome == .asServed)
+        }
         let got = Self.params(r.latticeRows.map { [$0.x, $0.y, $0.z] })
         let want = Self.params(c.conventional.lattice)
         for k in 0..<6 { #expect(abs(got[k] - want[k]) <= 1e-9 * max(1, want[k]), "\(c.input) parameter \(k)") }
         #expect(Self.sameSites(r.sites, c.conventional.sites, tol: 1e-9), "\(c.input) sites")
+    }
+
+    /// The served MP cells themselves (already conventional) come back as served with the pymatgen cell's parameters.
+    @Test(arguments: pins.cases) func conventionalServedCellsAreLeftAlone(_ c: Pins.Case) throws {
+        let (rows, _, sites, doc) = Self.load(c)
+        let r = try CellStandardisation.standardise(latticeRows: rows, sites: sites, symbol: doc.symmetry.symbol,
+                                                    crystalSystem: doc.symmetry.crystal_system)
+        if c.input.contains("aluminium") || c.input.contains("silicon") {
+            #expect(doc.structure.sites.count == c.conventional.sites.count)
+        }
+        #expect(r.outcome == .asServed)
+        #expect(r.sites == sites)
         #expect(doc.symmetry.number == c.spaceGroupNumber)
+    }
+
+    /// Body-centred primitive (a = 2.87, synthetic, truth: the cell is a cube and the sites are the two bcc points).
+    @Test func bodyCentredPrimitiveGivesTheCube() throws {
+        let h = 2.87 / 2
+        let rows = [SIMD3(-h, h, h), SIMD3(h, -h, h), SIMD3(h, h, -h)]
+        let r = try CellStandardisation.standardise(latticeRows: rows, sites: [AtomSite(z: 26, fractional: SIMD3(0, 0, 0))],
+                                                    symbol: "Im-3m", crystalSystem: "cubic")
+        #expect(r.outcome == .conventional(centring: "I"))
+        #expect(r.sites.count == 2)
+        for (i, v) in r.latticeRows.enumerated() { #expect(simd_length(v - SIMD3(0, 0, 0)) - 2.87 < 1e-12); #expect(abs(v[i]) > 2.8) }
+        #expect(r.sites.map(\.fractional).contains(SIMD3(0.5, 0.5, 0.5)))
     }
 
     /// The reference route: the kit's own detection of the primitive cell gives pymatgen's conventional cell.
@@ -109,6 +144,24 @@ struct CellStandardisationTests {
         let got = [conv.cell.a, conv.cell.b, conv.cell.c, conv.cell.alphaDeg, conv.cell.betaDeg, conv.cell.gammaDeg]
         for k in 0..<6 { #expect(abs(got[k] - want[k]) <= 1e-6 * max(1, want[k]), "\(c.input) parameter \(k): \(got[k]) vs \(want[k])") }
         #expect(conv.sites.count == c.conventional.sites.count, "\(c.input) site count")
+    }
+
+    @Test func moreGuardsRefuse() {
+        let rows = [SIMD3(0.0, 2.0, 2.0), SIMD3(2.0, 0.0, 2.0), SIMD3(2.0, 2.0, 0.0)]
+        let al = [AtomSite(z: 13, fractional: SIMD3(0, 0, 0))]
+        #expect(throws: CellStandardisation.Failure.self) {
+            try CellStandardisation.standardise(latticeRows: rows, sites: [], symbol: "Fm-3m", crystalSystem: "cubic")
+        }
+        #expect(throws: CellStandardisation.Failure.self) {
+            try CellStandardisation.standardise(latticeRows: Array(rows.prefix(2)), sites: al, symbol: "Fm-3m", crystalSystem: "cubic")
+        }
+        #expect(throws: CellStandardisation.Failure.self) {
+            try CellStandardisation.standardise(latticeRows: rows, sites: al, symbol: "Xm-3m", crystalSystem: "cubic")
+        }
+        // two same-element sites that land on each other after conversion: (0,0,0) twice
+        #expect(throws: CellStandardisation.Failure.self) {
+            try CellStandardisation.standardise(latticeRows: rows, sites: al + al, symbol: "Fm-3m", crystalSystem: "cubic")
+        }
     }
 
     @Test func guardsRefuseBadInput() {

@@ -24,13 +24,17 @@ public enum CellStandardisation {
 
     /// A standardised cell: lattice rows (Å), sites and what was done.
     public struct Result: Sendable, Equatable {
+        /// The lattice rows (Å).
         public let latticeRows: [SIMD3<Double>]
+        /// The sites in the conventional cell (fractional, in [0, 1)).
         public let sites: [AtomSite]
+        /// Whether a conversion happened.
         public let outcome: Outcome
     }
 
     /// The conversion was refused; the message says which guard failed.
     public struct Failure: Error, Sendable, Equatable, CustomStringConvertible {
+        /// Which guard failed, in words.
         public let message: String
         public var description: String { message }
     }
