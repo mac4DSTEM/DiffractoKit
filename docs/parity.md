@@ -22,11 +22,11 @@ is named. Counts are of rows.
 
 | Package | held | partly | not held | rows |
 |---|---|---|---|---|
-| pymatgen | 12 | 16 | 22 | 50 |
-| py4DSTEM | 1 | 14 | 9 | 24 |
-| pyxem / diffsims / orix | 0 | 8 | 5 | 13 |
+| pymatgen | 13 | 16 | 22 | 51 |
+| py4DSTEM | 2 | 14 | 10 | 26 |
+| pyxem / diffsims / orix | 0 | 9 | 4 | 13 |
 
-The three counts are of rows in the tables below, as of slice 1b (bc99fa0) for pymatgen and of slice 4 (2026-10-15, `main` at b70880f) for py4DSTEM and orix. "Held" is the only state that means a test compares the kit with that package's own output; every "partly" row names its check.
+The counts include the unreleased orientation-symmetry addition (P17–P19). "Held" is the only state that means a test compares the kit with that package's own output; every "partly" row names its check.
 
 ## The pins and references behind the rows
 
@@ -48,10 +48,12 @@ The three counts are of rows in the tables below, as of slice 1b (bc99fa0) for p
 | P14 | py4DSTEM f050d207 run (a pinned environment outside the repository, its files checked against the f050d207 tree by `pins-py4dstem.py`): `Crystal.generate_diffraction_pattern` at lambda -> 0 (`setup_diffraction(1e30)`), sigma = w/sqrt(2), on 7 phases x 37 zone axes (hkl, gx, gy, intensity), and `parse_orientation` (the in-plane frame per axis); NumPy float64 with py4DSTEM's convention beside it | `tools/slice-4/pins.py` (+ `pins-py4dstem.py`) -> `Tests/DiffractoOrientationTests/Fixtures/slice-4-pins.json` | `Slice4PinsTests` (G2) | hkl sets equal; \|q\| 1e-12 (measured 1.1e-15); rotated q 1e-12; intensity 5e-5 vs py4DSTEM (its complex64: 1.15e-5 measured), 1e-12 vs NumPy (one sub-floor reflection at 2.7e-12, a known issue) |
 | P15 | SciPy 1.18.1 `Rotation.from_matrix(M.T).as_euler("zxz")` and `from_euler` on 1000 seeded rotations and the gimbal cases; NumPy closed forms of the matcher (chance fraction, score, nearest, Friedel pair, in-plane steps, the 49 low-index axes) | same file | `Slice4PinsTests` (G3, G4) | angles one Float ulp + 1e-12 (Phi within 1.5e-8 near 0 and pi, a known issue); closed forms 1e-15 |
 | P16 | the apps' compiled vector matching (mac4DSTEM 7d6fdbd1 `PhaseReferenceLibrary`, `PhaseVectorMatching`, `EulerAngles`, `ACOMOrientation`, `git show`, swiftc -O): libraries, 72 maps, fits, claims, 270 Euler cases | `tools/slice-4/apps-parity` -> `slice-4-apps.json` | `Slice4AppsParityTests` (G1) | bit for bit (about 1.68 million values) |
+| P17 | pymatgen-core ae9a834 `PointGroup.symmetry_ops` proper subgroups, all 11 Laue classes in standard settings; SciPy quaternion minimum-angle search on 32 seeded random rotations plus 16 boundary/half-turn cases per class (528 inputs) | `tools/symmetry/pins.py` -> `Tests/DiffractoOrientationTests/Fixtures/symmetry-pins.json` | `OrientationSymmetryTests.allElevenProperGroupsMatchPymatgenAndAreClosed`, `seededRotationsMatchMinimumAngleOracleForEveryLaueClass` | operations 2e-14 absolute (measured 0); reduced matrix 2e-12 absolute (measured 0); Float angle 2e-7 rad (measured 1.06594e-7); orbit invariance, minimum angle, orthogonality and closure also checked |
+| P18 | py4DSTEM f050d207 `orientation_plan` auto-sector basis and actual `plot_orientation_maps`, full mask, beam RGB: signed random poles, poles from its actual `symmetry_reduce_directions`, sector corners and interior, for all 11 classes | `tools/symmetry/pins.py` invokes `pins-py4dstem.py` -> same fixture; `color-table.py` writes the tiny inverse-basis source table | `OrientationSymmetryTests.pythonColorsEqualPinnedPlotOrientationMapsAtFloatPrecisionBitForBit` | **Float RGB bit patterns exact after converting Python's Double RGB to Float**; measured Double-to-Float max channel gap 2.97910e-8. Native keys are not substituted. Python family reduction is not ported |
+| P19 | native app c809679c compiled `git show` extraction: m-3m, 6/mmm and b-unique 2/m colour keys, folded directions and samplers at counts 0,1,2,3,8,16; other 8 classes' canonical orbit sectors and Fibonacci/farthest-point samples evaluated in NumPy from pymatgen operations | `tools/symmetry/pins.py` -> same fixture, seed 20261016; source digests and versions included | `OrientationSymmetryTests.nativeColorsAndDirectionFoldingArePinnedToOriginalSource`, `remainingEightSectorsAndSamplesArePinnedUsingPymatgenOrbits`, `samplingCoversDistinctDirectionOrbitsForAllClasses` | native Float colours and Double sample bits exact; native folded directions 2e-14 (measured 0); new folded directions/samples 2e-12 (measured 2.28879e-16). Sampling is a native policy, not Python's angular grid |
 
 pyxem, diffsims and orix are **not pinned clones** here; py4DSTEM is held as its scattering table file (P5) and, for slice 4,
-as a pinned f050d207 environment the pins run (P14). Every py4DSTEM, pyxem, diffsims and orix function name below is from their documentation and the kit's source
-comments, not from a pinned clone, and must be re-read against a pinned clone at the next reference re-pin (ROADMAP, phase 4).
+as a pinned f050d207 environment the pins run (P14, P18). The remaining unexecuted Python APIs below are a checklist, not an additional parity claim. P18 byte-checks the installed crystal.py, crystal_ACOM.py, crystal_viz.py and utils.py against the pinned clone before execution.
 
 ## 1. pymatgen 2026.9.24 / pymatgen-core 2026.9.23 (pinned clones: `References/pymatgen-8461938`, `References/pymatgen-core-ae9a834`)
 
@@ -105,6 +107,12 @@ comments, not from a pinned clone, and must be re-read against a pinned clone at
 | `get_primitive_standard_structure`, `find_primitive`, `get_refined_structure` | none | not held | not registered; slice 1b goes from any cell to the conventional cell only (the lattice points inside it are `centringTranslations`, with no test of a primitive result) |
 | `get_symmetrized_structure`, `get_ir_reciprocal_mesh`, `get_ir_reciprocal_mesh_map`, `get_kpoint_weights`, `is_laue`, `PointGroupAnalyzer` | none | not held | out of scope (k-point meshes, molecules) |
 
+### Orientation point groups
+
+| pymatgen | DiffractoKit | State | How checked |
+|---|---|---|---|
+| `symmetry.groups.PointGroup.symmetry_ops` (proper operations of the 11 Laue groups) | `CrystalOrientationSymmetry(laueClass:).operators` | **held** | P17; all eleven operation sets, counts and Cartesian transforms checked; standard settings documented in `docs/orientation-symmetry.md`. Minimum-angle representative checked independently with SciPy; no unknown-class fallback |
+
 ### 1.4 `pymatgen.io.cif`
 
 | pymatgen | DiffractoKit | State | How checked |
@@ -130,7 +138,7 @@ comments, not from a pinned clone, and must be re-read against a pinned clone at
 | `XRDCalculator.get_pattern` | `StructureFactors.compute(_:in:formFactor:)` with an injected X-ray form factor | **partly** | P6: sum of \|F\|^2 over each pymatgen peak's members, with pymatgen's X-ray form factor injected from the pin, equals its intensity / (2 LP) within 1e-6 relative on 6 structures. No 2 theta, Lorentz-polarisation or peak-merging output; no X-ray table in the kit |
 | `NDCalculator.get_pattern` | none | not held | |
 
-## 2. py4DSTEM (documentation, not a pinned clone; scattering table f050d207 pinned)
+## 2. py4DSTEM (f050d207 pinned; only P5, P14 and P18 outputs are held)
 
 | py4DSTEM | DiffractoKit | State | How checked |
 |---|---|---|---|
@@ -145,7 +153,9 @@ comments, not from a pinned clone, and must be re-read against a pinned clone at
 | `Crystal.calculate_dynamical_structure_factors`, `generate_dynamical_diffraction_pattern` (Bloch) | none | not held | dynamical scattering is SimulatoKit's |
 | `Crystal.orientation_plan(...)` | none | not held | planned: template matching in `DiffractoOrientation` (slice 5) |
 | `Crystal.match_orientations`, `match_single_pattern` (template matching) | none | not held | planned: slice 5; the vector-matching route is `PhaseVectorMatcher` (rows above) |
-| `Crystal.symmetry_reduce_directions`, `cluster_grains`, `cluster_orientation_map`, `save_ang_file` | none | not held | planned: `DiffractoOrientation` (symmetry reduction per Laue class) |
+| `Crystal.symmetry_reduce_directions` | none | not held | **not ported (returns families, not a rotation)**. Columns are reduced independently; `CrystalOrientationSymmetry.reduce` instead selects one minimum-angle proper rotation. P18 calls the Python reducer only to generate colour inputs |
+| `Crystal.cluster_grains`, `cluster_orientation_map`, `save_ang_file` | none | not held | not ported |
+| `Crystal.plot_orientation_maps` (automatic plan sector, full-mask beam RGB) | `CrystalOrientationSymmetry.ipfColor(direction:key: .py4DSTEM)` | **held** | P18 at public Float precision, bits exact; input is the Python family pole except for 2/m (original pole). No plotting, masking, custom sectors or rotated in-plane key. `.native` is the app's **own convention** for m-3m, 6/mmm and 2/m (P19), not a Python colour key; unavailable for other classes with a named error |
 | `Crystal.calculate_strain`, `process.latticevectors.*` (`fit_lattice_vectors`, `index_bragg_directly`) | none | not held | strain is CuboKit's |
 | `Crystal.calibrate_pixel_size`, `calibrate_unit_cell`, `process.calibration.calibrate_Bragg_peaks_pixel_size` | `RingCalibration.calibrate(radius:d:highTensionVolts:pixelPitchMM:)` (one ring of known d) | not held | the kit has only the single-ring closed form, not py4DSTEM's multi-peak fit |
 | `Calibration.set_Q_pixel_size` (A^-1 per pixel, no 2 pi) | `RingCalibration.qPerPixel(d:radius:)`, `q(radius:cameraLengthPixels:wavelengthAngstroms:)`, `radius(q:...)` | **partly** | P8 (decimal truth, 1e-12; the exact form, not the small-angle one); py4DSTEM not run |
@@ -171,10 +181,10 @@ comments, not from a pinned clone, and must be re-read against a pinned clone at
 | pyxem `Diffraction2D` / `ElectronDiffraction2D` signals, `get_azimuthal_integral1d`, `get_direct_beam_position` | none | not held | signals are FormatoKit's, processing CuboKit's |
 | pyxem `calibrate` (pixel size, camera length, beam energy, ellipticity) | `RingCalibration`, `EllipseCalibration`, `EllipseTransform` | **partly** | the quantities are held (P8, P10, P11); not compared with pyxem |
 | pyxem `DiffractionVectors`, `vector_matching`, `IndexationGenerator`, `OrientationMap`, `index_dataset_with_template_rotation`, `get_orientation` | `PhaseVectorMatcher` (vector matching after Thronsen et al. 2024), `OrientationResult` | not held | a different vector-matching method, not compared; template matching and orientation maps are slice 5 |
-| orix `Rotation.from_euler(euler, direction, degrees)`, `to_euler`, `Quaternion`, `Rotation`, `Orientation`, `Misorientation` | `EulerAngles` (Bunge z-x-z, crystal to lab, as SciPy) | **partly** | P15 against SciPy's Bunge convention (orix's default is the same Bunge z-x-z, not run); no quaternions, misorientation or symmetry reduction yet (slice 5) |
+| orix `Rotation.from_euler(euler, direction, degrees)`, `to_euler`, `Quaternion`, `Rotation`, `Orientation`, `Misorientation` | `EulerAngles` (Bunge z-x-z, crystal to lab, as SciPy) | **partly** | P15 against SciPy's Bunge convention (orix's default is the same Bunge z-x-z, not run); minimum-angle proper symmetry reduction is `CrystalOrientationSymmetry` (P17 against SciPy and pymatgen, not orix); no general quaternion or two-orientation misorientation API |
 | orix `Symmetry`, `symmetry.get_point_group(space_group_number)`, `Symmetry.laue`, `fundamental_sector` | `PointSymmetry`, `LaueClass` (the 11 Laue classes as integer rotations acting on hkl) | **partly** | operation counts and rotation sets per class vs pymatgen/spglib (P2, P3), not vs orix; the 32 point groups, quaternions and fundamental sectors are not held |
 | orix `vector.Miller` (`hkl`, `uvw`, `symmetrise`, `unique`, `multiplicity`, `length`, `angle_with`) | `MillerIndex`, `PointSymmetry.orbit(of:)`, `canonical(_:)`, `orbitName`, `UnitCell.d`, `ZoneAxis` | **partly** | P2 for orbits and canonical forms (registration definitions applied to pymatgen's operations); not compared with orix; no vector class |
-| orix `Vector3d`, `FundamentalSector`, `plot.IPFColorKeyTSL`, `StereographicPlot` | none | not held | planned: `DiffractoOrientation` (IPF keys); plotting is not a kit's job |
+| orix `Vector3d`, `FundamentalSector`, `plot.IPFColorKeyTSL`, `StereographicPlot` | `CrystalOrientationSymmetry.reduceDirection`, `sampleFundamentalZone`, `ipfColor(direction:key:)` | **partly** | P19 native sector/sampling policies and three app keys, not compared with orix. `.native` is the app's own convention; `.py4DSTEM` is P18, not orix. No vector class or plotting |
 | orix `crystal_map.CrystalMap`, `Phase`, `io.load` (.ang, h5ebsd) | none | not held | maps are CuboKit's, readers FormatoKit's |
 
 ## What this checklist does not say
@@ -182,5 +192,5 @@ comments, not from a pinned clone, and must be re-read against a pinned clone at
 - No row says the kit agrees with the real instrument: nothing here is validated on a real pattern (`NOTICE`).
 - A "partly" row whose check reads "not compared" has no comparison with that package at all; it is listed so the gap is
   visible.
-- Function names for py4DSTEM, pyxem, diffsims and orix are not read from a pinned clone (section 2 and 3 headers).
+- Only the executed py4DSTEM portions P5, P14 and P18 are checked against its pinned source. pyxem, diffsims and orix are not executed oracles here.
 - The Python oracles are not run in CI (`.github/workflows/ci.yml`): CI proves the kit equals the committed pins.

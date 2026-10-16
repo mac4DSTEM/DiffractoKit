@@ -3,6 +3,24 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## Unreleased
+
+### Added
+- `CrystalOrientationSymmetry`: proper operation tables and minimum-angle rotation reduction for all eleven Laue classes,
+  with deterministic quaternion ties, direction folding and fundamental-zone sampling. Standard settings are explicit;
+  there is no unknown-class or identity fallback.
+- `IPFColorKey.py4DSTEM`: the pinned automatic-sector, full-mask beam key of py4DSTEM f050d207, bit identical after
+  converting Python's Double RGB to the public Float RGB type. Pass Python family poles (original poles for 2/m).
+- `IPFColorKey.native`: the app's existing m-3m, 6/mmm and b-unique 2/m keys, pinned to its original Float bits. Other
+  native keys throw a named refusal. Invalid rotations, poles and sampling counts are refused explicitly.
+- Pinned pymatgen point-group operations, SciPy minimum-angle fixtures, py4DSTEM colour fixtures and original-source
+  native colours/samples; generator, seed and measured tolerances in `docs/parity.md` (P17–P19).
+
+### Conventions
+- py4DSTEM's direction-family reduction is not ported (returns families, not a rotation). Neither the minimum-angle
+  rotation nor the native direction fold substitutes for Python's family array. See `docs/orientation-symmetry.md`.
+- Additive API; no package dependency, matcher, UI or orientation-map container added.
+
 ## 0.3.1 (unreleased: the owner tags it)
 
 ### Fixed

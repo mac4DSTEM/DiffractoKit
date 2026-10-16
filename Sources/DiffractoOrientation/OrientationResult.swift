@@ -2,8 +2,8 @@
 //  OrientationResult.swift
 //  Role: the value types of an orientation result: `EulerAngles` (the py4DSTEM / SciPy Bunge convention, both directions),
 //        `ZoneAxisFrame` (the detector frame of a zone axis and the orientation matrix built from it) and `OrientationResult`
-//        (one position's result). Registration docs/registration-slice-4.md, sections 1 and 4. The map, its presentation and
-//        the symmetry reduction are not here (slice 5).
+//        (one position's result). Registration docs/registration-slice-4.md, sections 1 and 4. The map and its presentation
+//        stay with the caller; symmetry primitives are in CrystalOrientationSymmetry.swift.
 //
 //  `ZoneAxisFrame` is the apps' application-specific frame type under a library name; the renaming is the only change.
 //

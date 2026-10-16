@@ -11,7 +11,7 @@
 //    - `EulerAngles` (py4DSTEM's orientation matrix to and from SciPy's Bunge angles), `ZoneAxisFrame` (the detector frame of
 //      a zone axis) and `OrientationResult` (one position's orientation result).
 //
-//  Planned, not here (slice 5, against pyxem / orix and py4DSTEM's crystal orientation mapping): template matching,
-//  symmetry reduction and fundamental zones per Laue class, IPF colour keys.
+//  Template matching remains planned (slice 5). CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
+//  native direction sampling and explicit IPFColorKey conventions (docs/orientation-symmetry.md).
 //  Depends on DiffractoCore and DiffractoScattering.
 //
