@@ -6,6 +6,7 @@ reproduces, and against what, are in `docs/parity.md`.
 ## Unreleased
 
 ### Added
+- `CellStandardisation.standardise`: the app's primitive-to-conventional conversion of a centred cell (fixed ITA matrices for F, I, C, A, B, R) with its guards, its F conversion pinned to pymatgen `SpacegroupAnalyzer` standard cells (P20; I by a closed form). The reference route is `CrystalStructure.detectingSymmetry(...).conventionalSetting`.
 - `CrystalOrientationSymmetry`: proper operation tables and minimum-angle rotation reduction for all eleven Laue classes,
   with deterministic quaternion ties, direction folding and fundamental-zone sampling. Standard settings are explicit;
   there is no unknown-class or identity fallback.

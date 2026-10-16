@@ -1,0 +1,82 @@
+{
+  "data": [
+    {
+      "formula_pretty": "Al",
+      "material_id": "mp-134",
+      "structure": {
+        "lattice": {
+          "a": 4.05,
+          "alpha": 90,
+          "b": 4.05,
+          "beta": 90,
+          "c": 4.05,
+          "gamma": 90,
+          "volume": 66.4
+        },
+        "sites": [
+          {
+            "abc": [
+              0,
+              0,
+              0
+            ],
+            "species": [
+              {
+                "element": "Al",
+                "occu": 1
+              }
+            ]
+          },
+          {
+            "abc": [
+              0,
+              0.5,
+              0.5
+            ],
+            "species": [
+              {
+                "element": "Al",
+                "occu": 1
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.5,
+              0,
+              0.5
+            ],
+            "species": [
+              {
+                "element": "Al",
+                "occu": 1
+              }
+            ]
+          },
+          {
+            "abc": [
+              0.5,
+              0.5,
+              0
+            ],
+            "species": [
+              {
+                "element": "Al",
+                "occu": 1
+              }
+            ]
+          }
+        ]
+      },
+      "symmetry": {
+        "crystal_system": "Cubic",
+        "number": 225,
+        "symbol": "Fm-3m"
+      }
+    }
+  ],
+  "fixture_provenance": "Recorded MP v3 Al envelope in mac4DSTEM c809679c MaterialsProjectImportTests.swift (2026-09-21 fetch)",
+  "meta": {
+    "api_version": "v3"
+  }
+}
