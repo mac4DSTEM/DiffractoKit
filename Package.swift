@@ -1,15 +1,14 @@
 // swift-tools-version: 6.2
 // DiffractoKit — a crystallography and diffraction library: cells, symmetry, CIF import, d-spacings and
-// reflection orbits (DiffractoCore, slice 1); scattering and structure factors (DiffractoScattering, slice 2); pattern
+// reflection orbits (DiffractoCore); scattering and structure factors (DiffractoScattering); pattern
 // geometry, calibration, camera length, zone axes and indexing (DiffractoGeometry); orientation results and Euler
-// conventions (DiffractoOrientation). The direction is the "Kits" plan; docs/registration-slice-1.md is the
-// first registration (it names the repository each reference commit belongs to). Ported from reference commits 7448401b and a58c84c (both GPL-3.0), checked against pymatgen (MIT) as
-// an oracle; no pymatgen code is copied.
+// conventions (DiffractoOrientation). Ported from earlier GPL-3.0 code (commits named in NOTICE), checked against pymatgen (MIT) as a
+// reference; no pymatgen code is copied.
 //
-// Swift 6 language mode, nonisolated by default (no `.defaultIsolation`), the three upcoming features the consuming packages
-// enable, no unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised
+// Swift 6 language mode, nonisolated by default (no `.defaultIsolation`), the three upcoming features consuming packages
+// typically enable, no unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised
 // itself, and tools/test.sh runs this package's tests with `-c release`. One product per module. What one module needs
-// from another is `package`, never `public`; what an app reads is `public` and is guarded by tools/consumer-check.
+// from another is `package`, never `public`; what a consumer reads is `public` and is guarded by tools/consumer-check.
 import PackageDescription
 
 let settings: [SwiftSetting] = [
@@ -28,22 +27,22 @@ let package = Package(
         .library(name: "DiffractoOrientation", targets: ["DiffractoOrientation"]),
     ],
     dependencies: [
-        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation only); a minor range, so the apps (which pin exact tags) resolve one ImagoKit.
+        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation only); a minor range, so that consumers who pin exact tags resolve one ImagoKit.
         .package(url: "https://github.com/mac4DSTEM/ImagoKit", .upToNextMinor(from: "0.2.0")),
     ],
     targets: [
-        // Slice 1 (docs/registration-slice-1.md): cells of the seven systems, symmetry operations and Laue groups, CIF
+        // Cells of the seven systems, symmetry operations and Laue groups, CIF
         // import, the reflection list with systematic absences, orbits and families. Foundation, simd and CryptoKit (the CIF bytes hash).
         .target(name: "DiffractoCore", swiftSettings: settings),
-        // Slice 2 (docs/registration-slice-2.md): electron scattering factors (Lobato–Van Dyck, py4DSTEM's table),
+        // Electron scattering factors (Lobato–Van Dyck, py4DSTEM's table),
         // structure factors and the kinematic ring list after the |F| cut.
         .target(name: "DiffractoScattering", dependencies: ["DiffractoCore"], swiftSettings: settings),
-        // Slice 3 (docs/registration-slice-3.md): wavelength, ring calibration and camera length, the indexing decision,
-        // zone axes (3a); the ring and ellipse fit (3b).
+        // Wavelength, ring calibration and camera length, the indexing decision,
+        // zone axes; the ring and ellipse fit.
         .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
-        // Slice 4 (docs/registration-slice-4.md): the reference library and the vector matcher of phase mapping, and the
-        // value types of an orientation result (Euler angles, the zone-axis frame). The apps' ACOM template matcher; later: py4DSTEM's
-        // SO(3) correlogram and pyxem / orix template matching (slice 5).
+        // The reference library and the vector matcher of phase mapping, the value types of an orientation result (Euler
+        // angles, the zone-axis frame) and the ACOM template matcher. Later: py4DSTEM's SO(3) correlogram and pyxem / orix
+        // template matching.
         .target(name: "DiffractoOrientation",
                 dependencies: ["DiffractoCore", "DiffractoScattering",
                                .product(name: "ImagoFFT", package: "ImagoKit")],

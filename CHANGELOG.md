@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to DiffractoKit. Versions are semantic (0.x: a minor may change the API). The numbers each module
+All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
 ## 0.4.1 (2026-10-16)
@@ -14,37 +14,37 @@ None for consumers of 0.4.0 beyond re-pinning to 0.4.1. A consumer may now use a
 
 ## 0.4.0 (2026-10-16)
 
-Orientation symmetry for all eleven Laue classes, the ACOM matcher, the Materials Project cell import, and the pieces
-macTEM's rooms use (crystal loading, ring overlay, indexing display, ring scale).
+Orientation symmetry for all eleven Laue classes, the ACOM matcher, the Materials Project cell import, and helpers for
+application front ends (crystal loading, ring overlay, indexing display, ring scale).
 
 ### Migration
 Additive: no existing signature or number changes, so a consumer of 0.3.1 recompiles unchanged. The one change to the
 package graph is a new dependency, ImagoKit 0.2.0 (exact), for `FFT1D` (ImagoFFT), used by `DiffractoOrientation` only;
-an app that also pins ImagoKit must pin 0.2.0 (0.2.0 is additive over 0.1.1). The 0.3.1 fix (symmetry detection of
+a consumer that also pins ImagoKit must pin 0.2.0 (0.2.0 is additive over 0.1.1). The 0.3.1 fix (symmetry detection of
 non-lattice rotations) is included in this tag.
 
 ### Added
-- `RingScale` (DiffractoGeometry): |q| of a ring radius and the radius of a |q| under a `RingCalibration` (the exact closed forms with a beam energy, the linear Δq·R without one), the linear helper `RingScale.linear(radius:deltaQ:)` and `fitVersusFile`, ported from macTEM; the app's forms agree with `RingCalibration.q`/`radius` (P24). macTEM's `fileScale` is not ported (the kit has no `CalibrationUnitConversion`).
-- `IndexingDisplay.index` and `DisplayedIndexing` (DiffractoGeometry): the numbers a room shows for `RingIndexing`'s decision (sigma_q from a percent tolerance, delta %, |dd|/d, z, margin, odds and the "> 10⁶ : 1" cap text), ported from macTEM; the decision is untouched (P23).
-- `RingOverlay` and `RingEllipse` (DiffractoGeometry): a ring fit as an image-coordinate ellipse (x = column, y = row), the drawing polyline, the predicted ring of another family, and the point-to-ellipse distance, ported from macTEM (P22).
-- `CrystalLoading.load(bytes:fileName:)` and `LoadedCrystal`: a CIF from bytes with the app's rules (5 MiB cap, strict UTF-8, `CIFImport`, lower-case hex SHA-256 of the bytes), ported from macTEM; refusals `CrystalLoading.Refusal.tooLarge`/`.notUTF8`, importer errors unchanged (P21).
-- `CellStandardisation.standardise`: the app's primitive-to-conventional conversion of a centred cell (fixed ITA matrices for F, I, C, A, B, R) with its guards, its F conversion pinned to pymatgen `SpacegroupAnalyzer` standard cells (P20; I by a closed form). The reference route is `CrystalStructure.detectingSymmetry(...).conventionalSetting`.
+- `RingScale` (DiffractoGeometry): |q| of a ring radius and the radius of a |q| under a `RingCalibration` (the exact closed forms with a beam energy, the linear Δq·R without one), the linear helper `RingScale.linear(radius:deltaQ:)` and `fitVersusFile`, ported from an application; its forms agree with `RingCalibration.q`/`radius` (P24). The application's `fileScale` is not ported (the kit has no `CalibrationUnitConversion`).
+- `IndexingDisplay.index` and `DisplayedIndexing` (DiffractoGeometry): the numbers a room shows for `RingIndexing`'s decision (sigma_q from a percent tolerance, delta %, |dd|/d, z, margin, odds and the "> 10⁶ : 1" cap text), ported from an application; the decision is untouched (P23).
+- `RingOverlay` and `RingEllipse` (DiffractoGeometry): a ring fit as an image-coordinate ellipse (x = column, y = row), the drawing polyline, the predicted ring of another family, and the point-to-ellipse distance, ported from an application (P22).
+- `CrystalLoading.load(bytes:fileName:)` and `LoadedCrystal`: a CIF from bytes with a 5 MiB cap, strict UTF-8, `CIFImport` and a lower-case hex SHA-256 of the bytes, ported from an application; refusals `CrystalLoading.Refusal.tooLarge`/`.notUTF8`, importer errors unchanged (P21).
+- `CellStandardisation.standardise`: the primitive-to-conventional conversion of a centred cell (fixed ITA matrices for F, I, C, A, B, R) with its guards, its F conversion pinned to pymatgen `SpacegroupAnalyzer` standard cells (P20; I by a closed form). The reference route is `CrystalStructure.detectingSymmetry(...).conventionalSetting`.
 - `CrystalOrientationSymmetry`: proper operation tables and minimum-angle rotation reduction for all eleven Laue classes,
   with deterministic quaternion ties, direction folding and fundamental-zone sampling. Standard settings are explicit;
   there is no unknown-class or identity fallback.
 - `IPFColorKey.py4DSTEM`: the pinned automatic-sector, full-mask beam key of py4DSTEM f050d207, bit identical after
   converting Python's Double RGB to the public Float RGB type. Pass Python family poles (original poles for 2/m).
-- `IPFColorKey.native`: the app's existing m-3m, 6/mmm and b-unique 2/m keys, pinned to its original Float bits. Other
+- `IPFColorKey.native`: the previously existing m-3m, 6/mmm and b-unique 2/m keys, pinned to its original Float bits. Other
   native keys throw a named refusal. Invalid rotations, poles and sampling counts are refused explicitly.
 - Pinned pymatgen point-group operations, SciPy minimum-angle fixtures, py4DSTEM colour fixtures and original-source
   native colours/samples; generator, seed and measured tolerances in `docs/parity.md` (P17–P19).
-- ACOM matcher (`DiffractoOrientation`): `ACOMTemplateLibrary` (template library of the apps' simplified polar-correlation
+- ACOM matcher (`DiffractoOrientation`): `ACOMTemplateLibrary` (template library of a simplified polar-correlation
   route: fundamental-zone beam directions of any Laue class, polar images with radial kernel, azimuthal blur, per-ring mean
   subtraction and unit norm, per-ring azimuthal FFT) and `ACOMMatcher` (best template, in-plane angle, score, runner-up
   reliability and the mirror pass, result as `OrientationResult`), with `ACOMTemplateSettings`, `ACOMReflection`, `ACOMPeak`,
-  `ACOMError`. `ACOMExcitationModel` chooses the excitation error: `.flat`, `.appCurvature` (the apps' sign) or `.py4DSTEM`
+  `ACOMError`. `ACOMExcitationModel` chooses the excitation error: `.flat`, `.appCurvature` (the sign used by the applications it was ported from) or `.py4DSTEM`
   (py4DSTEM's `excitation_errors`). This is not py4DSTEM's SO(3) correlogram; docs/parity.md says what is compared. Pinned (P25)
-  to a NumPy transcription of the app source (m-3m, 6/mmm, 2/m) and, for the spots and planted orientations, to py4DSTEM
+  to a NumPy transcription of the original application source (m-3m, 6/mmm, 2/m) and, for the spots and planted orientations, to py4DSTEM
   f050d207 run (spots 5e-15 relative). Measured: with `.py4DSTEM` the route is within 4 degrees of the truth on 17 of 18 planted
   patterns; one 2/m pattern returns a different beam direction (127 degrees).
 - Dependency: ImagoKit 0.2.0 (exact), for `FFT1D` (ImagoFFT), used by DiffractoOrientation only.
@@ -52,7 +52,7 @@ non-lattice rotations) is included in this tag.
 ### Conventions
 - py4DSTEM's direction-family reduction is not ported (returns families, not a rotation). Neither the minimum-angle
   rotation nor the native direction fold substitutes for Python's family array. See `docs/orientation-symmetry.md`.
-- Additive API; no package dependency, matcher, UI or orientation-map container added.
+- Additive API; no orientation-map container added.
 
 ## 0.3.1 (2026-10-15)
 
@@ -104,7 +104,7 @@ identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the
 
 ### Changed
 - The platform floor is macOS 15 and iOS 18 (was macOS 27); numbers unchanged there.
-- No app or suite name remains in sources, test names or comments; test names changed accordingly.
+- Application names were removed from sources, test names and comments; test names changed accordingly.
 - `ReflectionListError.cellTooLargeOrInvalid`'s text names the estimated count, the default limit and the policy field.
 
 ### Fixed
@@ -113,10 +113,10 @@ identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the
   conventional-cell route: refused by validation or flagged `reductionConverged == false`); `IntegerMatrix.determinant` wraps.
 - A position tolerance of 0 or NaN returned a structure without the identity operation; it is refused, and the identity is
   always present.
-- A cell sheared by hundreds of units was silently left unreduced (slice 1b's review); a non-converged reduction is flagged.
+- A cell sheared by hundreds of units was silently left unreduced (found in review); a non-converged reduction is flagged.
 - NaN, negative or infinite metric tolerances and Niggli epsilons are read as documented (0, or unreduced and unconverged).
 - `RingIndexing.reach` answers NaN where `index` refuses the margin.
-- Against the phase-mapping implementation it was ported from:
+- Against the original phase-mapping implementation:
   - A rotation about the beam whose R22 rounds to 1 − 2⁻⁵³ (with R20 = R21 = 0) was lost by the Euler decomposition (both
     angles 0); it is folded into φ1.
   - An exact score tie between two phases was broken by the process's hash seed; it goes to the lower phase index.
@@ -135,26 +135,23 @@ identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the
 and loosening coverage needs both `RingCalibration.Policy.minimumOccupiedAngularBins` and the ellipse policy's
 `degeneracyBoundBins`; removing the `ReflectionList.Policy` caps removes the memory and time protection (a k_max of 100 reached
 10 GB). Error texts quote the default bounds. A kinematic pattern cannot tell +c from −c on a polar structure: no consumer may
-claim a polarity from a kinematic match. The app-specific notes of earlier releases are in git history
-(`docs/consumers-0.0.3.md` to `docs/consumers-0.3.0.md`; they leave the repository at the next lean pass and stay in git history).
+claim a polarity from a kinematic match. Earlier per-release migration notes are in `docs/consumers-0.0.3.md` to `docs/consumers-0.3.0.md` and in git history.
 
-**Phase mapping.** An app that carried its own vector matching deletes it when it adopts the kit's (mac4DSTEM:
-`PhaseVectorMatching.swift`, `PhaseReferenceLibrary.swift`, `EulerAngles` and `ACOMOrientation`, and their tests). For code moving from the app implementation: `Crystal` becomes `CrystalStructure` (`PhaseDefinition.crystal`); a structure the
+**Phase mapping.** An application that carried its own vector matching can delete it when it adopts the kit's. For code moving from such an implementation: `Crystal` becomes `CrystalStructure` (`PhaseDefinition.crystal`); a structure the
 kit refuses throws `PhaseReferenceLibrary.Failure.structureRefused`; `BraggVectors` becomes `scan:scanWidth:scanHeight:` with
 `PeakCoordinates` (pass each peak's `Float` x, y as `SIMD2<Double>`; the pixel form reproduces the old arithmetic bit for bit);
 the cancellation token becomes `progress:` / `isCancelled:` closures; `ACOMOrientation` is `ZoneAxisFrame`; `fitZoneAxis`
 throws; a scan whose position count is not width × height gives nil (or `[]`) from every entry point, and an out-of-range
 `matrixEntryIndex` makes `map` return nil; a cancelled `build` throws `CancellationError`. The decision rule of `.knownVariants` and its
-two constants follow Thronsen et al., Ultramicroscopy 255 (2024) 113861 (CC BY 4.0; NOTICE). No other number moves. On
-re-pinning to 0.3.0, mac4DSTEM deletes its own `PhaseVectorMatching` and `PhaseReferenceLibrary` copies.
+two constants follow Thronsen et al., Ultramicroscopy 255 (2024) 113861 (CC BY 4.0; NOTICE). No other number moves.
 
 ## 0.1.1
 
-Slice 1b: Niggli reduction, the conventional cell in both settings, the Cartesian symmetry tolerance, detection on a cell list;
+Niggli reduction, the conventional cell in both settings, the Cartesian symmetry tolerance, detection on a cell list;
 the CI type-check fixes.
 
 ## 0.1.0
 
-Slices 1 to 3: cells of the seven systems, symmetry from the atoms, CIF import, reflections, absences, orbits and rings;
+Cells of the seven systems, symmetry from the atoms, CIF import, reflections, absences, orbits and rings;
 electron scattering factors and structure factors; the wavelength, ring and ellipse calibration, camera length, indexing and
 zone axes; error texts; progress and cancellation of the fits.

@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use DiffractoKit in your work, please cite it as below, and cite the packages it is checked against (see references)."
+title: "DiffractoKit"
+type: software
+abstract: "A Swift library for crystallography and electron diffraction: unit cells, symmetry, CIF import, d-spacings and reflection lists, electron scattering factors and structure factors, ring and ellipse calibration of diffraction patterns, zone axes, phase mapping and orientation symmetry."
+authors:
+  - name: "mac4DSTEM contributors"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/mac4DSTEM/DiffractoKit"
+keywords:
+  - crystallography
+  - electron diffraction
+  - Swift
+references:
+  - type: software
+    title: "pymatgen"
+    authors:
+      - name: "The Materials Project"
+    url: "https://github.com/materialsproject/pymatgen"
+  - type: software
+    title: "spglib"
+    authors:
+      - name: "The spglib developers"
+    url: "https://github.com/spglib/spglib"
+  - type: software
+    title: "py4DSTEM"
+    authors:
+      - name: "The py4DSTEM developers"
+    url: "https://github.com/py4dstem/py4DSTEM"
+  - type: software
+    title: "pyxem"
+    authors:
+      - name: "The pyxem developers"
+    url: "https://github.com/pyxem/pyxem"
