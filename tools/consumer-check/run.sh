@@ -33,7 +33,9 @@ jobs=()
 cd $here
 mkdir -p .build
 log=.build/consumer-check-build.log
-if ! swift build -c debug $jobs >$log 2>&1; then
+# --disable-dependency-cache: SwiftPM's shared repository cache can print a 'skipping cache' warning on a CI runner,
+# which the warning count would take for the kit's own (DiffractoKit 0.4.1's CI).
+if ! swift build --disable-dependency-cache -c debug $jobs >$log 2>&1; then
   grep -E "error" $log | head -20 >&2
   die "BUILD FAILED (full log: $here/$log)"
 fi
@@ -42,7 +44,7 @@ warnings=$(grep -c "warning:" $log || true)
 if grep -qE "DiffractoCoreTests|DiffractoScatteringTests|DiffractoGeometryTests|DiffractoOrientationTests" $log; then
   die "the build log names a test-only target"
 fi
-bin=$(swift build -c debug --show-bin-path)
+bin=$(swift build --disable-dependency-cache -c debug --show-bin-path)
 out=.build/consumer-check-run.log
 set +e
 $bin/consumer-check >$out 2>&1
