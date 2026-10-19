@@ -5,7 +5,7 @@ type: software
 abstract: "A Swift library for crystallography and electron diffraction: unit cells, symmetry, CIF import, d-spacings and reflection lists, electron scattering factors and structure factors, ring and ellipse calibration of diffraction patterns, zone axes, phase mapping and orientation symmetry."
 authors:
   - name: "mac4DSTEM contributors"
-license: GPL-3.0-or-later
+license: GPL-3.0
 repository-code: "https://github.com/mac4DSTEM/DiffractoKit"
 keywords:
   - crystallography
