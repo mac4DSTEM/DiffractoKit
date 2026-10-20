@@ -28,7 +28,7 @@ struct Py4DSTEMFamilyTests {
         for c in try pins().classes {
             let s = CrystalOrientationSymmetry(laueClass: try #require(LaueClass(rawValue: c.symbol)))
             for k in c.cases {
-                let f = try s.py4DSTEMDirectionFamily(mat(k.matrix))
+                let f = try s.py4DSTEMDirectionFamily(mat(k.matrix), order: .sortedFractional)
                 let e = mat(k.family)
                 var g = 0.0
                 for col in 0..<3 {

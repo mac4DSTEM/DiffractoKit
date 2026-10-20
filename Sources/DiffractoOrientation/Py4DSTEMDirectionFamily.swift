@@ -4,6 +4,20 @@ import Foundation
 import simd
 import DiffractoCore
 
+/// The order of the symmetry operators py4DSTEM's family reduction scans, which decides the result wherever several operators
+/// put a direction inside the plan sector and, for the classes whose sector is not a fundamental domain, which operator a
+/// direction that no operator brings into the sector falls back to (the first).
+public enum Py4DSTEMOperatorOrder: Sendable, Equatable, CaseIterable {
+    /// The order of a real py4DSTEM `Crystal`: pymatgen's `SpacegroupAnalyzer.get_point_group_operations()` of the structure
+    /// (identity first), as generated from the first space group of each class (P-1, P2/m, Pmmm, P4/m, P4/mmm, P-3, P-31m or P-3m1,
+    /// P6/m, P6/mmm, Pm-3, Pm-3m). Space groups of one class that list the operations in another order (origin choice 2, some
+    /// centred groups) gave identical families on every pinned matrix. The default.
+    case pymatgen
+    /// The proper operators sorted by their fractional matrices, then their negatives: the harness order of
+    /// `tools/symmetry/family-pins.py` (py4DSTEM's function on an operator list that is not a real crystal's).
+    case sortedFractional
+}
+
 extension CrystalOrientationSymmetry {
     /// py4DSTEM's `Orientation.family`: each column of `matrix` (a lab axis in crystal coordinates) is folded by the first
     /// symmetry operator that puts it inside the class's automatic orientation-plan sector, independently of the other
@@ -13,17 +27,18 @@ extension CrystalOrientationSymmetry {
     /// Faithful to the pinned function, including its quirks: a column that no operator maps into the sector keeps the
     /// first operator (the identity), which happens for -1, 2/m and -3m, whose automatic sector is not a fundamental
     /// domain of the full Laue group; and where several operators qualify (a column on a sector boundary, or the whole
-    /// of -3m) the first in the operator order wins. The order is py4DSTEM's list in the pin harness: the proper
-    /// operators sorted by their fractional matrices, then their negatives (the Laue group's inversions), twice over for
-    /// -3 (the plan's 180 degree fibre, second copy tested against the sector with its first vertex negated). A real
-    /// py4DSTEM crystal lists its own point group's operators in pymatgen's order, so classes whose sector is not a
-    /// fundamental domain can differ in the choice among qualifying operators.
+    /// of -3m) the first in the operator order wins. `order` selects that list: `.pymatgen` (the default) is the list of a
+    /// real py4DSTEM crystal, the full Laue group in pymatgen's order (twice over for -3: the plan's 180 degree fibre, the
+    /// second copy tested against the sector with its first vertex negated); `.sortedFractional` is the pin harness's
+    /// (proper operators sorted by their fractional matrices, then their negatives). The two differ in the fallback operator
+    /// (-1, 2/m, -3m) and where several operators qualify. For `-3m` the setting of this symmetry selects the pymatgen list
+    /// of P-31m or P-3m1.
     ///
     /// The matrix must be finite (otherwise `invalidRotation`); it is not required to be a rotation. Comparisons are exact `>= 0` as in Python, so a
     /// column lying on a sector boundary within 1e-16 can resolve differently from NumPy's BLAS products.
-    public func py4DSTEMDirectionFamily(_ matrix: simd_double3x3) throws -> simd_double3x3 {
+    public func py4DSTEMDirectionFamily(_ matrix: simd_double3x3, order: Py4DSTEMOperatorOrder = .pymatgen) throws -> simd_double3x3 {
         guard Self.isFinite(matrix) else { throw OrientationSymmetryError.invalidRotation }
-        let (ops, bases) = py4DSTEMFamilyTables()
+        let (ops, bases) = py4DSTEMFamilyTables(order)
         var out = matrix
         for column in 0..<3 {
             let v = matrix[column]
@@ -60,11 +75,40 @@ extension CrystalOrientationSymmetry {
 
     /// The operator list (proper operators sorted by fractional matrix, then negated; doubled for -3) and, per entry, the
     /// plan sector's inverse-transpose rows (the second copy of -3 uses the flipped sector).
-    private func py4DSTEMFamilyTables() -> ([simd_double3x3], [BasisRows]) {
+    private func py4DSTEMFamilyTables(_ order: Py4DSTEMOperatorOrder) -> ([simd_double3x3], [BasisRows]) {
         let hex = [LaueClass.threeBar, .threeBarM, .sixOverM, .sixOverMmm].contains(laueClass)
         let frame = hex ? simd_double3x3(columns: (SIMD3(1, 0, 0), SIMD3(-0.5, sqrt(3) / 2, 0), SIMD3(0, 0, 1)))
                         : matrix_identity_double3x3
         let inverse = frame.inverse
+        var ops: [simd_double3x3]
+        switch order {
+        case .sortedFractional: ops = sortedHarnessOperators(frame: frame, inverse: inverse)
+        case .pymatgen:
+            // py4DSTEM: symmetry_operators[i] = lat_inv.T @ R_i.T @ lat_real, which is the transpose of the Cartesian operator
+            // frame * R_i * frame^-1 (lat_real = rows a, b, c).
+            ops = PymatgenOperatorTable.fractional(laueClass, threeBarMSetting).map { m in
+                let r = simd_double3x3(rows: [SIMD3(Double(m[0]), Double(m[1]), Double(m[2])),
+                                              SIMD3(Double(m[3]), Double(m[4]), Double(m[5])),
+                                              SIMD3(Double(m[6]), Double(m[7]), Double(m[8]))])
+                var cartesian = (frame * r * inverse).transpose
+                // Entries that are zero in exact arithmetic are ~1e-17 here; NumPy's products give exact zeros.
+                for c in 0..<3 { for row in 0..<3 where abs(cartesian[c][row]) < 1e-14 { cartesian[c][row] = 0 } }
+                return cartesian
+            }
+        }
+        let primary = BasisRows(py4DSTEMBasis)
+        var bases = [BasisRows](repeating: primary, count: ops.count)
+        if laueClass == .threeBar {
+            let flipped = BasisRows([SIMD3(7.070501591499379e-17, 0.0, -1.0), SIMD3(0.5773502691896257, -1.0000000000000002, -0.0),
+                                     SIMD3(0.5773502691896257, 1.0000000000000002, -0.0)])
+            ops += ops
+            bases += [BasisRows](repeating: flipped, count: bases.count)
+        }
+        return (ops, bases)
+    }
+
+    /// The pin harness's list: the proper operators sorted by their fractional matrices, then their negatives.
+    private func sortedHarnessOperators(frame: simd_double3x3, inverse: simd_double3x3) -> [simd_double3x3] {
         let keyed: [([Int], simd_double3x3)] = operators.map { op in
             let fractional = inverse * op * frame
             var key: [Int] = []
@@ -76,16 +120,7 @@ extension CrystalOrientationSymmetry {
             return (key, snapped)
         }
         let sorted = keyed.sorted { $0.0.lexicographicallyPrecedes($1.0) }.map(\.1)
-        var ops = sorted + sorted.map { -1.0 * $0 }
-        let primary = BasisRows(py4DSTEMBasis)
-        var bases = [BasisRows](repeating: primary, count: ops.count)
-        if laueClass == .threeBar {
-            let flipped = BasisRows([SIMD3(7.070501591499379e-17, 0.0, -1.0), SIMD3(0.5773502691896257, -1.0000000000000002, -0.0),
-                                     SIMD3(0.5773502691896257, 1.0000000000000002, -0.0)])
-            ops += ops
-            bases += [BasisRows](repeating: flipped, count: bases.count)
-        }
-        return (ops, bases)
+        return sorted + sorted.map { -1.0 * $0 }
     }
 
     /// Three rows (the inverse-transpose of a plan sector), indexed `basis[k][l]` = row k, column l.
