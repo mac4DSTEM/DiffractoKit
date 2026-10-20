@@ -546,6 +546,129 @@ struct ACOMScanTests {
     }
 }
 
+// MARK: Metal backend
+
+/// `ACOMBackend.metal` against the CPU reference. Written tolerances: scores and runner-up scores (normalised correlations in
+/// [0, 1], Float32 sums over 32 rings and a 128-term inverse transform) within 1e-6 absolute (the CPU's own FFT and the GPU's
+/// exact DFT round differently; measured worst gaps are printed); template, in-plane angle, mirror flag, Euler angles and
+/// disorientation identical (they follow from the template and the bin). Cases where two bins or templates tie within the score
+/// tolerance could differ; on the pinned fixtures the pinned margins (> 1e-4) exclude them. Skipped where no Metal device exists.
+struct ACOMMetalTests {
+    static let scoreTolerance: Float = 1e-6
+
+    private func setup() throws -> (ACOMMatcher, ACOMTemplateLibrary) {
+        let c = try #require(try fixture().crystals["al"])
+        let lib = try ACOMTemplateLibrary.generate(
+            reflections: reflections(c), kMax: c.kmax, laueClass: .mThreeBarM,
+            settings: ACOMTemplateSettings(zoneAxisCount: 40, excitation: .appCurvature(wavelengthAngstrom: 0.0251)))
+        return (try #require(ACOMMatcher(library: lib)), lib)
+    }
+
+    private func scan(_ lib: ACOMTemplateLibrary, width: Int, height: Int) -> [[ACOMPeak]] {
+        (0..<(width * height)).map { i in
+            if i % 5 == 4 { return [] }
+            let phi = 0.1 * Double(i % 7), ipp = 0.004
+            // every third pattern is mirrored (azimuth reversed) so the second pass wins sometimes
+            return lib.templateSpots[(3 * i + 1) % lib.count].map { s in
+                let a = (i % 3 == 0 ? -Double(s.azimuth) : Double(s.azimuth)) + phi, r = Double(s.radius) / ipp
+                return ACOMPeak(x: Float(64 + r * cos(a)), y: Float(64 + r * sin(a)), intensity: pow(s.weight, 4))
+            }
+        }
+    }
+
+    /// Same result apart from the scores, which agree within the tolerance; returns the gap. With `tiesAllowed`, a position where
+    /// the GPU took another route (template, bin or pass) to a top score and runner-up that equal the CPU's within the
+    /// tolerance is a tie within Float32 rounding (typically a pattern that is its own mirror image: both passes score alike): it
+    /// is counted in `ties` instead of failing.
+    @discardableResult
+    private func same(_ gpu: OrientationResult, _ cpu: OrientationResult, _ what: String,
+                      tiesAllowed ties: LockedBox<Int>? = nil) -> Float {
+        let gap = max(abs(gpu.score - cpu.score), abs(gpu.secondScore - cpu.secondScore))
+        #expect(gap <= Self.scoreTolerance, "\(what) score gap \(gap)")
+        let sameRoute = gpu.templateIndex == cpu.templateIndex && gpu.inPlaneAngle == cpu.inPlaneAngle && gpu.mirrored == cpu.mirrored
+        if !sameRoute, let ties { ties.update { $0 += 1 }; return gap }
+        #expect(gpu.templateIndex == cpu.templateIndex, "\(what) template")
+        #expect(gpu.inPlaneAngle == cpu.inPlaneAngle, "\(what) in-plane angle")
+        #expect(gpu.mirrored == cpu.mirrored, "\(what) mirrored")
+        #expect(gpu.euler == cpu.euler && gpu.symmetryDisorientationRad == cpu.symmetryDisorientationRad && gpu.phaseID == cpu.phaseID,
+                "\(what) euler")
+        return gap
+    }
+
+    @Test func metalEqualsTheCPUOnTheAppRoutePins() throws {
+        var worst: Float = 0, cases = 0
+        for key in appKeys {
+            let c = try #require(try fixture().crystals[key])
+            let lib = try appLibrary(key, c)
+            let matcher = try #require(ACOMMatcher(library: lib))
+            guard matcher.isMetalAvailable else { return }
+            let pinned = try #require(c.appRoute).cases
+            for (k, cs) in pinned.enumerated() {
+                let one = [peaks(cs)], ox = Float(cs.origin[0]), oy = Float(cs.origin[1])
+                let cpu = try #require(matcher.matchAll(peaks: one, width: 1, height: 1, originX: ox, originY: oy,
+                                                         invAngstromPerPixel: cs.invAngstromPerPixel, backend: .cpu)).results[0]
+                let gpu = try #require(matcher.matchAll(peaks: one, width: 1, height: 1, originX: ox, originY: oy,
+                                                         invAngstromPerPixel: cs.invAngstromPerPixel, backend: .metal)).results[0]
+                #expect(cs.marginTemplate > 1e-4 && cs.marginInPlane > 1e-4)
+                #expect(gpu.templateIndex == cs.template && gpu.mirrored == cs.mirrored, "\(key) \(k) versus the pin")
+                #expect(abs(Double(gpu.inPlaneAngle) - cs.angle) < 2e-6, "\(key) \(k) angle versus the pin")
+                worst = max(worst, same(gpu, cpu, "\(key) case \(k)"))   // no ties allowed on the pins
+                cases += 1
+            }
+        }
+        print("ACOM Metal versus CPU on the app-route pins: \(cases) patterns, worst score gap \(worst)")
+    }
+
+    @Test func metalScanEqualsCPUAcrossBatchesSelectionsAndEmptyPatterns() throws {
+        let (matcher, lib) = try setup()
+        guard matcher.isMetalAvailable else { return }
+        let (w, h) = (13, 12)   // 156 positions: three GPU batches of at most 64
+        let peaks = scan(lib, width: w, height: h)
+        var worst: Float = 0
+        let ties = LockedBox(0)
+        for selection in [ACOMScanSelection.full, .preview(maxDimension: 5), .square(centerX: 6, centerY: 5, radius: 2)] {
+            let cpu = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64,
+                                                     invAngstromPerPixel: 0.004, selection: selection, backend: .cpu))
+            let gpu = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64,
+                                                     invAngstromPerPixel: 0.004, selection: selection, maxWorkers: 3, backend: .metal))
+            #expect(gpu.width == w && gpu.height == h && gpu.templateCount == lib.count)
+            for i in cpu.results.indices { worst = max(worst, same(gpu.results[i], cpu.results[i], "\(selection) position \(i)", tiesAllowed: ties)) }
+            if selection == .full {
+                #expect(cpu.results.contains { $0.templateIndex < 0 } && cpu.results.contains { $0.mirrored } && cpu.results.contains { !$0.mirrored && $0.templateIndex >= 0 })
+            }
+        }
+        print("ACOM Metal versus CPU scan (156 positions, three selections): worst score gap \(worst), ties within rounding \(ties.value)")
+        #expect(ties.value <= 3, "ties are the exception, not the rule: \(ties.value)")
+    }
+
+    @Test func metalProgressCancellationAndRefusals() throws {
+        let (matcher, lib) = try setup()
+        guard matcher.isMetalAvailable else { return }
+        let peaks = scan(lib, width: 9, height: 9)
+        let seen = LockedBox<[Double]>([])
+        let r = matcher.matchAll(peaks: peaks, width: 9, height: 9, originX: 64, originY: 64, invAngstromPerPixel: 0.004,
+                                 backend: .metal, progress: { f in seen.update { $0.append(f) } })
+        #expect(r != nil && seen.value.last == 1 && zip(seen.value, seen.value.dropFirst()).allSatisfy { $0 <= $1 } && seen.value.allSatisfy { $0 <= 1 })
+        #expect(matcher.matchAll(peaks: peaks, width: 9, height: 9, originX: 64, originY: 64, backend: .metal,
+                                 isCancelled: { true }) == nil)
+        let calls = LockedBox(0)
+        #expect(matcher.matchAll(peaks: peaks, width: 9, height: 9, originX: 64, originY: 64, backend: .metal,
+                                 isCancelled: { calls.update { $0 += 1 }; return calls.value > 3 }) == nil)
+        #expect(matcher.matchAll(peaks: peaks, width: 9, height: 8, originX: 64, originY: 64, backend: .metal) == nil)
+        #expect(matcher.matchAll(peaks: peaks, width: 9, height: 9, originX: 64, originY: 64,
+                                 selection: .square(centerX: 99, centerY: 99, radius: 1), backend: .metal) == nil)
+    }
+
+    @Test func cpuStaysTheDefaultAndTheBackendCasesAreStable() throws {
+        #expect(ACOMBackend.allCases == [.cpu, .metal])
+        let (matcher, lib) = try setup()
+        let peaks = scan(lib, width: 4, height: 3)
+        let implicit = try #require(matcher.matchAll(peaks: peaks, width: 4, height: 3, originX: 64, originY: 64, invAngstromPerPixel: 0.004))
+        let explicit = try #require(matcher.matchAll(peaks: peaks, width: 4, height: 3, originX: 64, originY: 64, invAngstromPerPixel: 0.004, backend: .cpu))
+        #expect(implicit.results == explicit.results)
+    }
+}
+
 private final class LockedBox<T: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var stored: T

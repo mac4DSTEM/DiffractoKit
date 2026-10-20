@@ -9,7 +9,7 @@
 //  The peak of corr over Δφ is the in-plane angle, its height the score. A second pass on the unconjugated product correlates
 //  the azimuth-reversed image, covering the mirror half of the proper-rotation zone that the sampled zone does not reach
 //  (py4DSTEM `inversion_symmetry`, `Orientation.mirror`). The scan loop, selection, progress and cancellation are in ACOMScan.swift; the
-//  apps' Metal backend is not here.
+//  Metal option (`ACOMBackend.metal`) is in ACOMMetal.swift; the CPU path in this file is the reference.
 //
 
 import Foundation
@@ -160,7 +160,7 @@ public struct ACOMMatcher: Sendable {
         return (bestTemplate, Int(bins[bestTemplate]), best, second)
     }
 
-    private func makeResult(bestTemplate: Int, bestBin: Int, bestScore: Float, secondScore: Float, mirrored: Bool)
+    func makeResult(bestTemplate: Int, bestBin: Int, bestScore: Float, secondScore: Float, mirrored: Bool)
         -> OrientationResult {
         let na = library.geometry.nAzimuthal
         // The correlation peaks at −θ; negate to report the pattern rotation. A mirrored match carries py4DSTEM's extra half

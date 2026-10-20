@@ -9,6 +9,27 @@ Orientation symmetry beyond the three app classes, pinned to orix; the py4DSTEM 
 Materials Project models and the phase model that the two apps carry.
 
 ### Added
+- The second `-3m` frame. `ThreeBarMSetting` (`.threeBarOneM` = -31m, twofolds between the axes, the default and the kit's original setting;
+  `.threeBarMOne` = -3m1, twofolds on a, b and -(a+b): P-3m1, P-3c1, R-3m and R-3c in hexagonal axes), `CrystalOrientationSymmetry(laueClass:setting:)`
+  and `.threeBarMSetting`, `PhaseModel.orientationSymmetry(of:)` (the class and, for -3m, the setting the structure has), `PhaseModel.orientationSetting`
+  (and an `orientationSetting:` initialiser parameter). `PhaseModel.orientationClass(of:)` now names -3m for P-3m1 and R-3m too: all
+  15 pinned space groups are in a standard setting (13 before). The orix IPF key (frame: the identity for -3m1, Rz(-30 degrees) for -31m),
+  `reduce`, `disorientation`, `reduceDirection` and the py4DSTEM family work in both. Pinned: the operators equal the proper part of pymatgen / spglib's
+  point-group operations of space groups 162 to 167 (gap 0, fractional matrices exact), orix `D3d` (RGB 2.98e-8; reduce and pair angles
+  as the other classes). A rhombohedral-axes R-3m cell is still nil (not a standard setting).
+- `Py4DSTEMOperatorOrder` and `py4DSTEMDirectionFamily(_:order:)`: `.pymatgen` (the new default) scans the operators in the order a real py4DSTEM
+  `Crystal` has them (pymatgen's `get_point_group_operations()`); `.sortedFractional` is the 0.6.0 harness order. Pinned on 57 real
+  py4DSTEM `Crystal`s (12 class/setting entries, centrosymmetric space groups, 8 607 matrices): family entries within 1e-12 (measured 4.4e-16). The harness
+  order disagreed with real crystals for 2/m and -3m (-31m) on 139 and 136 of 151 matrices (the fallback operator of a direction no operator
+  brings into the sector is the first one, the twofold in the sorted list and the identity in a real crystal's); every other class agrees either way on the pins. Space groups of one class that list the operators in another order (origin choice 2, some centred groups)
+  gave identical families on every pinned matrix.
+- `ACOMBackend` (`.cpu`, the default and the reference; `.metal`), `matchAll(..., backend:)` and `ACOMMatcher.isMetalAvailable`: the template correlation
+  and the inverse-angle search on the GPU through Metal, the polar image and forward ring FFTs, the winner/runner-up choice and the symmetry reduction
+  on the CPU with the reference's own code. The shader is compiled at run time (no Metal build step; the package builds unchanged where Metal is
+  unused, and `.metal` returns nil there). Against the CPU: scores within 1e-6 absolute (measured 3.0e-7), template, in-plane angle, mirror flag
+  and Euler angles identical on the app-route pins (14 patterns, margins > 1e-4); on a 156-position synthetic scan two positions took the other pass at a tie
+  within rounding (both passes score alike on a mirror-symmetric pattern), counted in the test. About 1.3 times the speed of 8 CPU workers on a 64 x 64 scan at machine load 14
+  (`tools/acom-benchmark`; the CPU forward FFTs dominate what is left).
 - `IPFColorKey.orix`: orix 0.15.0's `DirectionColorKeyTSL` (the EDAX/TSL key as in MTEX) for all eleven Laue classes, in the kit's
   standard settings. `IPFColorKey.native` now has a key for every class: the app's own m-3m, 6/mmm and b-unique 2/m keys
   are unchanged (pinned to their Float bits), and the other eight classes use the orix key. Measured against orix on 2 777
@@ -32,15 +53,24 @@ Materials Project models and the phase model that the two apps carry.
   FNV-1a content fingerprint (recomputed independently), built-in models by id, and `PhaseModel(materialsProject:fetchedAt:)`.
   `PhaseModel.orientationClass(of:)` generalises the apps' cubic / hexagonal / monoclinic test to the eleven classes: a class is
   named only when the structure's own Laue operators in its cell are the class's standard operators (agrees with spglib's Laue class
-  on 13 of 15 pinned space groups and returns nil for the other two: the -3m1 groups P-3m1 and R-3m in hexagonal axes, twofolds on a).
+  on all 15 pinned space groups; it first returned nil for the two -3m1 groups, P-3m1 and R-3m in hexagonal axes, twofolds on a, which the second -3m frame above now covers).
 - `tools/orix/` (provision script, `ipf-pins.py`, `disorientation-pins.py`), `tools/symmetry/family-pins.py`, `tools/presets/pins.py`;
   consumer-check 690 checks (was 666).
 
+- `reduceDirection` and `sampleFundamentalZone` cross-checked against orix 0.15.0 (`Vector3d.in_fundamental_sector`, orix's Laue groups) for all eleven classes
+  and both -3m settings: 3 765 poles, the reduced pole is in the orbit of the input and of orix's folded pole (1.1e-15) and every orbit member reduces to
+  the same pole (9e-16); samples lie in the zone, are pairwise inequivalent, and their covering radii are recorded (`docs/orientation-symmetry.md`). No change to the kit was needed.
+- consumer-check: 710 checks (was 690) and negative controls for the 0.6.0 DiffractoOrientation symbols (the controls file had none for them).
+
 ### Changed
-- `PhaseModel.provenance` adds `laue_class`; it does not carry the app's `validation: none` / monoclinic note for 2/m (an app policy label; the app keeps adding it).
+- `py4DSTEMDirectionFamily(_:)` (unreleased 0.6.0 API, first added above) scans a real crystal's operator order by default; pass `order: .sortedFractional` for the harness order.
+- `PhaseModel.provenance` adds `laue_class` and, for -3m, `laue_setting`; it does not carry the app's `validation: none` / monoclinic note for 2/m (an app policy label; the app keeps adding it).
 - `OrientationSymmetryError.nativeKeyUnavailable` is no longer thrown (kept so `switch` statements compile).
 
 ### Migration
+- `CrystalOrientationSymmetry(laueClass: .threeBarM)` is unchanged (-31m). A -3m1 structure (P-3m1, R-3m) now has a class from `PhaseModel.orientationClass(of:)`: build the
+  symmetry with `PhaseModel.orientationSymmetry(of:)` (or `CrystalOrientationSymmetry(laueClass: .threeBarM, setting: .threeBarMOne)`) so its operators and colour
+  key are the structure's; a consumer that built `CrystalOrientationSymmetry(laueClass: model.orientationClass!)` for a -3m1 model gets the -31m operators, which are wrong for that cell. `PhaseModel.orientationSymmetry` does it right.
 - `IPFColorKey` has a new case, `.orix`: an exhaustive `switch` over it needs one more case.
 - `ipfColor(direction:key: .native)` for a class other than m-3m, 6/mmm and 2/m no longer throws `nativeKeyUnavailable`; it returns
   the orix colour. A consumer that treated the refusal as "no key" now gets a key.

@@ -2,8 +2,12 @@
 
 `CrystalOrientationSymmetry(laueClass:)` supports every `LaueClass`. Its operators are proper rotations in a standard
 Cartesian frame: monoclinic b is y; tetragonal c is z; trigonal/hexagonal a is x, c is z and b is at 120° to a. The
-trigonal -3m setting is pymatgen's standard hexagonal setting. A cell in a different setting must first be transformed
-into this frame. This constructor does not infer a setting from a cell or from its atoms.
+trigonal -3m has two settings in hexagonal axes, chosen with `CrystalOrientationSymmetry(laueClass: .threeBarM, setting:)`
+(`ThreeBarMSetting`): `.threeBarOneM` (-31m: P-31m, P-31c; twofolds perpendicular to a, at -30, 30 and 90 degrees from x; pymatgen's
+`PointGroup("-3m")`; the default) and `.threeBarMOne` (-3m1: P-3m1, P-3c1, R-3m and R-3c in hexagonal axes; twofolds on a, b and -(a+b),
+at 0, 60 and 120 degrees; orix's `D3d`). A cell in another setting must first be transformed into one of these frames
+(a rhombohedral-axes R-3m cell is not covered). This constructor does not infer a setting from a cell or from its atoms;
+`PhaseModel.orientationSymmetry(of:)` does.
 
 | Laue class | Proper subgroup order | Generators (fractional for hexagonal axes) |
 |---|---:|---|
@@ -44,6 +48,16 @@ samplers preserve their seeds, candidate counts and arithmetic. Other classes se
 use at least 192 candidates or 16 per requested point. This is a deterministic coverage policy, not py4DSTEM's angular
 sampling grid or a claim of optimal covering radius. Counts outside 0...4096 throw before allocation.
 
+Both are cross-checked against orix 0.15.0 (`tools/orix/direction-pins.py`, `OrixDirectionTests`): the kit's zone is not orix's (orix's
+`fundamental_sector` is a different representative region), so the comparison is of orbits under orix's own Laue group in the kit frame. On
+3 765 poles (300 seeded random and 20 designed per class, twelve class/setting entries) the reduced pole lies in the orbit of the input and of orix's
+folded pole (worst gap 1.1e-15), and every member of an orbit reduces to the same pole (9e-16), so the kit's zone holds exactly one pole per
+orbit. Sampled poles lie in the zone, no two are equivalent under orix's group, and the covering radius over 1 500 Fibonacci probe poles
+(radians, counts 1 / 3 / 8 / 16 / 64) is: -1 1.570 / 0.950 / 0.858 / 0.499 / 0.266; 2/m 1.571 / 0.950 / 0.587 / 0.368 / 0.187; mmm 1.570 / 0.950 / 0.473 / 0.335 / 0.133;
+4/m 1.570 / 0.669 / 0.465 / 0.319 / 0.134; 4/mmm 1.570 / 0.656 / 0.320 / 0.241 / 0.096; -3 1.570 / 0.800 / 0.418 / 0.312 / 0.152; -31m 1.570 / 0.800 / 0.380 / 0.256 / 0.104;
+-3m1 1.570 / 0.800 / 0.339 / 0.229 / 0.110; 6/m 1.570 / 0.800 / 0.321 / 0.232 / 0.106; 6/mmm 1.570 / 0.800 / 0.266 / 0.191 / 0.083; m-3 0.950 / 0.476 / 0.307 / 0.169 / 0.080;
+m-3m 0.950 / 0.480 / 0.183 / 0.128 / 0.059 (a deterministic coverage policy, not an optimum). No change was needed.
+
 ## Three keys with different input contracts
 
 All keys return RGB as `SIMD3<Float>`, without UI or a map container. The convention must be selected explicitly.
@@ -76,10 +90,11 @@ setting:
 | Laue class | orix setting | `frame` (orix to kit) |
 |---|---|---|
 | 2/m | twofold on z (c unique) | cyclic: kit (x, y, z) = orix (Y, Z, X), so the kit's b axis is orix's z |
-| -3m | twofolds on x, 60 degrees apart | Rz(-30 degrees): the kit's pymatgen setting has its twofolds at -30, 30 and 90 degrees |
+| -3m (-31m) | twofolds on x, 60 degrees apart | Rz(-30 degrees): the kit's pymatgen setting has its twofolds at -30, 30 and 90 degrees |
+| -3m (-3m1) | the same | identity: the twofolds already lie on a, b and -(a+b) |
 | all others | the same | identity |
 
-Two frames are equally valid for -3m (Rz(-30) and Rz(+30) differ by Rz(60), which is not in the group) and for 2/m (any
+Two frames are equally valid for -31m (Rz(-30) and Rz(+30) differ by Rz(60), which is not in the group) and for 2/m (any
 rotation about b); they give the same colour wheel mirrored. The choices above are fixed and pinned; a consumer that uses
 another setting must transform the pole first.
 
@@ -102,16 +117,23 @@ needed no change. Notes from the comparison:
 
 ## py4DSTEM direction families
 
-`py4DSTEMDirectionFamily(_:)` (0.6.0) is py4DSTEM f050d207's `Crystal.symmetry_reduce_directions`, returning `Orientation.family`:
+`py4DSTEMDirectionFamily(_:order:)` (0.6.0) is py4DSTEM f050d207's `Crystal.symmetry_reduce_directions`, returning `Orientation.family`:
 each column of the matrix is folded independently by the first symmetry operator that puts it inside the class's automatic
 orientation-plan sector (all three barycentric coordinates `>= 0`), so the result is **not** a rotation and is not the
 minimum-angle matrix. Quirks are kept: a column no operator maps into the sector keeps the first operator (-1, 2/m and -3m, whose
 automatic sector is not a fundamental domain, return it for part of the sphere), the first qualifying operator wins, and -3
 tests its operators twice, the second copy against the sector with its first vertex negated (py4DSTEM's 180 degree fibre
-case). The operator list is the pin harness's: the proper operators sorted by their fractional matrices, then their
-negatives. A real py4DSTEM crystal lists its point group's operators in pymatgen's order, so where several operators qualify
-the choice can differ (-3m: 336 of 651 pinned columns had several qualifying operators and the sorted list agrees with the
-harness on all of them). Pinned (`tools/symmetry/family-pins.py` runs the real function; `Py4DSTEMFamilyTests`): 2 387
+case). The operator list is selected with `order:`. `.pymatgen` (the default) is a real py4DSTEM crystal's: `Crystal.orientation_plan` takes the full Laue group from
+`SpacegroupAnalyzer(structure).get_point_group_operations()` (pymatgen's order, identity first, duplicates removed; transposed to
+`lat_inv.T @ R.T @ lat_real`), twice over for -3. The kit ships the order of the first space group of each class (P-1, P2/m, Pmmm, P4/m,
+P4/mmm, P-3, P-31m for -31m, P-3m1 for -3m1, P6/m, P6/mmm, Pm-3, Pm-3m) as a generated table (`PymatgenOperatorTable.swift`,
+`tools/symmetry/family-real-pins.py`); other space groups of a class that list the operators differently (Fddd; the origin-choice-2 groups of 4/m, 4/mmm,
+m-3, m-3m) gave identical families on all pinned matrices. `.sortedFractional` is the pin harness's: the proper operators sorted by their fractional
+matrices, then their negatives. They differ in the fallback operator, which is the first one: for 2/m and -3m (-31m) a column that no
+operator maps into the automatic sector (which is not a fundamental domain there) keeps the first, a twofold in the sorted list and the identity in a real crystal's.
+Pinned on real crystals (57 `Crystal`s of centrosymmetric space groups, 8 607 matrices, `Py4DSTEMRealFamilyTests`): family entries within 4.4e-16, all twelve class/setting
+entries; against the same crystals the sorted order disagrees on 139 of 151 matrices for 2/m and 136 of 151 for -31m. Under the harness order, pinned
+(`tools/symmetry/family-pins.py` runs the real function; `Py4DSTEMFamilyTests`): 2 387
 matrices, all eleven classes, 7 161 columns, family entries identical (worst gap 0.0); 171 columns lying within 1e-12 of a
 sector wall (the identity's columns on the 6/m wall, for example) are not compared, because whether the exact `>= 0` test
 passes there is BLAS rounding noise in NumPy. For example, native cubic folding uses [001]-[101]-[111], while the automatic
@@ -121,10 +143,10 @@ Python sector uses [001]-[011]-[111].
 
 `PhaseModel.orientationClass(of:)` (0.6.0, `DiffractoOrientation`) names the Laue class the reduction can use for a structure:
 the class detected from the atoms, when the structure's own proper Laue operators in its cell basis are exactly the class's
-standard operators. It agrees with spglib's Laue class for 13 of 15 pinned space groups (-1 to m-3m) and returns nil for the other two;
-the two groups it returns nil for are the -3m1 type whose twofolds lie on a (P-3m1 and R-3m in hexagonal axes), because the
-kit's -3m setting has them on a-b (P-31m). A -3m1 structure therefore has no fundamental zone yet; transforming its cell is
-future work.
+standard operators in one of its settings. It agrees with spglib's Laue class for all 15 pinned space groups (-1 to m-3m). For -3m the
+structure's setting is named too: `PhaseModel.orientationSymmetry(of:)` returns the `CrystalOrientationSymmetry` with the setting
+(-31m for P-31m and P-31c, -3m1 for P-3m1, P-3c1, R-3m and R-3c in hexagonal axes, pinned to pymatgen / spglib's operations of space groups 162 to 167 in
+`TrigonalSettingTests`); a rhombohedral-axes cell or a primitive cell of a centred lattice still returns nil.
 
 The py4DSTEM key's automatic-sector inverse matrices are a small generated table from the executed pinned plan parser.
 The monoclinic default sector is [001], [010], [100]; NNLS of its positive/negative Cartesian basis is exactly the positive

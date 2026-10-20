@@ -60,8 +60,8 @@ struct Py4DSTEMRealFamilyTests {
             let s = try #require(pinnedSymmetry(crystal.class))
             for k in crystal.cases where try gap(s, k, .sortedFractional) >= 1e-12 { bad[crystal.class, default: 0] += 1 }
         }
-        #expect(bad["2/m", default: 0] > 100 && bad["-3m", default: 0] > 100, "\(bad)")
-        #expect(bad["-3m1", default: 0] == 0 && bad["-1"] == nil && bad["m-3m"] == nil, "\(bad)")
+        #expect(bad["2/m", default: 0] == 139 && bad["-3m", default: 0] == 136, "\(bad)")
+        #expect(Set(bad.keys) == ["2/m", "-3m"], "every other class agrees under both orders: \(bad)")
         print("PY4DSTEM harness order versus real crystals, mismatching matrices of 151: \(bad.sorted { $0.key < $1.key })")
     }
 }

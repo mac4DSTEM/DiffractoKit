@@ -51,6 +51,7 @@ JOBS = os.environ.get("CONSUMER_CHECK_JOBS", "")
 CORE = "Sources/DiffractoCore/"
 SCAT = "Sources/DiffractoScattering/"
 GEO = "Sources/DiffractoGeometry/"
+ORI = "Sources/DiffractoOrientation/"
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 WITNESS = r"must be declared public because it matches a requirement in public protocol"
 DEFAULT_ARGUMENT = r"static property 'default' is package and cannot be referenced from a default argument value|is package and cannot be referenced from a default argument value"
@@ -109,6 +110,13 @@ ZA = GEO + "ZoneAxis.swift"
 DP = GEO + "DiffractionPattern.swift"
 EC = GEO + "EllipseCalibration.swift"
 ET = GEO + "EllipseTransform.swift"
+COS = ORI + "CrystalOrientationSymmetry.swift"
+PM = ORI + "PhaseModel.swift"
+PFAM = ORI + "Py4DSTEMDirectionFamily.swift"
+ASCAN = ORI + "ACOMScan.swift"
+AMET = ORI + "ACOMMetal.swift"
+PRESETS = CORE + "CrystalPresets.swift"
+MP = CORE + "MaterialsProject.swift"
 
 # Each `old` occurs exactly once in its file (checked at run time, `--dry` checks without a build).
 CONTROLS = [
@@ -422,6 +430,30 @@ CONTROLS = [
     # RingIndexing's minimum margin; kinematicReflections (retainingAll:, policy:, validation:)
     library(RI, "RingIndexing.minimumMargin", "public static let minimumMargin: Double", DEFAULT_ARGUMENT),
     used(SF, "CrystalStructure.kinematicReflections(retainingAll:)", "public func kinematicReflections(kMax: Double, cut: Double"),
+    # ---- 0.6.0 DiffractoOrientation: the second -3m setting, the family operator order, the Metal backend (PhaseOrientationChecks,
+    #      ACOMChecks) and the symbols the earlier 0.6.0 checks name ------------------------------------------------------------
+    decl(COS, "ThreeBarMSetting", "public enum ThreeBarMSetting: String"),
+    access(COS, "CrystalOrientationSymmetry", "threeBarMSetting", "public let threeBarMSetting: ThreeBarMSetting?"),
+    used(COS, "CrystalOrientationSymmetry.init(laueClass:setting:)", "public init(laueClass: LaueClass, setting:"),
+    decl(COS, "IPFColorKey", "public enum IPFColorKey: Sendable"),
+    access(COS, "CrystalOrientationSymmetry", "ipfColor", "public func ipfColor(direction:"),
+    access(COS, "CrystalOrientationSymmetry", "disorientation", "public func disorientation(from a:"),
+    decl(PFAM, "Py4DSTEMOperatorOrder", "public enum Py4DSTEMOperatorOrder: Sendable"),
+    access(PFAM, "CrystalOrientationSymmetry", "py4DSTEMDirectionFamily", "public func py4DSTEMDirectionFamily("),
+    access(PM, "PhaseModel", "orientationSetting", "public let orientationSetting: ThreeBarMSetting?"),
+    # also an instance property of the same name: with the static function package the call resolves to the property
+    used(PM, "PhaseModel.orientationSymmetry(of:)", "public static func orientationSymmetry(of structure",
+         r"instance member 'orientationSymmetry' cannot be used on type 'PhaseModel'|inaccessible due to 'package' protection level"),
+    used(PM, "PhaseModel.orientationClass(of:)", "public static func orientationClass(of structure",
+         r"instance member 'orientationClass' cannot be used on type 'PhaseModel'|inaccessible due to 'package' protection level"),
+    decl(PM, "PhaseModelLibrary", "public enum PhaseModelLibrary {"),
+    access(PM, "PhaseModelLibrary", "model", "public static func model(id: String)"),
+    decl(ASCAN, "ACOMBackend", "public enum ACOMBackend: Sendable"),
+    used(ASCAN, "ACOMMatcher.matchAll(backend:)", "public func matchAll(peaks: [[ACOMPeak]]"),
+    access(AMET, "ACOMMatcher", "isMetalAvailable", "public var isMetalAvailable: Bool"),
+    decl(PRESETS, "CrystalPresets", "public enum CrystalPresets {"),
+    decl(MP, "MaterialsProjectImport", "public enum MaterialsProjectImport {"),
+    decl(MP, "MaterialsProjectDocument", "public struct MaterialsProjectDocument: Decodable"),
 ]
 
 # What cannot be reverted from `public` to `package`, and why (printed, not counted).

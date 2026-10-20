@@ -69,6 +69,17 @@ func runACOMChecks(_ report: inout Report) {
                                        selection: .preview(maxDimension: 2))
         r.equal("a preview copies the block corner over the block", preview?[1, 1] == preview?[0, 0], true)
         r.equal("the preview step fits the longer side", ACOMScanSelection.preview(maxDimension: 2).previewStep(width: 4, height: 3), 2)
+        let cpuScan = matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, invAngstromPerPixel: 0.01, backend: .cpu)
+        r.equal("the CPU backend is the default", cpuScan?.results == scan?.results, true)
+        if matcher.isMetalAvailable {
+            let gpu = matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, invAngstromPerPixel: 0.01,
+                                       maxWorkers: 2, backend: .metal)
+            r.equal("the Metal scan has one result per position", gpu?.results.count, 12)
+            r.equal("the Metal scan finds the same templates as the CPU",
+                    zip(gpu?.results ?? [], scan?.results ?? []).filter { $0.templateIndex != $1.templateIndex }.count <= 1, true)
+        } else {
+            r.check("Metal is unavailable: the Metal scan is nil", matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, backend: .metal) == nil)
+        }
         let empty = ACOMScanResults(width: 2, height: 2, templateCount: 0)
         r.equal("an empty map expands to itself", empty.expandedPreview(selection: .full) == empty, true)
     }

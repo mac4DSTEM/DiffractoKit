@@ -40,10 +40,10 @@ let peaks: [[ACOMPeak]] = (0..<(width * height)).map { i in
 let meanPeaks = Double(peaks.reduce(0) { $0 + $1.count }) / Double(peaks.count)
 print("scan: \(width) x \(height) = \(width * height) patterns, \(String(format: "%.1f", meanPeaks)) peaks each, cores: \(ProcessInfo.processInfo.activeProcessorCount)")
 
-@MainActor func run(_ label: String, workers: Int?, cancel: (@Sendable () -> Bool)? = nil) {
+@MainActor func run(_ label: String, workers: Int?, backend: ACOMBackend = .cpu, cancel: (@Sendable () -> Bool)? = nil) {
     t0 = now()
     let r = matcher.matchAll(peaks: peaks, width: width, height: height, originX: 128, originY: 128,
-                             invAngstromPerPixel: ipp, maxWorkers: workers, isCancelled: cancel)
+                             invAngstromPerPixel: ipp, maxWorkers: workers, backend: backend, isCancelled: cancel)
     let dt = now() - t0
     precondition(r != nil)
     let per = dt / Double(width * height) * 1000
@@ -55,3 +55,9 @@ run("2 workers", workers: 2)
 run("4 workers", workers: 4)
 run("8 workers", workers: 8)
 run("8 workers + cancel poll", workers: 8, cancel: { false })
+if matcher.isMetalAvailable {
+    run("Metal, 8 prep workers", workers: 8, backend: .metal)
+    run("Metal, 4 prep workers", workers: 4, backend: .metal)
+} else {
+    print("Metal: not available on this machine")
+}

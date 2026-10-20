@@ -98,6 +98,17 @@ public struct ACOMScanResults: Sendable, Equatable {
     }
 }
 
+/// Where `ACOMMatcher.matchAll` computes the template correlations.
+public enum ACOMBackend: Sendable, Equatable, CaseIterable {
+    /// The reference: each position is exactly `ACOMMatcher.match`, on worker threads. The default.
+    case cpu
+    /// The correlation and the inverse-angle search on the GPU through Metal (``ACOMMatcher/isMetalAvailable``); the polar
+    /// image and the forward ring FFTs stay on the CPU, and the winner, runner-up and symmetry reduction are the CPU's code.
+    /// Scores equal the CPU path within Float32 rounding and the chosen template, bin and mirror flag are identical
+    /// except where two candidates tie within that rounding; the tolerance is in `docs/parity.md` (P31).
+    case metal
+}
+
 extension ACOMMatcher {
     /// Matches a scan of patterns on worker threads.
     ///
@@ -109,13 +120,15 @@ extension ACOMMatcher {
     ///   - selection: the positions to match; the others stay empty (`preview` is expanded over its blocks).
     ///   - maxWorkers: the most threads used, at least 1; nil uses the active processor count. The positions are dealt to the
     ///     workers round-robin, so a spatially uneven peak count does not leave one worker with the slow rows.
-    ///   - isCancelled: polled before every position; once it returns true no further position is started.
-    ///   - progress: called from worker threads with the fraction of the selected positions done, in 1 % batches, ending at 1.
+    ///   - backend: `.cpu` (default, the reference) or `.metal`. `.metal` uses `maxWorkers` for the CPU preparation of each batch
+    ///     and returns nil when Metal is unavailable (``isMetalAvailable``) or a GPU step fails.
+    ///   - isCancelled: polled before every position (every batch with Metal); once it returns true no further position is started.
+    ///   - progress: called from worker threads with the fraction of the selected positions done, in 1 % batches, ending at 1 (with Metal: from the calling thread, once per GPU batch).
     /// - Returns: nil when `peaks.count != width * height`, the selection is empty, or the run was cancelled. A cancelled
     ///   run returns nil even if every position had finished by the time it was noticed.
     public func matchAll(peaks: [[ACOMPeak]], width: Int, height: Int,
                          originX: Float, originY: Float, invAngstromPerPixel: Double = 1,
-                         selection: ACOMScanSelection = .full, maxWorkers: Int? = nil,
+                         selection: ACOMScanSelection = .full, maxWorkers: Int? = nil, backend: ACOMBackend = .cpu,
                          isCancelled: (@Sendable () -> Bool)? = nil,
                          progress: (@Sendable (Double) -> Void)? = nil) -> ACOMScanResults? {
         guard width > 0, height > 0, peaks.count == width * height else { return nil }
@@ -123,6 +136,14 @@ extension ACOMMatcher {
         let selected = selection.sourceIndices(width: width, height: height)
         guard !selected.isEmpty else { return nil }
 
+        if backend == .metal {
+            guard let matched = matchSelectedWithMetal(peaks: peaks, selected: selected, originX: originX, originY: originY,
+                                                      invAngstromPerPixel: invAngstromPerPixel, maxWorkers: maxWorkers,
+                                                      isCancelled: isCancelled, progress: progress) else { return nil }
+            var map = ACOMScanResults(width: width, height: height, templateCount: library.count)
+            for (k, source) in selected.enumerated() { map.results[source] = matched[k] }
+            return map.expandedPreview(selection: selection)
+        }
         let counter = Progress(total: selected.count)
         let workers = max(1, min(maxWorkers ?? ProcessInfo.processInfo.activeProcessorCount, selected.count))
         let batch = max(1, selected.count / (workers * 100))
