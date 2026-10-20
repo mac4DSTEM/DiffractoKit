@@ -239,6 +239,7 @@ runConventionalChecks(&report)
 runPolicyChecks(&report)
 runACOMChecks(&report)
 runMacTEMPiecesChecks(&report)
+runPhaseOrientationChecks(&report)
 
 exit(report.finish())
 

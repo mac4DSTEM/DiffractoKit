@@ -3,6 +3,51 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## Unreleased (proposed 0.6.0)
+
+Orientation symmetry beyond the three app classes, pinned to orix; the py4DSTEM direction families; the preset crystals, the
+Materials Project models and the phase model that the two apps carry.
+
+### Added
+- `IPFColorKey.orix`: orix 0.15.0's `DirectionColorKeyTSL` (the EDAX/TSL key as in MTEX) for all eleven Laue classes, in the kit's
+  standard settings. `IPFColorKey.native` now has a key for every class: the app's own m-3m, 6/mmm and b-unique 2/m keys
+  are unchanged (pinned to their Float bits), and the other eight classes use the orix key. Measured against orix on 2 777
+  poles: worst RGB gap 2.98e-8 (Float rounding). The app's native keys versus orix: m-3m 3.5e-6, 6/mmm 0.30, 2/m 1.0 (different
+  conventions for the last two). 2/m and -3m are mapped from orix's settings by a fixed frame (`docs/orientation-symmetry.md`).
+- `CrystalOrientationSymmetry.disorientation(from:to:)`: the smallest angle between two orientations of one crystal (Double
+  radians) with the reduced matrix. `reduce(_:)` and the pair angle were cross-checked against orix 0.15.0 for all eleven
+  classes on seeded random orientations and pairs: Float angle within 1.19e-7 rad, reduced matrix within 6.7e-16, pair angle within
+  1.4e-14 rad. **No change to the reduction was needed.**
+- `CrystalOrientationSymmetry.py4DSTEMDirectionFamily(_:)`: py4DSTEM f050d207's `symmetry_reduce_directions` (`Orientation.family`),
+  all eleven classes, bit identical to the real function on 7 161 pinned columns (171 columns on a sector wall are not compared). It
+  returns families, not a rotation; `reduce` is still the minimum-angle rotation.
+- `CrystalPresets` (DiffractoCore): fcc, bcc, simple cubic, diamond, hcp and the cubic families; Au, Al, Ni, Cu, Fe, Si, Mg at the
+  apps' lattice constants; beta'' (Mg5Si6, C2/m) and 2H-WS2 from their literature refinements. Pinned to independent pymatgen
+  `Structure.from_spacegroup` expansions and spglib (volume and d 4e-16 relative, sites 3e-11, Laue class and operation count exact).
+- `MaterialsProjectSummaryResponse` and the other wire types, `MaterialsProjectImport` (`request`, `decode`, `firstDocument`,
+  `structure(from:)`, `check`, `parseFormula`, `Failure`), `PhaseExpectation`, `PhaseExpectationVerdict` (DiffractoCore): the
+  apps' Materials Project JSON models and verdicts on the kit's `CellStandardisation`; no network access.
+- `PhaseModel`, `PhaseModelLibrary`, `PhaseModelSource`, `PhaseModelIssue` (DiffractoOrientation): the apps' `CrystalModel` checks
+  (cell, basis, occupancy, close contacts, `unsupported_element`, a declared symmetry the cell does not have), provenance and the
+  FNV-1a content fingerprint (recomputed independently), built-in models by id, and `PhaseModel(materialsProject:fetchedAt:)`.
+  `PhaseModel.orientationClass(of:)` generalises the apps' cubic / hexagonal / monoclinic test to the eleven classes: a class is
+  named only when the structure's own Laue operators in its cell are the class's standard operators (agrees with spglib's Laue class
+  on 15 space groups). The -3m1 groups (P-3m1, R-3m in hexagonal axes: twofolds on a) return nil.
+- `tools/orix/` (provision script, `ipf-pins.py`, `disorientation-pins.py`), `tools/symmetry/family-pins.py`, `tools/presets/pins.py`;
+  consumer-check 693 checks (was 666).
+
+### Changed
+- `OrientationSymmetryError.nativeKeyUnavailable` is no longer thrown (kept so `switch` statements compile).
+
+### Migration
+- `IPFColorKey` has a new case, `.orix`: an exhaustive `switch` over it needs one more case.
+- `ipfColor(direction:key: .native)` for a class other than m-3m, 6/mmm and 2/m no longer throws `nativeKeyUnavailable`; it returns
+  the orix colour. A consumer that treated the refusal as "no key" now gets a key.
+- Nothing else changes: no existing number moves. mac4DSTEM and macTEM may drop their own `Crystal` presets, `ReferenceStructures`,
+  `CrystalModel` checks and `MaterialsProjectImport` wire types for the kit's (their `ACOMCrystalSymmetry` family becomes
+  `PhaseModel.orientationClass`; the apps' `.identity` is `nil`, and the kit also reduces tetragonal, orthorhombic, cubic m-3, trigonal
+  and 6/m cells that the apps called unreduced).
+
 ## 0.5.0 (2026-10-20)
 
 ACOM matching over a whole scan, so the apps can drop their own scan loop (mac4DSTEM `OrientationMatching.matchAll`, CPU path).

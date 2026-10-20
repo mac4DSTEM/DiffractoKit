@@ -24,7 +24,8 @@ into this frame. This constructor does not infer a setting from a cell or from i
 comparison breaks ties, ignoring component differences up to 1e-13. Near a half-turn (`|w| < 1e-14`), the first imaginary
 component whose magnitude exceeds 1e-14 fixes the sign. Otherwise w is nonnegative. This is the minimum-angle
 orix/MTEX convention; orix/MTEX themselves are not executed as oracles here. The fixture independently minimizes over
-pymatgen's operation sets with SciPy quaternions. The diagnostic angle is Float radians.
+pymatgen's operation sets with SciPy quaternions, and (0.6.0) orix 0.15.0's `Orientation.reduce()` and `angle_with` agree with it for
+all eleven classes (see "Disorientation" below). The diagnostic angle is Float radians.
 
 ```swift
 import DiffractoCore
@@ -43,23 +44,87 @@ samplers preserve their seeds, candidate counts and arithmetic. Other classes se
 use at least 192 candidates or 16 per requested point. This is a deterministic coverage policy, not py4DSTEM's angular
 sampling grid or a claim of optimal covering radius. Counts outside 0...4096 throw before allocation.
 
-## Two keys with different input contracts
+## Three keys with different input contracts
 
-Both keys return RGB as `SIMD3<Float>`, without UI or a map container. The convention must be selected explicitly.
+All keys return RGB as `SIMD3<Float>`, without UI or a map container. The convention must be selected explicitly.
 
-- `.native` accepts the original Cartesian pole and folds it. It preserves the app's current **own convention** for
-  m-3m (TSL-style equalized spherical key), 6/mmm (square-root triangular key), and b-unique 2/m (HSV disk). It does
-  not claim numerical parity with orix or py4DSTEM. The other eight classes throw `nativeKeyUnavailable(laueClass)`.
+- `.native` accepts the original Cartesian pole and folds it. For m-3m (TSL-style equalized spherical key), 6/mmm
+  (square-root triangular key) and b-unique 2/m (HSV disk) it preserves the app's current **own convention**, pinned to the
+  app's Float bits. For the other eight classes (0.6.0) it is the orix key below, so every class has a native key and
+  `nativeKeyUnavailable` is no longer thrown (the case remains so exhaustive `switch` statements compile).
+- `.orix` (0.6.0) accepts the original Cartesian pole and colours it with orix 0.15.0's `DirectionColorKeyTSL` (the EDAX/TSL
+  key as implemented in MTEX) for **all eleven** classes: the pole is folded into orix's `fundamental_sector` with
+  `Vector3d.in_fundamental_sector` (MTEX `project2FundamentalRegion`), then coloured by the polar coordinates about the
+  sector centre (the 1000-point corrected azimuth for three-vertex sectors, hue from azimuth, lightness `0.5 + polar/2`).
+  The sectors, the centres, orix's element order for ties and the frame below are a generated table
+  (`OrixIPFSectors.swift`, `tools/orix/ipf-pins.py`). Measured against orix on 2 777 poles (240 seeded signed random poles
+  per class plus the axes, sector vertices and centres, and points beside the vertices): worst RGB gap 2.98e-8, the Float
+  rounding (the test tolerance is 1e-7). The measured distance between the app's native keys and orix's is recorded by a
+  test: m-3m 3.5e-6 (the app's key is the same construction), 6/mmm 0.30 and 2/m 1.0 (different conventions).
 - `.py4DSTEM` accepts a pole already in py4DSTEM's `Orientation.family` for the class's **automatic plan sector**.
   The exception is 2/m: pass the **original matrix pole**, because `plot_orientation_maps` uses NNLS there. This key
   matches the full-mask (`mask = 1`) beam RGB from the pinned routine, converted to Float. No pole normalization is
   inserted: the Python clipping and maximum normalization are preserved. Correlation masks, rotated in-plane colours,
   custom plan sectors and plotting are not implemented. Negative sector weights clip to zero, as in Python.
 
-py4DSTEM's `symmetry_reduce_directions` is **not ported (returns families, not a rotation)**. It transforms the columns
-independently; its `family` array need not be orthonormal. Neither the minimum-angle matrix nor `reduceDirection` should
-be substituted for that array when reproducing a Python map. For example, native cubic folding uses [001]-[101]-[111],
-while the automatic Python sector uses [001]-[011]-[111].
+### orix frames
+
+orix has one setting per group and the kit's standard settings differ for two classes. The generator maps orix's group onto
+the kit's operators (asserted as sets for all eleven) with a rotation `frame`; the key is orix's, evaluated in the kit's
+setting:
+
+| Laue class | orix setting | `frame` (orix to kit) |
+|---|---|---|
+| 2/m | twofold on z (c unique) | cyclic: kit (x, y, z) = orix (Y, Z, X), so the kit's b axis is orix's z |
+| -3m | twofolds on x, 60 degrees apart | Rz(-30 degrees): the kit's pymatgen setting has its twofolds at -30, 30 and 90 degrees |
+| all others | the same | identity |
+
+Two frames are equally valid for -3m (Rz(-30) and Rz(+30) differ by Rz(60), which is not in the group) and for 2/m (any
+rotation about b); they give the same colour wheel mirrored. The choices above are fixed and pinned; a consumer that uses
+another setting must transform the pole first.
+
+## Disorientation
+
+`CrystalOrientationSymmetry.disorientation(from:to:)` (0.6.0) is the smallest rotation angle between two orientations of one
+crystal over their symmetry equivalents: with the py4DSTEM matrix convention of `reduce(_:)` (which is also orix's
+`Orientation` matrix: lab to crystal, symmetry on the left) the misorientation is `to * from^T` and the result is the
+minimum-angle `S * to * from^T`. Because `angle(S1 M S2)` equals `angle(M S2 S1)`, the two-sided reduction of orix's
+`Misorientation((sym, sym)).reduce()` and the one-sided one are the same angle. The cross-check against orix 0.15.0
+(`tools/orix/disorientation-pins.py`; 150 seeded random orientations, 10 designed ones (the identity and small, medium and large rotations) and 150 pairs per class, all eleven
+classes, `OrixDisorientationTests`): `reduce`'s Float angle within 1.19e-7 rad, the reduced matrix within 6.7e-16 wherever the
+minimum is unique (next-best angle more than 1e-6 rad away), the Double pair angle within 1.4e-14 rad. The kit's reduction
+needed no change. Notes from the comparison:
+
+- orix 0.15's `Quaternion.from_matrix` zeroes a small scalar part near a half-turn (an error of 1.3e-5 rad at
+  |w| = 7e-6); the pins take the quaternion from SciPy instead and require orix's own `to_matrix` to return the matrix.
+- The angle of a single orientation to the reference is not invariant under a relabelling of the crystal axes, so for 2/m and
+  -3m the pins relabel the lab axes together with the crystal's (`M_orix = frame^T M frame`); pairs need no such step.
+
+## py4DSTEM direction families
+
+`py4DSTEMDirectionFamily(_:)` (0.6.0) is py4DSTEM f050d207's `Crystal.symmetry_reduce_directions`, returning `Orientation.family`:
+each column of the matrix is folded independently by the first symmetry operator that puts it inside the class's automatic
+orientation-plan sector (all three barycentric coordinates `>= 0`), so the result is **not** a rotation and is not the
+minimum-angle matrix. Quirks are kept: a column no operator maps into the sector keeps the first operator (-1, 2/m and -3m, whose
+automatic sector is not a fundamental domain, return it for part of the sphere), the first qualifying operator wins, and -3
+tests its operators twice, the second copy against the sector with its first vertex negated (py4DSTEM's 180 degree fibre
+case). The operator list is the pin harness's: the proper operators sorted by their fractional matrices, then their
+negatives. A real py4DSTEM crystal lists its point group's operators in pymatgen's order, so where several operators qualify
+the choice can differ (-3m: 336 of 636 pinned columns had several qualifying operators and the sorted list agrees with the
+harness on all of them). Pinned (`tools/symmetry/family-pins.py` runs the real function; `Py4DSTEMFamilyTests`): 2 387
+matrices, all eleven classes, 7 161 columns, family entries identical (worst gap 0.0); 171 columns lying within 1e-12 of a
+sector wall (the identity's columns on the 6/m wall, for example) are not compared, because whether the exact `>= 0` test
+passes there is BLAS rounding noise in NumPy. For example, native cubic folding uses [001]-[101]-[111], while the automatic
+Python sector uses [001]-[011]-[111].
+
+## Orientation class of a structure
+
+`PhaseModel.orientationClass(of:)` (0.6.0, `DiffractoOrientation`) names the Laue class the reduction can use for a structure:
+the class detected from the atoms, when the structure's own proper Laue operators in its cell basis are exactly the class's
+standard operators. It agrees with spglib's Laue class for 15 pinned space groups (-1 to m-3m) wherever it returns a class;
+the two groups it returns nil for are the -3m1 type whose twofolds lie on a (P-3m1 and R-3m in hexagonal axes), because the
+kit's -3m setting has them on a-b (P-31m). A -3m1 structure therefore has no fundamental zone yet; transforming its cell is
+future work.
 
 The py4DSTEM key's automatic-sector inverse matrices are a small generated table from the executed pinned plan parser.
 The monoclinic default sector is [001], [010], [100]; NNLS of its positive/negative Cartesian basis is exactly the positive
@@ -76,7 +141,9 @@ From the worktree, with the existing pinned references (no installation or netwo
 swift test -c release --jobs 4
 ```
 
-`MACEM_SUITE_ROOT` can locate references from a differently placed checkout. `pins.py` invokes the pinned py4DSTEM
+The orix pins (`tools/orix/ipf-pins.py`, `tools/orix/disorientation-pins.py`) use the orix venv, provisioned by
+`tools/orix/provision-orix.sh` (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file beside the venv in
+`References/DiffractoKit/orix-venv-freeze.txt`); the direction-family pins use the py4DSTEM venv. `MACEM_SUITE_ROOT` can locate references from a differently placed checkout. `pins.py` invokes the pinned py4DSTEM
 interpreter and compiles only a `git show` extraction of the app's symmetry classes at c809679c into this worktree's
 `.build/symmetry-generator`. It does not build or modify the app. The JSON contains seed 20261016, package versions,
 source digests (including pymatgen symm_data.json), every proper group, random rotations, half-turn/boundary cases, original native Float colour bits and
