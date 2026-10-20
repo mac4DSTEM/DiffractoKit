@@ -20,7 +20,7 @@ says which parts come from where). Modules: `DiffractoCore` (slice 1), `Diffract
 - **mac4DSTEM and macTEM are read-only from here**: `git -C ../<repo> --no-optional-locks show <commit>:<path>`, never their
   working trees. Never build, test or write in them. The seeds of slice 1 were read at mac4DSTEM `7448401b` and macTEM `a58c84c`
   (their pushed heads on 2026-10-14 night); slices 2 and 3 at mac4DSTEM `7d6fdbd1` and macTEM `9482831`. The apps' code is
-  also compiled by `git show` into `.build/` for bit-for-bit parity (`tools/slice-2/apps-parity`, `tools/slice-3b/apps-parity`).
+  also compiled by `git show` into `.build/` for the apps-parity quick check (`tools/slice-2/apps-parity`, `tools/slice-3b/apps-parity`).
 - **Registration before code** for anything tier 1 (every number a scientist reads): `docs/registration-<slice>.md`, with the
   definitions, the pins, the planted truth, the gates and the planned mutants, committed before the first Swift line; a change
   after code starts is a dated amendment with its reason.
@@ -39,9 +39,15 @@ says which parts come from where). Modules: `DiffractoCore` (slice 1), `Diffract
   3b's sweep. Oracles run as `References/pymatgen-venv/bin/python
   -I -B`. An unpinned copy is never a reference. Agreement with pymatgen is agreement, not truth: truth is a closed form, a
   group-theory count or a cell content the file's formula states.
+- **Numerical testing policy (D12, Paul 2026-10-19):** readers, I/O, indices and metadata are tested exact. Numerics are
+  compared against the pinned Python reference within a tolerance written per function (`assert_allclose` style: about 1e-7
+  relative for float64, 1e-5 for float32), never widened to hide a bug. During an app-to-kit switch, bit for bit is only a
+  quick check that nothing moved by accident; if it fails, verify against the Python reference within tolerance and do not
+  block. A moved pinned number gets its own commit with the reason. The registration docs and consumer notes keep their dated
+  wording ("bit for bit") as history; D12 governs from 2026-10-19.
 - **Pins are generated before the Swift code** (`tools/slice-1/pins.py` writes `Tests/DiffractoCoreTests/Fixtures/
   slice-1-pins.json`); the Swift tests read the pins and the planted truth; a difference is a failure of the port, never a
-  tolerance to widen.
+  tolerance to widen (D12: the tolerance is the one written per function).
 - **Public API only, no app types.** Nothing an app needs is `package`; nothing here names `AppState`, `CrystalModel`,
   `ACOMCrystalSymmetry` or any other app type. `tools/consumer-check` is a separate package that depends on this one by path
   and compiles only while every symbol it names is `public`. Error messages never say "mac4DSTEM", "macTEM" or "ACOM".

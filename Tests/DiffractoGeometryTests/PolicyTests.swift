@@ -1,7 +1,7 @@
 //
 //  PolicyTests.swift
 //  DiffractoKit 0.2.0 (docs/registration-0.2.0.md §1, §2): the policies of DiffractoGeometry are parameters with the suite's
-//  values as defaults. Tier 2 (the default path is held bit for bit by the existing suite, EllipseAppsParityTests included):
+//  values as defaults. Tier 2 (the default path is held exact by the existing suite as a D12 quick check, EllipseAppsParityTests included):
 //  here a non-default value moves the outcome in the stated direction, and an invalid one is refused as documented.
 //  Every test names under "RED UNDER" the production mutation that turns it red (tools/kit-0.2.0/mutants-policy.py).
 //

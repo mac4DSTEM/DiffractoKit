@@ -344,13 +344,13 @@ struct ScatteringPinsTests {
         #expect(worst <= 1e-6, "\(name): worst relative difference \(worst) at \(worstAt)")
     }
 
-    // MARK: 4.4 the reference implementations, bit for bit (amendment 1)
+    // MARK: 4.4 the reference implementations, exact today (amendment 1; D12 allows a tolerance)
 
     /// The reference implementations' `Crystal.reflections(kMax:tolerance: 1e-4)` (reference commit 7d6fdbd1, -O): the kept sets equal, and per kept
     /// reflection the Double bit patterns of |g|, Re F and |F|² equal; Im F bit-equal where |Im F| ≥ 1e-15 and within 1e-15
     /// below that (amendment 1). β″ is built from the CIF here, so its site order differs from the reference implementations' hand list and a
     /// summation-order difference is expected: for it, Re F and Im F are held to 1e-12 relative of max(|F|, 1e-4) (Im F also
-    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| bit for bit (registration 4.4 as amended 2026-10-15: the measured worst is 2.7e-13; bit identity is the reference-site-list test).
+    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| exact today (registration 4.4 as amended 2026-10-15: the measured worst is 2.7e-13; bit identity is the reference-site-list test).
     @Test(arguments: ScatteringFixtures.appsCaseIndices)
     func testAppsBitForBit(_ index: Int) throws {
         let c = try ScatteringFixtures.apps().cases[index]
@@ -361,7 +361,7 @@ struct ScatteringPinsTests {
     }
 
     /// The cause of the β″ differences above: built from the reference implementations' own site list (same order, same coordinates) the kit is
-    /// bit identical to the reference implementations like every other preset.
+    /// exact to the reference implementations like every other preset (D12 quick check).
     @Test(arguments: [8, 9])
     func testAppsBetaDoublePrimeFromTheAppsSiteListIsBitIdentical(_ index: Int) throws {
         let c = try ScatteringFixtures.apps().cases[index]

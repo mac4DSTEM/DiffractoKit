@@ -1,10 +1,11 @@
 //
 //  Slice4AppsParityTests.swift
 //  Role: gate G1 of slice 4 (registration docs/registration-slice-4.md, section 7, and the amendment of 2026-10-15 16:08):
-//        the kit reproduces, bit for bit, the dump of the apps' own compiled code (tools/slice-4/apps-parity, written from
+//        the kit reproduces, exactly today (D12 quick check), the dump of the apps' own compiled code (tools/slice-4/apps-parity, written from
 //        mac4DSTEM 7d6fdbd1) in Fixtures/slice-4-apps.json. The dump is the -O build and these tests run at -c release, so
 //        there is no exception: every Double is compared by `bitPattern`, every Float by `bitPattern`, every integer and
-//        string by equality. A difference is a finding of the port, never a tolerance to widen.
+//        string by equality. A difference is a finding of the port, never a tolerance to widen; D12 allows a written
+//        per-function tolerance against the Python reference, a later change to the assertions.
 //
 //        Blocks of the dump and the tests that read them:
 //          reflections    the reflection list a library is made from (order, hkl, g, |g|, Re F, Im F, |F|^2), 6 phases

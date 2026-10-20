@@ -9,7 +9,7 @@
 //
 //  Written for the kit (the seed has these checks only as tools/ellipse-calibration-test, a scientific harness); the numbers
 //  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equal the kit's, which
-//  EllipseAppsParityTests proves bit for bit).
+//  EllipseAppsParityTests checks exactly, as a D12 quick check).
 //
 //  Every test names under "RED UNDER" the production mutation that turns it red.
 //

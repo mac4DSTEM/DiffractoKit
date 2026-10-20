@@ -1,7 +1,7 @@
 //
 //  EllipseAppsParityTests.swift
 //  DiffractoKit slice 3b (docs/registration-slice-3.md sections 2 and 3, last item): the kit's `EllipseCalibration` against the
-//  apps' own compiled code, BIT FOR BIT. tools/slice-3b/apps-parity/run.sh fetches reference commit 7d6fdbd1's
+//  apps' own compiled code, exact today (the apps-parity quick check, D12). tools/slice-3b/apps-parity/run.sh fetches reference commit 7d6fdbd1's
 //  `EllipseCalibration.swift` and `DiffractionPattern.swift` by `git show`, compiles them with swiftc -O beside a main.swift that
 //  renders the planted rings with the SplitMix64 + Box-Muller renderer of EllipseNoisyRingTests, runs `fit1D`, `fitAmorphousRing`
 //  and `fitBestAvailable` on each (six calls per ring: fit1D at the default 0.2 residual cap, at 0.4, at 0.4 with the anyway
@@ -49,7 +49,7 @@ private struct Dump: Decodable {
     }
 
     /// The reference implementations' code compiled -O (the Release configuration, `tools/test.sh`) or -Onone (a debug `swift test`): the two differ in
-    /// the last bits of some profile fits, so each build of the kit is held bit for bit to the reference implementations built the same way.
+    /// the last bits of some profile fits, so each build of the kit is compared exactly (a quick check, D12) to the reference implementations built the same way.
     #if DEBUG
     static let file = "slice-3b-apps-onone.json"
     #else
