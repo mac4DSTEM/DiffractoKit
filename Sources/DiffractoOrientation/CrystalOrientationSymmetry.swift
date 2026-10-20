@@ -110,6 +110,28 @@ public struct CrystalOrientationSymmetry: Sendable {
         return (best,Float(angle))
     }
 
+    /// The disorientation between two orientations of the same crystal: the smallest rotation angle over the symmetry
+    /// equivalents of `from` and `to`. Both are in the py4DSTEM matrix convention of `reduce(_:)`; the misorientation is
+    /// `to * from^T` (crystal `from` to crystal `to`) and the result is the minimum-angle `S * to * from^T` (ties as in
+    /// `reduce`). Pinned to orix 0.15.0 (`Orientation.angle_with`, `Misorientation.reduce`) in `OrixDisorientationTests`.
+    /// The angle is Double radians.
+    public func disorientation(from a: simd_double3x3, to b: simd_double3x3) throws ->
+        (matrix: simd_double3x3, angleRad: Double) {
+        for m in [a, b] {
+            guard Self.finite(m), Self.matrixGap(m.transpose * m, matrix_identity_double3x3) <= 1e-8,
+                  abs(simd_determinant(m) - 1) <= 1e-8 else { throw OrientationSymmetryError.invalidRotation }
+        }
+        let r = try reduce(b * a.transpose)
+        return (r.matrix, Self.rotationAngle(r.matrix))
+    }
+
+    /// Rotation angle of a proper rotation matrix, from the quaternion's scalar part (stable near 0 and pi).
+    private static func rotationAngle(_ m: simd_double3x3) -> Double {
+        let q = simd_quatd(m.transpose)
+        let imaginary = simd_length(q.imag)
+        return 2 * atan2(imaginary, abs(q.real))
+    }
+
     /// Folds a pole under the full Laue group (proper operators and inversion).
     /// Native sectors are preserved for m-3m (z ≥ x ≥ y ≥ 0), 6/mmm (z ≥ 0, azimuth 0...30°)
     /// and 2/m (y ≥ 0, azimuth atan2(z,x) in 0...180°). For all other classes the largest

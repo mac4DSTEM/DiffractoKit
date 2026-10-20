@@ -11,7 +11,7 @@ import simd
 import DiffractoCore
 
 extension CrystalOrientationSymmetry {
-    private var py4DSTEMBasis: [SIMD3<Double>] {
+    internal var py4DSTEMBasis: [SIMD3<Double>] {
         switch laueClass {
 '''
 for name,record in zip(names,p['py4dstem']['records']):
