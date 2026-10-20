@@ -29,6 +29,8 @@ apps' code, and recovery of planted truth, are what is claimed.
 
 ## Hand-off
 
+**One line (2026-10-20):** done: ACOM scan matching committed for 0.5.0 (tests 550 green, consumer-check 666, benchmark run), release-ready, awaiting tag; next: mac4DSTEM switches its CPU `matchAll` and `ACOMScanSelection` onto 0.5.0, then the open kit gaps (`.native` IPF key beyond m-3m, 6/mmm, 2/m; orix/MTEX cross-check of the minimum-angle reduction; py4DSTEM direction-family reduction).
+
 The suite board's `lanes/diffractokit` holds the next prompt. In order:
 
 1. The release shape (asked of the owner through the coordinator, 17:55): (A) no separate 0.2.0, tag `main` as 0.3.0 after
