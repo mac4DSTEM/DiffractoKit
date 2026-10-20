@@ -44,6 +44,17 @@ PRESETS = {
         [[0, 0, 0], [0.3459, 0, 0.089], [0.430, 0, 0.652], [0.0565, 0, 0.649], [0.1885, 0, 0.224], [0.2171, 0, 0.617]]),
 }
 
+# Structures at a general position of each space group (hexagonal axes for the trigonal groups, b unique for monoclinic):
+# the Laue class pymatgen/spglib finds, which PhaseModel.orientationClass must reproduce whenever it returns a class.
+GENERIC = [0.1234, 0.2345, 0.3456]
+ORIENTATION = {
+    'P-1': Lattice.from_parameters(3, 4, 5, 80, 95, 100), 'P2_1/m': Lattice.from_parameters(5, 4, 6, 90, 100, 90),
+    'Pnma': Lattice.orthorhombic(5, 6, 7), 'P4/m': Lattice.tetragonal(4, 6), 'P4/mmm': Lattice.tetragonal(4, 6),
+    'I4/mmm': Lattice.tetragonal(4, 6), 'P-3': Lattice.hexagonal(4, 6), 'P-3m1': Lattice.hexagonal(4, 6),
+    'P-31m': Lattice.hexagonal(4, 6), 'R-3m': Lattice.hexagonal(4, 12), 'P6/m': Lattice.hexagonal(4, 6),
+    'P6/mmm': Lattice.hexagonal(4, 6), 'Pm-3': Lattice.cubic(5), 'Pa-3': Lattice.cubic(5), 'Pm-3m': Lattice.cubic(5),
+}
+
 def main():
     PRESETS['mg_hcp'].translate_sites(list(range(2)), [-2 / 3, -1 / 3, -0.25], frac_coords=True, to_unit_cell=True)
     out = {'python': platform.python_version(), 'pymatgen': version('pymatgen'), 'pymatgenCore': version('pymatgen-core'),
@@ -60,6 +71,19 @@ def main():
             'operationCount': len(ops), 'siteCount': len(sites), 'formula': s.composition.formula,
             'sites': sites, 'd': [float(s.lattice.d_hkl(h)) for h in HKL]}
         print(key, out['presets'][key]['spaceGroupSymbol'], out['presets'][key]['spaceGroupNumber'], len(sites), len(ops))
+    out['orientation'] = {}
+    for symbol, lattice in ORIENTATION.items():
+        st = Structure.from_spacegroup(symbol, lattice, ['Si'], [GENERIC])
+        sga = SpacegroupAnalyzer(st, symprec=1e-5)
+        laue = {'1': '-1', '-1': '-1', '2': '2/m', 'm': '2/m', '2/m': '2/m', '222': 'mmm', 'mm2': 'mmm', 'mmm': 'mmm',
+                '4': '4/m', '-4': '4/m', '4/m': '4/m', '422': '4/mmm', '4mm': '4/mmm', '-42m': '4/mmm', '4/mmm': '4/mmm',
+                '3': '-3', '-3': '-3', '32': '-3m', '3m': '-3m', '-3m': '-3m', '6': '6/m', '-6': '6/m', '6/m': '6/m',
+                '622': '6/mmm', '6mm': '6/mmm', '-6m2': '6/mmm', '6/mmm': '6/mmm', '23': 'm-3', 'm-3': 'm-3',
+                '432': 'm-3m', '-43m': 'm-3m', 'm-3m': 'm-3m'}[sga.get_point_group_symbol()]
+        out['orientation'][symbol] = {'lattice': {'a': st.lattice.a, 'b': st.lattice.b, 'c': st.lattice.c, 'alpha': st.lattice.alpha,
+            'beta': st.lattice.beta, 'gamma': st.lattice.gamma}, 'laue': laue, 'spaceGroupNumber': sga.get_space_group_number(),
+            'sites': [{'z': x.specie.Z, 'abc': [float(t) for t in x.frac_coords]} for x in st]}
+        print(symbol, sga.get_space_group_number(), laue, len(st))
     OUT.write_text(json.dumps(out, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n')
 
 if __name__ == '__main__':

@@ -39,6 +39,9 @@ public struct CrystalOrientationSymmetry: Sendable {
     public let laueClass: LaueClass
     /// Proper rotations only, deterministic order, verified against pymatgen's point-group tables.
     public let operators: [simd_double3x3]
+    /// The same proper operators as integer matrices in the fractional (cell) basis, for comparison with a structure's
+    /// own Laue group.
+    package let fractionalRotations: [IntegerMatrix]
 
     /// Constructs the complete proper subgroup of any of the eleven Laue classes.
     public init(laueClass: LaueClass) {
@@ -66,6 +69,7 @@ public struct CrystalOrientationSymmetry: Sendable {
         case .mThreeBarM: generators = [four,diagonal]
         }
         let fractional = PointSymmetry(closureOf:generators).rotations
+        self.fractionalRotations = fractional
         let hex = [.threeBar,.threeBarM,.sixOverM,.sixOverMmm].contains(laueClass)
         let frame = hex ? simd_double3x3(columns:(SIMD3(1,0,0),SIMD3(-0.5,sqrt(3)/2,0),SIMD3(0,0,1)))
                         : matrix_identity_double3x3
