@@ -178,7 +178,7 @@ struct OrientationSymmetryTests {
         print("SYMMETRY eight new sectors/samples worst: \(worst)")
     }
 
-    @Test func invalidInputsAndUnavailableNativeKeysAreExplicit() throws {
+    @Test func invalidInputsAreExplicitAndEveryClassHasANativeKey() throws {
         let s = CrystalOrientationSymmetry(laueClass:.mThreeBarM)
         #expect(throws:OrientationSymmetryError.invalidRotation) { try s.reduce(.init(0)) }
         #expect(throws:OrientationSymmetryError.invalidRotation) { try s.reduce(-matrix_identity_double3x3) }
@@ -187,10 +187,10 @@ struct OrientationSymmetryTests {
         #expect(throws:OrientationSymmetryError.invalidSampleCount) { try s.sampleFundamentalZone(count:Int.max) }
         #expect(throws:OrientationSymmetryError.invalidSampleCount) { try s.sampleFundamentalZone(count:-1) }
         #expect(try s.sampleFundamentalZone(count:0).isEmpty)
+        // 0.6.0: the other eight classes have a native key too (the orix key); nothing throws nativeKeyUnavailable.
         for laue in LaueClass.allCases where ![.mThreeBarM,.sixOverMmm,.twoOverM].contains(laue) {
-            #expect(throws:OrientationSymmetryError.nativeKeyUnavailable(laue)) {
-                try CrystalOrientationSymmetry(laueClass:laue).ipfColor(direction:[1,0,0],key:.native)
-            }
+            let s = CrystalOrientationSymmetry(laueClass:laue)
+            #expect(try s.ipfColor(direction:[1,0.3,0.7],key:.native) == s.ipfColor(direction:[1,0.3,0.7],key:.orix))
         }
     }
 }

@@ -2,7 +2,7 @@ import Foundation
 import simd
 import DiffractoCore
 
-/// Explicit colour conventions. Neither key performs py4DSTEM's direction-family reduction.
+/// Explicit colour conventions. No key performs py4DSTEM's direction-family reduction (see `py4DSTEMDirectionFamily`).
 public enum IPFColorKey: Sendable, Equatable, CaseIterable {
     /// py4DSTEM f050d207 `plot_orientation_maps`, full mask (1), beam colour, rounded to Float.
     /// Supply its `family` pole, except for 2/m which uses the original pole (the NNLS branch).
@@ -10,6 +10,9 @@ public enum IPFColorKey: Sendable, Equatable, CaseIterable {
     /// The original cubic, hexagonal and b-unique monoclinic keys. This convention folds the
     /// input pole itself; it is independent of py4DSTEM's colour convention.
     case native
+    /// orix 0.15.0 `DirectionColorKeyTSL` (the EDAX/TSL key as implemented in MTEX) for every Laue class, in the kit's
+    /// standard settings. Pass the original pole; it is folded into orix's fundamental sector.
+    case orix
 }
 
 /// Explicit refusals of invalid inputs or a colour convention with no defined key.
@@ -20,7 +23,7 @@ public enum OrientationSymmetryError: Error, Sendable, Equatable {
     case invalidDirection
     /// Sampling accepts counts in 0...4096; other counts are refused before allocation.
     case invalidSampleCount
-    /// The native colour convention defines only m-3m, 6/mmm and b-unique 2/m.
+    /// No longer thrown since 0.6.0 (every class has a native key); kept so existing `switch` statements compile.
     case nativeKeyUnavailable(LaueClass)
 }
 
@@ -176,7 +179,8 @@ public struct CrystalOrientationSymmetry: Sendable {
     /// The full-mask beam key is reproduced; correlation masking and plotting belong to the caller.
     /// Inputs are not renormalized in this branch, matching Python's clipping and normalization.
     /// `.native`: pass the original pole; folding and the original three-class keys are applied.
-    /// Other native classes throw `nativeKeyUnavailable`; no identity colour fallback exists.
+    /// The other eight classes use the orix key (as `.orix`), so every class has a native key; no identity colour fallback.
+    /// `.orix`: orix 0.15.0's TSL key for every class (pass the original pole), pinned in `OrixIPFKeyTests`.
     public func ipfColor(direction: SIMD3<Double>, key: IPFColorKey) throws -> SIMD3<Float> {
         try Self.validate(direction)
         switch key {
@@ -185,8 +189,10 @@ public struct CrystalOrientationSymmetry: Sendable {
             case .mThreeBarM: return NativeCubicSymmetry.ipfColor(direction:direction)
             case .sixOverMmm: return NativeHexagonalSymmetry.ipfColor(direction:direction)
             case .twoOverM: return NativeMonoclinicSymmetry.ipfColor(direction:direction)
-            default: throw OrientationSymmetryError.nativeKeyUnavailable(laueClass)
+            default: return SIMD3<Float>(orixIPFColor(direction))
             }
+        case .orix:
+            return SIMD3<Float>(orixIPFColor(direction))
         case .py4DSTEM:
             return py4DSTEMColor(direction)
         }
