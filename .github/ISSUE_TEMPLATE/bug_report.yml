@@ -1,0 +1,32 @@
+name: Bug report
+description: Something gives a wrong result, crashes or refuses input it should accept
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: DiffractoKit version
+      placeholder: "0.4.1"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and Swift version
+      placeholder: "macOS 15.5, Swift 6.2"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal example
+      description: A short code sample, and the CIF or numbers it uses if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+      description: If you compared against pymatgen, py4DSTEM or another package, say which version and what it gave.
+    validations:
+      required: true

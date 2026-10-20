@@ -1,26 +1,30 @@
 # DiffractoKit
 
-Crystallography and electron diffraction for macOS, as a Swift package: the numbers a scientist reads, never UI. DiffractoKit
-is the Mac-native counterpart of the crystallography parts of **pymatgen**, **py4DSTEM** and **pyxem**: the unit cell and its
+Crystallography and electron diffraction as a Swift package: the numbers a scientist reads, never UI. DiffractoKit
+is the Swift counterpart of the crystallography parts of **pymatgen**, **py4DSTEM** and **pyxem**: the unit cell and its
 reciprocal lattice, symmetry found from the atoms, CIF import, d-spacings and the list of reflections with systematic
 absences, electron scattering factors and kinematic structure factors, rings and zone axes, and the calibration of a
 diffraction pattern (wavelength, camera length, reciprocal-space pixel size, the ring and ellipse fit). It is built to be
 imported by tagged version into applications.
 
-Mac-native: Swift 6 strict concurrency, `Foundation` and `simd` only (no Python, no dependency), macOS 27. Headless, one
-SwiftPM product per module. Where a path is accelerated (Accelerate, none yet), it keeps a CPU reference path with a
-registered tolerance. **Status: 0.0.x, the API may still move**: pin an exact tag and bump on purpose.
+Swift 6 strict concurrency, `Foundation`, `simd` and `CryptoKit` (no Python). Headless, one SwiftPM product per module.
+Where a path is accelerated (none yet), it will keep a CPU reference path with a stated tolerance.
+**Status: 0.x** ([semantic versioning](https://semver.org): a minor release may change the API, and every release has a
+`CHANGELOG.md` entry with a migration note where needed). Pin an exact tag and bump on purpose.
+
+**Platform.** Apple platforms today (macOS 15 or later, iOS 18 or later). Linux is not supported yet: `DiffractoCore` imports
+`CryptoKit` and `DiffractoOrientation` depends on ImagoKit, which uses Accelerate.
 
 ## The modules
 
 One SwiftPM product per module; a module imports only the ones above it in this table.
 
-| Module | Holds | State |
+| Module | Holds | Since |
 |---|---|---|
-| `DiffractoCore` | `UnitCell` (all seven crystal systems: real and reciprocal lattice, metric, volume, d and g of an hkl, the angle between planes), `SymmetryOperation` and `PointSymmetry` (the eleven Laue classes, `LaueClass`, `CrystalSystem`), symmetry found from the atom sites (`SymmetryDetection`, `CrystalStructure`), `CIFImport` (CIF text to `CrystalStructure`, with named refusals), `ReflectionList` (every hkl up to a k_max with its systematic-absence flag), orbits and families (rings) with their names | slice 1, `docs/registration-slice-1.md`; slice 1b (Niggli reduction, the conventional cell, a Cartesian tolerance) is registered, not written |
-| `DiffractoScattering` | `ElectronScatteringFactors` (Lobato and Van Dyck, the table of py4DSTEM, Z = 1 to 103), `StructureFactors` (F(hkl) in A^-2), `CrystalStructure.kinematicReflections(kMax:)`: the reflections after an \|F\| cut, and their rings with the summed \|F\|^2 | slice 2, `docs/registration-slice-2.md` |
-| `DiffractoGeometry` | `ElectronWavelength` (relativistic, CODATA 2018), `RingCalibration` (camera length, reciprocal-space pixel size from one ring of known d, with the refusals that say when a ring must not be calibrated from; `fit` runs the whole chain on a pattern), `EllipseCalibration` and `EllipseTransform` (the ring and detector-ellipse fit, py4DSTEM's model), `RingIndexing` (which family a measured \|q\| belongs to, and when it must not be named), `ZoneAxis` (beam directions, the detector basis, excitation errors) | slice 3, `docs/registration-slice-3.md`; 0.0.4 amendments in `docs/registration-0.0.4.md` |
-| `DiffractoOrientation` | Phase reference libraries and vector matching, Euler angles and orientation-result values; `CrystalOrientationSymmetry` (minimum-angle reduction for all 11 Laue classes), direction sampling and explicit `.py4DSTEM` / `.native` IPF colour keys | symmetry: 0.4.0; [conventions](docs/orientation-symmetry.md), parity P17–P19 |
+| `DiffractoCore` | `UnitCell` (all seven crystal systems: real and reciprocal lattice, metric, volume, d and g of an hkl, the angle between planes), `SymmetryOperation` and `PointSymmetry` (the eleven Laue classes, `LaueClass`, `CrystalSystem`), symmetry found from the atom sites (`SymmetryDetection`, `CrystalStructure`), `CIFImport` (CIF text to `CrystalStructure`, with named refusals), `ReflectionList` (every hkl up to a k_max with its systematic-absence flag), orbits and families (rings) with their names | 0.1.0; Niggli reduction, the conventional cell and a Cartesian symmetry tolerance since 0.1.1 |
+| `DiffractoScattering` | `ElectronScatteringFactors` (Lobato and Van Dyck, the table of py4DSTEM, Z = 1 to 103), `StructureFactors` (F(hkl) in A^-2), `CrystalStructure.kinematicReflections(kMax:)`: the reflections after an \|F\| cut, and their rings with the summed \|F\|^2 | 0.1.0 |
+| `DiffractoGeometry` | `ElectronWavelength` (relativistic, CODATA 2018), `RingCalibration` (camera length, reciprocal-space pixel size from one ring of known d, with the refusals that say when a ring must not be calibrated from; `fit` runs the whole chain on a pattern), `EllipseCalibration` and `EllipseTransform` (the ring and detector-ellipse fit, py4DSTEM's model), `RingIndexing` (which family a measured \|q\| belongs to, and when it must not be named), `ZoneAxis` (beam directions, the detector basis, excitation errors) | 0.1.0 |
+| `DiffractoOrientation` | Phase reference libraries and vector matching, Euler angles and orientation-result values; `CrystalOrientationSymmetry` (minimum-angle reduction for all 11 Laue classes), direction sampling and explicit `.py4DSTEM` / `.native` IPF colour keys | phase mapping and orientation results 0.3.0; orientation symmetry and the ACOM matcher 0.4.0; [conventions](docs/orientation-symmetry.md), parity P17–P19 |
 
 ## Install
 
@@ -38,8 +42,9 @@ targets: [
 ]
 ```
 
-The package needs macOS 27 and a Swift 6.2 toolchain (`swift-tools-version: 6.2`). It carries no unsafe flags and no
-dependency: your build compiles it optimised itself; a Debug build of the reflection loops and of the ring fit is slow.
+The package needs macOS 15 or iOS 18 and a Swift 6.2 toolchain (`swift-tools-version: 6.2`). Its only dependency is
+[ImagoKit](https://github.com/mac4DSTEM/ImagoKit), used by `DiffractoOrientation` alone (its `FFT1D`). It carries no unsafe
+flags: your build compiles it optimised itself; a Debug build of the reflection loops and of the ring fit is slow.
 `DiffractoGeometry` depends on the other two, but each file that names a type of a module should import that module itself
 (`MemberImportVisibility` is on in this package).
 
@@ -155,7 +160,7 @@ do {
 }
 ```
 
-Output of the program on the machine it was written on (macOS 27, Apple Swift 6.4, release build); the last three lines show the planted
+Output of the program on the machine it was written on (Apple Swift 6.4, release build); the last three lines show the planted
 truth recovered:
 
 ```
@@ -193,58 +198,61 @@ F(hkl) is in A^-2 (f in A over V in A^3); a pattern's rows are `qx` and its colu
 
 ## Oracles and pins
 
-Every number has a reference, and the references are pinned (`CLAUDE.md`):
+Every number has a reference, and the references are pinned (`CONTRIBUTING.md`):
 
 - **pymatgen 2026.9.24** with pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7 (cells, expanded CIF sites,
   symmetry operations, d-spacings, reflections within a sphere, the X-ray peak sums), SciPy 1.18.1 (the ring fit's
-  least-squares optimum), **py4DSTEM** f050d207's `scattering_factors.txt` (sha256 `be845d1d...`, bit for bit), and the compiled
-  code of two earlier GPL-3.0 applications (pinned by commit in `NOTICE`) where a port must be bit identical.
-- The pins are generated before the Swift code (`tools/slice-*/pins.py`, committed as JSON under `Tests/*/Fixtures/`); the
+  least-squares optimum), **py4DSTEM** f050d207's `scattering_factors.txt` (sha256 `be845d1d...`, bit for bit), and the
+  code of the earlier GPL-3.0 applications this library was ported from (pinned by commit in `NOTICE`) where a port must be
+  bit identical.
+- The pins are generated before the Swift code (`tools/*/pins.py`, committed as JSON under `Tests/*/Fixtures/`); the
   Swift tests read the pins and a planted truth (a closed form, a group-theory count, a cell content); a difference is a
   failure of the port, never a tolerance to widen. Agreement with a package is agreement, not truth.
 - `docs/parity.md` lists, function by function, what is held against pymatgen, py4DSTEM and pyxem / diffsims / orix, and
   how each row is checked. It also says what is **not** held.
-- Nothing here is validated on a real diffraction pattern: that validation is each consuming application's to register against a tag
+- Nothing here is validated on a real diffraction pattern: that validation belongs to the application that uses the library
   (`NOTICE`).
 
 ## Build and test
 
 ```sh
-tools/test.sh                      # the gate: swift test -c release, stamps .build/last-green on a clean tree
-tools/last-green.sh                # the last green commit and whether HEAD equals it
+swift test -c release              # or tools/test.sh, which runs the same command
 tools/consumer-check/run.sh        # a separate package using the public API only
 tools/readme-consumer/run.sh       # a separate package compiling exactly the README's program, checking its output
 swift run -c release diffracto-example
 ```
 
-Never run `swift build --build-tests -c release` (it fails on this toolchain); `tools/test.sh` is the gate. The tests read
-committed pins and need no Python. The oracle venv is not in the repository: `docs/registration-slice-1.md` section 2 and
-`CLAUDE.md` say how it is pinned and provisioned (`References/pymatgen-venv`), for regenerating a pin.
+`swift build --build-tests -c release` fails on current toolchains; use `swift test -c release`. The tests read committed
+pins and need no Python. The Python environment that generates the pins is not in the repository: the versions are listed
+under "Oracles and pins" above, and `tools/*/pins.py` are the generators.
 
 ## Licence
 
-GPL-3.0 (`LICENSE`, `NOTICE`). The code is ported from two earlier GPL-3.0 applications by the same author (named, with their commits, in `NOTICE`), whose
+GPL-3.0 (`LICENSE`, `NOTICE`). The code is ported from earlier GPL-3.0 applications by the same author (named, with their commits, in `NOTICE`), whose
 lattice and reflection conventions follow py4DSTEM's `Crystal` class (GPL-3.0): the real-lattice matrix with a along x and b in
 the xy plane, reciprocal vectors without 2 pi, the per-axis index bound. The electron scattering table of
 `DiffractoScattering` is py4DSTEM's (Lobato and Van Dyck 2014), also GPL-3.0. **pymatgen** (MIT) is an oracle: cells,
 symmetry and d-spacings are checked against it, and no pymatgen code is copied or ported; a part ported from pymatgen in the
 future would be MIT on its own, but one package with any GPL part is GPL, so the whole is GPL-3.0 and an app built on it must
 be GPL-compatible. The CIF fixtures under `Tests/` come from those applications' tests (GPL-3.0) with their provenance in a comment
-line; the beta'' cell content (Andersen et al. 1998) is written by a generator into the gitignored `References/`, as those
-applications do. Per-source notices are in `NOTICE`.
+line; the beta'' cell content (Andersen et al. 1998) is written by a generator into the gitignored `References/`. Per-source notices are in `NOTICE`.
+
+## Please cite
+
+If you use DiffractoKit in published work, please cite it (see `CITATION.cff`), and cite the packages it is checked against
+and ported from: pymatgen, spglib, py4DSTEM and, for the orientation work, pyxem / orix conventions where you rely on them.
 
 ## Status and documents
 
-0.0.x: the API may move between tags; consumers pin exact tags. `docs/status.md` says what is live and what is unverified.
+0.x: the API may change between minor versions; pin an exact tag. `docs/status.md` says what is live and what is not verified.
 
 | Document | What |
 |---|---|
-| `docs/status.md` | what is live, the hand-off, what is not verified |
+| `CHANGELOG.md` | what changed in each release, with migration notes |
 | `docs/parity.md` | the checklist against pymatgen, py4DSTEM, pyxem / diffsims / orix |
-| `docs/registration-slice-1.md`, `-1b.md`, `-2.md`, `-3.md`, `registration-0.0.4.md` | what each slice makes, the definitions, the pins, the planted truth, the gates, the amendments |
-| `docs/consumers-0.0.3.md` | what an app changes to import 0.0.3, and the numbers that move |
-| `docs/slice-1-mutants-2026-10-14.md` | the mutation run behind slice 1 |
+| `docs/status.md` | what is live and what is not verified |
+| `docs/orientation-symmetry.md` | orientation conventions |
 | `tools/consumer-check/README.md` | the separate package that uses the public API only |
 | `tools/readme-consumer/README.md` | the separate package that compiles and runs exactly this README's program |
 | `Sources/*/*.docc` | the DocC catalogues: one landing page and one article per module |
-| `CLAUDE.md` | the rules for working in this repository |
+| `CONTRIBUTING.md` | how to build, test and contribute |

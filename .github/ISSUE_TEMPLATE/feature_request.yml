@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest a new function or capability
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you want to do?
+      description: The task, and the function or package you would use today (pymatgen, py4DSTEM, pyxem, orix, ...).
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference
+      description: Where the result can be checked (a package and version, a paper, a closed form).
