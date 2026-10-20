@@ -36,9 +36,14 @@ struct PhaseModelTests {
                 #expect(found.symbol == c.laue, "\(symbol)")
             } else { nils.append(symbol) }
         }
-        // Everything but the -3m1 groups (twofolds on a: P-3m1, R-3m in hexagonal axes) is in the kit's standard setting;
-        // the kit's -3m twofolds lie on a-b (pymatgen's setting, the P-31m type), so the -3m1 cells return nil.
-        #expect(nils == ["P-3m1", "R-3m"], "unsupported: \(nils)")
+        // Since the second -3m frame (-3m1: twofolds on a, P-3m1 and R-3m in hexagonal axes) all fifteen pinned groups are in a
+        // standard setting of the kit, so none returns nil (before, the two -3m1 groups did).
+        #expect(nils.isEmpty, "unsupported: \(nils)")
+        for symbol in ["P-3m1", "R-3m"] {
+            let c = try #require(pins.orientation[symbol])
+            #expect(PhaseModel.orientationSymmetry(of: structure(c))?.threeBarMSetting == .threeBarMOne, "\(symbol)")
+        }
+        #expect(PhaseModel.orientationSymmetry(of: structure(try #require(pins.orientation["P-31m"])))?.threeBarMSetting == .threeBarOneM)
         print("PHASEMODEL orientation class not in the kit's standard setting: \(nils)")
     }
 

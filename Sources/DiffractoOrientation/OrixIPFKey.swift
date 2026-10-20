@@ -9,7 +9,8 @@ extension CrystalOrientationSymmetry {
     /// setting (the setting maps to orix's through `OrixIPFSector.frame`), as Double RGB.
     internal func orixIPFColor(_ direction: SIMD3<Double>) -> SIMD3<Double> {
         let sector = OrixIPFSector.sector(for: laueClass)
-        let frame = sector.frame
+        // orix's D3d has its twofolds on x: the kit's -3m1 setting is orix's frame itself, the -31m setting is rotated by -30 degrees.
+        let frame = threeBarMSetting == .threeBarMOne ? matrix_identity_double3x3 : sector.frame
         let v0 = frame.transpose * simd_normalize(direction)
         let h = foldIntoSector(v0, sector: sector)
         let (azimuth, polar) = Self.polarCoordinates(sector: sector, v: h)

@@ -21,7 +21,8 @@ FIX = KIT / 'Tests/DiffractoOrientationTests/Fixtures'
 SEED = 20261020
 assert md.version('orix') == '0.15.0'
 CLASSES = [('-1', S.Ci), ('2/m', S.C2h), ('mmm', S.D2h), ('4/m', S.C4h), ('4/mmm', S.D4h), ('-3', S.S6),
-           ('-3m', S.D3d), ('6/m', S.C6h), ('6/mmm', S.D6h), ('m-3', S.Th), ('m-3m', S.Oh)]
+           ('-3m', S.D3d), ('6/m', S.C6h), ('6/mmm', S.D6h), ('m-3', S.Th), ('m-3m', S.Oh),
+           ('-3m1', S.D3d)]   # -3m1: orix's frame is the kit's (last, so the other draws are unchanged)
 def rz(a):
     c, s = np.cos(a), np.sin(a)
     return np.array([[c, -s, 0], [s, c, 0], [0, 0, 1.0]])

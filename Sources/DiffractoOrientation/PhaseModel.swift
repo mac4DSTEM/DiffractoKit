@@ -41,6 +41,8 @@ public struct PhaseModel: Identifiable, Sendable {
     /// The Laue class of the orientation symmetry, in the kit's standard setting (`CrystalOrientationSymmetry`), or nil
     /// when the phase can be identified but cannot be orientation-mapped ("Unreduced").
     public let orientationClass: LaueClass?
+    /// For `-3m` the placement of the twofolds in this cell (`ThreeBarMSetting`); nil for every other class and for an unreduced model.
+    public let orientationSetting: ThreeBarMSetting?
     public let source: PhaseModelSource
     /// International Tables space-group number when known; nil means "not recorded", not "P1".
     public let spaceGroupNumber: Int?
@@ -48,11 +50,13 @@ public struct PhaseModel: Identifiable, Sendable {
     public let extraProvenance: [String: String]
 
     public init(id: String, displayName: String, structure: CrystalStructure, orientationClass: LaueClass?,
+                orientationSetting: ThreeBarMSetting = .threeBarOneM,
                 source: PhaseModelSource, spaceGroupNumber: Int? = nil, extraProvenance: [String: String] = [:]) {
         self.id = id
         self.displayName = displayName
         self.structure = structure
         self.orientationClass = orientationClass
+        self.orientationSetting = orientationClass == .threeBarM ? orientationSetting : nil
         self.source = source
         self.spaceGroupNumber = spaceGroupNumber
         self.extraProvenance = extraProvenance
@@ -61,25 +65,40 @@ public struct PhaseModel: Identifiable, Sendable {
     /// A model whose orientation class is detected from the structure (`orientationClass(of:)`).
     public init(id: String, displayName: String, structure: CrystalStructure, source: PhaseModelSource,
                 spaceGroupNumber: Int? = nil, extraProvenance: [String: String] = [:]) {
+        let detected = Self.orientationSymmetry(of: structure)
         self.init(id: id, displayName: displayName, structure: structure,
-                  orientationClass: Self.orientationClass(of: structure), source: source,
-                  spaceGroupNumber: spaceGroupNumber, extraProvenance: extraProvenance)
+                  orientationClass: detected?.laueClass, orientationSetting: detected?.threeBarMSetting ?? .threeBarOneM,
+                  source: source, spaceGroupNumber: spaceGroupNumber, extraProvenance: extraProvenance)
     }
 
     /// The orientation symmetry of this phase, or nil when it is unreduced.
-    public var orientationSymmetry: CrystalOrientationSymmetry? { orientationClass.map { CrystalOrientationSymmetry(laueClass: $0) } }
+    public var orientationSymmetry: CrystalOrientationSymmetry? {
+        orientationClass.map { CrystalOrientationSymmetry(laueClass: $0, setting: orientationSetting ?? .threeBarOneM) }
+    }
 
     /// The Laue class the orientation reduction can work in for `structure`: the class detected from the atoms, when the
     /// structure's own proper Laue operators, written in its cell basis, are exactly the class's standard operators
     /// (`CrystalOrientationSymmetry.operators` documents the settings: cubic and orthorhombic axes, monoclinic b unique,
-    /// tetragonal c, hexagonal a = x with the pymatgen -3m twofold). A cell in another setting, for example a face-centred
-    /// structure in its primitive rhombohedral cell or a -3m1 cell whose twofolds lie on a, returns nil rather than a
-    /// fundamental zone drawn in the wrong frame. (The application it came from supported m-3m, 6/mmm and 2/m only.)
+    /// tetragonal c, hexagonal a = x). For `-3m` either twofold placement is a standard setting (`orientationSymmetry(of:)`
+    /// says which). A cell in another setting, for example a face-centred structure in its primitive rhombohedral cell or
+    /// an R-3m structure in rhombohedral axes, returns nil rather than a fundamental zone drawn in the wrong frame. (The
+    /// application it came from supported m-3m, 6/mmm and 2/m only.)
     public static func orientationClass(of structure: CrystalStructure) -> LaueClass? {
+        orientationSymmetry(of: structure)?.laueClass
+    }
+
+    /// The orientation symmetry of `structure` in its own cell, or nil when it has no standard setting there: the class
+    /// of `orientationClass(of:)` with, for `-3m`, the setting whose twofolds the structure has (-31m for P-31m, P-31c;
+    /// -3m1 for P-3m1, P-3c1, R-3m and R-3c in hexagonal axes).
+    public static func orientationSymmetry(of structure: CrystalStructure) -> CrystalOrientationSymmetry? {
         guard let laue = structure.laueClass else { return nil }
         let proper = Set(structure.laueGroup.rotations.filter { $0.determinant == 1 })
-        guard proper == Set(CrystalOrientationSymmetry(laueClass: laue).fractionalRotations) else { return nil }
-        return laue
+        let settings: [ThreeBarMSetting] = laue == .threeBarM ? ThreeBarMSetting.allCases : [.threeBarOneM]
+        for setting in settings {
+            let symmetry = CrystalOrientationSymmetry(laueClass: laue, setting: setting)
+            if proper == Set(symmetry.fractionalRotations) { return symmetry }
+        }
+        return nil
     }
 
     /// The application-era family name of the orientation class ("cubic", "hexagonal", "monoclinic", "identity" for
@@ -111,7 +130,8 @@ public struct PhaseModel: Identifiable, Sendable {
             issues.append(PhaseModelIssue(code: "unsupported_element",
                                           message: "No electron scattering factors are available for Z = \(site.z)."))
         }
-        if let declared = orientationClass, Self.orientationClass(of: structure) != declared {
+        let found = Self.orientationSymmetry(of: structure)
+        if let declared = orientationClass, found?.laueClass != declared || found?.threeBarMSetting != orientationSetting {
             let system: String
             switch declared.crystalSystem {
             case .trigonal, .hexagonal: system = "hexagonal"
@@ -151,7 +171,8 @@ public struct PhaseModel: Identifiable, Sendable {
         let sites = structure.sites.map {
             "\($0.z):\($0.fractional.x),\($0.fractional.y),\($0.fractional.z):\($0.occupancy)"
         }.joined(separator: ";")
-        return "\(id)|\(orientationFamilyName)|\(cell.a),\(cell.b),\(cell.c)|\(cell.alphaDeg),\(cell.betaDeg),\(cell.gammaDeg)|\(sites)"
+        let setting = orientationSetting == .threeBarMOne ? "|-3m1" : ""
+        return "\(id)|\(orientationFamilyName)\(setting)|\(cell.a),\(cell.b),\(cell.c)|\(cell.alphaDeg),\(cell.betaDeg),\(cell.gammaDeg)|\(sites)"
     }
 
     /// Immutable description to attach to products made with this phase.
@@ -176,6 +197,7 @@ public struct PhaseModel: Identifiable, Sendable {
             "atomic_basis": atomicBasis,
         ]
         if let orientationClass { result["laue_class"] = orientationClass.symbol }
+        if let orientationSetting { result["laue_setting"] = orientationSetting.rawValue }
         if let spaceGroupNumber { result["space_group_number"] = String(spaceGroupNumber) }
         for (key, value) in extraProvenance { result[key] = value }
         return result

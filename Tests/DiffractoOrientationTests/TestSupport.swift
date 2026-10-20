@@ -104,3 +104,9 @@ extension PhaseVectorMatcher {
                          inPlaneStepDeg: inPlaneStepDeg, sampleLimit: sampleLimit)
     }
 }
+
+/// The symmetry a pin file's class symbol names; "-3m1" is `-3m` in the twofolds-on-a setting (the pin files list it last).
+func pinnedSymmetry(_ symbol: String) -> CrystalOrientationSymmetry? {
+    if symbol == "-3m1" { return CrystalOrientationSymmetry(laueClass: .threeBarM, setting: .threeBarMOne) }
+    return LaueClass(rawValue: symbol).map { CrystalOrientationSymmetry(laueClass: $0) }
+}

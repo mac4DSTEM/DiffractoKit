@@ -8,6 +8,8 @@ orix is the oracle (MTEX is MATLAB and is not used). orix works in its own setti
 twofolds on x); `frame` is the rotation that maps orix coordinates into the kit's documented standard setting:
   2/m   kit (x,y,z) = (Y,Z,X)_orix (cyclic: the kit's unique axis b = y is orix's z)
   -3m   Rz(-30 deg) (the kit's pymatgen setting has twofolds at -30, 30, 90 degrees; orix's at 0, 60, 120)
+  -3m1  identity: the kit's -3m1 setting (P-3m1, R-3m; twofolds on a) is orix's D3d itself. It is the last entry, so the other
+        classes' seeded draws are unchanged. Its kit operators come from tools/symmetry/trigonal-pins.py (pymatgen).
   others identity.
 The generator asserts that frame * orix proper operators == the kit's operators as sets (symmetry-pins.json).
 """
@@ -27,7 +29,8 @@ assert md.version('orix') == '0.15.0'
 assert md.version('numpy') == '2.5.4'
 
 CLASSES = [('-1', S.Ci), ('2/m', S.C2h), ('mmm', S.D2h), ('4/m', S.C4h), ('4/mmm', S.D4h), ('-3', S.S6),
-           ('-3m', S.D3d), ('6/m', S.C6h), ('6/mmm', S.D6h), ('m-3', S.Th), ('m-3m', S.Oh)]
+           ('-3m', S.D3d), ('6/m', S.C6h), ('6/mmm', S.D6h), ('m-3', S.Th), ('m-3m', S.Oh),
+           ('-3m1', S.D3d)]
 
 def rz(a):
     c, s = np.cos(a), np.sin(a)
@@ -41,6 +44,9 @@ def same_set(a, b):
 def main():
     kit = {g['symbol']: np.array(g['operators']) for g in
            json.load(open(FIX / 'symmetry-pins.json'))['groups']}
+    tri = json.load(open(FIX / 'trigonal-pins.json'))['cases']
+    kit['-3m1'] = np.array([c for c in next(t for t in tri if t['spaceGroup'] == 164)['operatorsCartesian']
+                            if np.linalg.det(c) > 0])
     rng = np.random.default_rng(SEED)
     out = {'orix': md.version('orix'), 'numpy': md.version('numpy'), 'seed': SEED, 'classes': []}
     swift = []
@@ -71,7 +77,8 @@ def main():
             'folded': (folded @ F.T).tolist(), 'rgb': rgb.tolist()})
         group = np.array([(-1.0 if bool(sym[i].improper[0]) else 1.0) * sym[i].to_matrix().reshape(3, 3)
                           for i in range(sym.size)])
-        swift.append((symbol, F, normals, center, vertices, group))
+        if symbol != '-3m1':   # the sector table is shared with -3m; only the frame differs
+            swift.append((symbol, F, normals, center, vertices, group))
     (FIX / 'orix-ipf-pins.json').write_text(json.dumps(out, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n')
     case = {'-1': 'oneBar', '2/m': 'twoOverM', 'mmm': 'mmm', '4/m': 'fourOverM', '4/mmm': 'fourOverMmm', '-3': 'threeBar',
             '-3m': 'threeBarM', '6/m': 'sixOverM', '6/mmm': 'sixOverMmm', 'm-3': 'mThreeBar', 'm-3m': 'mThreeBarM'}

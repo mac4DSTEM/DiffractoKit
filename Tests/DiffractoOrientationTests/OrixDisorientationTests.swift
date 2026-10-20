@@ -26,7 +26,7 @@ struct OrixDisorientationTests {
     @Test func minimumAngleReductionMatchesOrixForEveryClass() throws {
         var worstAngle = 0.0, worstMatrix = 0.0
         for c in try pins().classes {
-            let s = CrystalOrientationSymmetry(laueClass: try #require(LaueClass(rawValue: c.symbol)))
+            let s = try #require(pinnedSymmetry(c.symbol))
             for p in c.singles {
                 let r = try s.reduce(mat(p.matrix))
                 let da = abs(Double(r.disorientationRad) - p.angle)
@@ -47,7 +47,7 @@ struct OrixDisorientationTests {
     @Test func disorientationOfPairsMatchesOrixForEveryClass() throws {
         var worst = 0.0
         for c in try pins().classes {
-            let s = CrystalOrientationSymmetry(laueClass: try #require(LaueClass(rawValue: c.symbol)))
+            let s = try #require(pinnedSymmetry(c.symbol))
             for p in c.pairs {
                 let d = try s.disorientation(from: mat(p.a), to: mat(p.b))
                 let gap = abs(d.angleRad - p.angle)
@@ -59,8 +59,10 @@ struct OrixDisorientationTests {
     }
 
     @Test func disorientationIsSymmetricAndZeroForEquivalentOrientations() throws {
-        for laue in LaueClass.allCases {
-            let s = CrystalOrientationSymmetry(laueClass: laue)
+        let all = LaueClass.allCases.map { CrystalOrientationSymmetry(laueClass: $0) }
+            + [CrystalOrientationSymmetry(laueClass: .threeBarM, setting: .threeBarMOne)]
+        for s in all {
+            let laue = s.laueClass
             let a = simd_double3x3(simd_quatd(angle: 0.9, axis: simd_normalize(SIMD3(1, 2, 3))))
             for op in s.operators {
                 let d = try s.disorientation(from: a, to: op * a)

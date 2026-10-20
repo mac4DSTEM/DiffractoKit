@@ -22,13 +22,12 @@ struct OrixIPFKeyTests {
         return try JSONDecoder().decode(OrixPins.self, from: Data(contentsOf: file))
     }
 
-    @Test func orixKeyMatchesOrixForAllElevenLaueClasses() throws {
+    @Test func orixKeyMatchesOrixForAllElevenLaueClassesAndBothMinus3mSettings() throws {
         let fixture = try pins()
-        #expect(fixture.classes.count == 11)
+        #expect(fixture.classes.count == 12 && fixture.classes.last?.symbol == "-3m1")
         var worst = 0.0
         for c in fixture.classes {
-            let laue = try #require(LaueClass(rawValue: c.symbol))
-            let s = CrystalOrientationSymmetry(laueClass: laue)
+            let s = try #require(pinnedSymmetry(c.symbol))
             for (d, e) in zip(c.directions, c.rgb) {
                 let rgb = try s.ipfColor(direction: SIMD3(d[0], d[1], d[2]), key: .orix)
                 let gap = max(abs(Double(rgb.x) - e[0]), abs(Double(rgb.y) - e[1]), abs(Double(rgb.z) - e[2]))
@@ -41,9 +40,8 @@ struct OrixIPFKeyTests {
 
     @Test func nativeKeyOfTheEightOtherClassesIsTheOrixKey() throws {
         for c in try pins().classes {
-            let laue = LaueClass(rawValue: c.symbol)!
-            guard ![.mThreeBarM, .sixOverMmm, .twoOverM].contains(laue) else { continue }
-            let s = CrystalOrientationSymmetry(laueClass: laue)
+            let s = pinnedSymmetry(c.symbol)!
+            guard ![.mThreeBarM, .sixOverMmm, .twoOverM].contains(s.laueClass) else { continue }
             for d in c.directions.prefix(20) {
                 let v = SIMD3(d[0], d[1], d[2])
                 #expect(try s.ipfColor(direction: v, key: .native) == s.ipfColor(direction: v, key: .orix))
@@ -52,8 +50,10 @@ struct OrixIPFKeyTests {
     }
 
     @Test func symmetricallyEquivalentPolesGetTheSameColour() throws {
-        for laue in LaueClass.allCases {
-            let s = CrystalOrientationSymmetry(laueClass: laue)
+        let all = LaueClass.allCases.map { CrystalOrientationSymmetry(laueClass: $0) }
+            + [CrystalOrientationSymmetry(laueClass: .threeBarM, setting: .threeBarMOne)]
+        for s in all {
+            let laue = s.laueClass
             let d = SIMD3<Double>(0.31, 0.52, 0.79)
             let reference = try s.ipfColor(direction: d, key: .orix)
             for op in s.operators {
@@ -72,9 +72,9 @@ extension OrixIPFKeyTests {
     @Test func nativeKeysOfTheThreeOriginalClassesVersusOrix() throws {
         var out: [String] = []
         for c in try pins().classes {
-            let laue = LaueClass(rawValue: c.symbol)!
+            let s = pinnedSymmetry(c.symbol)!
+            let laue = s.laueClass
             guard [.mThreeBarM, .sixOverMmm, .twoOverM].contains(laue) else { continue }
-            let s = CrystalOrientationSymmetry(laueClass: laue)
             var worst: Float = 0
             for d in c.directions {
                 let v = SIMD3(d[0], d[1], d[2])

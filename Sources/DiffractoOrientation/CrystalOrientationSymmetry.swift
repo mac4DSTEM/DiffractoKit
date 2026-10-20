@@ -15,6 +15,17 @@ public enum IPFColorKey: Sendable, Equatable, CaseIterable {
     case orix
 }
 
+/// The two orientations of the -3m twofold axes in hexagonal axes (the two settings of the point group 3m/32 family).
+///
+/// - `threeBarOneM` (-31m, P-31m and P-31c): the twofolds are perpendicular to a, along [1 -1 0], [1 2 0], [-2 -1 0]
+///   (Cartesian directions at -30, 30 and 90 degrees). This is pymatgen's `PointGroup("-3m")` and the kit's original setting.
+/// - `threeBarMOne` (-3m1, P-3m1, P-3c1, R-3m and R-3c in hexagonal axes): the twofolds lie on a, b and -(a+b) (Cartesian
+///   directions at 0, 60 and 120 degrees). This is orix's `D3d` setting.
+public enum ThreeBarMSetting: String, Sendable, Equatable, CaseIterable {
+    case threeBarOneM = "-31m"
+    case threeBarMOne = "-3m1"
+}
+
 /// Explicit refusals of invalid inputs or a colour convention with no defined key.
 public enum OrientationSymmetryError: Error, Sendable, Equatable {
     /// Expected a finite, orthonormal matrix with determinant +1 (tolerance 1e-8).
@@ -37,15 +48,19 @@ public enum OrientationSymmetryError: Error, Sendable, Equatable {
 public struct CrystalOrientationSymmetry: Sendable {
     /// The Laue class in the documented standard setting.
     public let laueClass: LaueClass
+    /// For `-3m` the placement of the twofolds; nil for every other class (which has one setting).
+    public let threeBarMSetting: ThreeBarMSetting?
     /// Proper rotations only, deterministic order, verified against pymatgen's point-group tables.
     public let operators: [simd_double3x3]
     /// The same proper operators as integer matrices in the fractional (cell) basis, for comparison with a structure's
     /// own Laue group.
     package let fractionalRotations: [IntegerMatrix]
 
-    /// Constructs the complete proper subgroup of any of the eleven Laue classes.
-    public init(laueClass: LaueClass) {
+    /// Constructs the complete proper subgroup of any of the eleven Laue classes. `setting` selects the twofold placement of
+    /// `-3m` (default: -31m, the kit's original setting, pymatgen's); it is ignored for every other class.
+    public init(laueClass: LaueClass, setting: ThreeBarMSetting = .threeBarOneM) {
         self.laueClass = laueClass
+        self.threeBarMSetting = laueClass == .threeBarM ? setting : nil
         let x = IntegerMatrix([1,0,0],[0,-1,0],[0,0,-1])
         let y = IntegerMatrix([-1,0,0],[0,1,0],[0,0,-1])
         let four = IntegerMatrix([0,-1,0],[1,0,0],[0,0,1])
@@ -61,7 +76,8 @@ public struct CrystalOrientationSymmetry: Sendable {
         case .fourOverMmm: generators = [four,x]
         case .threeBar: generators = [three]
         case .threeBarM:
-            generators = [three,IntegerMatrix([0,-1,0],[-1,0,0],[0,0,-1])]
+            generators = [three, setting == .threeBarOneM ? IntegerMatrix([0,-1,0],[-1,0,0],[0,0,-1])
+                                                          : IntegerMatrix([1,-1,0],[0,-1,0],[0,0,-1])]
         case .sixOverM: generators = [six]
         case .sixOverMmm:
             generators = [six,IntegerMatrix([1,-1,0],[0,-1,0],[0,0,-1])]
