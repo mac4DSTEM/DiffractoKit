@@ -15,6 +15,6 @@
 //      `ACOMError`): the apps' simplified polar-correlation ACOM route (docs/parity.md P25); not py4DSTEM's SO(3) correlogram.
 //
 //  py4DSTEM's SO(3) correlogram matcher and pyxem's template matching are not ported (slice 5); the ACOM route above is the apps' simplified one. CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
-//  native direction sampling and explicit IPFColorKey conventions (docs/orientation-symmetry.md).
+//  native direction sampling, disorientation, the py4DSTEM direction families and explicit IPFColorKey conventions (native, py4DSTEM, orix); PhaseModel (validation, orientation class, Materials Project models) (docs/orientation-symmetry.md).
 //  Depends on DiffractoCore, DiffractoScattering and ImagoKit's ImagoFFT (FFT1D, for the ring FFTs).
 //

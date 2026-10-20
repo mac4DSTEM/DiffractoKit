@@ -82,6 +82,8 @@ extension OrixIPFKeyTests {
                 worst = max(worst, abs(a.x - b.x), abs(a.y - b.y), abs(a.z - b.z))
             }
             out.append("\(c.symbol): \(worst)")
+            // Upper bound for the construction shared with orix, lower bound for the two different conventions.
+            if laue == .mThreeBarM { #expect(worst < 1e-5) } else { #expect(worst > 0.1, "\(c.symbol)") }
         }
         print("NATIVE versus ORIX worst RGB gaps: \(out.joined(separator: "; "))")
     }

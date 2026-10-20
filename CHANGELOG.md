@@ -19,7 +19,7 @@ Materials Project models and the phase model that the two apps carry.
   classes on seeded random orientations and pairs: Float angle within 1.19e-7 rad, reduced matrix within 6.7e-16, pair angle within
   1.4e-14 rad. **No change to the reduction was needed.**
 - `CrystalOrientationSymmetry.py4DSTEMDirectionFamily(_:)`: py4DSTEM f050d207's `symmetry_reduce_directions` (`Orientation.family`),
-  all eleven classes, bit identical to the real function on 7 161 pinned columns (171 columns on a sector wall are not compared). It
+  all eleven classes, identical to the real function (worst gap 0.0) on 6 990 of 7 161 pinned columns (171 columns on a sector wall are not compared); the operator order is the pin harness's (sorted), which can differ from a real crystal's pymatgen order where several operators qualify. It
   returns families, not a rotation; `reduce` is still the minimum-angle rotation.
 - `CrystalPresets` (DiffractoCore): fcc, bcc, simple cubic, diamond, hcp and the cubic families; Au, Al, Ni, Cu, Fe, Si, Mg at the
   apps' lattice constants; beta'' (Mg5Si6, C2/m) and 2H-WS2 from their literature refinements. Pinned to independent pymatgen
@@ -32,11 +32,12 @@ Materials Project models and the phase model that the two apps carry.
   FNV-1a content fingerprint (recomputed independently), built-in models by id, and `PhaseModel(materialsProject:fetchedAt:)`.
   `PhaseModel.orientationClass(of:)` generalises the apps' cubic / hexagonal / monoclinic test to the eleven classes: a class is
   named only when the structure's own Laue operators in its cell are the class's standard operators (agrees with spglib's Laue class
-  on 15 space groups). The -3m1 groups (P-3m1, R-3m in hexagonal axes: twofolds on a) return nil.
+  on 13 of 15 pinned space groups and returns nil for the other two: the -3m1 groups P-3m1 and R-3m in hexagonal axes, twofolds on a).
 - `tools/orix/` (provision script, `ipf-pins.py`, `disorientation-pins.py`), `tools/symmetry/family-pins.py`, `tools/presets/pins.py`;
-  consumer-check 693 checks (was 666).
+  consumer-check 690 checks (was 666).
 
 ### Changed
+- `PhaseModel.provenance` adds `laue_class`; it does not carry the app's `validation: none` / monoclinic note for 2/m (an app policy label; the app keeps adding it).
 - `OrientationSymmetryError.nativeKeyUnavailable` is no longer thrown (kept so `switch` statements compile).
 
 ### Migration

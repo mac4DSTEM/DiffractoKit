@@ -19,7 +19,7 @@ func runPhaseOrientationChecks(_ report: inout Report) {
         for laue in LaueClass.allCases {
             let s = CrystalOrientationSymmetry(laueClass: laue)
             let a = try s.ipfColor(direction: [0.3, 0.5, 0.8], key: .native)
-            r.equal("every class has a native key (\(laue))", a == (try s.ipfColor(direction: [0.3, 0.5, 0.8], key: .native)), true)
+            if ![.mThreeBarM, .sixOverMmm, .twoOverM].contains(laue) { r.equal("the native key of \(laue) is the orix key", a, try s.ipfColor(direction: [0.3, 0.5, 0.8], key: .orix)) }
         }
         let m = simd_double3x3(simd_quatd(angle: 0.7, axis: simd_normalize(SIMD3(1, 1, 0))))
         let d = try cubic.disorientation(from: matrix_identity_double3x3, to: m)
@@ -27,7 +27,7 @@ func runPhaseOrientationChecks(_ report: inout Report) {
         let quarter = simd_double3x3(simd_quatd(angle: .pi / 2, axis: [0, 0, 1]))
         r.near("a fourfold rotation is no disorientation in m-3m", try cubic.disorientation(from: matrix_identity_double3x3, to: quarter).angleRad, 0, 1e-12)
         let family = try cubic.py4DSTEMDirectionFamily(matrix_identity_double3x3)
-        r.equal("the family of the identity has three columns", family.columns.0.z.isFinite, true)
+        r.equal("the family of the identity is a signed permutation of the axes", family.columns.0.x.magnitude + family.columns.0.y.magnitude + family.columns.0.z.magnitude, 1)
     }
     report.section("presets, Materials Project, phase model") { r in
         r.equal("gold has four atoms", CrystalPresets.gold.sites.count, 4)

@@ -19,7 +19,7 @@ extension CrystalOrientationSymmetry {
     /// py4DSTEM crystal lists its own point group's operators in pymatgen's order, so classes whose sector is not a
     /// fundamental domain can differ in the choice among qualifying operators.
     ///
-    /// The matrix must be finite; it is not required to be a rotation. Comparisons are exact `>= 0` as in Python, so a
+    /// The matrix must be finite (otherwise `invalidRotation`); it is not required to be a rotation. Comparisons are exact `>= 0` as in Python, so a
     /// column lying on a sector boundary within 1e-16 can resolve differently from NumPy's BLAS products.
     public func py4DSTEMDirectionFamily(_ matrix: simd_double3x3) throws -> simd_double3x3 {
         guard Self.isFinite(matrix) else { throw OrientationSymmetryError.invalidRotation }

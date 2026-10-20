@@ -65,6 +65,8 @@ struct OrixDisorientationTests {
             for op in s.operators {
                 let d = try s.disorientation(from: a, to: op * a)
                 #expect(d.angleRad < 1e-7, "\(laue)")
+                let trace = d.matrix[0][0] + d.matrix[1][1] + d.matrix[2][2]
+                #expect(abs(acos(min(1, max(-1, (trace - 1) / 2))) - d.angleRad) < 1e-6, "\(laue) matrix angle")
             }
             let b = simd_double3x3(simd_quatd(angle: 2.1, axis: simd_normalize(SIMD3(-1, 0.5, 2))))
             let ab = try s.disorientation(from: a, to: b).angleRad, ba = try s.disorientation(from: b, to: a).angleRad

@@ -23,7 +23,7 @@ into this frame. This constructor does not infer a setting from a cell or from i
 (the py4DSTEM matrix convention). The returned matrix is one proper rotation. Canonical quaternion `(−w,x,y,z)`
 comparison breaks ties, ignoring component differences up to 1e-13. Near a half-turn (`|w| < 1e-14`), the first imaginary
 component whose magnitude exceeds 1e-14 fixes the sign. Otherwise w is nonnegative. This is the minimum-angle
-orix/MTEX convention; orix/MTEX themselves are not executed as oracles here. The fixture independently minimizes over
+orix/MTEX convention; orix 0.15.0 is executed as an oracle (MTEX is MATLAB and is not). The fixture independently minimizes over
 pymatgen's operation sets with SciPy quaternions, and (0.6.0) orix 0.15.0's `Orientation.reduce()` and `angle_with` agree with it for
 all eleven classes (see "Disorientation" below). The diagnostic angle is Float radians.
 
@@ -110,7 +110,7 @@ automatic sector is not a fundamental domain, return it for part of the sphere),
 tests its operators twice, the second copy against the sector with its first vertex negated (py4DSTEM's 180 degree fibre
 case). The operator list is the pin harness's: the proper operators sorted by their fractional matrices, then their
 negatives. A real py4DSTEM crystal lists its point group's operators in pymatgen's order, so where several operators qualify
-the choice can differ (-3m: 336 of 636 pinned columns had several qualifying operators and the sorted list agrees with the
+the choice can differ (-3m: 336 of 651 pinned columns had several qualifying operators and the sorted list agrees with the
 harness on all of them). Pinned (`tools/symmetry/family-pins.py` runs the real function; `Py4DSTEMFamilyTests`): 2 387
 matrices, all eleven classes, 7 161 columns, family entries identical (worst gap 0.0); 171 columns lying within 1e-12 of a
 sector wall (the identity's columns on the 6/m wall, for example) are not compared, because whether the exact `>= 0` test
@@ -121,7 +121,7 @@ Python sector uses [001]-[011]-[111].
 
 `PhaseModel.orientationClass(of:)` (0.6.0, `DiffractoOrientation`) names the Laue class the reduction can use for a structure:
 the class detected from the atoms, when the structure's own proper Laue operators in its cell basis are exactly the class's
-standard operators. It agrees with spglib's Laue class for 15 pinned space groups (-1 to m-3m) wherever it returns a class;
+standard operators. It agrees with spglib's Laue class for 13 of 15 pinned space groups (-1 to m-3m) and returns nil for the other two;
 the two groups it returns nil for are the -3m1 type whose twofolds lie on a (P-3m1 and R-3m in hexagonal axes), because the
 kit's -3m setting has them on a-b (P-31m). A -3m1 structure therefore has no fundamental zone yet; transforming its cell is
 future work.

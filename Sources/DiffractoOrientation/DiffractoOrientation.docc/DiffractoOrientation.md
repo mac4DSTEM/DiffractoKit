@@ -39,7 +39,8 @@ orientation and phase results say which reflections matched, not which way a pol
 standard setting. ``CrystalOrientationSymmetry/reduce(_:)`` returns one minimum-angle rotation representative;
 ``CrystalOrientationSymmetry/sampleFundamentalZone(count:)`` samples directions deterministically.
 
-Choose an ``IPFColorKey`` explicitly. `.native` folds a pole using the original m-3m, 6/mmm or b-unique 2/m key;
-other native keys throw a named error. `.py4DSTEM` expects the already reduced Python family pole in the automatic
+Choose an ``IPFColorKey`` explicitly. `.native` folds a pole using the original m-3m, 6/mmm or b-unique 2/m key and, for the other eight classes,
+the orix key; `.orix` is orix's TSL key for all eleven classes. `.py4DSTEM` expects the already reduced Python family pole in the automatic
 sector (the original pole for 2/m), and reproduces the pinned full-mask beam key at Float precision. Python's
-independent direction-family reduction is not ported; it returns three families rather than one rotation.
+direction-family reduction is ``CrystalOrientationSymmetry/py4DSTEMDirectionFamily(_:)``; it returns three families rather than
+one rotation. ``CrystalOrientationSymmetry/disorientation(from:to:)`` is the symmetry-reduced angle between two orientations.
