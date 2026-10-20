@@ -1,0 +1,15 @@
+{
+  "originHash" : "770fa46d1d286550c8f9e9fdaf50ea02d78221595ccff674f5e7270c7931860f",
+  "pins" : [
+    {
+      "identity" : "imagokit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mac4DSTEM/ImagoKit",
+      "state" : {
+        "revision" : "2af2133b27b54043ffd6655ba2112edfce533f46",
+        "version" : "0.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}

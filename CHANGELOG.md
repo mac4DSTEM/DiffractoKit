@@ -3,6 +3,28 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.5.0 (2026-10-20)
+
+ACOM matching over a whole scan, so the apps can drop their own scan loop (mac4DSTEM `OrientationMatching.matchAll`, CPU path).
+
+- `ACOMMatcher.matchAll(peaks:width:height:originX:originY:invAngstromPerPixel:selection:maxWorkers:isCancelled:progress:)`:
+  positions dealt round-robin over worker threads (default: the active processor count), `isCancelled` polled before every
+  position (a cancelled run returns nil), `progress` in 1 % batches, non-decreasing, the last call 1. Each position is exactly `ACOMMatcher.match`,
+  so no pinned number moves.
+- `ACOMScanSelection` (`full`, `preview(maxDimension:)`, `square(centerX:centerY:radius:)`) and `ACOMScanResults` (the grid,
+  `expandedPreview(selection:)`), taken from the app's `ACOMScanSelection` and `OrientationMap` container; the map's presentation
+  (Euler read-out text, reliability and IPF-Z images) stays in the app.
+- `tools/acom-benchmark`: the speed measurement. On the default 600-direction library (32 x 128 bins, 19 peaks a pattern), under a
+  machine load of about 9: 1.45 ms a pattern on one worker, 0.24 ms on eight (4 200 patterns a second; 2026-10-20, load 3); a 256 x 256 scan is about
+  2 minutes on one worker and 20 seconds on eight. A cancel request is therefore honoured within one pattern (about 2 ms).
+
+Not here: the apps' Metal backend (measured slower than this CPU path in the app, kept in the app as a named option) and strain
+mapping (a Bragg-vector lattice fit with no crystal in it; it belongs to CuboKit).
+
+### Migration
+Additive: a consumer of 0.4.1 recompiles unchanged. mac4DSTEM replaces its CPU `matchAll` loop and `ACOMScanSelection` with the
+kit's; the Metal path and the `OrientationMap` presentation stay.
+
 ## 0.4.1 (2026-10-16)
 
 Dependency range only; no API, source or number changes.

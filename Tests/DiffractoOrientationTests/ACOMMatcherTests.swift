@@ -422,3 +422,134 @@ struct ACOMContractTests {
         #expect(matcher.library.count == 40)
     }
 }
+
+// MARK: Scan matching
+
+struct ACOMScanTests {
+    private func setup() throws -> (ACOMMatcher, ACOMTemplateLibrary) {
+        let c = try #require(try fixture().crystals["al"])
+        let lib = try ACOMTemplateLibrary.generate(
+            reflections: reflections(c), kMax: c.kmax, laueClass: .mThreeBarM,
+            settings: ACOMTemplateSettings(zoneAxisCount: 40, excitation: .appCurvature(wavelengthAngstrom: 0.0251)))
+        return (try #require(ACOMMatcher(library: lib)), lib)
+    }
+
+    /// A scan whose pattern at (x, y) is template (3 * x + y) % 40 rotated by a position-dependent angle; every fifth is empty.
+    private func scan(_ lib: ACOMTemplateLibrary, width: Int, height: Int) -> [[ACOMPeak]] {
+        (0..<(width * height)).map { i in
+            if i % 5 == 4 { return [] }
+            let phi = 0.1 * Double(i % 7), ipp = 0.004
+            return lib.templateSpots[(3 * i + 1) % lib.count].map { s in
+                let a = Double(s.azimuth) + phi, r = Double(s.radius) / ipp
+                return ACOMPeak(x: Float(64 + r * cos(a)), y: Float(64 + r * sin(a)), intensity: pow(s.weight, 4))
+            }
+        }
+    }
+
+    @Test func selectionsListTheirPositions() {
+        #expect(ACOMScanSelection.full.sourceIndices(width: 3, height: 2) == [0, 1, 2, 3, 4, 5])
+        #expect(ACOMScanSelection.full.sourceIndices(width: 0, height: 2).isEmpty)
+        // 5 x 3 into at most 2 blocks a side: step 3, so columns 0 and 3 of row 0.
+        #expect(ACOMScanSelection.preview(maxDimension: 2).sourceIndices(width: 5, height: 3) == [0, 3])
+        #expect(ACOMScanSelection.preview(maxDimension: 2).previewStep(width: 5, height: 3) == 3)
+        #expect(ACOMScanSelection.preview(maxDimension: 0).previewStep(width: 5, height: 3) == 5)
+        #expect(ACOMScanSelection.full.previewStep(width: 5, height: 3) == 1)
+        #expect(ACOMScanSelection.square(centerX: 0, centerY: 0, radius: 1).sourceIndices(width: 4, height: 4) == [0, 1, 4, 5])
+        #expect(ACOMScanSelection.square(centerX: 9, centerY: 9, radius: 1).sourceIndices(width: 4, height: 4).isEmpty)
+        #expect(ACOMScanSelection.square(centerX: 1, centerY: 1, radius: -3).sourceIndices(width: 4, height: 4) == [5])
+        #expect(ACOMScanSelection.square(centerX: 2, centerY: 1, radius: 1).positionCount(width: 4, height: 4) == 9)
+    }
+
+    @Test func fullScanEqualsPatternByPatternForAnyWorkerCount() throws {
+        let (matcher, lib) = try setup()
+        let (w, h) = (6, 5)
+        let peaks = scan(lib, width: w, height: h)
+        let want = peaks.map { matcher.match(peaks: $0, originX: 64, originY: 64, invAngstromPerPixel: 0.004) }
+        #expect(want.contains { $0.templateIndex >= 0 } && want.contains { $0.templateIndex < 0 })
+        for workers in [1, 3, nil] as [Int?] {
+            let got = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64,
+                                                     invAngstromPerPixel: 0.004, maxWorkers: workers))
+            #expect(got.results == want)
+            #expect(got.width == w && got.height == h && got.templateCount == lib.count)
+            #expect(got[2, 1] == want[1 * w + 2])
+        }
+    }
+
+    @Test func progressEndsAtOneAndNeverExceedsIt() throws {
+        let (matcher, lib) = try setup()
+        let peaks = scan(lib, width: 8, height: 8)
+        let seen = LockedBox<[Double]>([])
+        let done = matcher.matchAll(peaks: peaks, width: 8, height: 8, originX: 64, originY: 64, invAngstromPerPixel: 0.004,
+                                    maxWorkers: 4, progress: { f in seen.update { $0.append(f) } })
+        #expect(done != nil)
+        let values = seen.value
+        #expect(!values.isEmpty)
+        #expect(values.allSatisfy { $0 > 0 && $0 <= 1 })
+        #expect(values.max() == 1)
+        #expect(values.last == 1)
+        #expect(zip(values, values.dropFirst()).allSatisfy { $0 <= $1 })
+    }
+
+    @Test func hugeSquareAndPreviewArgumentsClipInsteadOfTrapping() {
+        #expect(ACOMScanSelection.square(centerX: 2, centerY: 2, radius: Int.max).positionCount(width: 4, height: 3) == 12)
+        #expect(ACOMScanSelection.square(centerX: Int.min, centerY: 0, radius: 1).positionCount(width: 4, height: 3) == 0)
+        #expect(ACOMScanSelection.preview(maxDimension: Int.max).sourceIndices(width: 4, height: 3).count == 12)
+    }
+
+    @Test func squareLeavesTheOutsideEmpty() throws {
+        let (matcher, lib) = try setup()
+        let (w, h) = (6, 5)
+        let peaks = scan(lib, width: w, height: h)
+        let full = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64, invAngstromPerPixel: 0.004))
+        let sq = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64, invAngstromPerPixel: 0.004,
+                                               selection: .square(centerX: 2, centerY: 2, radius: 1)))
+        for y in 0..<h {
+            for x in 0..<w {
+                let inside = abs(x - 2) <= 1 && abs(y - 2) <= 1
+                #expect(sq[x, y] == (inside ? full[x, y] : .empty))
+            }
+        }
+    }
+
+    @Test func previewCopiesEachBlocksCornerOverTheBlock() throws {
+        let (matcher, lib) = try setup()
+        let (w, h) = (6, 4)
+        let peaks = scan(lib, width: w, height: h)
+        let full = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64, invAngstromPerPixel: 0.004))
+        let sel = ACOMScanSelection.preview(maxDimension: 3)    // step 2
+        let pv = try #require(matcher.matchAll(peaks: peaks, width: w, height: h, originX: 64, originY: 64, invAngstromPerPixel: 0.004,
+                                               selection: sel))
+        for y in 0..<h { for x in 0..<w { #expect(pv[x, y] == full[(x / 2) * 2, (y / 2) * 2]) } }
+    }
+
+    @Test func cancellationReturnsNilAndStopsStartingPositions() throws {
+        let (matcher, lib) = try setup()
+        let peaks = scan(lib, width: 10, height: 10)
+        let upFront = matcher.matchAll(peaks: peaks, width: 10, height: 10, originX: 64, originY: 64, isCancelled: { true })
+        #expect(upFront == nil)
+        // Cancel after about 20 polls: the run is nil, and far fewer than 100 positions were started (one worker, so the polls
+        // are the positions).
+        let polls = LockedBox(0)
+        let r = matcher.matchAll(peaks: peaks, width: 10, height: 10, originX: 64, originY: 64, invAngstromPerPixel: 0.004, maxWorkers: 1,
+                                 isCancelled: { polls.update { $0 += 1 }; return polls.value > 20 })
+        #expect(r == nil)
+        #expect(polls.value <= 23)
+    }
+
+    @Test func badInputIsRefused() throws {
+        let (matcher, lib) = try setup()
+        let peaks = scan(lib, width: 3, height: 3)
+        #expect(matcher.matchAll(peaks: peaks, width: 3, height: 4, originX: 64, originY: 64) == nil)
+        #expect(matcher.matchAll(peaks: [], width: 0, height: 0, originX: 64, originY: 64) == nil)
+        #expect(matcher.matchAll(peaks: peaks, width: 3, height: 3, originX: 64, originY: 64,
+                                 selection: .square(centerX: 9, centerY: 9, radius: 1)) == nil)
+    }
+}
+
+private final class LockedBox<T: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: T
+    init(_ value: T) { stored = value }
+    var value: T { lock.lock(); defer { lock.unlock() }; return stored }
+    func update(_ body: (inout T) -> Void) { lock.lock(); defer { lock.unlock() }; body(&stored) }
+}

@@ -8,8 +8,8 @@
 //
 //  The peak of corr over Δφ is the in-plane angle, its height the score. A second pass on the unconjugated product correlates
 //  the azimuth-reversed image, covering the mirror half of the proper-rotation zone that the sampled zone does not reach
-//  (py4DSTEM `inversion_symmetry`, `Orientation.mirror`). The apps' Metal backend, scan selection, progress and cancellation
-//  are not here.
+//  (py4DSTEM `inversion_symmetry`, `Orientation.mirror`). The scan loop, selection, progress and cancellation are in ACOMScan.swift; the
+//  apps' Metal backend is not here.
 //
 
 import Foundation

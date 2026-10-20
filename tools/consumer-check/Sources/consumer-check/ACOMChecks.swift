@@ -47,5 +47,29 @@ func runACOMChecks(_ report: inout Report) {
         r.near("the orientation matrix is a rotation", simd_determinant(mat), 1, 1e-12)
         let s: any Sendable = matcher
         _ = s
+
+        // The scan layer: 4 x 3 positions from template spots, a cancelled run, a square selection, a preview.
+        let scanPeaks: [[ACOMPeak]] = (0..<12).map { i in
+            i % 4 == 3 ? [] : lib.templateSpots[(i * 2 + 1) % lib.count].map { s in
+                let a = Double(s.azimuth) + 0.1 * Double(i), rad = Double(s.radius) / 0.01
+                return ACOMPeak(x: Float(200 + rad * cos(a)), y: Float(190 + rad * sin(a)), intensity: pow(s.weight, 4))
+            }
+        }
+        let scan = matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, invAngstromPerPixel: 0.01,
+                                    selection: .full, maxWorkers: 2, isCancelled: { false }, progress: { _ in })
+        r.equal("a scan has one result per position", scan?.results.count, 12)
+        r.equal("a scan position equals the single-pattern match",
+                scan?[1, 1] == matcher.match(peaks: scanPeaks[5], originX: 200, originY: 190, invAngstromPerPixel: 0.01), true)
+        r.equal("a position without peaks stays empty", scan?[3, 0] == .empty, true)
+        r.equal("a cancelled scan is nil",
+                matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, isCancelled: { true }) == nil, true)
+        r.equal("the square selection lists its positions",
+                ACOMScanSelection.square(centerX: 1, centerY: 1, radius: 1).sourceIndices(width: 4, height: 3), [0, 1, 2, 4, 5, 6, 8, 9, 10])
+        let preview = matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, invAngstromPerPixel: 0.01,
+                                       selection: .preview(maxDimension: 2))
+        r.equal("a preview copies the block corner over the block", preview?[1, 1] == preview?[0, 0], true)
+        r.equal("the preview step fits the longer side", ACOMScanSelection.preview(maxDimension: 2).previewStep(width: 4, height: 3), 2)
+        let empty = ACOMScanResults(width: 2, height: 2, templateCount: 0)
+        r.equal("an empty map expands to itself", empty.expandedPreview(selection: .full) == empty, true)
     }
 }

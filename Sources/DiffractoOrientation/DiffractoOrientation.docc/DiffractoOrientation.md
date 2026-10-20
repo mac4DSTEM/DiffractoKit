@@ -20,6 +20,11 @@ grouping or multi-match). Choose the excitation error with ``ACOMExcitationModel
 in py4DSTEM's orientation convention, `.appCurvature` for the apps', `.flat` when the in-plane angle may be ambiguous by a half
 turn. docs/parity.md (P25) lists what is pinned to the app source and to py4DSTEM.
 
+A whole scan is matched with ``ACOMMatcher/matchAll(peaks:width:height:originX:originY:invAngstromPerPixel:selection:maxWorkers:isCancelled:progress:)``:
+the positions are dealt over worker threads, ``ACOMScanSelection`` picks all of them, one per block (a preview) or a square,
+`isCancelled` is polled before every position and `progress` reports the finished fraction. The result is an ``ACOMScanResults`` grid.
+`tools/acom-benchmark/run.sh` times it.
+
 ## Polarity
 
 A kinematic pattern cannot tell +c from -c on a polar structure. Without anomalous scattering |F(hkl)|^2 equals
