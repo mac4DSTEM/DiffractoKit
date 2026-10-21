@@ -3,6 +3,10 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.7.1 (2026-10-21)
+
+The ImagoKit dependency accepts `"0.2.0"..<"1.0.0"` (was 0.2.x), so a consumer can take ImagoKit 0.4.0. Only `FFT1D` is used; the ACOM, phase and orientation tests pass against ImagoKit 0.4.0.
+
 ## 0.7.0 (2026-10-21)
 
 The ACOM asks of the apps' kit switch: what mac4DSTEM still carries a copy of around `ACOMMatcher` and `ACOMTemplateLibrary`. No
