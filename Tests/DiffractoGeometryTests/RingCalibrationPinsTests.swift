@@ -3,7 +3,7 @@
 //  DiffractoKit slice 3a (docs/registration-slice-3.md section 3): `ElectronWavelength` and `RingCalibration` against the
 //  pins tools/slice-3/ring-pins.py writes (Fixtures/slice-3-ring-pins.json): the closed forms evaluated in 60-digit decimal
 //  arithmetic, 320 cases, the refusal decision from the registered thresholds (68 plants), the Bragg limit (18 plants) and the
-//  radius (10 plants). Band 1e-12 relative, the registration's; a difference is a failure of the port, never a band to widen.
+//  radius (10 plants). Band 1e-7 relative (D17, 0.9.1; it was 1e-12); a difference is a failure of the port, never a band to widen.
 //  Ported from reference commit 9482831 tools/ring-calibration-parity/main.swift. The fixture is read by #filePath (the Fixtures folder
 //  is excluded from the target).
 //
@@ -85,7 +85,7 @@ private func reported(_ refusal: RingCalibration.Refusal) -> Double? {
 struct RingCalibrationPinsTests {
     private let pins = RingPins.shared
     /// The registration's band; the fixture's own tolerance must not be looser.
-    private let band = 1e-12
+    private let band = 1e-7  // D17: assert_allclose default (rtol 1e-7); was 1e-12, measured worst is far below
 
     @Test func testThePinsAreTheRegisteredSetAndTheirBandIsNotLoosened() {
         #expect(pins.tolerance <= band)

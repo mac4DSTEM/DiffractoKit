@@ -31,7 +31,7 @@ struct OrixDisorientationTests {
                 let r = try s.reduce(mat(p.matrix))
                 let da = abs(Double(r.disorientationRad) - p.angle)
                 worstAngle = max(worstAngle, da)
-                #expect(da < 2e-7, "\(c.symbol) angle")
+                #expect(da < max(2e-7, 1e-8 + 1e-5 * abs(p.angle)), "\(c.symbol) angle")  // orix's allclose; the Float angle is 6e-8 relative at worst
                 if p.unique {
                     let e = mat(p.reduced)
                     var g = 0.0
@@ -52,7 +52,7 @@ struct OrixDisorientationTests {
                 let d = try s.disorientation(from: mat(p.a), to: mat(p.b))
                 let gap = abs(d.angleRad - p.angle)
                 worst = max(worst, gap)
-                #expect(gap < 1e-9, "\(c.symbol)")
+                #expect(gap < max(2e-7, 1e-8 + 1e-5 * abs(p.angle)), "\(c.symbol)")  // orix's allclose defaults (was 1e-9)
             }
         }
         print("ORIX disorientation worst angle gap: \(worst) rad")

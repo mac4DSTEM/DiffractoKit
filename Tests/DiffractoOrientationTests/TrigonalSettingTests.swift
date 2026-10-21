@@ -45,7 +45,7 @@ struct TrigonalSettingTests {
             for e in proper {
                 let g = s.operators.map { gap($0, e) }.min()!
                 worst = max(worst, g)
-                #expect(g < 1e-12, "\(c.spaceGroup) \(c.setting)")
+                #expect(g < 1e-7, "\(c.spaceGroup) \(c.setting)")  // D17 (was 1e-12)
             }
             // Exact: the fractional integer matrices.
             let expected = Set(c.operatorsFractional.filter { m in

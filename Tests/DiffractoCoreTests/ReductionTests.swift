@@ -37,7 +37,7 @@ struct ReductionTests {
     }
 
     /// The reduced cell's six parameters equal spglib's and pymatgen's (two independent implementations of the same
-    /// algorithm) to 1e-10 (relative on the lengths, degrees on the angles).
+    /// algorithm) to 1e-5, the functions' own tol (D17; was 1e-10; relative on the lengths, degrees on the angles).
     @Test func testNiggliReducedCellAgreesWithSpglibAndPymatgen() {
         var worstSpglib = 0.0, worstPymatgen = 0.0
         for c in Self.cases {
@@ -46,8 +46,8 @@ struct ReductionTests {
             let mine = parameters(reduced.cell)
             let ds = parameterDeviation(mine, c.spglib), dp = parameterDeviation(mine, c.pymatgen)
             worstSpglib = max(worstSpglib, ds); worstPymatgen = max(worstPymatgen, dp)
-            #expect(ds <= 1e-10, "\(c.name) vs spglib: \(mine) \(c.spglib)")
-            #expect(dp <= 1e-10, "\(c.name) vs pymatgen: \(mine) \(c.pymatgen)")
+            #expect(ds <= 1e-5, "\(c.name) vs spglib: \(mine) \(c.spglib)")
+            #expect(dp <= 1e-5, "\(c.name) vs pymatgen: \(mine) \(c.pymatgen)")
         }
         print("slice 1b reduction: \(Self.cases.count) cells, worst deviation from spglib \(worstSpglib), from pymatgen \(worstPymatgen)")
     }

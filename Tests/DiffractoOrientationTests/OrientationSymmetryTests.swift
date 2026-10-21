@@ -65,7 +65,7 @@ struct OrientationSymmetryTests {
                 #expect(gap(op.transpose * op, matrix_identity_double3x3) < 2e-14)
                 let g = p.operators.map { gap(op, matrix($0)) }.min()!
                 worst = max(worst,g)
-                #expect(g < 2e-14)
+                #expect(g < 1e-7)  // D17 (was 2e-14); closure and orthogonality above and below stay at 2e-14
                 for other in ops { #expect(ops.contains { gap(op * other, $0) < 2e-14 }) }
             }
         }
@@ -164,14 +164,14 @@ struct OrientationSymmetryTests {
             let symmetry = CrystalOrientationSymmetry(laueClass:try #require(LaueClass(rawValue:group.symbol)))
             for (d,e) in zip(p.nativeDirections,group.foldedDirections) {
                 let g = simd_length(try symmetry.reduceDirection(vector(d))-vector(e))
-                worst = max(worst,g); #expect(g < 2e-12)
+                worst = max(worst,g); #expect(g < 1e-7)  // D17 (was 2e-12)
             }
             for sample in group.samples {
                 let actual = try symmetry.sampleFundamentalZone(count:sample.count)
                 #expect(actual.count == sample.directions.count)
                 for (v,e) in zip(actual,sample.directions) {
                     let g = simd_length(v-vector(e)); worst = max(worst,g)
-                    #expect(g < 2e-12)
+                    #expect(g < 1e-7)  // D17 (was 2e-12)
                 }
             }
         }

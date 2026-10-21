@@ -66,7 +66,7 @@ struct ConventionalSymmetryTests {
                 #expect(families.count == pin.rings.families.count, "\(name) \(label) rings \(families.count) vs \(pin.rings.families.count)")
                 for (mine, want) in zip(families, pin.rings.families) {
                     rings += 1
-                    assertClose(mine.g, want.g, relative: 1e-8, "\(name) \(label) ring g")
+                    assertClose(mine.g, want.g, relative: 1e-7, "\(name) \(label) ring g")
                     #expect(mine.multiplicity == want.multiplicity, "\(name) \(label) multiplicity of \(want.name)")
                     if label == "conventional" {
                         if sameCell { #expect(mine.name == want.name, "\(name) conventional ring name"); namesCompared += 1 } else { namesSkipped += 1; if !differentCells.contains(name) { differentCells.append(name) } }

@@ -6,7 +6,7 @@ import DiffractoOrientation
 
 /// Pins: tools/orix/direction-pins.py (orix 0.15.0 `Vector3d.in_fundamental_sector`, orix's Laue groups in the kit frame).
 /// The kit's zone is not orix's (largest-(z,x,y) orbit member, or the apps' native sector for m-3m, 6/mmm, 2/m), so the
-/// comparison is of orbits under orix's own group. Written tolerances: 1e-9 absolute on unit-vector components for orbit
+/// comparison is of orbits under orix's own group. Written tolerances: 1e-5 (orix's allclose; was 1e-9) on unit-vector components for orbit membership against orix, 1e-9 for the kit's own invariance check; formerly one 1e-9 for orbit
 /// membership and for the reduced pole being the same for every orbit member (the kit's own ties are compared at 1e-13;
 /// the random poles are generic, the designed poles lie on mirror planes and axes, where the orbit members coincide).
 private struct DirectionPinsFlat: Decodable {
@@ -40,7 +40,7 @@ struct OrixDirectionTests {
                 // 1. the reduced pole is a member of the pole's orbit and of orix's folded pole's orbit
                 let m = orbitGap(r, d, g), o = orbitGap(r, v(folded), g)
                 worstMember = max(worstMember, m); worstOrix = max(worstOrix, o)
-                #expect(m < 1e-9 && o < 1e-9, "\(c.symbol) \(p): member \(m), orix \(o)")
+                #expect(m < 1e-5 && o < 1e-5, "\(c.symbol) \(p): member \(m), orix \(o)")
                 // 2. every orbit member reduces to the same pole (the zone holds one pole per orbit)
                 for gi in g {
                     let r2 = try s.reduceDirection(gi * d)

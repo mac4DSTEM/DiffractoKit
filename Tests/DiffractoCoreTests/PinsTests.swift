@@ -33,7 +33,8 @@ struct PinsTests {
 
     private func assertMatrix(_ got: [SIMD3<Double>], _ want: [[Double]], scale: Double, _ name: String) {
         for i in 0..<3 { for j in 0..<3 {
-            #expect(abs(got[i][j] - want[i][j]) <= 1e-12 * scale, "\(name) [\(i)][\(j)]")
+            // D17: numpy assert_allclose defaults (rtol 1e-7), with an absolute floor of 1e-12 of the matrix scale for exact zeros.
+            #expect(abs(got[i][j] - want[i][j]) <= 1e-12 * scale + 1e-7 * abs(want[i][j]), "\(name) [\(i)][\(j)]")
         } }
     }
 
@@ -42,7 +43,7 @@ struct PinsTests {
         let scale = max(cell.a, cell.b, cell.c)
         assertMatrix(cell.realLattice, matrix, scale: scale, "\(name) matrix")
         assertMatrix(cell.metricTensor, metric, scale: scale * scale, "\(name) metric")
-        assertClose(cell.volume, volume, relative: 1e-12, "\(name) volume")
+        assertClose(cell.volume, volume, relative: 1e-7, "\(name) volume")
         assertMatrix(cell.reciprocalLattice, reciprocal, scale: 1 / min(cell.a, cell.b, cell.c), "\(name) reciprocal")
     }
 
@@ -52,8 +53,8 @@ struct PinsTests {
             assertCell(cell, matrix: pin.matrix, metric: pin.metric, volume: pin.volume, reciprocal: pin.reciprocal, pin.name)
             for d in pin.d {
                 let hkl = MillerIndex(d.hkl)
-                assertClose(cell.d(hkl), d.d, relative: 1e-12, "\(pin.name) d\(hkl)")
-                assertClose(cell.gLength(hkl), d.g, relative: 1e-12, "\(pin.name) g\(hkl)")
+                assertClose(cell.d(hkl), d.d, relative: 1e-7, "\(pin.name) d\(hkl)")
+                assertClose(cell.gLength(hkl), d.g, relative: 1e-7, "\(pin.name) g\(hkl)")
             }
             #expect(pin.d.count == 7 * 7 * 7 - 1, "\(pin.name)")
         }
@@ -101,10 +102,10 @@ struct PinsTests {
             for site in pin.expectedSites {
                 let found = unmatched.firstIndex { i in
                     let mine = s.sites[i]
-                    return mine.z == site.z && abs(mine.occupancy - site.occupancy) <= 1e-9
-                        && fractionalAxisDelta(mine.fractional.x, site.frac[0]) <= 1e-9
-                        && fractionalAxisDelta(mine.fractional.y, site.frac[1]) <= 1e-9
-                        && fractionalAxisDelta(mine.fractional.z, site.frac[2]) <= 1e-9
+                    return mine.z == site.z && abs(mine.occupancy - site.occupancy) <= 1e-7
+                        && fractionalAxisDelta(mine.fractional.x, site.frac[0]) <= 1e-7
+                        && fractionalAxisDelta(mine.fractional.y, site.frac[1]) <= 1e-7
+                        && fractionalAxisDelta(mine.fractional.z, site.frac[2]) <= 1e-7
                 }
                 if let found { unmatched.remove(at: found) } else { Issue.record("\(name): no site for Z\(site.z) \(site.frac)") }
             }
@@ -115,7 +116,7 @@ struct PinsTests {
             #expect(LaueClass(pointGroupSymbol: pin.pointGroup) == s.laueClass, "\(name) point group \(pin.pointGroup)")
             #expect(s.operations.count == pin.operations.count, "\(name) operation count: mine \(s.operations.map(\.xyzString))")
             for op in pin.operations {
-                #expect(s.operations.contains { $0.isEquivalent(to: op.operation, translationTolerance: 1e-6) }, "\(name): missing \(op.xyz)")
+                #expect(s.operations.contains { $0.isEquivalent(to: op.operation, translationTolerance: 0.01 / max(s.cell.a, s.cell.b, s.cell.c)) }, "\(name): missing \(op.xyz)")
             }
             #expect(Set(s.laueGroup.rotations) == Set(pin.laueRotations.map { IntegerMatrix($0) }), "\(name) Laue rotations")
             // The file's loop against the detected set (amendment 2).
@@ -131,8 +132,8 @@ struct PinsTests {
             for (mine, want) in zip(list.reflections, pin.reflections.items) {
                 #expect(mine.hkl == MillerIndex(want.hkl), "\(name) order")
                 guard mine.hkl == MillerIndex(want.hkl) else { break }
-                assertClose(mine.gLength, want.g, relative: 1e-12, "\(name) g\(mine.hkl)")
-                assertClose(mine.d, want.d, relative: 1e-12, "\(name) d\(mine.hkl)")
+                assertClose(mine.gLength, want.g, relative: 1e-7, "\(name) g\(mine.hkl)")
+                assertClose(mine.d, want.d, relative: 1e-7, "\(name) d\(mine.hkl)")
                 #expect(mine.isAllowed == want.allowed, "\(name) allowed \(mine.hkl)")
                 if let orbit = want.orbit {
                     #expect(s.laueGroup.orbit(of: mine.hkl) == Set(orbit.map { MillerIndex($0) }), "\(name) orbit \(mine.hkl)")
@@ -143,7 +144,7 @@ struct PinsTests {
             let families = list.families()
             #expect(families.count == pin.families.count, "\(name) family count")
             for (mine, want) in zip(families, pin.families) {
-                assertClose(mine.g, want.g, relative: 1e-12, "\(name) family g")
+                assertClose(mine.g, want.g, relative: 1e-7, "\(name) family g")
                 #expect(mine.members == want.members.map { MillerIndex($0) }, "\(name) members of \(want.name)")
                 #expect(mine.multiplicity == want.multiplicity, "\(name) multiplicity of \(want.name)")
                 #expect(mine.orbits == want.orbits.map { MillerIndex($0) }, "\(name) orbits of \(want.name)")

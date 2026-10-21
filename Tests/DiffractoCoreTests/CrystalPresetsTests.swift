@@ -5,7 +5,7 @@ import DiffractoCore
 
 /// PresetPins: tools/presets/pins.py (pymatgen 2026.9.24, spglib 2.8.0). The pins build each structure independently, from the
 /// published cell and Wyckoff positions with `Structure.from_spacegroup`. Tolerances, written per quantity: lattice
-/// parameters, volume and d(hkl) 1e-12 relative (closed forms in float64 on both sides); fractional site positions 1e-9
+/// parameters, volume and d(hkl) 1e-7 relative (D17; was 1e-12, closed forms in float64 on both sides); fractional site positions 1e-7
 /// (the kit's hand lists carry 2/3 as a Double, pymatgen's orbit expansion computes it); counts, Z, space-group number
 /// and operation count exact.
 private struct PresetPins: Decodable {
@@ -60,10 +60,10 @@ struct CrystalPresetsTests {
             for (name, kit, ref) in [("a", s.cell.a, l.a), ("b", s.cell.b, l.b), ("c", s.cell.c, l.c),
                                      ("alpha", s.cell.alphaDeg, l.alpha), ("beta", s.cell.betaDeg, l.beta),
                                      ("gamma", s.cell.gammaDeg, l.gamma)] {
-                #expect(abs(kit - ref) <= 1e-12 * ref, "\(id) \(name)")
+                #expect(abs(kit - ref) <= 1e-7 * ref, "\(id) \(name)")
             }
             worstVolume = max(worstVolume, abs(s.cell.volume - p.volume) / p.volume)
-            #expect(abs(s.cell.volume - p.volume) <= 1e-12 * p.volume, "\(id) volume")
+            #expect(abs(s.cell.volume - p.volume) <= 1e-7 * p.volume, "\(id) volume")
             // Sites: the same multiset of (Z, fractional position mod 1).
             #expect(s.sites.count == p.siteCount, "\(id) site count")
             var unmatched = p.sites
@@ -76,7 +76,7 @@ struct CrystalPresetsTests {
                 }
                 guard let i = unmatched.indices.min(by: { gap(unmatched[$0]) < gap(unmatched[$1]) }) else { Issue.record("\(id) extra site"); continue }
                 worstSite = max(worstSite, gap(unmatched[i]))
-                #expect(gap(unmatched[i]) < 1e-9, "\(id) site \(f)")
+                #expect(gap(unmatched[i]) < 1e-7, "\(id) site \(f)")
                 unmatched.remove(at: i)
             }
             #expect(unmatched.isEmpty, "\(id) missing sites")
@@ -84,7 +84,7 @@ struct CrystalPresetsTests {
             for (h, e) in zip(fixture.hkl, p.d) {
                 let d = s.cell.d(MillerIndex(h[0], h[1], h[2]))
                 worstD = max(worstD, abs(d - e) / e)
-                #expect(abs(d - e) <= 1e-12 * e, "\(id) d\(h)")
+                #expect(abs(d - e) <= 1e-7 * e, "\(id) d\(h)")
             }
             // Symmetry: the Laue class from the point group, and the operation count of the cell.
             let expected: LaueClass = ["m-3m": .mThreeBarM, "6/mmm": .sixOverMmm, "2/m": .twoOverM][p.pointGroup]!

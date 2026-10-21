@@ -44,7 +44,7 @@ struct ConventionalCellTests {
             #expect(conv.centringTranslations.first == SIMD3(0, 0, 0), "\(c.name)")
             let volumeDeviation = abs(conv.cell.volume - c.lattice.convVolume) / c.lattice.convVolume
             worstVolume = max(worstVolume, volumeDeviation)
-            #expect(volumeDeviation <= 1e-10, "\(c.name) volume \(conv.cell.volume) vs \(c.lattice.convVolume)")
+            #expect(volumeDeviation <= 1e-7, "\(c.name) volume \(conv.cell.volume) vs \(c.lattice.convVolume)")
             // the transformation reproduces the conventional metric and volume from the INPUT cell
             let v = transformedVectors(c.cell, p)
             let g = metric(of: v)
@@ -53,9 +53,9 @@ struct ConventionalCellTests {
             for i in 0..<3 { for j in 0..<3 {
                 let deviation = abs(g[i][j] - want[i][j]) / scale
                 worstMetric = max(worstMetric, deviation)
-                #expect(deviation <= 1e-9, "\(c.name) Pᵀ G P [\(i)][\(j)] \(g[i][j]) vs \(want[i][j])")
+                #expect(deviation <= 1e-7, "\(c.name) Pᵀ G P [\(i)][\(j)] \(g[i][j]) vs \(want[i][j])")
             } }
-            #expect(abs(c.cell.volume * Double(p.determinant) - conv.cell.volume) <= 1e-9 * conv.cell.volume, "\(c.name)")
+            #expect(abs(c.cell.volume * Double(p.determinant) - conv.cell.volume) <= 1e-7 * conv.cell.volume, "\(c.name)")
             // lengths
             switch conv.bravais {
             case .mP, .mC:

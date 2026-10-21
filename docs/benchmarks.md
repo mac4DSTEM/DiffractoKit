@@ -9,9 +9,10 @@ Float64 unless the function is Float32 by design (ACOM, ellipse pattern pixels).
 |---|---|
 | Machine | Apple M5 Pro, 64 GB, macOS 27.0.1 (Darwin 27.0.0) |
 | Toolchain | Apple Swift 6.4, `swift build -c release` (separate package `tools/benchmarks`) |
-| Python | 3.12.14, NumPy 2.5.4, SciPy 1.18.1; py4DSTEM 0.14.19 (`References/python/py4dstem`); pymatgen 2026.10.16 and orix 0.15.0 and spglib 2.8.0 (`References/python/orix`) |
+| Python | 3.12.14, NumPy 2.5.4, SciPy 1.18.1; py4DSTEM 0.14.19 (`References/python/py4dstem`); pymatgen-core 2026.10.16 (the code; its `pymatgen` metapackage dist-info reads 2026.9.24) and orix 0.15.0 and spglib 2.8.0 (`References/python/orix`) |
 | Load | **10.5 on a 12-core machine while five other kit sessions ran** (uptime 17:39): every figure carries that noise, the single-core rows least. Re-run when the machine is quiet before quoting a ratio. |
-| Pin note | `References/python/orix` holds pymatgen **2026.10.16**, the kit's parity pin is 2026.9.24; nothing here compares numbers, only time |
+| Pin note | `References/python/orix` runs pymatgen-core **2026.10.16** under a `pymatgen` 2026.9.24 metapackage; the fixtures record `pymatgen` 2026.9.24 and, except `cif-symmetry-pins.json` (generated 2026-10-21 on this install, byte-identical on regeneration), `pymatgen-core` 2026.9.23. Nothing here compares numbers, only time |
+| 0.9.1 | The `symmetry_detection` and `cif_import` rows above are the 2026-10-21 measurement of 0.9.0. 0.9.1 replaced the closure check that took 95 % of them (see `docs/open-items.md`); measured in-process on the same `al_super2.cif` (machine load 3.6): `cif_import` typical median 67 ms (min 67, max 77), against 297 ms (one run at load 9) before the change and the table's 351 ms. Not yet re-run through `run.sh`; the nightly's row replaces these |
 
 Re-run: `tools/benchmarks/gen_inputs.py` (References/python/orix Python), then `../../tools/memcap.sh --gb 8 -- tools/benchmarks/run.sh`
 for the kit and `tools/benchmarks/bench_python.py pymatgen|py4dstem` for Python, merged by `merge.py`. The raw lines are
@@ -59,8 +60,8 @@ for the kit and `tools/benchmarks/bench_python.py pymatgen|py4dstem` for Python,
   `Crystal.calculate_structure_factors` on the same C2/m cell; the kit is 1.8 to 4.5 times faster. Both use the Lobato-Van Dyck table.
 - `symmetry_detection` and `cif_import`: the kit's `CIFImport.read` always detects the symmetry of the cell it reads;
   pymatgen's `CifParser` only parses and `SpacegroupAnalyzer` is spglib in C. On a 32-atom P1 cell (an fcc supercell with
-  1 536 operations) the kit takes 361 ms against 13 ms, **28 times slower**; on a four-atom cell they are level. Listed first in
-  `docs/open-items.md`.
+  1 536 operations) the kit took 361 ms against 13 ms, **28 times slower**; on a four-atom cell they are level. The cause was the
+  closure check, not the symmetry search (`docs/open-items.md`); 0.9.1 made the check about five times faster, the rest stays listed there.
 - `orientation_reduce`: the kit reduces one matrix at a time (24 proper operators); orix reduces a vectorised batch
   (`Orientation.from_matrix` + `map_into_symmetry_reduced_zone`). The kit is 2.5 to 12 times faster at these sizes.
 - `ellipse_fit_1d`: level with py4DSTEM's `fit_ellipse_1D` (0.94 and 1.1).

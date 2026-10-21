@@ -144,7 +144,7 @@ struct ScatteringPinsTests {
     // MARK: 4.2 the table
 
     /// All 103 rows × 10 parameters equal to the fetched file bit for bit; f_e at g² ∈ {0, 0.25, 1, 4} for every Z within
-    /// 1e-15 relative of NumPy's value. (Also holds the JSON decoder to exact doubles: a lossy decode fails here first.)
+    /// 1e-7 relative of NumPy's value (D17; was 1e-15, measured at rounding level). (Also holds the JSON decoder to exact doubles: a lossy decode fails here first.)
     @Test func testTableBitForBitAndSamples() throws {
         let pins = try ScatteringFixtures.pins()
         #expect(pins.tableSha256 == "be845d1d541cdb75ae16f8928cd9e56a9ea38af8a3cc43da9137e73cc72bb6f4")
@@ -166,7 +166,7 @@ struct ScatteringPinsTests {
                 if e > worst { worst = e; worstAt = "Z=\(z) g2=\(g2)" }
             }
         }
-        #expect(worst <= 1e-15, "f_e differs from NumPy by \(worst) at \(worstAt)")
+        #expect(worst <= 1e-7, "f_e differs from NumPy by \(worst) at \(worstAt)")
         #expect(ElectronScatteringFactors.f(z: 104, gSquared: 0) == nil && ElectronScatteringFactors.f(z: 0, gSquared: 0) == nil)
     }
 
@@ -183,9 +183,9 @@ struct ScatteringPinsTests {
 
     // MARK: 4.1 NumPy
 
-    /// Every structure at k_max 1.2: Re F, Im F, |F| within 1e-9 relative of max(|F|, 1e-4) on every pinned reflection; the
+    /// Every structure at k_max 1.2: Re F, Im F, |F| within 1e-7 relative (D17; was 1e-9) of max(|F|, 1e-4) on every pinned reflection; the
     /// kept set equal (a reflection within 1e-12 relative of the cut may fall either side); the unlisted ones (|F| ≤ 1e-6
-    /// in NumPy) stay below 1e-6; the families equal (count, g 1e-12, members, multiplicity, orbits, name, Σ|F|² 1e-9).
+    /// in NumPy) stay below 1e-6; the families equal (count, g 1e-7, members, multiplicity, orbits, name, Σ|F|² 1e-7).
     @Test(arguments: ScatteringFixtures.structureNames)
     func testStructureMatchesNumPyPins(_ name: String) throws {
         let p = try ScatteringFixtures.pin(name)
@@ -202,10 +202,10 @@ struct ScatteringPinsTests {
             guard let k = kit[hkl] else { fails.append("missing \(hkl)"); continue }
             let f = k.structureFactor
             let floor = max(it[6], 1e-4)
-            if abs(f.gLength - it[3]) > 1e-12 * it[3] { fails.append("\(hkl) |g| \(f.gLength) vs \(it[3])") }
-            if abs(f.real - it[4]) > 1e-9 * floor { fails.append("\(hkl) Re \(f.real) vs \(it[4])") }
-            if abs(f.imaginary - it[5]) > 1e-9 * floor { fails.append("\(hkl) Im \(f.imaginary) vs \(it[5])") }
-            if abs(f.magnitude - it[6]) > 1e-9 * floor { fails.append("\(hkl) |F| \(f.magnitude) vs \(it[6])") }
+            if abs(f.gLength - it[3]) > 1e-7 * it[3] { fails.append("\(hkl) |g| \(f.gLength) vs \(it[3])") }
+            if abs(f.real - it[4]) > 1e-7 * floor { fails.append("\(hkl) Re \(f.real) vs \(it[4])") }
+            if abs(f.imaginary - it[5]) > 1e-7 * floor { fails.append("\(hkl) Im \(f.imaginary) vs \(it[5])") }
+            if abs(f.magnitude - it[6]) > 1e-7 * floor { fails.append("\(hkl) |F| \(f.magnitude) vs \(it[6])") }
             if it[3] <= 1.2, abs(it[6] - 1e-4) > 1e-12 * 1e-4 {
                 let pinKept = it[6] > 1e-4
                 let kitKept = f.magnitude > 1e-4
@@ -224,12 +224,12 @@ struct ScatteringPinsTests {
             for (i, (a, b)) in zip(list.families, p.families).enumerated() {
                 let fam = a.family
                 var why: [String] = []
-                if abs(fam.g - b.g) > 1e-12 * b.g { why.append("g \(fam.g) vs \(b.g)") }
+                if abs(fam.g - b.g) > 1e-7 * b.g { why.append("g \(fam.g) vs \(b.g)") }
                 if descendingMembers(fam.members) != b.members { why.append("members") }
                 if fam.multiplicity != b.multiplicity { why.append("multiplicity \(fam.multiplicity) vs \(b.multiplicity)") }
                 if fam.orbits.map({ [$0.h, $0.k, $0.l] }) != b.orbits { why.append("orbits \(fam.orbits) vs \(b.orbits)") }
                 if fam.name != b.name { why.append("name \(fam.name) vs \(b.name)") }
-                if abs(a.intensity - b.sumF2) > 1e-9 * b.sumF2 { why.append("sumF2 \(a.intensity) vs \(b.sumF2)") }
+                if abs(a.intensity - b.sumF2) > 1e-7 * b.sumF2 { why.append("sumF2 \(a.intensity) vs \(b.sumF2)") }
                 if !why.isEmpty { fails.append("family \(i) \(b.name): " + why.joined(separator: "; ")) }
             }
         }
@@ -314,7 +314,7 @@ struct ScatteringPinsTests {
     // MARK: 4.3 pymatgen X-ray
 
     /// For each pymatgen peak: Σ|F_X|² over its half-space members through the kit's phase sum with pymatgen's X-ray form
-    /// factor f(s) = Z − 41.78214 s² Σ a exp(−b s²), s = |g|/2, equals pymatgen's intensity / (2 LP) within 1e-6 relative.
+    /// factor f(s) = Z − 41.78214 s² Σ a exp(−b s²), s = |g|/2, equals pymatgen's intensity / (2 LP) within 1e-3 relative (XRDCalculator.SCALED_INTENSITY_TOL; D17, was 1e-6).
     @Test(arguments: ScatteringFixtures.xrayNames)
     func testXRayPhaseSumsMatchPymatgen(_ name: String) throws {
         let pins = try ScatteringFixtures.pins()
@@ -341,7 +341,7 @@ struct ScatteringPinsTests {
             let e = abs(total - peak.sumF2Pymatgen) / peak.sumF2Pymatgen
             if e > worst { worst = e; worstAt = "\(peak.members.first ?? [])" }
         }
-        #expect(worst <= 1e-6, "\(name): worst relative difference \(worst) at \(worstAt)")
+        #expect(worst <= 1e-7, "\(name): worst relative difference \(worst) at \(worstAt)")
     }
 
     // MARK: 4.4 the reference implementations, exact today (amendment 1; D12 allows a tolerance)

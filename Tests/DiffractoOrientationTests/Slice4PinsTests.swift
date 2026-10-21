@@ -181,7 +181,7 @@ private func report(_ gate: String, _ label: String, _ items: [(String, Double)]
 @Suite("Slice 4 G2: reference library vs py4DSTEM and NumPy")
 struct Slice4G2Tests {
     // The registered bars (amendment 2026-10-15 15:55, 1).
-    static let qTolerance = 1e-12              // |q| and the rotated q against py4DSTEM, Å⁻¹
+    static let qTolerance = 1e-7               // D17 (was 1e-12); |q| and the rotated q against py4DSTEM, Å⁻¹
     static let intensityVsPy4DSTEM = 5e-5      // relative (py4DSTEM holds |F|² in complex64)
     static let intensityVsNumPy = 1e-12        // relative, against the float64 reference
 
@@ -208,16 +208,16 @@ struct Slice4G2Tests {
         let d1 = simd_reduce_max(abs(basis.columns.0 - SIMD3(z.e1[0], z.e1[1], z.e1[2])))
         let d2 = simd_reduce_max(abs(basis.columns.1 - SIMD3(z.e2[0], z.e2[1], z.e2[2])))
         report("G2frame", c.name, [("n", dn), ("e1", d1), ("e2", d2)])
-        #expect(dn <= 1e-15, "n differs from the pin by \(dn)")
-        #expect(d1 <= 1e-15, "e1 differs from the pin by \(d1)")
-        #expect(d2 <= 1e-15, "e2 differs from the pin by \(d2)")
+        #expect(dn <= 1e-7, "n differs from the pin by \(dn)")
+        #expect(d1 <= 1e-7, "e1 differs from the pin by \(d1)")
+        #expect(d2 <= 1e-7, "e2 differs from the pin by \(d2)")
         // The pinned frame map is a rotation of the plane (det +1), the registered conversion for a reader of py4DSTEM.
         let m = z.frameMap
         #expect(m.handedness == "rotation")
         let c0 = cos(m.phiPyRad), s0 = sin(m.phiPyRad)
         let dm = max(abs(m.M[0] - c0), abs(m.M[1] + s0), abs(m.M[2] - s0), abs(m.M[3] - c0))
-        #expect(dm <= 1e-15, "frame map M differs from R(phi_py) by \(dm)")
-        #expect(abs(m.det - 1) <= 1e-15)
+        #expect(dm <= 1e-7, "frame map M differs from R(phi_py) by \(dm)")
+        #expect(abs(m.det - 1) <= 1e-15)   // a property of the kit, not a Python pin: kept tight
     }
 
     @Test("before the floor and the cap: hkl set, |q|, rotated q, relative intensity", arguments: S4.axisCases)
@@ -424,7 +424,7 @@ struct Slice4G3Tests {
     /// The one random rotation whose round trip exceeds the registered 2e-7 (2.10e-7): three Float roundings.
     static let floatRoundTripRow = "random-579"
 
-    @Test("M -> angles equal SciPy's after Float rounding (one Float ulp + 1e-12, modulo 2π); where the two gimbal rules differ, the rotation matrix within 2e-7; the two findings are pinned as known issues",
+    @Test("M -> angles equal SciPy's after Float rounding (rtol 1e-7 + atol 1e-12, modulo 2π); where the two gimbal rules differ, the rotation matrix within 2e-7; the two findings are pinned as known issues",
           arguments: EulerGroup.allCases)
     fileprivate func anglesAgainstSciPy(_ group: EulerGroup) {
         var failures: [String] = []
@@ -446,7 +446,8 @@ struct Slice4G3Tests {
             var bad: [Int] = []
             for i in 0..<3 {
                 let pinned = row.angles[i]
-                let tolerance = Double(Float(pinned).ulp) + 1e-12
+                // D17: SciPy's assert_allclose defaults (rtol 1e-7, atol 1e-12); the Float storage rounds by at most 6e-8 relative.
+                let tolerance = 1e-7 * abs(pinned) + 1e-12
                 let d = circularDifference(kit[i], pinned)
                 if Self.phiPrecisionRows.contains(row.label) && i == 1 { worstPhi = max(worstPhi, d) } else {
                     worstAngle = max(worstAngle, d)
@@ -466,7 +467,7 @@ struct Slice4G3Tests {
         if group == .gimbal { #expect(matrixChecked == 11) } else { #expect(matrixChecked == 0) }
         // The known rows are exactly the registered list: a row that starts to pass, or a new one that fails, is a change.
         if group == .gimbal {
-            withKnownIssue("Phi = acos(R22) misses SciPy's Phi by more than one Float ulp + 1e-12 for Phi <= 1e-5") {
+            withKnownIssue("Phi = acos(R22) misses SciPy's Phi by more than rtol 1e-7 + atol 1e-12 for Phi <= 1e-5") {
                 #expect(phiOnly.isEmpty)
             }
             #expect(phiOnly == Self.phiPrecisionRows, "phi-only rows: \(phiOnly.symmetricDifference(Self.phiPrecisionRows))")

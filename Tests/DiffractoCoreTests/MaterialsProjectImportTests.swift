@@ -2,7 +2,7 @@
 //  MaterialsProjectImportTests.swift
 //  The Materials Project JSON models, the document-to-structure route and the expectation verdicts. Numerics against
 //  pymatgen SpacegroupAnalyzer (fixtures/mp-import/pymatgen-pins.json, tools/mp-import/pins.py; pymatgen 2026.9.24,
-//  spglib 2.8.0): the conventional cell's volume and site count (volume 1e-9 relative: the MP inputs carry their cell to 3-4
+//  spglib 2.8.0): the conventional cell's volume and site count (volume 1e-7 relative (D17; was 1e-9): the MP inputs carry their cell to 3-4
 //  digits and pymatgen's standard cell is rebuilt from lengths and angles), the Laue class and the metric family exact.
 //  Verdicts, refusals and the formula parser are exact logic. Nothing touches the network.
 //
@@ -34,7 +34,7 @@ struct MaterialsProjectImportTests {
             let imported = try MaterialsProjectImport.structure(from: doc)
             #expect(imported.structure.sites.count == c.conventional.sites.count, "\(c.input)")
             let volume = abs(det(c.conventional.lattice))
-            #expect(abs(imported.structure.cell.volume - volume) <= 1e-9 * volume, "\(c.input) volume")
+            #expect(abs(imported.structure.cell.volume - volume) <= 1e-7 * volume, "\(c.input) volume")
             let expectedFamily: UnitCell.MetricFamily = c.spaceGroupNumber >= 195 ? .cubic : .hexagonal
             #expect(imported.structure.cell.metricFamily(lengthTolerance: 1e-4, angleToleranceDeg: 1e-2) == expectedFamily, "\(c.input)")
             #expect(imported.structure.laueClass == (c.spaceGroupNumber >= 195 ? .mThreeBarM : .sixOverMmm), "\(c.input)")
@@ -63,7 +63,7 @@ struct MaterialsProjectImportTests {
             let imported = try MaterialsProjectImport.structure(from: doc)
             #expect(imported.structure.sites.count == c.conventional.sites.count, "\(c.input)")
             let volume = abs(det(c.conventional.lattice))
-            #expect(abs(imported.structure.cell.volume - volume) <= 1e-9 * volume, "\(c.input) volume")
+            #expect(abs(imported.structure.cell.volume - volume) <= 1e-7 * volume, "\(c.input) volume")
             #expect(imported.structure.laueClass == (c.spaceGroupNumber >= 195 ? .mThreeBarM : .sixOverMmm), "\(c.input)")
             // Fm-3m and Fd-3m start with F: converted; P6_3/mmc starts with P: as served.
             if c.spaceGroupSymbol.hasPrefix("F") { #expect(imported.cell == .conventional(centring: "F"), "\(c.input)") }

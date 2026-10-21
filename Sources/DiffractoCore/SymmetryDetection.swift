@@ -260,14 +260,59 @@ public enum SymmetryDetection {
     static func closedSubset(_ operations: [SymmetryOperation], tolerance: Double = positionTolerance) -> [SymmetryOperation] {
         guard operations.count <= closureCheckLimit else { return operations }
         var set = operations
+        // Same test as composing every pair and searching the product's rotation for an equal translation, without the
+        // per-pair matrix allocation and linear search (a 32-atom fcc P1 supercell: 2.4 million pairs). Rotations get an
+        // id and a product table; translations sit in a cell list whose bucket is at least the tolerance wide, so an equal
+        // translation is in the 27 neighbouring buckets and `translationsEqual` still decides.
+        let bucketsPerAxis = max(1, min(64, Int(1 / (tolerance + 1e-6))))
         while true {
-            var byRotation: [IntegerMatrix: [SIMD3<Double>]] = [:]
-            for op in set { byRotation[op.rotation, default: []].append(op.translation) }
-            func contains(_ op: SymmetryOperation) -> Bool {
-                byRotation[op.rotation]?.contains { translationsEqual($0, op.translation, tolerance) } ?? false
+            var rotationID: [IntegerMatrix: Int] = [:]
+            var rotations: [IntegerMatrix] = []
+            for op in set where rotationID[op.rotation] == nil {
+                rotationID[op.rotation] = rotations.count
+                rotations.append(op.rotation)
             }
-            let kept = set.filter { g in g.rotation.isIdentity && SymmetryOperation.isWholeNumber(g.translation)
-                || set.allSatisfy { h in contains(g.composed(with: h)) } }
+            let n = rotations.count
+            var product = [Int](repeating: -1, count: n * n)  // product[i * n + j] = id of Rᵢ Rⱼ, -1 if not in the set
+            for i in 0..<n { for j in 0..<n { product[i * n + j] = rotationID[rotations[i].multiplied(by: rotations[j])] ?? -1 } }
+            let rows = rotations.map { r in r.rows.map { SIMD3<Double>(Double($0.x), Double($0.y), Double($0.z)) } }
+            // Bucket edges sit half a bucket off the grid, away from the usual k/24 translations, so a composed translation
+            // nearly always lands in the bucket of its equal; the 26 neighbours are searched only on a miss.
+            func bucket(_ v: SIMD3<Double>) -> SIMD3<Int> {
+                func axis(_ x: Double) -> Int {
+                    let m = x - x.rounded(.down)
+                    return Int((m * Double(bucketsPerAxis) + 0.5).rounded(.down)) % bucketsPerAxis
+                }
+                return SIMD3(axis(v.x), axis(v.y), axis(v.z))
+            }
+            let cube = bucketsPerAxis * bucketsPerAxis * bucketsPerAxis
+            func key(_ id: Int, _ b: SIMD3<Int>) -> Int { id * cube + (b.x * bucketsPerAxis + b.y) * bucketsPerAxis + b.z }
+            var store: [Int: [SIMD3<Double>]] = [:]  // rotation id and bucket -> translations
+            for op in set { store[key(rotationID[op.rotation]!, bucket(op.translation)), default: []].append(op.translation) }
+            func contains(rotation id: Int, translation t: SIMD3<Double>) -> Bool {
+                guard id >= 0 else { return false }
+                let b = bucket(t)
+                if let list = store[key(id, b)], list.contains(where: { translationsEqual($0, t, tolerance) }) { return true }
+                for dx in -1...1 { for dy in -1...1 { for dz in -1...1 where dx != 0 || dy != 0 || dz != 0 {
+                    let nb = SIMD3((b.x + dx + bucketsPerAxis) % bucketsPerAxis, (b.y + dy + bucketsPerAxis) % bucketsPerAxis,
+                                   (b.z + dz + bucketsPerAxis) % bucketsPerAxis)
+                    if let list = store[key(id, nb)], list.contains(where: { translationsEqual($0, t, tolerance) }) { return true }
+                } } }
+                return false
+            }
+            let ids = set.map { rotationID[$0.rotation]! }
+            let kept = set.indices.filter { gi in
+                let g = set[gi]
+                if g.rotation.isIdentity && SymmetryOperation.isWholeNumber(g.translation) { return true }
+                let r = rows[ids[gi]]
+                return set.indices.allSatisfy { hi in
+                    let p = set[hi].translation
+                    // Same arithmetic as IntegerMatrix.apply(_:) plus the translation, so the comparison is unchanged.
+                    let t = SIMD3(r[0].x * p.x + r[0].y * p.y + r[0].z * p.z, r[1].x * p.x + r[1].y * p.y + r[1].z * p.z,
+                                  r[2].x * p.x + r[2].y * p.y + r[2].z * p.z) + g.translation
+                    return contains(rotation: product[ids[gi] * n + ids[hi]], translation: t)
+                }
+            }.map { set[$0] }
             if kept.count == set.count { return set }
             set = kept
         }

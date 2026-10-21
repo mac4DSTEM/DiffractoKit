@@ -3,6 +3,40 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.9.1 (2026-10-21)
+
+Tests, docs and one speed fix. No number, default or public symbol changes.
+
+### Changed
+- Speed: `SymmetryDetection.closedSubset`, the closure check of the detected operations, no longer composes every pair as a
+  heap-allocated matrix and searches linearly. It was 95 % of `CIFImport.read` on a 32-atom P1 supercell (measured: 281 of
+  297 ms); rotations get ids and a product table, translations a bucket list, and `translationsEqual` still decides, so the
+  returned operations are the same (`ClosureEquivalenceTests` compares it with the old code on closed and broken sets). `read` of that
+  file: 67 ms (median), the 0.9.0 table's 351 ms. Still about 27 times pymatgen's parser, which does not detect symmetry;
+  the rest is in `docs/open-items.md`, which now lists `cif_import` first with the measured cause.
+
+### Tests (D17)
+- The 33 parity rows marked [S] (pins stricter than upstream): 31 loosened, 2 lost only the marker (see below). Loosened to the upstream tolerance stated in each row: rtol 1e-7
+  (with a 1e-12 floor for exact zeros) where upstream states none, `tol` 1e-5 for the Niggli reduction, orix's allclose
+  (atol 1e-8, rtol 1e-5) for the orix rows, `symprec` 0.01 angstrom (as a fraction of the longest edge) for operation translations,
+  rtol 1e-7 for the XRD peak sum (pymatgen's `SCALED_INTENSITY_TOL` is a drop threshold, not a comparison tolerance). Files: PinsTests, ReductionTests, ConventionalCellTests,
+  ConventionalSymmetryTests, CrystalPresetsTests, MaterialsProjectImportTests, ScatteringPinsTests, RingCalibration{Pins,Q}Tests,
+  Slice4PinsTests, OrientationSymmetryTests, Orix{IPFKey,Disorientation,Direction}Tests, Py4DSTEM{,Real}FamilyTests,
+  TrigonalSettingTests. No fixture moved. Two rows were not stricter and lost the marker only (P11's SciPy optimum; the P25 spot
+  bound is [L], float32 upstream). Closure, orthogonality and the kit's own invariance checks keep their tight bounds.
+
+### Docs
+- `docs/parity.md`: no [S] left; the three 0.9.0 numerics have rows (opt-in in-plane parabola refinement: partly, the vertex
+  formula is py4DSTEM's but is applied to the kit's own correlation; the mirror flag and pattern-angle planes: partly, no Python
+  counterpart; `minimumMatrixEvidence`: partly, no Python counterpart), the Summary counts follow (148 rows, 58 partly).
+- pymatgen versions stated once: the disk has pymatgen-core 2026.10.16 under a `pymatgen` 2026.9.24 metapackage; the older
+  fixtures record pymatgen-core 2026.9.23; `cif-symmetry-pins.json` records `pymatgen` 2026.9.24 and regenerating it on 2026-10-21
+  gave a byte-identical file, so its numbers hold under 2026.10.16 (P35, `docs/benchmarks.md`, `docs/open-items.md`, `pins.py`).
+- The 0.9.0 commit skipped the Sonnet review (numerics-touching: ACOM refinement, planes, phase evidence, CIF checks). The 0.9.1 diff (closure rewrite, loosened pins, new rows) had one; its findings are applied (XRD pin to rtol 1e-7, small-angle floor in the orix angle pins, boundary and wrap cases and a seeded generator in `ClosureEquivalenceTests`). The 0.9.0 numerics themselves have still had no review of their own.
+
+### Migration
+None.
+
 ## 0.9.0 (2026-10-21)
 
 The kit audit: the three diagnose-first items (phase matching, ACOM mirror and in-plane angle, CIF symmetry) diagnosed with
