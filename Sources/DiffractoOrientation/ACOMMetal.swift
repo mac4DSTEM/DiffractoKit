@@ -30,10 +30,11 @@ extension ACOMMatcher {
 
     /// Matches `selected` positions with the GPU correlation; results in the order of `selected`. nil when Metal is unavailable, a
     /// GPU step fails or the run is cancelled.
-    func matchSelectedWithMetal(peaks: [[ACOMPeak]], selected: [Int], originX: Float, originY: Float,
+    func matchSelectedWithMetal<Peaks: Collection & SendableMetatype>(peaksAt: @Sendable (Int) -> Peaks, selected: [Int], originX: Float, originY: Float,
                                 invAngstromPerPixel: Double, maxWorkers: Int?,
                                 isCancelled: (@Sendable () -> Bool)?,
-                                progress: (@Sendable (Double) -> Void)?) -> [OrientationResult]? {
+                                progress: (@Sendable (Double) -> Void)?) -> [OrientationResult]?
+    where Peaks.Element == ACOMPeak {
         #if canImport(Metal)
         guard isMetalAvailable, library.count > 0, let gpu = ACOMMetalContext(library: library) else { return nil }
         let na = library.geometry.nAzimuthal, nr = library.geometry.nRadial, grid = nr * na
@@ -47,7 +48,7 @@ extension ACOMMatcher {
             let slices = Slices(count: count, grid: grid)
             DispatchQueue.concurrentPerform(iterations: min(workers, count)) { w in
                 for local in stride(from: w, to: count, by: min(workers, count)) {
-                    guard let f = experimentalFFT(peaks: peaks[selected[lower + local]], originX: originX, originY: originY,
+                    guard let f = experimentalFFT(peaks: peaksAt(selected[lower + local]), originX: originX, originY: originY,
                                                   invAngstromPerPixel: invAngstromPerPixel) else { continue }
                     slices.write(local: local, re: f.re, im: f.im)
                 }
@@ -57,17 +58,11 @@ extension ACOMMatcher {
             guard let out = gpu.run(re: slices.real, im: slices.imaginary, positions: count) else { return nil }
             for local in 0..<count where valid[local] {
                 let o = local * library.count
-                var scores = Array(out.forwardScores[o..<(o + library.count)])
-                var bins = Array(out.forwardBins[o..<(o + library.count)])
-                var mirrored = [Bool](repeating: false, count: library.count)
-                for t in 0..<library.count where out.mirrorScores[o + t] > scores[t] {   // strictly larger, as the reference
-                    scores[t] = out.mirrorScores[o + t]; bins[t] = out.mirrorBins[o + t]; mirrored[t] = true
-                }
-                let pick = Self.selectOrientation(zoneAxes: library.zoneAxes, scores: scores, bins: bins,
-                                                  distinctOrientationRadians: library.distinctOrientationRadians)
-                guard pick.template >= 0 else { continue }
-                results[lower + local] = makeResult(bestTemplate: pick.template, bestBin: pick.bin, bestScore: pick.score,
-                                                    secondScore: pick.secondScore, mirrored: mirrored[pick.template])
+                let range = o..<(o + library.count)
+                results[lower + local] = result(forwardScores: Array(out.forwardScores[range]),
+                                                forwardBins: Array(out.forwardBins[range]),
+                                                mirrorScores: Array(out.mirrorScores[range]),
+                                                mirrorBins: Array(out.mirrorBins[range]))
             }
             done += count
             progress?(Double(done) / Double(selected.count))

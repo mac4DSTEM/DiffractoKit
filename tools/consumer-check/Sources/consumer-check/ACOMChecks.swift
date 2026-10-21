@@ -80,6 +80,21 @@ func runACOMChecks(_ report: inout Report) {
         } else {
             r.check("Metal is unavailable: the Metal scan is nil", matcher.matchAll(peaks: scanPeaks, width: 4, height: 3, originX: 200, originY: 190, backend: .metal) == nil)
         }
+        // 0.7.0: a peaks view, one-peak polar image, result from scores, generate cancellation.
+        let viewedScan = matcher.matchAll(width: 4, height: 3, originX: 200, originY: 190, invAngstromPerPixel: 0.01,
+                                          selection: .full, maxWorkers: 2, peaksAt: { scanPeaks[$0].lazy.map { $0 } })
+        r.equal("a peaks view gives the array form's results", viewedScan?.results == scan?.results, true)
+        r.equal("one peak draws the polar image",
+                matcher.experimentalPolarImage(peaks: [ACOMPeak(x: 230, y: 190, intensity: 1)], originX: 200, originY: 190,
+                                               invAngstromPerPixel: 0.01) != nil, true)
+        r.equal("malformed scores give the empty result", matcher.result(scores: [1], bins: [0], mirrored: [false]) == .empty, true)
+        r.equal("a result from the pass scores is the empty result for an empty pass",
+                matcher.result(forwardScores: [], forwardBins: [], mirrorScores: [], mirrorBins: []) == .empty, true)
+        do {
+            _ = try ACOMTemplateLibrary.generate(reflections: [ACOMReflection(g: [1, 0, 0], intensity: 1)], kMax: 1.5,
+                                                 laueClass: .mThreeBarM, isCancelled: { true })
+            r.check("generate honours cancellation", false)
+        } catch { r.equal("generate honours cancellation", (error as? ACOMError) == .cancelled, true) }
         let empty = ACOMScanResults(width: 2, height: 2, templateCount: 0)
         r.equal("an empty map expands to itself", empty.expandedPreview(selection: .full) == empty, true)
     }

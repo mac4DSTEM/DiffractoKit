@@ -102,6 +102,8 @@ public enum ACOMError: Error, Sendable, Equatable, CustomStringConvertible {
     case noLaueClass
     /// The zone sampling was refused (the count is outside 0...4096).
     case zoneSampling(OrientationSymmetryError)
+    /// `generate`'s `isCancelled` returned true.
+    case cancelled
 
     public var description: String {
         switch self {
@@ -110,6 +112,7 @@ public enum ACOMError: Error, Sendable, Equatable, CustomStringConvertible {
         case .kinematics(let s): return "The structure's reflections were refused: \(s)"
         case .noLaueClass: return "The structure has no Laue class, so there is no fundamental zone to sample."
         case .zoneSampling(let e): return "The beam directions could not be sampled: \(e)."
+        case .cancelled: return "The template generation was cancelled."
         }
     }
 }
@@ -196,9 +199,13 @@ public struct ACOMTemplateLibrary: Sendable {
     ///   - kMax: the radius (Å⁻¹) of the outermost ring; reflections beyond it are not deposited.
     ///   - laueClass: the Laue class whose fundamental zone the beam directions sample.
     ///   - settings: see ``ACOMTemplateSettings``.
+    ///   - isCancelled: polled before every beam direction; once it returns true `generate` throws ``ACOMError/cancelled``.
+    ///   - progress: called from the calling thread with the fraction of beam directions done, after each one, ending at 1.
     /// - Throws: ``ACOMError``.
     public static func generate(reflections: [ACOMReflection], kMax: Double, laueClass: LaueClass,
-                                settings: ACOMTemplateSettings = ACOMTemplateSettings()) throws(ACOMError)
+                                settings: ACOMTemplateSettings = ACOMTemplateSettings(),
+                                isCancelled: (@Sendable () -> Bool)? = nil,
+                                progress: (@Sendable (Double) -> Void)? = nil) throws(ACOMError)
         -> ACOMTemplateLibrary {
         try validate(settings, kMax: kMax)
         guard reflections.allSatisfy({ $0.g.x.isFinite && $0.g.y.isFinite && $0.g.z.isFinite && $0.intensity.isFinite })
@@ -222,7 +229,10 @@ public struct ACOMTemplateLibrary: Sendable {
         let ringCount = geo.nRadial * geo.nAzimuthal
         fftRe.reserveCapacity(axes.count * ringCount)
         fftIm.reserveCapacity(axes.count * ringCount)
-        for n in axes {
+        if isCancelled?() == true { throw .cancelled }
+        if axes.isEmpty { progress?(1) }
+        for (k, n) in axes.enumerated() {
+            if isCancelled?() == true { throw .cancelled }
             let spots = project(reflections: usable, zoneAxis: n, settings: settings)
             var polar = buildPolar(spots: spots, geometry: geo, azimuthalBlurBins: settings.azimuthalBlurBins,
                                    radialKernel: settings.radialKernel)
@@ -233,6 +243,7 @@ public struct ACOMTemplateLibrary: Sendable {
             templates.append(polar)
             fftRe.append(contentsOf: re)
             fftIm.append(contentsOf: im)
+            progress?(Double(k + 1) / Double(axes.count))
         }
         return ACOMTemplateLibrary(geometry: geo, laueClass: laueClass, settings: settings, zoneAxes: axes,
                                    detectorBases: bases, templateSpots: allSpots, templates: templates,
@@ -246,14 +257,17 @@ public struct ACOMTemplateLibrary: Sendable {
     /// - Throws: ``ACOMError`` (`.kinematics` for the kit's refusal of the structure, `.noLaueClass` when its symmetry is
     ///   undetermined).
     public static func generate(crystal: CrystalStructure, kMax: Double,
-                                settings: ACOMTemplateSettings = ACOMTemplateSettings()) throws(ACOMError)
+                                settings: ACOMTemplateSettings = ACOMTemplateSettings(),
+                                isCancelled: (@Sendable () -> Bool)? = nil,
+                                progress: (@Sendable (Double) -> Void)? = nil) throws(ACOMError)
         -> ACOMTemplateLibrary {
         guard let laue = crystal.laueClass else { throw .noLaueClass }
         let list: KinematicReflectionList
         do { list = try crystal.kinematicReflections(kMax: kMax, retainingAll: false) }
         catch { throw .kinematics(error.description) }
         let reflections = list.kept.map { ACOMReflection(g: $0.reflection.g, intensity: $0.structureFactor.intensity) }
-        return try generate(reflections: reflections, kMax: kMax, laueClass: laue, settings: settings)
+        return try generate(reflections: reflections, kMax: kMax, laueClass: laue, settings: settings,
+                            isCancelled: isCancelled, progress: progress)
     }
 
     private static func validate(_ s: ACOMTemplateSettings, kMax: Double) throws(ACOMError) {

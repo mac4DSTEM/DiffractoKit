@@ -3,7 +3,34 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
-## Unreleased (proposed 0.6.0)
+## 0.7.0 (2026-10-21)
+
+The ACOM asks of the apps' kit switch: what mac4DSTEM still carries a copy of around `ACOMMatcher` and `ACOMTemplateLibrary`. No
+number changes: every addition is checked against the existing CPU route (`match`, `matchAll(peaks:)`), which stays the reference.
+
+### Added
+- `ACOMTemplateLibrary.generate(reflections:...)` and `generate(crystal:...)` take `isCancelled` (polled before every beam
+  direction) and `progress` (fraction of directions done, from the calling thread, ending at 1). Cancelled: `ACOMError.cancelled`.
+- `ACOMMatcher.result(scores:bins:mirrored:)` and `result(forwardScores:forwardBins:mirrorScores:mirrorBins:)`: the winner, the
+  distinct runner-up and the symmetry-reduced orientation from per-template scores a caller computed itself (the GPU path of an
+  app). The two-pass form merges the passes by `match`'s rule (the mirrored pass wins only when strictly larger). Malformed input
+  (wrong lengths, a bin outside the azimuthal grid) is `.empty`. The kit's own Metal path now goes through it.
+- `ACOMMatcher.matchAll(width:height:originX:originY:...peaksAt:)`: the peaks of a position come from a closure returning any
+  `Collection` of `ACOMPeak` (a `lazy.map` over the app's own peak type), so no `[[ACOMPeak]]` is built; called from worker threads,
+  only for selected positions. `match`, `templateScores`, `experimentalPolarImage` and `experimentalFFT` are generic over the same.
+
+### Changed
+- `experimentalPolarImage` draws the image for one peak (nil only for none); `match`, `templateScores` and `experimentalFFT` still
+  need `minimumPeakCount` (2).
+- `CellStandardisation` needs no change for species lists and disorder: a site with several species is one `AtomSite` per species at
+  one position (the rule `MaterialsProjectImport.structure(from:)` has applied since 0.6.0); occupancy and label survive the conversion
+  (test `CellStandardisationDisorderTests`). The app drops its adapter and calls `MaterialsProjectImport.structure(from:)`.
+
+### Migration
+- `ACOMError` has a new case `cancelled`: an exhaustive `switch` over it needs one more branch.
+- The generic `match`/`matchAll` overloads accept everything the array forms did; no call site changes.
+
+## 0.6.0 (2026-10-20)
 
 Orientation symmetry beyond the three app classes, pinned to orix; the py4DSTEM direction families; the preset crystals, the
 Materials Project models and the phase model that the two apps carry.

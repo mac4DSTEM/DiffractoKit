@@ -131,13 +131,31 @@ extension ACOMMatcher {
                          selection: ACOMScanSelection = .full, maxWorkers: Int? = nil, backend: ACOMBackend = .cpu,
                          isCancelled: (@Sendable () -> Bool)? = nil,
                          progress: (@Sendable (Double) -> Void)? = nil) -> ACOMScanResults? {
-        guard width > 0, height > 0, peaks.count == width * height else { return nil }
+        guard peaks.count == width * height else { return nil }
+        return matchAll(width: width, height: height, originX: originX, originY: originY,
+                        invAngstromPerPixel: invAngstromPerPixel, selection: selection, maxWorkers: maxWorkers,
+                        backend: backend, isCancelled: isCancelled, progress: progress) { peaks[$0] }
+    }
+
+    /// As ``matchAll(peaks:width:height:originX:originY:invAngstromPerPixel:selection:maxWorkers:backend:isCancelled:progress:)``
+    /// with the peaks of a position supplied by `peaksAt` (row-major index `y * width + x`), so a caller whose peaks live in
+    /// another type hands over a view of them (a `lazy.map`, a slice) instead of converting the whole scan to `[[ACOMPeak]]`.
+    /// `peaksAt` is called from worker threads, only for the selected positions, and must be thread-safe.
+    public func matchAll<Peaks: Collection & SendableMetatype>(width: Int, height: Int,
+                                            originX: Float, originY: Float, invAngstromPerPixel: Double = 1,
+                                            selection: ACOMScanSelection = .full, maxWorkers: Int? = nil,
+                                            backend: ACOMBackend = .cpu,
+                                            isCancelled: (@Sendable () -> Bool)? = nil,
+                                            progress: (@Sendable (Double) -> Void)? = nil,
+                                            peaksAt: @Sendable (Int) -> Peaks) -> ACOMScanResults?
+    where Peaks.Element == ACOMPeak {
+        guard width > 0, height > 0 else { return nil }
         if isCancelled?() == true { return nil }
         let selected = selection.sourceIndices(width: width, height: height)
         guard !selected.isEmpty else { return nil }
 
         if backend == .metal {
-            guard let matched = matchSelectedWithMetal(peaks: peaks, selected: selected, originX: originX, originY: originY,
+            guard let matched = matchSelectedWithMetal(peaksAt: peaksAt, selected: selected, originX: originX, originY: originY,
                                                       invAngstromPerPixel: invAngstromPerPixel, maxWorkers: maxWorkers,
                                                       isCancelled: isCancelled, progress: progress) else { return nil }
             var map = ACOMScanResults(width: width, height: height, templateCount: library.count)
@@ -153,7 +171,7 @@ extension ACOMMatcher {
             for k in stride(from: worker, to: selected.count, by: workers) {
                 if isCancelled?() == true { break }
                 let source = selected[k]
-                results.write(match(peaks: peaks[source], originX: originX, originY: originY,
+                results.write(match(peaks: peaksAt(source), originX: originX, originY: originY,
                                     invAngstromPerPixel: invAngstromPerPixel), at: source)
                 pending += 1
                 if progress != nil, pending >= batch {

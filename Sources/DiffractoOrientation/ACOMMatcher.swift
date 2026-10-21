@@ -46,8 +46,8 @@ public struct ACOMMatcher: Sendable {
     ///   normalised correlation (clamped at 0), `secondScore` the best score among templates farther than the library's
     ///   distinct angle from the winner (0 when there is none), `euler` the symmetry-reduced orientation, `inPlaneAngle` the
     ///   rotation before reduction and `mirrored` whether the conjugated pass won.
-    public func match(peaks: [ACOMPeak], originX: Float, originY: Float, invAngstromPerPixel: Double = 1)
-        -> OrientationResult {
+    public func match<Peaks: Collection>(peaks: Peaks, originX: Float, originY: Float, invAngstromPerPixel: Double = 1)
+        -> OrientationResult where Peaks.Element == ACOMPeak {
         guard let experimental = experimentalFFT(peaks: peaks, originX: originX, originY: originY,
                                                  invAngstromPerPixel: invAngstromPerPixel) else { return .empty }
         let all = correlate(experimentalRe: experimental.re, experimentalIm: experimental.im)
@@ -60,17 +60,20 @@ public struct ACOMMatcher: Sendable {
 
     /// Every template's best score for one pattern, in library order: the larger of the forward and the mirrored pass.
     /// Empty when `match` would return `.empty` for lack of peaks.
-    public func templateScores(peaks: [ACOMPeak], originX: Float, originY: Float, invAngstromPerPixel: Double = 1) -> [Float] {
+    public func templateScores<Peaks: Collection>(peaks: Peaks, originX: Float, originY: Float, invAngstromPerPixel: Double = 1)
+        -> [Float] where Peaks.Element == ACOMPeak {
         guard let experimental = experimentalFFT(peaks: peaks, originX: originX, originY: originY,
                                                  invAngstromPerPixel: invAngstromPerPixel) else { return [] }
         return correlate(experimentalRe: experimental.re, experimentalIm: experimental.im).scores
     }
 
     /// The measured pattern's polar image after the deposition, blur, per-ring mean subtraction and unit normalisation of the
-    /// templates (the same exponent, kernel and grid): the image whose ring FFTs are correlated. nil for fewer than two peaks.
-    public func experimentalPolarImage(peaks: [ACOMPeak], originX: Float, originY: Float,
-                                       invAngstromPerPixel: Double = 1) -> [Float]? {
-        guard peaks.count >= Self.minimumPeakCount else { return nil }
+    /// templates (the same exponent, kernel and grid): the image whose ring FFTs are correlated. nil for no peak; one peak is
+    /// enough to draw it (a diagnostic), although `match` needs ``minimumPeakCount``.
+    public func experimentalPolarImage<Peaks: Collection>(peaks: Peaks, originX: Float, originY: Float,
+                                                          invAngstromPerPixel: Double = 1) -> [Float]?
+    where Peaks.Element == ACOMPeak {
+        guard !peaks.isEmpty else { return nil }
         let power = library.settings.intensityPower
         var spots: [ACOMTemplateLibrary.Spot] = []
         spots.reserveCapacity(peaks.count)
@@ -87,9 +90,9 @@ public struct ACOMMatcher: Sendable {
     }
 
     /// The forward ring FFTs of the measured pattern's polar image (ring major), what the correlation multiplies the templates by.
-    public func experimentalFFT(peaks: [ACOMPeak], originX: Float, originY: Float, invAngstromPerPixel: Double = 1)
-        -> (re: [Float], im: [Float])? {
-        guard let polar = experimentalPolarImage(peaks: peaks, originX: originX, originY: originY,
+    public func experimentalFFT<Peaks: Collection>(peaks: Peaks, originX: Float, originY: Float, invAngstromPerPixel: Double = 1)
+        -> (re: [Float], im: [Float])? where Peaks.Element == ACOMPeak {
+        guard peaks.count >= Self.minimumPeakCount, let polar = experimentalPolarImage(peaks: peaks, originX: originX, originY: originY,
                                                  invAngstromPerPixel: invAngstromPerPixel), library.count > 0
         else { return nil }
         return ACOMTemplateLibrary.ringFFTs(polar, geometry: library.geometry, fft: fft)
@@ -158,6 +161,40 @@ public struct ACOMMatcher: Sendable {
         }
         if second == -.greatestFiniteMagnitude { second = 0 }
         return (bestTemplate, Int(bins[bestTemplate]), best, second)
+    }
+
+    /// The result of one pattern from its per-template scores, for a caller that ran the correlation itself (the GPU path of an
+    /// app): the winner, the best distinct runner-up and the symmetry-reduced orientation, as `match` does.
+    ///
+    /// - Parameters:
+    ///   - scores: each template's best score (the larger of the forward and the mirrored pass), in library order.
+    ///   - bins: each template's winning azimuthal bin of that pass, `0..<nAzimuthal`.
+    ///   - mirrored: whether the mirrored pass won, per template.
+    /// - Returns: `.empty` for empty input or arrays whose length is not the library's template count.
+    public func result(scores: [Float], bins: [UInt32], mirrored: [Bool]) -> OrientationResult {
+        guard scores.count == library.count, bins.count == scores.count, mirrored.count == scores.count,
+              !scores.isEmpty else { return .empty }
+        let na = UInt32(library.geometry.nAzimuthal)
+        guard bins.allSatisfy({ $0 < na }) else { return .empty }
+        let selected = Self.selectOrientation(zoneAxes: library.zoneAxes, scores: scores, bins: bins,
+                                              distinctOrientationRadians: library.distinctOrientationRadians)
+        guard selected.template >= 0 else { return .empty }
+        return makeResult(bestTemplate: selected.template, bestBin: selected.bin, bestScore: selected.score,
+                          secondScore: selected.secondScore, mirrored: mirrored[selected.template])
+    }
+
+    /// As ``result(scores:bins:mirrored:)`` from the two passes separately: the mirrored pass wins a template only when its
+    /// score is strictly larger, the rule of `match`.
+    public func result(forwardScores: [Float], forwardBins: [UInt32], mirrorScores: [Float], mirrorBins: [UInt32])
+        -> OrientationResult {
+        guard forwardScores.count == mirrorScores.count, forwardBins.count == forwardScores.count,
+              mirrorBins.count == forwardScores.count else { return .empty }
+        var scores = forwardScores, bins = forwardBins
+        var mirrored = [Bool](repeating: false, count: scores.count)
+        for t in 0..<scores.count where mirrorScores[t] > scores[t] {
+            scores[t] = mirrorScores[t]; bins[t] = mirrorBins[t]; mirrored[t] = true
+        }
+        return result(scores: scores, bins: bins, mirrored: mirrored)
     }
 
     func makeResult(bestTemplate: Int, bestBin: Int, bestScore: Float, secondScore: Float, mirrored: Bool)
