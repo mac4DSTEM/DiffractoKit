@@ -3,6 +3,23 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.8.0 (2026-10-21)
+
+The one numeric piece mac4DSTEM still carried that belongs here. No existing number changes.
+
+### Added
+- `LinearScale.estimate(radiiPerPosition:referenceRadiusInvAngstrom:secondShellRadiusInvAngstrom:minimumRadiusPixels:)` in
+  `DiffractoGeometry`: the linear reciprocal scale Δq (Å⁻¹ per pixel) from the innermost reflection of a known crystal over many
+  positions (same-shell cluster mean per position, median over positions, MAD, second-shell ratio beside the crystal's prediction),
+  with `LinearScaleEstimate` and `LinearScaleShellCheck`. Ported from mac4DSTEM `KnownCrystalQCalibration.estimate` with the
+  app's Bragg-vector and origin types replaced by plain radii; needs no camera length. Reports, refuses nothing.
+
+### Migration
+mac4DSTEM: build `radiiPerPosition` from its Bragg vectors (distance of each peak from the origin) and delete
+`KnownCrystalQCalibration.estimate` (keep the app's `QCalibrationEstimate` façade or typealias to the kit's).
+
+Not moved, by design: `ACOMCrystalSymmetry` / `OrientationMap` / `MetalACOMMatcher` (app, per its CLAUDE.md); the open phase-matching, ACOM-mirror and CIF-symmetry items are diagnose-first behaviour questions, not missing code.
+
 ## 0.7.1 (2026-10-21)
 
 The ImagoKit dependency accepts `"0.2.0"..<"1.0.0"` (was 0.2.x), so a consumer can take ImagoKit 0.4.0. Only `FFT1D` is used; the ACOM, phase and orientation tests pass against ImagoKit 0.4.0.
