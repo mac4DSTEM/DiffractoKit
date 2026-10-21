@@ -1522,3 +1522,78 @@ import DiffractoOrientation
         #expect(explicit.removedCount == result.removedCount)
     }
 }
+
+// MARK: Diagnosis 2026-10-21: the cross-phase ranking and the matrix verdict by exclusion
+
+struct PhaseDiagnosisTests {
+    private func library() throws -> PhaseReferenceLibrary {
+        var s = PhaseReferenceSettings(); s.kMaxInvAngstrom = 1.0; s.inPlaneStepDeg = 10
+        let al = PhaseDefinition(id: "al", displayName: "Al", crystal: .aluminum, role: .matrix, zoneAxes: [SIMD3(0, 0, 1)])
+        let beta = PhaseDefinition(id: "beta", displayName: "b", crystal: .betaDoublePrime, role: .candidate,
+                                   zoneAxes: [SIMD3(0, 1, 0), SIMD3(0, 0, 1)])
+        let mg = PhaseDefinition(id: "mg", displayName: "Mg", crystal: CrystalPresets.magnesium, role: .candidate,
+                                 zoneAxes: [SIMD3(0, 0, 1), SIMD3(1, 0, 0)])
+        return try PhaseReferenceLibrary.build(phases: [al, beta, mg], settings: s)
+    }
+
+    /// Wrong labels out of 400 planted patterns (two candidate phases, reference vectors of the true entry with Gaussian
+    /// noise `sigma`, a fraction `dropout` removed, two random spurious vectors), per ranking rule. The measurement behind
+    /// `completenessAwareCrossPhaseRanking` staying off (2026-10-21): the rule that counts matched vectors first loses at
+    /// small noise (a denser library entry takes spurious vectors by chance) and wins only when the noise approaches the pair
+    /// radius, so neither ranking dominates and the default stays the paper's mean distance.
+    private func wrongLabels(sigma: Double, dropout: Double, aware: Bool) throws -> Int {
+        let lib = try library()
+        let cands = lib.candidateEntryIndices
+        var seed: UInt64 = 777
+        func rnd() -> Double { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return Double(seed >> 11) / Double(1 << 53) }
+        func gauss() -> Double { (-2 * log(max(rnd(), 1e-12))).squareRoot() * cos(2 * .pi * rnd()) }
+        var settings = PhaseVectorSettings(); settings.completenessAwareCrossPhaseRanking = aware
+        let scratch = PhaseVectorMatcher.Scratch(capacity: 512)
+        var wrong = 0
+        for trial in 0..<400 {
+            let truth = trial % 2 == 0 ? 1 : 2
+            let entries = cands.filter { lib.entries[$0].phaseIndex == truth }
+            let e = lib.entries[entries[Int(rnd() * Double(entries.count)) % entries.count]]
+            var v: [SIMD2<Double>] = []
+            for r in e.vectors where r.length > 0.15 {
+                if rnd() < dropout { continue }
+                v.append(r.q + SIMD2(gauss(), gauss()) * sigma)
+            }
+            for _ in 0..<2 { let a = rnd() * 2 * .pi, r = 0.2 + rnd() * 0.7; v.append(SIMD2(cos(a), sin(a)) * r) }
+            let res = PhaseVectorMatcher.classify(vectors: v, library: lib, settings: settings, matrixEntry: nil,
+                                                  candidateEntryIndices: cands, scratch: scratch)
+            if res.verdict == .indexed, Int(res.phaseIndex) != truth { wrong += 1 }
+        }
+        return wrong
+    }
+
+    @Test func theCompletenessRankingLosesAtSmallNoiseAndWinsNearThePairRadius() throws {
+        // Measured with the seed above: default 0 / aware 23 wrong at sigma 0.003, dropout 0.4;
+        // default 53 / aware 20 at sigma 0.010, dropout 0.4.
+        #expect(try wrongLabels(sigma: 0.003, dropout: 0.4, aware: false) <= 2)
+        #expect(try wrongLabels(sigma: 0.003, dropout: 0.4, aware: true) >= 10)
+        #expect(try wrongLabels(sigma: 0.010, dropout: 0.4, aware: true) < (try wrongLabels(sigma: 0.010, dropout: 0.4, aware: false)))
+    }
+
+    /// One stray peak and none of the matrix's: the survivor count (1) calls it the matrix, the shipped rule. With
+    /// `minimumMatrixEvidence` 1 the position is "not indexed", while a pattern the matrix explains stays matrix.
+    /// RED UNDER: the setting absent (compile error), then its guard removed.
+    @Test func matrixByExclusionCanRequireTheMatrixToHaveBeenSeen() throws {
+        let lib = try library()
+        let matrixEntry = lib.entries[lib.matrixEntryIndices[0]]
+        let scratch = PhaseVectorMatcher.Scratch(capacity: 64)
+        let stray: [SIMD2<Double>] = [SIMD2(0.31, 0.12)]
+        let explained = Array(matrixEntry.vectors.prefix(6).map(\.q))
+        for rule in [PhaseVectorSettings.ClassificationRule.search, .knownVariants] {
+            var off = PhaseVectorSettings(); off.classificationRule = rule
+            var on = off; on.minimumMatrixEvidence = 1
+            func verdict(_ v: [SIMD2<Double>], _ s: PhaseVectorSettings) -> PhaseVerdict {
+                PhaseVectorMatcher.classify(vectors: v, library: lib, settings: s, matrixEntry: matrixEntry,
+                                            candidateEntryIndices: lib.candidateEntryIndices, scratch: scratch).verdict
+            }
+            #expect(verdict(stray, off) == .matrix, "\(rule): shipped")
+            #expect(verdict(stray, on) == .notIndexed, "\(rule): no matrix vector seen")
+            #expect(verdict(explained, on) == .matrix, "\(rule): matrix explained everything")
+        }
+    }
+}

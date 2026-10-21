@@ -394,3 +394,90 @@ struct CIFImportTests {
     }
 }
 
+
+// MARK: Completeness of the operation list (0.9.0: symbol-only declarations, primitive C-monoclinic with beta = 90)
+
+struct CIFSymmetryCompletenessTests {
+    private struct Pins: Decodable {
+        struct Case: Decodable { let name: String; let text: String; let atoms: Int; let operations: Int }
+        let symbols: [[JSONValue]]
+        let cases: [Case]
+        let conventionalOpsListed: Int
+    }
+    private enum JSONValue: Decodable {
+        case int(Int), string(String)
+        init(from decoder: Decoder) throws {
+            let c = try decoder.singleValueContainer()
+            if let i = try? c.decode(Int.self) { self = .int(i) } else { self = .string(try c.decode(String.self)) }
+        }
+    }
+    private func pins() throws -> Pins {
+        try JSONDecoder().decode(Pins.self, from: Data(contentsOf: Fixtures.directory.appendingPathComponent("cif-symmetry-pins.json")))
+    }
+
+    /// Every spelling spglib 2.8.0 lists for the 230 groups (short, full, unspaced, every setting) reads to the order and the
+    /// centring of the kit's own table: exact, no tolerance. RED UNDER: no symbol parser (the symbol-only file unchecked).
+    @Test func everyHermannMauguinSpellingReadsToItsGroupsOrder() throws {
+        var checked = 0
+        for row in try pins().symbols {
+            guard case .int(let number) = row[0], case .string(let symbol) = row[1] else { continue }
+            let facts = try #require(CIFImport.hermannMauguinFacts(symbol), "unreadable symbol \(symbol)")
+            #expect(facts.order * facts.centring == CIFImport.spaceGroupOrder(number), "\(symbol) (No. \(number))")
+            checked += 1
+        }
+        #expect(checked == 1048)
+        #expect(CIFImport.hermannMauguinFacts("P 1") != nil)
+        #expect(CIFImport.hermannMauguinFacts("not a group") == nil)
+        #expect(CIFImport.hermannMauguinFacts("") == nil)
+        #expect(CIFImport.hermannMauguinFacts("P 7") == nil)
+    }
+
+    /// A group named by symbol alone is held to the same completeness as one named by number: rock salt listing its 48
+    /// point operations is refused, in its conventional cell, naming the symbol. RED UNDER: the check ran only with an IT number.
+    @Test func aGroupNamedBySymbolAloneIsChecked() throws {
+        let pointOps = PointSymmetry.holohedry(of: .cubic).rotations.map { SymmetryOperation(rotation: $0).xyzString }
+        let loop = "loop_\n_symmetry_equiv_pos_as_xyz\n" + pointOps.map { "'\($0)'" }.joined(separator: "\n") + "\n"
+        let header = "data_MgO\n_symmetry_space_group_name_H-M 'F m -3 m'\n"
+        let cell = "_cell_length_a 4.21\n_cell_length_b 4.21\n_cell_length_c 4.21\n_cell_angle_alpha 90\n_cell_angle_beta 90\n_cell_angle_gamma 90\n"
+        let atoms = "loop_\n_atom_site_label\n_atom_site_type_symbol\n_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\nMg Mg 0 0 0\nO O 0.5 0.5 0.5\n"
+        do {
+            _ = try CIFImport.read(header + cell + loop + atoms)
+            Issue.record("a 48-operation Fm-3m list was admitted")
+        } catch {
+            #expect(error == .incompleteSymmetryOperationsForSymbol(symbol: "F m -3 m", listed: 48, required: 192))
+        }
+        // A symbol the parser cannot read stays unchecked (as before), and the primitive rhombohedral listing is admitted.
+        let primitiveCell = "_cell_length_a 2.977\n_cell_length_b 2.977\n_cell_length_c 2.977\n_cell_angle_alpha 60\n_cell_angle_beta 60\n_cell_angle_gamma 60\n"
+        #expect(try CIFImport.read(header + primitiveCell + loop + atoms).structure.sites.count == 2)
+        let unreadable = header.replacingOccurrences(of: "F m -3 m", with: "F banana")
+        #expect(try CIFImport.read(unreadable + cell + loop + atoms).structure.sites.count > 0)
+    }
+
+    /// A primitive C-centred monoclinic cell with beta = 90 has two right angles like the conventional cell; the kit judged it
+    /// conventional and refused its correct 4-operation list. The rotations settle it (not diagonal in a primitive basis).
+    /// Pins: pymatgen 2026.9.24 primitive structure, spglib 2.8.0 operations in that cell. RED UNDER: angles alone.
+    @Test func aPrimitiveCMonoclinicCellWithBeta90IsNotRefused() throws {
+        for c in try pins().cases {
+            let doc = try CIFImport.read(c.text, fileBaseName: "t")
+            #expect(doc.structure.sites.count == c.atoms, "\(c.name)")
+            #expect(c.operations == 4, "\(c.name)")
+        }
+        // The same ops cut to two are refused: the primitive list needs four.
+        let cut = try pins().cases[0].text.split(separator: "\n", omittingEmptySubsequences: false)
+        let ops = cut.enumerated().filter { $0.element.hasPrefix("'") }.map(\.offset)
+        var kept = cut.map(String.init)
+        for k in ops.dropFirst(2).reversed() { kept.remove(at: k) }
+        do {
+            _ = try CIFImport.read(kept.joined(separator: "\n"))
+            Issue.record("a half list was admitted")
+        } catch {
+            if case .incompleteSymmetryOperations(let n, _, let listed, let required) = error {
+                #expect(n == 12 && listed == 2 && required == 4)
+            } else { Issue.record("wrong refusal \(error)") }
+        }
+        // The conventional cell with the centring dropped is still refused: diagonal rotations, two right angles.
+        #expect(CIFImport.requiredOperationCount(spaceGroup: 12, alphaDeg: 90, betaDeg: 90, gammaDeg: 90, rotationsDiagonal: true) == 8)
+        #expect(CIFImport.requiredOperationCount(spaceGroup: 12, alphaDeg: 90, betaDeg: 90, gammaDeg: 102.68, rotationsDiagonal: false) == 4)
+        #expect(CIFImport.requiredOperationCount(spaceGroup: 12, alphaDeg: 90, betaDeg: 90, gammaDeg: 90) == 8)
+    }
+}

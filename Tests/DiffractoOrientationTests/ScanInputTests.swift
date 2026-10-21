@@ -222,6 +222,7 @@ private func sameResult(_ a: PhaseVectorResult, _ b: PhaseVectorResult) -> Bool 
         #expect(v.directMatrixMaximumVectors == 1)
         #expect(v.residualCutoffInvAngstrom == 0.07)
         #expect(v.knownVariantsMinimumSpecificReflections == 1)
+        #expect(v.minimumMatrixEvidence == 0)
 
         let r = PhaseReferenceSettings.default
         #expect(r == PhaseReferenceSettings())

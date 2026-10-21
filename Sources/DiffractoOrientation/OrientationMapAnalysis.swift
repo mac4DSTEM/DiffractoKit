@@ -50,6 +50,22 @@ public enum OrientationMapAnalysis {
         return results.map { $0.inPlaneAngle / twoPi }
     }
 
+    /// Which positions the conjugated (mirror) pass won: 1 for a mirrored match, 0 otherwise. The in-plane angle of a mirrored
+    /// match carries py4DSTEM's extra half turn (`inPlaneAnglePlane` publishes it raw), so a map of angles is read together
+    /// with this plane.
+    public static func mirroredPlane(_ results: [OrientationResult]) -> [UInt8] { results.map { $0.mirrored ? 1 : 0 } }
+
+    /// The in-plane angle over 2π with a mirrored match's added half turn taken off, i.e. the angle of the pattern itself
+    /// (the same plane as `inPlaneAnglePlane` for a forward match), wrapped to [0, 1).
+    public static func patternInPlaneAnglePlane(_ results: [OrientationResult]) -> [Float] {
+        let twoPi = Float(2 * Double.pi)
+        return results.map { r in
+            var a = r.inPlaneAngle / twoPi - (r.mirrored ? 0.5 : 0)
+            if a < 0 { a += 1 }
+            return a
+        }
+    }
+
     /// φ1 wrapped to [0, 1) (radians / 2π).
     public static func phi1Plane(_ results: [OrientationResult]) -> [Float] { cyclic(results) { $0.euler.phi1 } }
     /// φ2 wrapped to [0, 1) (radians / 2π).

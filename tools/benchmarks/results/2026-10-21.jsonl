@@ -1,0 +1,62 @@
+{"side":"kit","name":"niggli_reduce","size":"small","n":100,"backend":"cpu","median_ms":0.06787502765655518,"min_ms":0.06404197216033936,"max_ms":0.08387500047683716,"note":""}
+{"side":"kit","name":"niggli_reduce","size":"typical","n":1000,"backend":"cpu","median_ms":0.5095840096473694,"min_ms":0.5079579949378967,"max_ms":0.5119589567184448,"note":""}
+{"side":"kit","name":"niggli_reduce","size":"large","n":10000,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"reflections","size":"small","n":10,"backend":"cpu","median_ms":0.06062495708465576,"min_ms":0.05808401107788086,"max_ms":0.06504201889038086,"note":"k_max 1.0"}
+{"side":"kit","name":"reflections","size":"typical","n":20,"backend":"cpu","median_ms":0.7528749704360962,"min_ms":0.5595829486846924,"max_ms":0.9157499670982361,"note":"k_max 2.0"}
+{"side":"kit","name":"reflections","size":"large","n":40,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"kinematic_reflections","size":"small","n":10,"backend":"cpu","median_ms":0.9799579977989197,"min_ms":0.8493750095367432,"max_ms":1.1386249661445618,"note":"C2/m cell, k_max 1.0"}
+{"side":"kit","name":"kinematic_reflections","size":"typical","n":20,"backend":"cpu","median_ms":7.003540992736816,"min_ms":6.6363330483436584,"max_ms":7.548083007335663,"note":"C2/m cell, k_max 2.0"}
+{"side":"kit","name":"kinematic_reflections","size":"large","n":30,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"symmetry_detection","size":"small","n":4,"backend":"cpu","median_ms":6.871958017349243,"min_ms":6.4516249895095825,"max_ms":7.4744579792022705,"note":"fcc Al supercell 1^3 as P1 (4 atoms)"}
+{"side":"kit","name":"symmetry_detection","size":"typical","n":32,"backend":"cpu","median_ms":360.5631250143051,"min_ms":349.7057499885559,"max_ms":438.0519999861717,"note":"fcc Al supercell 2^3 as P1 (32 atoms)"}
+{"side":"kit","name":"symmetry_detection","size":"large","n":108,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"cif_import","size":"small","n":962,"backend":"cpu","median_ms":0.651667058467865,"min_ms":0.6319580078125,"max_ms":0.7129170298576355,"note":"c2m.cif"}
+{"side":"kit","name":"cif_import","size":"typical","n":2364,"backend":"cpu","median_ms":351.35866701602936,"min_ms":329.46087497472763,"max_ms":505.8162080049515,"note":"al_super2.cif"}
+{"side":"kit","name":"cif_import","size":"large","n":6483,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"orientation_reduce","size":"small","n":1000,"backend":"cpu","median_ms":1.8789160251617432,"min_ms":1.8742910027503967,"max_ms":5.394957959651947,"note":"m-3m, 24 proper operators"}
+{"side":"kit","name":"orientation_reduce","size":"typical","n":10000,"backend":"cpu","median_ms":19.263958036899567,"min_ms":17.761166989803314,"max_ms":29.40633398294449,"note":"m-3m, 24 proper operators"}
+{"side":"kit","name":"orientation_reduce","size":"large","n":100000,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"ellipse_fit_1d","size":"small","n":128,"backend":"cpu","median_ms":1.253749966621399,"min_ms":1.2025830149650574,"max_ms":1.4100840091705322,"note":"128 x 128 pattern"}
+{"side":"kit","name":"ellipse_fit_1d","size":"typical","n":256,"backend":"cpu","median_ms":5.856417000293732,"min_ms":4.351750016212463,"max_ms":17.675458014011383,"note":"256 x 256 pattern"}
+{"side":"kit","name":"ellipse_fit_1d","size":"large","n":512,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"acom_library","size":"small","n":100,"backend":"cpu","median_ms":7.813540995121002,"min_ms":6.8772499561309814,"max_ms":16.940833032131195,"note":"282 reflections, 32 x 128 polar bins"}
+{"side":"kit","name":"acom_library","size":"typical","n":600,"backend":"cpu","median_ms":60.588374972343445,"min_ms":49.421999990940094,"max_ms":80.6530829668045,"note":"282 reflections, 32 x 128 polar bins"}
+{"side":"kit","name":"acom_library","size":"large","n":2400,"backend":"cpu","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"acom_match_scan","size":"small","n":64,"backend":"cpu 1 worker","median_ms":118.21420800685883,"min_ms":117.42537498474121,"max_ms":120.34141701459885,"note":"600 templates, 8 x 8 scan"}
+{"side":"kit","name":"acom_match_scan","size":"small","n":64,"backend":"cpu all cores","median_ms":15.681625008583069,"min_ms":15.044999957084656,"max_ms":17.562583029270172,"note":"600 templates, 8 x 8 scan"}
+{"side":"kit","name":"acom_match_scan","size":"small","n":64,"backend":"metal","median_ms":18.8299999833107,"min_ms":18.224500000476837,"max_ms":20.121832966804504,"note":"600 templates, 8 x 8 scan"}
+{"side":"kit","name":"acom_match_scan","size":"typical","n":1024,"backend":"cpu 1 worker","median_ms":1988.481665968895,"min_ms":1952.5517910122871,"max_ms":2031.9043749570847,"note":"600 templates, 32 x 32 scan"}
+{"side":"kit","name":"acom_match_scan","size":"typical","n":1024,"backend":"cpu all cores","median_ms":220.94637501239777,"min_ms":216.10658395290375,"max_ms":241.84120798110962,"note":"600 templates, 32 x 32 scan"}
+{"side":"kit","name":"acom_match_scan","size":"typical","n":1024,"backend":"metal","median_ms":241.7804160118103,"min_ms":220.16108298301697,"max_ms":292.2704590559006,"note":"600 templates, 32 x 32 scan"}
+{"side":"kit","name":"acom_match_scan","size":"large","n":16384,"backend":"cpu 1 worker","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"acom_match_scan","size":"large","n":16384,"backend":"cpu all cores","median_ms":null,"note":"nightly"}
+{"side":"kit","name":"acom_match_scan","size":"large","n":16384,"backend":"metal","median_ms":null,"note":"nightly"}
+{"side": "python", "name": "niggli_reduce", "size": "small", "n": 100, "backend": "cpu", "median_ms": 11.336750001646578, "min_ms": 9.960083989426494, "max_ms": 11.69729104731232, "note": "pymatgen Lattice.get_niggli_reduced_lattice (spglib 2.8.0 niggli_reduce: see the next row)"}
+{"side": "python", "name": "niggli_reduce", "size": "small", "n": 100, "backend": "spglib", "median_ms": 0.29275001725181937, "min_ms": 0.2900830004364252, "max_ms": 0.29558298410847783, "note": "spglib.niggli_reduce"}
+{"side": "python", "name": "niggli_reduce", "size": "typical", "n": 1000, "backend": "cpu", "median_ms": 162.58679202292114, "min_ms": 148.93604203825817, "max_ms": 266.7790410341695, "note": "pymatgen Lattice.get_niggli_reduced_lattice (spglib 2.8.0 niggli_reduce: see the next row)"}
+{"side": "python", "name": "niggli_reduce", "size": "typical", "n": 1000, "backend": "spglib", "median_ms": 3.133833990432322, "min_ms": 2.8750000055879354, "max_ms": 3.495457989629358, "note": "spglib.niggli_reduce"}
+{"side": "python", "name": "niggli_reduce", "size": "large", "n": 10000, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "niggli_reduce", "size": "large", "n": 10000, "backend": "spglib", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "reflections", "size": "small", "n": 10, "backend": "cpu", "median_ms": 0.026124995201826096, "min_ms": 0.02400000812485814, "max_ms": 0.03529200330376625, "note": "Lattice.reciprocal_lattice_crystallographic.get_points_in_sphere, k_max 1.0"}
+{"side": "python", "name": "reflections", "size": "typical", "n": 20, "backend": "cpu", "median_ms": 0.11475000064820051, "min_ms": 0.09516702266409993, "max_ms": 0.19133399473503232, "note": "Lattice.reciprocal_lattice_crystallographic.get_points_in_sphere, k_max 2.0"}
+{"side": "python", "name": "reflections", "size": "large", "n": 40, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "symmetry_detection", "size": "small", "n": 4, "backend": "cpu", "median_ms": 5.376041983254254, "min_ms": 4.779667011462152, "max_ms": 5.6882090284489095, "note": "SpacegroupAnalyzer(symprec 1e-4).get_symmetry_operations, supercell 1^3 (4 atoms)"}
+{"side": "python", "name": "symmetry_detection", "size": "typical", "n": 32, "backend": "cpu", "median_ms": 13.073457987047732, "min_ms": 11.88020798144862, "max_ms": 16.490166017320007, "note": "SpacegroupAnalyzer(symprec 1e-4).get_symmetry_operations, supercell 2^3 (32 atoms)"}
+{"side": "python", "name": "symmetry_detection", "size": "large", "n": 108, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "cif_import", "size": "small", "n": 962, "backend": "cpu", "median_ms": 1.2756249634549022, "min_ms": 1.2674169847741723, "max_ms": 1.3065409730188549, "note": "c2m.cif"}
+{"side": "python", "name": "cif_import", "size": "typical", "n": 2364, "backend": "cpu", "median_ms": 2.5166249834001064, "min_ms": 2.324416011106223, "max_ms": 2.6435829931870103, "note": "al_super2.cif"}
+{"side": "python", "name": "cif_import", "size": "large", "n": 6483, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "orientation_reduce", "size": "small", "n": 1000, "backend": "cpu", "median_ms": 22.14612503303215, "min_ms": 17.84687500912696, "max_ms": 26.00199996959418, "note": "orix Orientation.from_matrix + map_into_symmetry_reduced_zone (Oh), vectorised"}
+{"side": "python", "name": "orientation_reduce", "size": "typical", "n": 10000, "backend": "cpu", "median_ms": 48.193875001743436, "min_ms": 42.20058396458626, "max_ms": 50.6694579962641, "note": "orix Orientation.from_matrix + map_into_symmetry_reduced_zone (Oh), vectorised"}
+{"side": "python", "name": "orientation_reduce", "size": "large", "n": 100000, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "kinematic_reflections", "size": "small", "n": 10, "backend": "cpu", "median_ms": 4.454791021998972, "min_ms": 3.961541980970651, "max_ms": 55.26308302069083, "note": "py4DSTEM Crystal.calculate_structure_factors, C2/m, k_max 1.0"}
+{"side": "python", "name": "kinematic_reflections", "size": "typical", "n": 20, "backend": "cpu", "median_ms": 12.67520897090435, "min_ms": 11.425375007092953, "max_ms": 34.74929096410051, "note": "py4DSTEM Crystal.calculate_structure_factors, C2/m, k_max 2.0"}
+{"side": "python", "name": "kinematic_reflections", "size": "large", "n": 30, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "ellipse_fit_1d", "size": "small", "n": 128, "backend": "cpu", "median_ms": 1.3390830135904253, "min_ms": 1.217625045683235, "max_ms": 1.8049590289592743, "note": "py4DSTEM fit_ellipse_1D, 128 x 128"}
+{"side": "python", "name": "ellipse_fit_1d", "size": "typical", "n": 256, "backend": "cpu", "median_ms": 5.2559999749064445, "min_ms": 4.869457974564284, "max_ms": 5.61716704396531, "note": "py4DSTEM fit_ellipse_1D, 256 x 256"}
+{"side": "python", "name": "ellipse_fit_1d", "size": "large", "n": 512, "backend": "cpu", "median_ms": null, "note": "nightly"}
+{"side": "python", "name": "acom_library", "size": "small", "n": 120, "backend": "cpu", "median_ms": 13.712208019569516, "min_ms": 12.440584017895162, "max_ms": 40.22583400364965, "note": "py4DSTEM orientation_plan, angle_step_zone_axis 4.0 deg = 120 zone axes, 128 in-plane steps"}
+{"side": "python", "name": "acom_library", "size": "typical", "n": 630, "backend": "cpu", "median_ms": 62.50416697002947, "min_ms": 39.01345800841227, "max_ms": 132.4240830144845, "note": "py4DSTEM orientation_plan, angle_step_zone_axis 1.6 deg = 630 zone axes, 128 in-plane steps"}
+{"side": "python", "name": "acom_match_scan", "size": "small", "n": 8, "backend": "python 1 core", "median_ms": 205.513582972344, "min_ms": 115.46662502223626, "max_ms": 303.45316597959027, "note": "py4DSTEM match_single_pattern x 8 patterns, 630 zone axes, one core"}
+{"side": "python", "name": "acom_match_scan", "size": "typical", "n": 32, "backend": "python 1 core", "median_ms": 559.0090000187047, "min_ms": 332.655459002126, "max_ms": 689.0913330134936, "note": "py4DSTEM match_single_pattern x 32 patterns, 630 zone axes, one core (a 32 x 32 scan is 32x this)"}
+{"side": "python", "name": "acom_library", "size": "large", "n": 2145, "backend": "cpu", "median_ms": null, "note": "nightly"}

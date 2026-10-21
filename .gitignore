@@ -3,3 +3,5 @@
 .build/
 .swiftpm/
 *.xcresult
+tools/benchmarks/inputs/
+tools/benchmarks/.build/

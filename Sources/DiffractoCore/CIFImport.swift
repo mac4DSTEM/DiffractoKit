@@ -39,6 +39,9 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
     /// The file names its space group by IT number but lists fewer distinct symmetry operations than that group has
     /// in the conventional setting; expanding with a partial list builds a smaller cell content.
     case incompleteSymmetryOperations(spaceGroupNumber: Int, declaredName: String?, listed: Int, required: Int)
+    /// As ``incompleteSymmetryOperations(spaceGroupNumber:declaredName:listed:required:)`` for a file that names its group
+    /// by Hermann–Mauguin symbol alone (no IT number): the order is read from the symbol (``requiredOperationCount(hermannMauguin:alphaDeg:betaDeg:gammaDeg:rightAngleToleranceDeg:rotationsDiagonal:)``).
+    case incompleteSymmetryOperationsForSymbol(symbol: String, listed: Int, required: Int)
     /// A `data_` block that defines no structure carries a symmetry-operation loop while another block defines one.
     case symmetryOperationsOutsideStructure(blockNames: [String])
 
@@ -77,6 +80,11 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
                 + "operations), so expanding the atom sites with it would build a smaller structure than the file "
                 + "describes (rock salt without its F-centring reads as CsCl). Re-export the CIF with its full "
                 + "symmetry-operation loop, or supply a P1 file that lists every atom in the cell."
+        case .incompleteSymmetryOperationsForSymbol(let symbol, let listed, let required):
+            return "The CIF lists \(listed) distinct symmetry operations but space group \"\(symbol)\" has \(required) in its "
+                + "conventional setting — the list is incomplete, so expanding the atom sites with it would build a "
+                + "smaller structure than the file describes. Re-export the CIF with its full symmetry-operation loop, "
+                + "or supply a P1 file that lists every atom in the cell."
         case .symmetryOperationsOutsideStructure(let names):
             return "The CIF has a symmetry-operation loop in a data_ block that holds no structure "
                 + "(\(names.joined(separator: ", "))). Reading the file as one crystal would apply those operations to "
@@ -387,16 +395,27 @@ public enum CIFImport {
         if haveSymmetryLoop, ops.contains(where: { !$0.isIdentity }) {
             // A file that names its space group must list every operation of it (in the setting its cell is written
             // in). Fewer builds a smaller structure (rock salt without its F-centring is CsCl, still cubic m-3m).
+            // The judgement of a monoclinic centred cell (conventional or primitive) also reads the listed rotations:
+            // angles alone cannot tell a primitive C-cell from a conventional one when beta = 90.
+            let diagonal = ops.allSatisfy { op in
+                (0..<3).allSatisfy { r in (0..<3).allSatisfy { c in r == c || op.rotation[r, c] == 0 } }
+            }
+            let listed = SymmetryOperation.distinctCount(ops)
             if let number = spaceGroupNumber,
                let required = requiredOperationCount(
                    spaceGroup: number, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma,
-                   rightAngleToleranceDeg: policy.rightAngleToleranceDeg) {
-                let listed = SymmetryOperation.distinctCount(ops)
+                   rightAngleToleranceDeg: policy.rightAngleToleranceDeg, rotationsDiagonal: diagonal) {
                 if listed < required {
                     throw .incompleteSymmetryOperations(
                         spaceGroupNumber: number, declaredName: declaredHermannMauguin(cellValues),
                         listed: listed, required: required)
                 }
+            } else if spaceGroupNumber == nil, let symbol = declaredHermannMauguin(cellValues),
+                      let required = requiredOperationCount(
+                          hermannMauguin: symbol, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma,
+                          rightAngleToleranceDeg: policy.rightAngleToleranceDeg, rotationsDiagonal: diagonal),
+                      listed < required {
+                throw .incompleteSymmetryOperationsForSymbol(symbol: symbol, listed: listed, required: required)
             }
             let lattice = UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma).realLattice
             sites = expand(baseSites, using: ops, latReal: lattice, policy: policy)
@@ -560,9 +579,13 @@ public enum CIFImport {
     /// The fewest distinct operations a CIF for `number` may list before it is called incomplete: the conventional
     /// order, except for a centred group written in a cell that is not its conventional one (a primitive cell lists
     /// order / centring; rhombohedral axes a third), judged from the angles alone.
+    ///
+    /// `rotationsDiagonal` (the listed rotations all diagonal in the file's basis) refines the monoclinic judgement: a
+    /// primitive C-centred monoclinic cell with beta = 90 has two right angles like the conventional one, but its
+    /// rotations are not diagonal. nil judges from the angles alone, as before.
     public static func requiredOperationCount(
         spaceGroup number: Int, alphaDeg: Double, betaDeg: Double, gammaDeg: Double,
-        rightAngleToleranceDeg: Double = 0.05
+        rightAngleToleranceDeg: Double = 0.05, rotationsDiagonal: Bool? = nil
     ) -> Int? {
         guard let order = spaceGroupOrder(number) else { return nil }
         let centring = centredGroups.first(where: { $0.numbers.contains(number) })?.multiplicity ?? 1
@@ -572,13 +595,111 @@ public enum CIFImport {
         let conventional: Bool
         switch number {
         case 3...15:
-            conventional = [alphaDeg, betaDeg, gammaDeg].filter(right).count >= 2
+            conventional = [alphaDeg, betaDeg, gammaDeg].filter(right).count >= 2 && rotationsDiagonal != false
         case 143...194:
             conventional = right(alphaDeg) && right(betaDeg) && abs(gammaDeg - 120) <= angleBound
         default:
             conventional = right(alphaDeg) && right(betaDeg) && right(gammaDeg)
         }
         return conventional ? order : order / centring
+    }
+
+    /// The point-group orders of the 32 crystal classes by short symbol, with the crystal system's first letter
+    /// (a anorthic, m monoclinic, o orthorhombic, t tetragonal, r trigonal, h hexagonal, c cubic).
+    private static let pointGroupBySymbol: [String: (order: Int, system: Character)] = [
+        "1": (1, "a"), "-1": (2, "a"),
+        "2": (2, "m"), "m": (2, "m"), "2/m": (4, "m"),
+        "222": (4, "o"), "mm2": (4, "o"), "mmm": (8, "o"),
+        "4": (4, "t"), "-4": (4, "t"), "4/m": (8, "t"), "422": (8, "t"), "4mm": (8, "t"), "-42m": (8, "t"),
+        "-4m2": (8, "t"), "4/mmm": (16, "t"),
+        "3": (3, "r"), "-3": (6, "r"), "32": (6, "r"), "3m": (6, "r"), "-3m": (12, "r"),
+        "6": (6, "h"), "-6": (6, "h"), "6/m": (12, "h"), "622": (12, "h"), "6mm": (12, "h"), "-6m2": (12, "h"),
+        "-62m": (12, "h"), "6/mmm": (24, "h"),
+        "23": (12, "c"), "m-3": (24, "c"), "432": (24, "c"), "-43m": (24, "c"), "m-3m": (48, "c"),
+    ]
+
+    /// The lattice letter, the point-group order and the crystal system a Hermann–Mauguin symbol states (screw axes read as
+    /// their rotation, glides as mirrors, the placeholder 1 of a monoclinic or trigonal symbol dropped), or nil when the
+    /// symbol is not one of the 32 classes (a Hall symbol, a typo). A bare "32" token reads as the screw axis 3₂, which
+    /// can only under-count the group (a file is then not refused), never over-count it.
+    package static func hermannMauguinFacts(_ symbol: String) -> (centring: Int, order: Int, system: Character)? {
+        let text = symbol.trimmingCharacters(in: .whitespaces)
+        guard let lattice = text.first, "PABCIFRH".contains(lattice) else { return nil }
+        let rest = String(text.dropFirst())
+        let screws: Set<String> = ["21", "31", "32", "41", "42", "43", "61", "62", "63", "64", "65"]
+        let bareScrews = !rest.contains("_") && lattice != "R" && lattice != "H"
+        var axes: [(axis: String, mirror: Bool)] = []
+        for chunk in rest.split(whereSeparator: { $0.isWhitespace }) {
+            let t = Array(chunk)
+            var i = 0
+            while i < t.count {
+                let c = t[i]
+                if c == "-" || c.isNumber {
+                    var axis = ""
+                    if c == "-" { axis = "-"; i += 1 }
+                    guard i < t.count, t[i].isNumber else { return nil }
+                    axis.append(t[i]); i += 1
+                    if i < t.count, t[i] == "_" {
+                        i += 1
+                        guard i < t.count, t[i].isNumber else { return nil }
+                        i += 1
+                    } else if i < t.count, t[i].isNumber, bareScrews, i == 1, axis.count == 1, (i + 1 == t.count || t[i + 1] == "/"),
+                              screws.contains(axis + String(t[i])) {
+                        i += 1
+                    }
+                    var mirror = false
+                    if i < t.count, t[i] == "/" {
+                        i += 1
+                        guard i < t.count, t[i].isLetter else { return nil }
+                        mirror = true; i += 1
+                    }
+                    if axis != "1" || mirror { axes.append((axis, mirror)) }
+                } else if "mabcndeg".contains(c) {
+                    axes.append(("m", false)); i += 1
+                } else {
+                    return nil
+                }
+            }
+        }
+        // The full symbol writes a mirror as "2/m", "4/m": past the first position, or before a cubic 3 or -3, the axis
+        // is the short symbol's m (4/m 2/m 2/m is 4/mmm, 2/m -3 is m-3).
+        let cubic = axes.contains { $0.axis == "3" || $0.axis == "-3" } && axes.count > 1
+        var point = ""
+        for (k, a) in axes.enumerated() {
+            if a.mirror, axes.count > 1, k > 0 || cubic || a.axis == "2" { point += "m" }
+            else { point += a.axis + (a.mirror ? "/m" : "") }
+        }
+        if point.isEmpty { point = "1" }
+        let centring = lattice == "P" ? 1 : lattice == "F" ? 4 : (lattice == "R" || lattice == "H") ? 3 : 2
+        if let hit = pointGroupBySymbol[point] { return (centring, hit.order, hit.system) }
+        // Orthorhombic symbols permute (P n m a is mmm, P m 2 m is mm2).
+        let key = String(point.sorted())
+        for (name, hit) in pointGroupBySymbol where hit.system == "o" && String(name.sorted()) == key {
+            return (centring, hit.order, hit.system)
+        }
+        return nil
+    }
+
+    /// As ``requiredOperationCount(spaceGroup:alphaDeg:betaDeg:gammaDeg:rightAngleToleranceDeg:rotationsDiagonal:)`` for a
+    /// file that names its group by Hermann–Mauguin symbol alone: the point-group order times the lattice points per cell
+    /// the symbol states, divided by the centring when the cell is not the conventional one. nil when the symbol is not
+    /// one of the 32 classes' (such a file stays unchecked, as before).
+    public static func requiredOperationCount(
+        hermannMauguin symbol: String, alphaDeg: Double, betaDeg: Double, gammaDeg: Double,
+        rightAngleToleranceDeg: Double = 0.05, rotationsDiagonal: Bool? = nil
+    ) -> Int? {
+        guard let facts = hermannMauguinFacts(symbol) else { return nil }
+        let order = facts.order * facts.centring
+        guard facts.centring > 1 else { return order }
+        let angleBound: Double = rightAngleToleranceDeg.isFinite && rightAngleToleranceDeg >= 0 ? rightAngleToleranceDeg : 0
+        func right(_ angle: Double) -> Bool { abs(angle - 90) <= angleBound }
+        let conventional: Bool
+        switch facts.system {
+        case "m": conventional = [alphaDeg, betaDeg, gammaDeg].filter(right).count >= 2 && rotationsDiagonal != false
+        case "r", "h": conventional = right(alphaDeg) && right(betaDeg) && abs(gammaDeg - 120) <= angleBound
+        default: conventional = right(alphaDeg) && right(betaDeg) && right(gammaDeg)
+        }
+        return conventional ? order : order / facts.centring
     }
 
     /// The Hermann–Mauguin symbol the file states; nil when it states none.

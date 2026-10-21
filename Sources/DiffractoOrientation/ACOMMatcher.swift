@@ -23,10 +23,19 @@ public struct ACOMMatcher: Sendable {
     public let library: ACOMTemplateLibrary
     private let fft: FFT1D
     private let symmetry: CrystalOrientationSymmetry
+    /// Whether ``match(peaks:originX:originY:invAngstromPerPixel:)`` places the in-plane angle between the azimuthal bins
+    /// (see ``init(library:refinesInPlaneAngle:)``).
+    public let refinesInPlaneAngle: Bool
 
+    /// - Parameter refinesInPlaneAngle: place the winner's in-plane angle at the vertex of the parabola through its
+    ///   correlation peak and the two neighbouring azimuthal bins, instead of at the bin. Default false: the angle is the
+    ///   bin (360°/nAzimuthal apart, the reference's own resolution), so an orientation is off the truth by up to half a bin
+    ///   (1.4° at 128 bins) before the beam direction is considered. The refinement is the CPU path's: the Metal option and
+    ///   ``result(scores:bins:mirrored:)`` carry the bin only.
     /// - Returns: nil when the library's azimuthal length has no FFT plan (it cannot happen for a library `generate` made).
-    public init?(library: ACOMTemplateLibrary) {
+    public init?(library: ACOMTemplateLibrary, refinesInPlaneAngle: Bool = false) {
         guard let fft = FFT1D(n: library.geometry.nAzimuthal) else { return nil }
+        self.refinesInPlaneAngle = refinesInPlaneAngle
         self.library = library
         self.fft = fft
         self.symmetry = CrystalOrientationSymmetry(laueClass: library.laueClass)
@@ -54,8 +63,35 @@ public struct ACOMMatcher: Sendable {
         let selected = Self.selectOrientation(zoneAxes: library.zoneAxes, scores: all.scores, bins: all.bins,
                                               distinctOrientationRadians: library.distinctOrientationRadians)
         guard selected.template >= 0 else { return .empty }
+        let offset = refinesInPlaneAngle
+            ? binOffset(template: selected.template, bin: selected.bin, mirrored: all.mirrored[selected.template],
+                        experimentalRe: experimental.re, experimentalIm: experimental.im)
+            : 0
         return makeResult(bestTemplate: selected.template, bestBin: selected.bin, bestScore: selected.score,
-                          secondScore: selected.secondScore, mirrored: all.mirrored[selected.template])
+                          secondScore: selected.secondScore, mirrored: all.mirrored[selected.template], binOffset: offset)
+    }
+
+    /// The vertex of the parabola through the correlation at `bin - 1`, `bin`, `bin + 1` of one template and pass, in bins
+    /// (|offset| ≤ 0.5; 0 when the three are not a strict local maximum).
+    private func binOffset(template t: Int, bin: Int, mirrored: Bool, experimentalRe: [Float], experimentalIm: [Float]) -> Double {
+        let na = library.geometry.nAzimuthal, nr = library.geometry.nRadial
+        var sumRe = [Float](repeating: 0, count: na), sumIm = [Float](repeating: 0, count: na)
+        let imaginarySign: Float = mirrored ? 1 : -1
+        let offset = t * nr * na
+        for r in 0..<nr {
+            let base = r * na
+            for a in 0..<na {
+                let er = experimentalRe[base + a], eIm = imaginarySign * experimentalIm[base + a]
+                let tr = library.templateFFTRe[offset + base + a], ti = library.templateFFTIm[offset + base + a]
+                sumRe[a] += er * tr - eIm * ti
+                sumIm[a] += er * ti + eIm * tr
+            }
+        }
+        fft.transform(re: &sumRe, im: &sumIm, forward: false)
+        let y0 = Double(sumRe[bin]), ym = Double(sumRe[(bin + na - 1) % na]), yp = Double(sumRe[(bin + 1) % na])
+        let curvature = ym - 2 * y0 + yp
+        guard curvature < 0, y0 >= ym, y0 >= yp else { return 0 }
+        return max(-0.5, min(0.5, 0.5 * (ym - yp) / curvature))
     }
 
     /// Every template's best score for one pattern, in library order: the larger of the forward and the mirrored pass.
@@ -197,13 +233,14 @@ public struct ACOMMatcher: Sendable {
         return result(scores: scores, bins: bins, mirrored: mirrored)
     }
 
-    func makeResult(bestTemplate: Int, bestBin: Int, bestScore: Float, secondScore: Float, mirrored: Bool)
-        -> OrientationResult {
+    func makeResult(bestTemplate: Int, bestBin: Int, bestScore: Float, secondScore: Float, mirrored: Bool,
+                    binOffset: Double = 0) -> OrientationResult {
         let na = library.geometry.nAzimuthal
         // The correlation peaks at −θ; negate to report the pattern rotation. A mirrored match carries py4DSTEM's extra half
         // turn (crystal_ACOM.py: `+ np.pi`) and the beam flip of `orientationMatrix(...mirrored:)`.
-        let bin = (na - bestBin) % na
-        var angle = Float(Double(bin) / Double(na) * 2 * Double.pi)
+        let bin = binOffset == 0 ? Double((na - bestBin) % na)
+            : (Double(na) - (Double(bestBin) + binOffset)).truncatingRemainder(dividingBy: Double(na))
+        var angle = Float((bin < 0 ? bin + Double(na) : bin) / Double(na) * 2 * Double.pi)
         if mirrored { angle = (angle + .pi).truncatingRemainder(dividingBy: 2 * .pi) }
         let matrix = library.orientationMatrix(templateIndex: bestTemplate, inPlaneAngle: angle, mirrored: mirrored)
         // The matrix is a proper rotation by construction; the fallback keeps `match` total.

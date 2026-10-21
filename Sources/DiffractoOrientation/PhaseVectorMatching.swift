@@ -40,7 +40,7 @@ import DiffractoScattering
 
 // MARK: - Settings
 
-/// The 17 settings of the matcher. Each is a tuned policy, not physics: the default is the value measured on the data
+/// The 18 settings of the matcher. Each is a tuned policy, not physics: the default is the value measured on the data
 /// named in its comment, and a different dataset may want a different value.
 public struct PhaseVectorSettings: Sendable, Equatable {
     /// The documented defaults, `PhaseVectorSettings()`: `directBeamRadiusInvAngstrom` 0.15, `maximumVectorInvAngstrom` 0
@@ -48,7 +48,8 @@ public struct PhaseVectorSettings: Sendable, Equatable {
     /// `matrixFallbackExplainedFraction` 0 (off), `minimumMatchedVectors` 3, `friedelPairMinimumMatchedVectors` 2,
     /// `chanceMatchMultiple` 5, `notIndexedAboveInvAngstrom` 0.015, `minimumPhaseContrastInvAngstrom` 0 (off),
     /// `orientationRelationshipToleranceDeg` 10, `completenessAwareCrossPhaseRanking` false, `classificationRule` `.search`,
-    /// `directMatrixMaximumVectors` 1, `residualCutoffInvAngstrom` 0.07, `knownVariantsMinimumSpecificReflections` 1.
+    /// `directMatrixMaximumVectors` 1, `residualCutoffInvAngstrom` 0.07, `knownVariantsMinimumSpecificReflections` 1,
+    /// `minimumMatrixEvidence` 0 (off).
     public static let `default` = PhaseVectorSettings()
 
     /// Peaks within this of the pattern origin are the direct beam. Å⁻¹.
@@ -80,6 +81,14 @@ public struct PhaseVectorSettings: Sendable, Equatable {
     public var pairRadiusInvAngstrom: Double = 0.02
     /// Fewer surviving vectors than this → the matrix, by exclusion.
     public var minimumVectors: Int = 2
+    /// "The matrix, by exclusion" (`minimumVectors` in `.search`, `directMatrixMaximumVectors` in `.knownVariants`) needs
+    /// at least this many vectors REMOVED as the matrix's; a position with fewer is "not indexed" instead. 0 disables it,
+    /// the shipped default: with it off a position showing no vector at all of the matrix (one stray peak, a vacuum
+    /// edge, an amorphous patch) is called matrix because too little survived, and the phase fraction counts it.
+    /// Diagnosed 2026-10-21: the exclusion rule is the paper's (one or no survivor is the matrix) and the survivor
+    /// count cannot tell "the matrix explained everything" from "nothing was there"; `removedCount` can. Not measured
+    /// on a labelled scan, so it ships off; an empty pattern is already neither (`PhaseVectorResult()`).
+    public var minimumMatrixEvidence: Int = 0
 
     /// When NO candidate phase clears its guards, fall back to the matrix
     /// verdict if the matrix already explained at least this fraction of the
@@ -1061,6 +1070,10 @@ public enum PhaseVectorMatcher {
 
         // 2 — the matrix, by exclusion.
         if surviving.count < settings.minimumVectors {
+            guard Int(result.removedCount) >= settings.minimumMatrixEvidence else {
+                result.verdict = .notIndexed
+                return result
+            }
             result.verdict = .matrix
             result.phaseIndex = Int32(library.matrixPhaseIndex)
             return result
@@ -1267,6 +1280,10 @@ public enum PhaseVectorMatcher {
 
         // b — the matrix, by exclusion (survivors at or below `directMatrixMaximumVectors`).
         if surviving.count <= settings.directMatrixMaximumVectors {
+            guard Int(result.removedCount) >= settings.minimumMatrixEvidence else {
+                result.verdict = .notIndexed
+                return result
+            }
             result.verdict = .matrix
             result.phaseIndex = Int32(library.matrixPhaseIndex)
             return result

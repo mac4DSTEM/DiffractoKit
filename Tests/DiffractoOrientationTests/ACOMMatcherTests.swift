@@ -676,3 +676,95 @@ private final class LockedBox<T: Sendable>: @unchecked Sendable {
     var value: T { lock.lock(); defer { lock.unlock() }; return stored }
     func update(_ body: (inout T) -> Void) { lock.lock(); defer { lock.unlock() }; body(&stored) }
 }
+
+// MARK: Off-grid self-recovery (diagnosis 2026-10-21)
+
+/// The apps' open item "off-grid self-recovery fails 37-43 of 200 at 1.4 degrees": 200 seeded patterns from beam directions
+/// perturbed off the library grid (up to 2.9 degrees from a template) and a random in-plane angle, built from the kit's own
+/// excitation model, matched, compared with the planted orientation over the Laue operations. DIAGNOSIS: the failures are
+/// the in-plane bin, not the beam-direction grid. 128 bins are 2.81 degrees apart, so the angle alone is off by up to
+/// 1.41; going to 512 bins takes the failures from 35 to 9, quadrupling the zone axes (600 to 2400) does not move the
+/// in-plane term, and fitting a parabola through the correlation peak (`refinesInPlaneAngle`) takes 35 to 14 at 128 bins.
+/// The rest (7 of 200 above 10 degrees, 36 or 60 degrees, mirrored or not) are zone axes at which the centrosymmetric
+/// kinematic pattern has a symmetry of its own (a 3-fold axis shows six spots): two orientations give one pattern, which
+/// no matcher on this pattern can separate; recorded in docs/open-items.md.
+struct ACOMOffGridRecoveryTests {
+    private func failures(bins: Int, zoneAxes: Int, refine: Bool) throws -> (over1p4: Int, over10: Int, median: Double) {
+        let c = try #require(try fixture().crystals["al"])
+        let refl = reflections(c)
+        let lib = try ACOMTemplateLibrary.generate(
+            reflections: refl, kMax: c.kmax, laueClass: .mThreeBarM,
+            settings: ACOMTemplateSettings(nAzimuthal: bins, zoneAxisCount: zoneAxes,
+                                           excitation: .appCurvature(wavelengthAngstrom: c.wavelength)))
+        let matcher = try #require(ACOMMatcher(library: lib, refinesInPlaneAngle: refine))
+        var seed: UInt64 = 12345
+        func rnd() -> Double { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return Double(seed >> 11) / Double(1 << 53) }
+        var errors: [Double] = []
+        for _ in 0..<200 {
+            let n = simd_normalize(lib.zoneAxes[Int(rnd() * Double(lib.count))]
+                                   + SIMD3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5) * 0.05)
+            let phi = rnd() * 2 * .pi
+            let ipp = 0.004
+            let peaks = ACOMTemplateLibrary.project(reflections: refl, zoneAxis: n, settings: lib.settings).map { s in
+                ACOMPeak(x: Float(s.r * cos(s.azimuth + phi) / ipp), y: Float(s.r * sin(s.azimuth + phi) / ipp),
+                         intensity: Float(pow(s.weight, 1 / lib.settings.intensityPower)))
+            }
+            let r = matcher.match(peaks: peaks, originX: 0, originY: 0, invAngstromPerPixel: ipp)
+            let truth = ZoneAxisFrame.matrix(detectorBasis: ZoneAxisFrame.detectorBasis(zoneAxis: n), inPlaneAngle: Float(phi))
+            let got = lib.orientationMatrix(templateIndex: r.templateIndex, inPlaneAngle: r.inPlaneAngle, mirrored: r.mirrored)
+            errors.append(misorientationDegrees(got, truth, laue: .mThreeBarM))
+        }
+        errors.sort()
+        return (errors.filter { $0 > 1.4 }.count, errors.filter { $0 > 10 }.count, errors[100])
+    }
+
+    @Test func theInPlaneBinIsTheFloorAndTheParabolaMovesIt() throws {
+        let coarse = try failures(bins: 128, zoneAxes: 600, refine: false)
+        let refined = try failures(bins: 128, zoneAxes: 600, refine: true)
+        let fine = try failures(bins: 512, zoneAxes: 600, refine: false)
+        let denseAxes = try failures(bins: 128, zoneAxes: 2400, refine: false)
+        print("ACOM off-grid >1.4 deg of 200: 128 bins \(coarse), refined \(refined), 512 bins \(fine), 2400 axes \(denseAxes)")
+        #expect(coarse.over1p4 >= 25)              // the app's 37-43 of 200, reproduced
+        #expect(refined.over1p4 <= 20)
+        #expect(refined.median < coarse.median)
+        #expect(fine.over1p4 <= 12)
+        #expect(denseAxes.over1p4 >= 20)           // more beam directions do not remove the in-plane floor
+        #expect(coarse.over10 <= 10)
+    }
+
+    @Test func refinementMovesOnlyTheInPlaneAngleByAtMostHalfABin() throws {
+        let c = try #require(try fixture().crystals["al"])
+        let lib = try ACOMTemplateLibrary.generate(
+            reflections: reflections(c), kMax: c.kmax, laueClass: .mThreeBarM,
+            settings: ACOMTemplateSettings(zoneAxisCount: 60, excitation: .appCurvature(wavelengthAngstrom: c.wavelength)))
+        let plain = try #require(ACOMMatcher(library: lib)), fine = try #require(ACOMMatcher(library: lib, refinesInPlaneAngle: true))
+        #expect(!plain.refinesInPlaneAngle && fine.refinesInPlaneAngle)
+        let ipp = 0.004
+        let peaks = lib.templateSpots[17].map { s -> ACOMPeak in
+            let a = Double(s.azimuth) + 0.9, r = Double(s.radius) / ipp
+            return ACOMPeak(x: Float(r * cos(a)), y: Float(r * sin(a)), intensity: pow(s.weight, 4))
+        }
+        let a = plain.match(peaks: peaks, originX: 0, originY: 0, invAngstromPerPixel: ipp)
+        let b = fine.match(peaks: peaks, originX: 0, originY: 0, invAngstromPerPixel: ipp)
+        #expect(a.templateIndex == b.templateIndex && a.mirrored == b.mirrored && a.score == b.score)
+        let halfBin = Float.pi / Float(lib.geometry.nAzimuthal)
+        var d = abs(a.inPlaneAngle - b.inPlaneAngle); d = min(d, 2 * .pi - d)
+        #expect(d <= halfBin * 1.0001)
+        #expect(abs(Double(b.inPlaneAngle) - 0.9) <= abs(Double(a.inPlaneAngle) - 0.9) + 1e-6)
+    }
+}
+
+struct OrientationMapMirrorPlaneTests {
+    /// The flag plane and the pattern's own in-plane angle: a mirrored result at 0.30 turns (0.80 raw) reads 0.30, a forward
+    /// one at 0.10 reads 0.10, a mirrored one raw 0.20 wraps to 0.70. RED UNDER: the planes absent (compile error).
+    @Test func mirroredPlaneAndPatternAngle() {
+        func result(_ angleTurns: Float, mirrored: Bool) -> OrientationResult {
+            OrientationResult(templateIndex: 0, euler: .init(phi1: 0, Phi: 0, phi2: 0), inPlaneAngle: angleTurns * 2 * .pi,
+                              score: 1, secondScore: 0, phaseID: 0, mirrored: mirrored)
+        }
+        let rs = [result(0.80, mirrored: true), result(0.10, mirrored: false), result(0.20, mirrored: true)]
+        #expect(OrientationMapAnalysis.mirroredPlane(rs) == [1, 0, 1])
+        let a = OrientationMapAnalysis.patternInPlaneAnglePlane(rs)
+        #expect(abs(a[0] - 0.30) < 1e-6 && abs(a[1] - 0.10) < 1e-6 && abs(a[2] - 0.70) < 1e-6)
+    }
+}

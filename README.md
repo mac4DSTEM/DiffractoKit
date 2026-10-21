@@ -250,7 +250,8 @@ and ported from: pymatgen, spglib, py4DSTEM and, for the orientation work, pyxem
 - theta'-Al2Cu in the slice 4 pins is a test structure (Al4Cu2 body-centred, a 4.04 A, c 5.80 A), not checked against a published CIF.
 - With py4DSTEM's patterns the ACOM matcher finds 17 of 18 planted orientations within 4 degrees; one 2/m pattern matches another beam direction.
 - `testRinglessFitOnARealMeanPatternFallsBackToTheConic` is disabled by name until the owner's Ni65Cu35 mean pattern has a manifest line.
-- Slice 5 template matching (`OrientationPlan`, `OrientationMatcher`) and policies not yet parameters (profile-fit plausibility bounds, cell volume 1e-6) remain.
+- Policies not yet parameters (profile-fit plausibility bounds, cell volume 1e-6) remain.
+- The open list, worst first, with causes: `docs/open-items.md`; timings against Python: `docs/benchmarks.md`.
 
 ## Status and documents
 
@@ -260,6 +261,8 @@ and ported from: pymatgen, spglib, py4DSTEM and, for the orientation work, pyxem
 |---|---|
 | `CHANGELOG.md` | what changed in each release, with migration notes |
 | `docs/parity.md` | the checklist against pymatgen, py4DSTEM, pyxem / diffsims / orix |
+| `docs/benchmarks.md` | the per-function timings against the Python counterparts and the backend decision |
+| `docs/open-items.md` | what is open, with causes |
 | `docs/orientation-symmetry.md` | orientation conventions |
 | `tools/consumer-check/README.md` | the separate package that uses the public API only |
 | `tools/readme-consumer/README.md` | the separate package that compiles and runs exactly this README's program |

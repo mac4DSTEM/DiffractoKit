@@ -3,6 +3,48 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.9.0 (2026-10-21)
+
+The kit audit: the three diagnose-first items (phase matching, ACOM mirror and in-plane angle, CIF symmetry) diagnosed with
+the experiment named in each test, the parity table and the benchmark table rewritten against the Python sources on disk.
+No existing default changes: every new behaviour is opt-in except the two CIF fixes below, which turn a wrong refusal into an
+import and a missed refusal into one.
+
+### Added
+- `CIFImport`: a group named by Hermann-Mauguin symbol alone (no IT number) is held to the same completeness as one named by
+  number (`CIFImportError.incompleteSymmetryOperationsForSymbol`); `requiredOperationCount(hermannMauguin:...)` reads
+  the point-group order and the centring from any of the 1 048 spellings spglib 2.8.0 lists (checked against its table).
+- `CIFImport.requiredOperationCount(spaceGroup:...rotationsDiagonal:)`: the new argument lets the listed rotations settle
+  whether a centred monoclinic cell is conventional.
+- `ACOMMatcher(library:refinesInPlaneAngle:)`: the in-plane angle at the vertex of the parabola through the correlation peak
+  (CPU `match` and the CPU scan; the Metal path and `result(scores:bins:mirrored:)` carry the bin). Default false.
+- `OrientationMapAnalysis.mirroredPlane` and `patternInPlaneAnglePlane`: the per-position mirror flag, and the in-plane angle
+  with a mirrored match's added half turn taken off.
+- `PhaseVectorSettings.minimumMatrixEvidence` (default 0, off): "the matrix, by exclusion" needs at least this many vectors
+  removed as the matrix's, else the position is "not indexed".
+- `docs/benchmarks.md` and `tools/benchmarks/` (kit and Python harnesses, results of 2026-10-21); `docs/open-items.md`.
+
+### Fixed
+- A primitive C-centred monoclinic cell with beta = 90 (two right angles, like the conventional cell) was refused with its
+  correct 4-operation list; the listed rotations (not diagonal in a primitive basis) now decide.
+
+### Diagnosed, nothing changed by default (the experiments are tests)
+- Phase matching: `minimumVectors` = 2 is the paper's rule (one or no survivor is the matrix) and the survivor count cannot tell
+  "the matrix explained everything" from "nothing was there" (`minimumMatrixEvidence` above). The completeness-aware cross-phase
+  ranking loses at small noise (23 wrong of 400 against 0 at sigma 0.003 A^-1) and wins only near the pair radius (20 against
+  53 at 0.010), so neither dominates and the default stays.
+- ACOM: the 37 to 43 of 200 off-grid self-recovery failures at 1.4 degrees are the in-plane bin (128 bins are 2.8 degrees apart):
+  35 fail at 128 bins, 14 with `refinesInPlaneAngle`, 9 at 512 bins, 34 with four times the zone axes. The `mirrored` flag
+  already exists on `OrientationResult`; the app's raw `acom_in_plane` lacked it. The 7 of 200 above 10 degrees are zone axes
+  whose centrosymmetric pattern has a symmetry of its own.
+
+### Migration
+Source-compatible except: (1) `CIFImportError` gains a case, so an exhaustive `switch` on it needs `.incompleteSymmetryOperationsForSymbol`;
+(2) `requiredOperationCount(spaceGroup:...)` has a new defaulted argument (call sites compile unchanged). mac4DSTEM: publish
+`OrientationMapAnalysis.mirroredPlane` beside `acom_in_plane` (or use `patternInPlaneAnglePlane`), and consider
+`ACOMMatcher(library:refinesInPlaneAngle: true)` for the scan. Phase maps: set `minimumMatrixEvidence = 1` to stop vacuum and stray-peak
+positions counting as matrix once a labelled scan has cleared it.
+
 ## 0.8.1 (2026-10-21)
 
 ### Added
