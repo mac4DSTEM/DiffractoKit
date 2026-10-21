@@ -22,6 +22,7 @@
 //  records which of these tests, and which of the arithmetic ones, turn red for each mutant).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry
@@ -55,7 +56,7 @@ private struct Dump: Decodable {
     #else
     static let file = "slice-3b-apps.json"
     #endif
-    static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/\(file)")
+    static let url = FixtureDirs.target("DiffractoGeometryTests").appendingPathComponent("Fixtures/\(file)")
     static let cases: [Case] = {
         do { return try JSONDecoder().decode([Case].self, from: Data(contentsOf: url)) } catch { fatalError("\(file): \(error)") }
     }()

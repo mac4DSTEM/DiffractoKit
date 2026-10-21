@@ -7,6 +7,7 @@
 //  (`reductionConverged`) and the conventional route falls back to the file setting's detection.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

@@ -16,6 +16,7 @@
 //  of the four rings throws `didNotConverge`.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry

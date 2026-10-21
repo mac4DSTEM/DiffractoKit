@@ -6,6 +6,7 @@
 //  these tests check the derived sigma_q, delta, z, margin, odds and the text, the refusal names, and that the decision is untouched.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoCore

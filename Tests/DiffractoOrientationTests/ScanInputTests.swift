@@ -5,6 +5,7 @@
 //        the two settings structs.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

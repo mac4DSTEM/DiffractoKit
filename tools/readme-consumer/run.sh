@@ -38,7 +38,7 @@ if ! swift build --disable-dependency-cache -c debug $jobs >$log 2>&1; then
 fi
 warnings=$(grep -c "warning:" $log || true)
 (( warnings == 0 )) || { grep "warning:" $log | head >&2; die "$warnings warning(s) in the build" }
-if grep -qE "DiffractoCoreTests|DiffractoScatteringTests|DiffractoGeometryTests|DiffractoOrientationTests" $log; then
+if grep -qE "DiffractoCoreTests|DiffractoScatteringTests|DiffractoGeometryTests|DiffractoOrientationTests|DiffractoKitParityTests|DiffractoKitTestSupport" $log; then
   die "the build log names a test-only target"
 fi
 bin=$(swift build --disable-dependency-cache -c debug --show-bin-path)

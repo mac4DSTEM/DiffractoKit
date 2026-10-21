@@ -6,6 +6,7 @@
 //  Every test names under "RED UNDER" the production change that turns it red.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry

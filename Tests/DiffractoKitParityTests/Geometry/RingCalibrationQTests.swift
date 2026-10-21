@@ -8,6 +8,7 @@
 //  difference is a failure of the port, never a band to widen. The fixture is read by #filePath.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry
@@ -38,7 +39,7 @@ private struct QPins: Decodable {
     let nan: [Plant]
     let just_inside: Inside
 
-    static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+    static let url = FixtureDirs.target("DiffractoGeometryTests")
         .appendingPathComponent("Fixtures/q-pins.json")
 
     static let shared: QPins = {

@@ -6,6 +6,7 @@
 //  a, magnesium with γ = 60°, corundum in rhombohedral axes, a skewed hexagonal lattice).
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

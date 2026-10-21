@@ -6,6 +6,7 @@
 //  line per row, a final newline). In-memory data only.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoCore

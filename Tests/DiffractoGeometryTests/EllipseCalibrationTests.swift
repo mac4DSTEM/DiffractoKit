@@ -14,6 +14,7 @@
 //  Every test names under "RED UNDER" the production mutation that turns it red.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry

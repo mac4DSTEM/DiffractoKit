@@ -5,6 +5,7 @@
 //        m-3m; hcp written in a gamma = 60 degree cell is 6/mmm, its true class.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import DiffractoCore
 

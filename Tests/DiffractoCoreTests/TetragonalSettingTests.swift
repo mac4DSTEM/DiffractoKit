@@ -7,6 +7,7 @@
 //  Laue class, the same count of operations and the same rings (multiplicity, |g|).
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

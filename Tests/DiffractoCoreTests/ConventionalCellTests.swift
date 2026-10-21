@@ -5,6 +5,7 @@
 //  and lengths, the transformation, and closed-form cells of the cubic lattices.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

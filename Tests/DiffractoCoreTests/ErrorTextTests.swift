@@ -5,6 +5,7 @@
 //  rather than Foundation's "The operation couldn't be completed. (DiffractoCore.CIFImportError error 0.)".
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoCore

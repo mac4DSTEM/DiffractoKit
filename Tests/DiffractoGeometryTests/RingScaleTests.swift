@@ -6,6 +6,7 @@
 //  3.3e-15 for R, tools/kit-0.0.4/q-pins.py); (2) the linear helper and the file comparison, closed forms.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoGeometry

@@ -7,6 +7,7 @@
 //  Verdicts, refusals and the formula parser are exact logic. Nothing touches the network.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

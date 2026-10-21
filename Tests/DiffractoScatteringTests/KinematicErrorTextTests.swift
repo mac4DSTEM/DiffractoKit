@@ -4,6 +4,7 @@
 //  `description`.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoCore

@@ -1,3 +1,4 @@
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
@@ -22,7 +23,7 @@ private func mat(_ r: [[Double]]) -> simd_double3x3 { .init(rows: r.map { SIMD3(
 
 struct Py4DSTEMRealFamilyTests {
     private func pins() throws -> [RealPins.Crystal] {
-        let file = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let file = FixtureDirs.target("DiffractoOrientationTests")
             .appendingPathComponent("Fixtures/py4dstem-family-real-pins.json")
         return try JSONDecoder().decode(RealPins.self, from: Data(contentsOf: file)).cases
     }

@@ -7,6 +7,7 @@
 //  turns it red.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

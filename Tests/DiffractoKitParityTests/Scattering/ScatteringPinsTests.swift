@@ -6,6 +6,7 @@
 //  Public API only (DiffractoScattering and DiffractoCore). A failure is a failure of the port, never a tolerance to widen.
 //
 
+import DiffractoKitTestSupport
 import CryptoKit
 import Foundation
 import Testing
@@ -70,12 +71,9 @@ private struct AppsCase: Decodable {
 private struct Apps: Decodable { let cases: [AppsCase] }
 
 enum ScatteringFixtures {
-    static let directory: URL = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent().appendingPathComponent("Fixtures")
+    static let directory: URL = FixtureDirs.target("DiffractoScatteringTests").appendingPathComponent("Fixtures")
     /// Slice 1's CIF fixtures (read by file name, as the pins name them).
-    static let coreDirectory: URL = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("DiffractoCoreTests").appendingPathComponent("Fixtures")
+    static let coreDirectory: URL = FixtureDirs.fixtures(of: "DiffractoCoreTests")
 
     fileprivate static func decode<T: Decodable>(_ type: T.Type, _ name: String) throws -> T {
         let data = try Data(contentsOf: directory.appendingPathComponent(name))

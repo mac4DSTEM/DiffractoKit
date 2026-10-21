@@ -5,6 +5,7 @@
 //  committed MP-shaped JSON; nothing here touches the network.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

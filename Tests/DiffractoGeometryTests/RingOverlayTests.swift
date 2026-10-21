@@ -5,6 +5,7 @@
 //  app source, NOT from this Swift. Closed forms (circle, axis vertex) are hand-derived and checked beside them.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoGeometry

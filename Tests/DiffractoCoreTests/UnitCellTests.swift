@@ -5,6 +5,7 @@
 //  family of each constructor. No reference code is read.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import simd
 import DiffractoCore

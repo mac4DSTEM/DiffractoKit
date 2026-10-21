@@ -5,6 +5,7 @@
 //  the port, never a tolerance to widen.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import CryptoKit

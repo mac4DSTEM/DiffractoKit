@@ -7,6 +7,7 @@
 //        order from the kit's lattice by the original loop and compare it with `PhaseReferenceLibrary.reflections`.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

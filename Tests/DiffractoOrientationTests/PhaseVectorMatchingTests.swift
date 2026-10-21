@@ -5,6 +5,7 @@
 //        names the mutation it catches.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

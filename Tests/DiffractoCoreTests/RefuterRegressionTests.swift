@@ -7,6 +7,7 @@
 //  48 operations, 924 of 924; the 7× Po supercell (c = 23.45) 112 operations, 122 of 782 allowed at 0.9.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

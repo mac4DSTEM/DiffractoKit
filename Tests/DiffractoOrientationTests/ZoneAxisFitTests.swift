@@ -4,6 +4,7 @@
 //        of the ranking (registration slice 4, gate G5).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

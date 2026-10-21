@@ -5,6 +5,7 @@
 //        against the existing CPU route (`match`, `matchAll(peaks:)`), which is the reference; nothing here changes a number.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

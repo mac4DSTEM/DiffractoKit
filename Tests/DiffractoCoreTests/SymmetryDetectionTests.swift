@@ -5,6 +5,7 @@
 //  (P6₃/mmc: 24), the split-atom gold that must not be cubic, and a tetragonal cell with a = c.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import simd
 import DiffractoCore

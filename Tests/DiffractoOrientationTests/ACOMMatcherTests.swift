@@ -8,6 +8,7 @@
 //            `ACOMTemplateLibrary.project`, and planted orientations against py4DSTEM's own match_single_pattern.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

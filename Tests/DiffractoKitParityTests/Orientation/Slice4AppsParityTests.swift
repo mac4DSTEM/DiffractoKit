@@ -24,6 +24,7 @@
 //        (default 5) of the named block in memory, so the block must turn red. Unset, the tests are the plain G1 tests.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
@@ -247,7 +248,7 @@ private func entryHash(_ e: PhaseOrientationReference) -> UInt64 {
 /// The dump, parsed once, and everything built from it that several tests share.
 private enum G1 {
     nonisolated(unsafe) static let dump: JSON = {
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let url = FixtureDirs.target("DiffractoOrientationTests")
             .appendingPathComponent("Fixtures").appendingPathComponent("slice-4-apps.json")
         let data = try! Data(contentsOf: url)
         return try! JSONSerialization.jsonObject(with: data) as! JSON

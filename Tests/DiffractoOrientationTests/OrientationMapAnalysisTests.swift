@@ -1,3 +1,4 @@
+import DiffractoKitTestSupport
 import Testing
 import simd
 @testable import DiffractoOrientation

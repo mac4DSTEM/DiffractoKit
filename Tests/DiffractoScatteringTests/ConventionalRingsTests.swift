@@ -5,6 +5,7 @@
 //  g to 1e-12, multiplicities): Au 8, Si 10, and β″'s 417 rings from 1442 kept reflections.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

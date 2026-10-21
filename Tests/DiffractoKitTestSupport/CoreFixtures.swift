@@ -9,16 +9,15 @@ import Foundation
 import Testing
 import DiffractoCore
 
-enum Fixtures {
-    static let directory: URL = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent().appendingPathComponent("Fixtures")
+package enum Fixtures {
+    package static let directory: URL = FixtureDirs.fixtures(of: "DiffractoCoreTests")
 
-    static func text(_ name: String) throws -> String {
+    package static func text(_ name: String) throws -> String {
         try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8)
     }
 
     /// The β″ CIF exactly as the generator writes it (C2/m, Andersen et al. 1998, Table 3 set 3).
-    static var betaDoublePrimeCIF: String {
+    package static var betaDoublePrimeCIF: String {
         let sites: [(String, String, Double, Double, Double, Double)] = [
             ("Mg1", "Mg", 0.0, 0.0, 0.0, 0.5),
             ("Mg2", "Mg", 0.3459, 0.0, 0.089, 1.0),
@@ -71,7 +70,7 @@ enum Fixtures {
 
     /// The β″ cell as the reference implementations' `Crystal.betaDoublePrime` builds it in code: the six sites expanded by hand under C2/m
     /// (22 atoms), for the detection tests (no CIF, no operations).
-    static var betaDoublePrimeSites: [AtomSite] {
+    package static var betaDoublePrimeSites: [AtomSite] {
         func fourI(_ z: Int, _ x: Double, _ zc: Double) -> [AtomSite] {
             [SIMD3(x, 0, zc), SIMD3(-x, 0, -zc), SIMD3(x + 0.5, 0.5, zc), SIMD3(-x + 0.5, 0.5, -zc)]
                 .map { AtomSite(z: z, fractional: wrapFractional($0)) }
@@ -89,149 +88,149 @@ enum Fixtures {
         return sites
     }
 
-    static let betaDoublePrimeCell = UnitCell.monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3)
+    package static let betaDoublePrimeCell = UnitCell.monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3)
 }
 
 // MARK: - The pins (tools/slice-1/pins.py)
 
-struct Pins: Decodable {
-    let versions: [String: String]
-    let generatedAt: String
-    let cells: [CellPin]
-    let structures: [StructurePin]
+package struct Pins: Decodable {
+    package let versions: [String: String]
+    package let generatedAt: String
+    package let cells: [CellPin]
+    package let structures: [StructurePin]
 
-    static let fileName = "slice-1-pins.json"
+    package static let fileName = "slice-1-pins.json"
 
-    static func load() throws -> Pins {
+    package static func load() throws -> Pins {
         let data = try Data(contentsOf: Fixtures.directory.appendingPathComponent(fileName))
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try decoder.decode(Pins.self, from: data)
     }
 
-    func structure(_ name: String) throws -> StructurePin {
+    package func structure(_ name: String) throws -> StructurePin {
         try #require(structures.first { $0.name == name }, "pins hold no structure \(name)")
     }
 }
 
-struct CellParams: Decodable {
-    let a: Double, b: Double, c: Double
-    let alpha: Double, beta: Double, gamma: Double
+package struct CellParams: Decodable {
+    package let a: Double, b: Double, c: Double
+    package let alpha: Double, beta: Double, gamma: Double
 
-    var unitCell: UnitCell {
+    package var unitCell: UnitCell {
         UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma)
     }
 }
 
-struct CellPin: Decodable {
-    let name: String
-    let a: Double, b: Double, c: Double
-    let alpha: Double, beta: Double, gamma: Double
-    let matrix: [[Double]]
-    let metric: [[Double]]
-    let volume: Double
-    let reciprocal: [[Double]]
-    let d: [DPin]
+package struct CellPin: Decodable {
+    package let name: String
+    package let a: Double, b: Double, c: Double
+    package let alpha: Double, beta: Double, gamma: Double
+    package let matrix: [[Double]]
+    package let metric: [[Double]]
+    package let volume: Double
+    package let reciprocal: [[Double]]
+    package let d: [DPin]
 
-    var unitCell: UnitCell {
+    package var unitCell: UnitCell {
         UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma)
     }
 }
 
-struct DPin: Decodable {
-    let hkl: [Int]
-    let g: Double
-    let d: Double
+package struct DPin: Decodable {
+    package let hkl: [Int]
+    package let g: Double
+    package let d: Double
 }
 
-struct SitePin: Decodable {
-    let z: Int
-    let frac: [Double]
-    let occupancy: Double
+package struct SitePin: Decodable {
+    package let z: Int
+    package let frac: [Double]
+    package let occupancy: Double
 }
 
-struct OperationPin: Decodable {
-    let rotation: [[Int]]
-    let translation: [Double]
-    let xyz: String
+package struct OperationPin: Decodable {
+    package let rotation: [[Int]]
+    package let translation: [Double]
+    package let xyz: String
 
-    var operation: SymmetryOperation {
+    package var operation: SymmetryOperation {
         SymmetryOperation(rotation: IntegerMatrix(rows: rotation.map { SIMD3($0[0], $0[1], $0[2]) }),
                           translation: SIMD3(translation[0], translation[1], translation[2]))
     }
 }
 
-struct ReflectionPin: Decodable {
-    let hkl: [Int]
-    let g: Double
-    let d: Double
-    let allowed: Bool
+package struct ReflectionPin: Decodable {
+    package let hkl: [Int]
+    package let g: Double
+    package let d: Double
+    package let allowed: Bool
     /// Carried by the first items of each list only (size).
-    let orbit: [[Int]]?
-    let canonical: [Int]
+    package let orbit: [[Int]]?
+    package let canonical: [Int]
 }
 
 /// What the file's loop is against the detected set (amendment 2).
-struct FileOperationsPin: Decodable {
-    let count: Int
-    let equalsDetected: Bool
-    let subsetOfDetected: Bool
+package struct FileOperationsPin: Decodable {
+    package let count: Int
+    package let equalsDetected: Bool
+    package let subsetOfDetected: Bool
 }
 
-struct ReflectionsPin: Decodable {
-    let kMax: Double
-    let count: Int
-    let allowedCount: Int
-    let items: [ReflectionPin]
+package struct ReflectionsPin: Decodable {
+    package let kMax: Double
+    package let count: Int
+    package let allowedCount: Int
+    package let items: [ReflectionPin]
 }
 
-struct FamilyPin: Decodable {
-    let g: Double
-    let d: Double
-    let members: [[Int]]
-    let multiplicity: Int
-    let orbits: [[Int]]
-    let name: String
+package struct FamilyPin: Decodable {
+    package let g: Double
+    package let d: Double
+    package let members: [[Int]]
+    package let multiplicity: Int
+    package let orbits: [[Int]]
+    package let name: String
 }
 
-struct StructurePin: Decodable {
-    let name: String
-    let cifFile: String?
-    let cifSha256: String?
-    let cifText: String?
-    let cell: CellParams
-    let matrix: [[Double]]
-    let metric: [[Double]]
-    let volume: Double
-    let reciprocal: [[Double]]
+package struct StructurePin: Decodable {
+    package let name: String
+    package let cifFile: String?
+    package let cifSha256: String?
+    package let cifText: String?
+    package let cell: CellParams
+    package let matrix: [[Double]]
+    package let metric: [[Double]]
+    package let volume: Double
+    package let reciprocal: [[Double]]
     /// As pymatgen expanded them (coordinates within 1e-4 of ⅓ and ⅔ snapped to the fraction, amendment 4).
-    let sites: [SitePin]
+    package let sites: [SitePin]
     /// The sites with the written coordinates, where pymatgen snapped any; what the port is compared with.
-    let sitesAsWritten: [SitePin]?
-    let siteSnapMax: Double?
-    let declaredSpaceGroupNumber: Int?
-    let spaceGroupNumber: Int
-    let pointGroup: String
-    let laueClass: String
-    let operations: [OperationPin]
-    let laueRotations: [[[Int]]]
-    let reflections: ReflectionsPin
-    let families: [FamilyPin]
-    let fileOperations: FileOperationsPin?
+    package let sitesAsWritten: [SitePin]?
+    package let siteSnapMax: Double?
+    package let declaredSpaceGroupNumber: Int?
+    package let spaceGroupNumber: Int
+    package let pointGroup: String
+    package let laueClass: String
+    package let operations: [OperationPin]
+    package let laueRotations: [[[Int]]]
+    package let reflections: ReflectionsPin
+    package let families: [FamilyPin]
+    package let fileOperations: FileOperationsPin?
 
-    var expectedSites: [SitePin] { sitesAsWritten ?? sites }
+    package var expectedSites: [SitePin] { sitesAsWritten ?? sites }
 }
 
-extension MillerIndex {
+package extension MillerIndex {
     init(_ array: [Int]) { self.init(array[0], array[1], array[2]) }
 }
 
-extension IntegerMatrix {
+package extension IntegerMatrix {
     init(_ rows: [[Int]]) { self.init(rows: rows.map { SIMD3($0[0], $0[1], $0[2]) }) }
 }
 
 /// |got − want| ≤ tolerance · max(1, |want|) when `relative`, else absolute.
-func assertClose(_ got: Double, _ want: Double, relative: Double, _ message: @autoclosure () -> String = "",
+package func assertClose(_ got: Double, _ want: Double, relative: Double, _ message: @autoclosure () -> String = "",
                  sourceLocation: SourceLocation = #_sourceLocation) {
     let bound = relative * max(abs(want), abs(got))
     #expect(abs(got - want) <= bound, "\(message()) got \(got), want \(want)", sourceLocation: sourceLocation)

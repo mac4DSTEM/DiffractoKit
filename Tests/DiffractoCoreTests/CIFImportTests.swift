@@ -4,6 +4,7 @@
 //  the structure, absences by the operations, the reference implementations' family counts and names, and the refusals. β″ first.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

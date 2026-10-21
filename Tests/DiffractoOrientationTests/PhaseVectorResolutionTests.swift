@@ -3,6 +3,7 @@
 //  Role: what the tolerances in Å⁻¹ mean on a particular detector (registration slice 4, gate G5).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

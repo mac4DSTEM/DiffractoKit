@@ -4,6 +4,7 @@
 //        every check that existed at the time (registration slice 4, gate G5).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

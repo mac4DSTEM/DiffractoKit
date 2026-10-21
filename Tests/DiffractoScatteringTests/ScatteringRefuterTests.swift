@@ -3,6 +3,7 @@
 //  The Gate B refuter's findings on slice 2 (be6b832; registration slice 2 §8, amendment of 2026-10-15), each a test.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

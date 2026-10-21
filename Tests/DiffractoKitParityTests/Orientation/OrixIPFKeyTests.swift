@@ -1,3 +1,4 @@
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
@@ -18,7 +19,7 @@ private struct OrixPins: Decodable {
 
 struct OrixIPFKeyTests {
     private func pins() throws -> OrixPins {
-        let file = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/orix-ipf-pins.json")
+        let file = FixtureDirs.target("DiffractoOrientationTests").appendingPathComponent("Fixtures/orix-ipf-pins.json")
         return try JSONDecoder().decode(OrixPins.self, from: Data(contentsOf: file))
     }
 

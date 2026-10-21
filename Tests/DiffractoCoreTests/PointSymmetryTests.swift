@@ -5,6 +5,7 @@
 //  and names the reference implementations use today (3.6). Group theory only; no reference code.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import DiffractoCore
 

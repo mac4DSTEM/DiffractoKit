@@ -8,6 +8,7 @@
 //  is excluded from the target).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry
@@ -52,7 +53,7 @@ private struct RingPins: Decodable {
     let domain: [Domain]
     let truth: Truth
 
-    static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+    static let url = FixtureDirs.target("DiffractoGeometryTests")
         .appendingPathComponent("Fixtures/slice-3-ring-pins.json")
 
     static let shared: RingPins = {

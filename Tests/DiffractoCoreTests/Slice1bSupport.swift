@@ -6,6 +6,7 @@
 //        oracle (registration docs/registration-slice-1b.md sections 2 and 3).
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

@@ -4,6 +4,7 @@
 //  extinctions, closed forms of F, the reference implementations' ring counts after the |F| cut, the weak cut, and f_e's own shape.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

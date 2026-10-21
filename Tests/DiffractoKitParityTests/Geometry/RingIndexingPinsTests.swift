@@ -7,6 +7,7 @@
 //  reach 1e-9 max(1, reach). A failure is a failure of the port, never a tolerance to widen.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import DiffractoCore
@@ -71,7 +72,7 @@ private struct IndexPins: Decodable {
 }
 
 private enum IndexPinFixtures {
-    static let directory: URL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures")
+    static let directory: URL = FixtureDirs.target("DiffractoGeometryTests").appendingPathComponent("Fixtures")
 
     static let result: Result<IndexPins, any Error> = Result {
         let data = try Data(contentsOf: directory.appendingPathComponent("slice-3-index-pins.json"))

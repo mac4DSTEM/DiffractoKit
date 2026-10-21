@@ -3,6 +3,7 @@
 //  The x,y,z grammar (registration 3.3): what parses, what it means, what is refused, and the round trip.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import simd
 import DiffractoCore

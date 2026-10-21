@@ -7,6 +7,7 @@
 //  red (tools/kit-0.2.0/mutants-policy.py).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

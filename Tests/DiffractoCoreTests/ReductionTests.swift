@@ -5,6 +5,7 @@
 //  written out from the text; the transformation is unimodular and reproduces the reduced metric.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

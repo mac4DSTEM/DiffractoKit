@@ -5,6 +5,7 @@
 //        test process).
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

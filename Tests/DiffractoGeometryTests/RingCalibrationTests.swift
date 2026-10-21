@@ -12,6 +12,7 @@
 //  ring fit's (EllipseCalibration, slice 3b); here it holds them to the literals 36 and 30, and slice 3b adds the equality.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry

@@ -6,6 +6,7 @@
 //  the curvature term, the slab test (<= to <), the Cartesian axis over the reciprocal rows.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

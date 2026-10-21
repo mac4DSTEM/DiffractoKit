@@ -1,3 +1,4 @@
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
@@ -17,7 +18,7 @@ private func v(_ a: [Double]) -> SIMD3<Double> { SIMD3(a[0], a[1], a[2]) }
 
 struct OrixDirectionTests {
     private func flat() throws -> [DirectionPinsFlat.Class] {
-        let file = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/orix-direction-pins.json")
+        let file = FixtureDirs.target("DiffractoOrientationTests").appendingPathComponent("Fixtures/orix-direction-pins.json")
         return try JSONDecoder().decode(DirectionPinsFlat.self, from: Data(contentsOf: file)).classes
     }
     private func group(_ c: DirectionPinsFlat.Class) -> [simd_double3x3] {

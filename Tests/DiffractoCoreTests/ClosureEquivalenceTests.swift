@@ -7,6 +7,7 @@
 //  no longer compose), and on translations that sit on the bucket edges.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

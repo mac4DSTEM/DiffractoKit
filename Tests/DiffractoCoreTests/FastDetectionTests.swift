@@ -6,6 +6,7 @@
 //  pseudo-symmetry that `.fractional` cannot in a large cell.
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

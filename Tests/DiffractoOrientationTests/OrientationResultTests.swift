@@ -5,6 +5,7 @@
 //        lives with the pins; these are the closed forms.
 //
 
+import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd

@@ -13,6 +13,7 @@
 //  with the worst difference it measured (the report of the gate reads them).
 //
 
+import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
@@ -130,7 +131,7 @@ private struct AxisCase: Sendable, CustomTestStringConvertible {
 }
 
 private enum S4 {
-    static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+    static let url = FixtureDirs.target("DiffractoOrientationTests")
         .appendingPathComponent("Fixtures").appendingPathComponent("slice-4-pins.json")
     static let pins: Slice4Pins = {
         let data = try! Data(contentsOf: url)

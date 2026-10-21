@@ -52,15 +52,28 @@ let package = Package(
         .executableTarget(name: "diffracto-example",
                           dependencies: ["DiffractoCore", "DiffractoScattering", "DiffractoGeometry"],
                           path: "Examples/diffracto-example", swiftSettings: settings),
-        .testTarget(name: "DiffractoCoreTests", dependencies: ["DiffractoCore"], exclude: ["Fixtures"],
-                    swiftSettings: settings),
-        .testTarget(name: "DiffractoScatteringTests", dependencies: ["DiffractoScattering", "DiffractoCore"],
+        // Test support both test sides use (where the fixtures are, shared builders); not a product.
+        .target(name: "DiffractoKitTestSupport",
+                dependencies: ["DiffractoCore", "DiffractoScattering", "DiffractoGeometry", "DiffractoOrientation"], path: "Tests/DiffractoKitTestSupport",
+                swiftSettings: settings),
+        .testTarget(name: "DiffractoCoreTests", dependencies: ["DiffractoCore", "DiffractoKitTestSupport"],
                     exclude: ["Fixtures"], swiftSettings: settings),
-        .testTarget(name: "DiffractoGeometryTests", dependencies: ["DiffractoGeometry", "DiffractoScattering", "DiffractoCore"],
+        .testTarget(name: "DiffractoScatteringTests",
+                    dependencies: ["DiffractoScattering", "DiffractoCore", "DiffractoKitTestSupport"],
+                    exclude: ["Fixtures"], swiftSettings: settings),
+        .testTarget(name: "DiffractoGeometryTests",
+                    dependencies: ["DiffractoGeometry", "DiffractoScattering", "DiffractoCore", "DiffractoKitTestSupport"],
                     exclude: ["Fixtures"], swiftSettings: settings),
         .testTarget(name: "DiffractoOrientationTests",
-                    dependencies: ["DiffractoOrientation", "DiffractoScattering", "DiffractoCore"],
+                    dependencies: ["DiffractoOrientation", "DiffractoScattering", "DiffractoCore", "DiffractoKitTestSupport"],
                     exclude: ["Fixtures"], swiftSettings: settings),
+        // The pinned comparisons against the Python references (pymatgen, spglib, py4DSTEM, orix, pyxem): the slow half,
+        // skipped by the per-session gate with `--skip DiffractoKitParityTests`, run by the plain `swift test`. Their
+        // fixtures stay in the Fixtures folders of the other test targets (FixtureDirs).
+        .testTarget(name: "DiffractoKitParityTests",
+                    dependencies: ["DiffractoOrientation", "DiffractoGeometry", "DiffractoScattering", "DiffractoCore",
+                                   "DiffractoKitTestSupport"],
+                    swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]
 )

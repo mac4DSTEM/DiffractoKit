@@ -13,14 +13,14 @@ import DiffractoScattering
 import DiffractoOrientation
 
 /// A cell with its sites and the identity operation.
-func makeCrystal(a: Double, b: Double, c: Double,
+package func makeCrystal(a: Double, b: Double, c: Double,
                  alphaDeg: Double = 90, betaDeg: Double = 90, gammaDeg: Double = 90,
                  sites: [AtomSite]) -> CrystalStructure {
     CrystalStructure(cell: UnitCell(a: a, b: b, c: c, alphaDeg: alphaDeg, betaDeg: betaDeg, gammaDeg: gammaDeg),
                      sites: sites, operations: [.identity])
 }
 
-extension CrystalStructure {
+package extension CrystalStructure {
     /// Face-centred cubic (4 atoms).
     static func fcc(a: Double, z: Int) -> CrystalStructure {
         makeCrystal(a: a, b: a, c: a, sites: [
@@ -65,21 +65,27 @@ extension CrystalStructure {
 }
 
 /// The reflections a library is made from (`try!`: the fixtures are valid structures).
-func refl(_ structure: CrystalStructure, _ kMax: Double) -> [KinematicReflection] {
+package func refl(_ structure: CrystalStructure, _ kMax: Double) -> [KinematicReflection] {
     try! PhaseReferenceLibrary.reflections(of: structure, kMaxInvAngstrom: kMax)
 }
 
 /// A peak at a detector position, as the pixel form of a scan holds it.
-func pixel(_ x: Float, _ y: Float) -> SIMD2<Double> { SIMD2(Double(x), Double(y)) }
+package func pixel(_ x: Float, _ y: Float) -> SIMD2<Double> { SIMD2(Double(x), Double(y)) }
 
 /// A scan as the tests build it: row-major positions, each an array of peak positions.
-struct ScanFixture {
-    var scanWidth: Int
-    var scanHeight: Int
-    var peaks: [[SIMD2<Double>]]
+package struct ScanFixture {
+    package var scanWidth: Int
+    package var scanHeight: Int
+    package var peaks: [[SIMD2<Double>]]
+
+    package init(scanWidth: Int, scanHeight: Int, peaks: [[SIMD2<Double>]]) {
+        self.scanWidth = scanWidth
+        self.scanHeight = scanHeight
+        self.peaks = peaks
+    }
 }
 
-extension PhaseVectorMatcher {
+package extension PhaseVectorMatcher {
     /// `map` on a fixture, pixel form.
     static func map(scan: ScanFixture, library: PhaseReferenceLibrary, settings: PhaseVectorSettings,
                     originX: Float, originY: Float, invAngstromPerPixel: Double,
@@ -106,7 +112,7 @@ extension PhaseVectorMatcher {
 }
 
 /// The symmetry a pin file's class symbol names; "-3m1" is `-3m` in the twofolds-on-a setting (the pin files list it last).
-func pinnedSymmetry(_ symbol: String) -> CrystalOrientationSymmetry? {
+package func pinnedSymmetry(_ symbol: String) -> CrystalOrientationSymmetry? {
     if symbol == "-3m1" { return CrystalOrientationSymmetry(laueClass: .threeBarM, setting: .threeBarMOne) }
     return LaueClass(rawValue: symbol).map { CrystalOrientationSymmetry(laueClass: $0) }
 }
