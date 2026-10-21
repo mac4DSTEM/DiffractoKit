@@ -4,7 +4,7 @@ What is live, one table; then the hand-off. Rules are in `CLAUDE.md` and the sui
 standard process since 2026-10-15 17:25: tests that fail before and pass after, one review per change, pinned regression
 fixtures, `CHANGELOG.md`, CI as the gate). The registrations `docs/registration-*.md` are the record of the first build-out.
 
-## Live (0.8.0 pending release, 2026-10-21; last tag 0.6.0)
+## Live (0.8.1 pending release, 2026-10-21; last tag 0.6.0)
 
 | Area | State | Evidence |
 |---|---|---|
@@ -30,7 +30,9 @@ apps' code, and recovery of planted truth, are what is claimed.
 
 ## Hand-off
 
-**One line (2026-10-21, 0.8.0):** done: `LinearScale.estimate` (Δq from a known crystal's innermost shell over positions, ported from mac4DSTEM `KnownCrystalQCalibration`; 3 tests); the other open DiffractoKit asks are diagnose-first and stay; next: mac4DSTEM re-pins 0.8.0 and deletes its estimator; gaps: none new.
+**One line (2026-10-21, 0.8.1):** done: `OrientationMapAnalysis` (orientation-map statistics, planes, IPF-Z bytes) moved from the app's `OrientationMap`, 4 tests; 0.8.0 (`LinearScale.estimate`) is tagged; next: mac4DSTEM re-pins 0.8.1 and forwards `OrientationMap` to it; gaps: none new.
+
+**Earlier one line (2026-10-21, 0.8.0):** done: `LinearScale.estimate` (Δq from a known crystal's innermost shell over positions, ported from mac4DSTEM `KnownCrystalQCalibration`; 3 tests); the other open DiffractoKit asks are diagnose-first and stay; next: mac4DSTEM re-pins 0.8.0 and deletes its estimator; gaps: none new.
 
 **Earlier one line (2026-10-21, kit round):** done: ImagoKit range widened to 0.2.0..<1.0.0 (0.7.1); the app asks for 0.7.0, committed on main awaiting the owner's tag: `generate` cancellation and progress (`ACOMError.cancelled`), `ACOMMatcher.result(scores:...)` from caller-computed scores (the kit's Metal path uses it), a one-peak `experimentalPolarImage`, `matchAll(peaksAt:)` over any peak collection, and `CellStandardisation` species/disorder needed no change (already native through `MaterialsProjectImport`, now tested); tests 591 green, consumer-check 715; next: mac4DSTEM and macTEM re-pin 0.7.0 and delete their ACOM interims and the MP adapter; gaps: none new.
 

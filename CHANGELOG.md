@@ -3,6 +3,18 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.8.1 (2026-10-21)
+
+### Added
+- `OrientationMapAnalysis` in `DiffractoOrientation`: `eulerText`, `reliabilityThreshold(percentile:)`, `fractionOfMatched`, the per-position planes
+  (reliability, score, in-plane angle, φ1, Φ, φ2, symmetry disorientation) and `ipfZRGBA` (low-reliability grey mask) over a
+  scan's `[OrientationResult]`; moved unchanged from mac4DSTEM's `OrientationMap`, whose container and image types stay in the app.
+  No existing number changes.
+
+### Migration
+mac4DSTEM (`OrientationMap`): forward its methods to `OrientationMapAnalysis` on `results`, wrapping the planes in `FloatImage` / `RGBAImage`.
+Not moved: the learned detector (Paul's decision), `ACOMCrystalSymmetry`'s test-only unreduced fallback; the open phase-matching, ACOM-mirror and CIF-symmetry items are diagnose-first.
+
 ## 0.8.0 (2026-10-21)
 
 The one numeric piece mac4DSTEM still carried that belongs here. No existing number changes.
