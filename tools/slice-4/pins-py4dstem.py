@@ -3,7 +3,7 @@
 Not run by hand: tools/slice-4/pins.py starts it with the py4DSTEM venv's interpreter, sends the phases as JSON on stdin and
 reads the JSON on stdout. Run through pins.py the whole chain sits under ONE tools/memcap.sh.
 
-    References/CuboKit/py4dstem-venv/bin/python -I -B tools/slice-4/pins-py4dstem.py < request.json > answer.json
+    References/python/py4dstem/bin/python -I -B tools/slice-4/pins-py4dstem.py < request.json > answer.json
 
 py4DSTEM f050d207 (0.14.19) is only called, never edited: Crystal(...), calculate_structure_factors, setup_diffraction,
 generate_diffraction_pattern (keep_qz) and parse_orientation. Per phase it answers

@@ -15,7 +15,7 @@ Swift test (EllipseCalibrationTests, testCleanSweepEqualsSciPysOptimum) fits the
 the registered bands: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad. This is the port of the sweep of mac4DSTEM
 tools/ellipse-calibration-test/reference.py (sweep_optimum, axes_of), on the kit's own rings.
 
-Run with the pinned interpreter:  References/pymatgen-venv/bin/python -I -B tools/slice-3b/sweep.py
+Run with the pinned interpreter:  ../References/python/orix/bin/python -I -B tools/slice-3b/sweep.py
 """
 import json
 import math

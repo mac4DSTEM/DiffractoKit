@@ -5,7 +5,7 @@ read the files these write. A difference is a failure of the port, never a toler
 
 ```
 tools/slice-2/fetch-table.sh                                         # py4DSTEM f050d207 scattering_factors.txt into References/, sha256-locked
-References/pymatgen-venv/bin/python -I -B tools/slice-2/pins.py      # about 2 s, deterministic (no clock): writes slice-2-pins.json
+../References/python/orix/bin/python -I -B tools/slice-2/pins.py      # about 2 s, deterministic (no clock): writes slice-2-pins.json
 tools/slice-2/apps-parity/run.sh                                     # about 4 s: the apps' own code (mac4DSTEM 7d6fdbd1, `git show`) dumped
 ```
 

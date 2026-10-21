@@ -1,7 +1,7 @@
 //
 //  PinsTests.swift
 //  Agreement with pymatgen (registration section 4), read from slice-1-pins.json (tools/slice-1/pins.py, run in
-//  References/pymatgen-venv before any Swift existed). Agreement is agreement, not truth; a difference is a failure of
+//  ../References/python/orix before any Swift existed). Agreement is agreement, not truth; a difference is a failure of
 //  the port, never a tolerance to widen.
 //
 

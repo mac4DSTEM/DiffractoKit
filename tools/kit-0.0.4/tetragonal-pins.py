@@ -2,7 +2,7 @@
 
 Run, from any directory, with the pinned oracle:
 
-    References/pymatgen-venv/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
+    ../References/python/orix/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
 
 It writes Tests/DiffractoCoreTests/Fixtures/tetragonal-pins.json BEFORE the Swift fix exists. Oracle: pymatgen 2026.9.24
 (pymatgen-core 2026.9.23) SpacegroupAnalyzer on spglib 2.8.0, NumPy 2.5.4.
@@ -38,7 +38,7 @@ space-group operations on the cell as given (get_symmetry_operations; centring t
 translations not), and the order of the Laue group (2 x the point-group's proper part: the count of {+-R}).
 """
 # Run under the suite's memory cap (a process cannot cap itself on macOS 27):
-#   ../tools/memcap.sh -- References/pymatgen-venv/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
+#   ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
 import json
 import math
 import os

@@ -5,7 +5,7 @@
 Swift tests read them and the planted truth. A difference is a failure of the port, never a tolerance to widen.
 
 ```
-References/pymatgen-venv/bin/python -I -B tools/slice-1/pins.py      # from any directory, about 5 s, deterministic
+../References/python/orix/bin/python -I -B tools/slice-1/pins.py      # from any directory, about 5 s, deterministic
 ```
 
 The oracle is pymatgen 2026.9.24 with pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7 (read at run

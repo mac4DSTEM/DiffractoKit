@@ -9,7 +9,7 @@ Registration: `docs/registration-slice-3.md` sections 2, 3 and 5. Seeds read onl
   SplitMix64 + Box-Muller renderer, runs `fit1D` (three ways), `fitAmorphousRing` and `fitBestAvailable` (two ways) on each and
   writes every field as bit patterns to `Tests/DiffractoGeometryTests/Fixtures/slice-3b-apps.json`; the sweep rings' raw Float32
   files go to `.build/apps-parity-3b/sweep`. The test `EllipseAppsParityTests` requires the kit equal in every bit.
-- `sweep.py` (`References/pymatgen-venv/bin/python -I -B tools/slice-3b/sweep.py`): SciPy 1.18.1 `least_squares` optimum of fit1D's
+- `sweep.py` (`../References/python/orix/bin/python -I -B tools/slice-3b/sweep.py`): SciPy 1.18.1 `least_squares` optimum of fit1D's
   objective on the 20 sweep rings -> `Fixtures/slice-3b-sweep.json`; held in `EllipseCalibrationTests`.
 - `mutants.py <copy-dir> <build-dir>`: the break-once run, in a copy of the repository.
 

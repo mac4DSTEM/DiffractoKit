@@ -4,7 +4,7 @@ Registration `docs/registration-slice-3.md` (sections 1, 3, 4, 5). Written befor
 the Swift and the pins is a failure of the port, never a band to widen.
 
 ```
-References/pymatgen-venv/bin/python -I -B tools/slice-3/ring-pins.py [out.json]   # about 2 s, deterministic (no clock)
+../References/python/orix/bin/python -I -B tools/slice-3/ring-pins.py [out.json]   # about 2 s, deterministic (no clock)
 ```
 
 - `ring-pins.py` writes `Tests/DiffractoGeometryTests/Fixtures/slice-3-ring-pins.json` (about 143 kB): the CODATA 2018
@@ -32,7 +32,7 @@ Registration `docs/registration-slice-3.md` (sections 1, 3, 4, 5). Written befor
 failure of the port, never a tolerance to widen.
 
 ```
-References/pymatgen-venv/bin/python -I -B tools/slice-3/index-pins.py     # about 2 s, deterministic: writes slice-3-index-pins.json
+../References/python/orix/bin/python -I -B tools/slice-3/index-pins.py     # about 2 s, deterministic: writes slice-3-index-pins.json
 ```
 
 - `index-pins.py` ports macTEM 9482831 `tools/indexing-parity/reference.py` (read by `git show`) onto the KIT's ring lists:

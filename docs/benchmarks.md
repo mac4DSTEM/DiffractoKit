@@ -9,11 +9,11 @@ Float64 unless the function is Float32 by design (ACOM, ellipse pattern pixels).
 |---|---|
 | Machine | Apple M5 Pro, 64 GB, macOS 27.0.1 (Darwin 27.0.0) |
 | Toolchain | Apple Swift 6.4, `swift build -c release` (separate package `tools/benchmarks`) |
-| Python | 3.12.14, NumPy 2.5.4, SciPy 1.18.1; py4DSTEM 0.14.19 (`refs/py4dstem`); pymatgen 2026.10.16 and orix 0.15.0 and spglib 2.8.0 (`refs/orix`) |
+| Python | 3.12.14, NumPy 2.5.4, SciPy 1.18.1; py4DSTEM 0.14.19 (`References/python/py4dstem`); pymatgen 2026.10.16 and orix 0.15.0 and spglib 2.8.0 (`References/python/orix`) |
 | Load | **10.5 on a 12-core machine while five other kit sessions ran** (uptime 17:39): every figure carries that noise, the single-core rows least. Re-run when the machine is quiet before quoting a ratio. |
-| Pin note | `refs/orix` holds pymatgen **2026.10.16**, the kit's parity pin is 2026.9.24; nothing here compares numbers, only time |
+| Pin note | `References/python/orix` holds pymatgen **2026.10.16**, the kit's parity pin is 2026.9.24; nothing here compares numbers, only time |
 
-Re-run: `tools/benchmarks/gen_inputs.py` (refs/orix Python), then `../../tools/memcap.sh --gb 8 -- tools/benchmarks/run.sh`
+Re-run: `tools/benchmarks/gen_inputs.py` (References/python/orix Python), then `../../tools/memcap.sh --gb 8 -- tools/benchmarks/run.sh`
 for the kit and `tools/benchmarks/bench_python.py pymatgen|py4dstem` for Python, merged by `merge.py`. The raw lines are
 `tools/benchmarks/results/2026-10-21.jsonl`.
 

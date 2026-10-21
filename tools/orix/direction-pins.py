@@ -1,7 +1,7 @@
 """orix pole-folding pins for the eleven Laue classes and both -3m settings (DiffractoKit 0.6.0), the reference for
 `CrystalOrientationSymmetry.reduceDirection` and `sampleFundamentalZone`.
 
-  ../tools/memcap.sh -- ../References/DiffractoKit/orix-venv/bin/python -I -B tools/orix/direction-pins.py
+  ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/orix/direction-pins.py
 
 Per class: orix's full Laue group as 3x3 matrices in the kit frame (F g F^T; see ipf-pins.py for F), poles in the kit frame
 with `Vector3d.in_fundamental_sector` of each (also in the kit frame), and 1500 Fibonacci probe poles for the coverage check.

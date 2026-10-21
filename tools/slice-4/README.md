@@ -5,11 +5,11 @@ tests read the file these write. A difference is a failure of the port, never a 
 named under "Measured floors and open points").
 
 ```
-../tools/memcap.sh -- References/pymatgen-venv/bin/python -I -B tools/slice-4/pins.py     # about 3 s, peak about 330 MB, deterministic
+../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/slice-4/pins.py     # about 3 s, peak about 330 MB, deterministic
 ```
 
 - `pins.py` runs on the pymatgen venv (Python 3.14.7, NumPy 2.5.4, SciPy 1.18.1, pymatgen 2026.9.24) and starts
-  `pins-py4dstem.py` as a subprocess with `../References/CuboKit/py4dstem-venv/bin/python -I -B` (Python 3.12.4, NumPy 2.5.0,
+  `pins-py4dstem.py` as a subprocess with `../References/python/py4dstem/bin/python -I -B` (Python 3.12.4, NumPy 2.5.0,
   SciPy 1.18.0, py4DSTEM 0.14.19 = f050d207; read-only, nothing installed into it). The helper checks that the installed
   py4DSTEM files (`crystal.py`, `single_atom_scatter.py`, `utils.py`, the scattering table) are byte equal to the source tree at the
   lock and that the table's sha256 is the lock (`be845d1d...`). One `memcap.sh` covers both (the helper is a child). SciPy 1.18.1

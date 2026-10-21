@@ -2,13 +2,13 @@
 
 Run, from any directory, under the memory cap, with the pymatgen venv (Python 3.14, NumPy 2.5.4, SciPy 1.18.1):
 
-    tools/memcap.sh -- DiffractoKit/References/pymatgen-venv/bin/python -I -B DiffractoKit/tools/slice-4/pins.py
+    tools/memcap.sh -- References/python/orix/bin/python -I -B DiffractoKit/tools/slice-4/pins.py
 
 It writes Tests/DiffractoOrientationTests/Fixtures/slice-4-pins.json BEFORE any Swift of slice 4 is trusted. Deterministic: no
 clock, seeded random numbers (np.random.default_rng), sorted keys, so two runs give the same bytes.
 
 Two interpreters, one memory cap: this script runs the py4DSTEM half (tools/slice-4/pins-py4dstem.py) as a subprocess with
-References/CuboKit/py4dstem-venv/bin/python (Python 3.12, py4DSTEM f050d207; read-only, never installed into) and reads its JSON
+References/python/py4dstem/bin/python (Python 3.12, py4DSTEM f050d207; read-only, never installed into) and reads its JSON
 from stdout. SciPy 1.18.1 and the NumPy oracle are here, because the py4DSTEM venv carries SciPy 1.18.0.
 
 What is an oracle for what
@@ -50,7 +50,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.abspath(os.path.join(HERE, "..", ".."))
 SUITE = os.path.abspath(os.path.join(KIT, ".."))
 TABLE_PATH = os.path.join(KIT, "References", "py4dstem-scattering", "scattering_factors.txt")
-PY4D_PYTHON = os.path.join(SUITE, "References", "CuboKit", "py4dstem-venv", "bin", "python")
+PY4D_PYTHON = os.path.join(SUITE, "References", "python", "py4dstem", "bin", "python")
 PY4D_HELPER = os.path.join(HERE, "pins-py4dstem.py")
 BETA_CIF = os.path.join(KIT, "References", "crystal-structures", "beta_double_prime_Mg5Si6.cif")
 SLICE2_PINS = os.path.join(KIT, "Tests", "DiffractoScatteringTests", "Fixtures", "slice-2-pins.json")
@@ -851,8 +851,8 @@ def main():
         "header": {
             "purpose": "slice 4 (vector matching and phase mapping, DiffractoOrientation 0.3.0): oracle pins, registration docs/registration-slice-4.md section 6",
             "generator": "tools/slice-4/pins.py + tools/slice-4/pins-py4dstem.py",
-            "commands": ["tools/memcap.sh -- DiffractoKit/References/pymatgen-venv/bin/python -I -B DiffractoKit/tools/slice-4/pins.py",
-                         "(started by pins.py) References/CuboKit/py4dstem-venv/bin/python -I -B DiffractoKit/tools/slice-4/pins-py4dstem.py < request.json"],
+            "commands": ["tools/memcap.sh -- References/python/orix/bin/python -I -B DiffractoKit/tools/slice-4/pins.py",
+                         "(started by pins.py) References/python/py4dstem/bin/python -I -B DiffractoKit/tools/slice-4/pins-py4dstem.py < request.json"],
             "versions": {"pins.py": {"python": sys.version, "numpy": np.__version__, "scipy": scipy.__version__,
                                      "pymatgen": dist_version("pymatgen"), "pymatgen_core": dist_version("pymatgen-core")},
                          "pins-py4dstem.py": py["versions"]},

@@ -1,7 +1,7 @@
 """Pins for the two -3m settings (DiffractoKit 0.6.0): the point-group operations pymatgen/spglib give for real trigonal
 structures, in the order they give them, in hexagonal fractional coordinates and in the kit's Cartesian frame.
 
-  ../tools/memcap.sh -- ../References/DiffractoKit/pymatgen-venv/bin/python -I -B tools/symmetry/trigonal-pins.py
+  ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/symmetry/trigonal-pins.py
 
 For space groups 162, 163 (-31m type) and 164, 165, 166, 167 (-3m1 type, 166 and 167 in hexagonal axes) a generic-position atom
 is expanded with `Structure.from_spacegroup`, the lattice is hexagonal (a 3.1, c 4.3), `SpacegroupAnalyzer.get_point_group_operations()`

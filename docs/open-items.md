@@ -19,5 +19,5 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   at 600 axes; 16 384 patterns and 2 400 axes are the nightly's.
 - **CIF symmetry.** Still unchecked: a group named by Hall symbol only, and a partial list whose count equals the primitive
   group's order but whose operations are the wrong ones (a count cannot see that).
-- **Python pins.** `refs/orix` holds pymatgen 2026.10.16; `docs/parity.md` pins 2026.9.24. Timing only here; re-pin before the
+- **Python pins.** `References/python/orix` holds pymatgen 2026.10.16; `docs/parity.md` pins 2026.9.24. Timing only here; re-pin before the
   next fixture is generated from it.

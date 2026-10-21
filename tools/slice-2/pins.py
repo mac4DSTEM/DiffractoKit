@@ -2,7 +2,7 @@
 
 Run, from any directory, with the pinned oracle:
 
-    References/pymatgen-venv/bin/python -I -B tools/slice-2/pins.py
+    ../References/python/orix/bin/python -I -B tools/slice-2/pins.py
 
 It writes Tests/DiffractoScatteringTests/Fixtures/slice-2-pins.json BEFORE any Swift exists. Deterministic: no clock, no
 random numbers, sorted sets; two runs give the same bytes.

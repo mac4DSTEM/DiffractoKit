@@ -2,7 +2,7 @@
 
 Run, from any directory, with the pinned oracle:
 
-    References/pymatgen-venv/bin/python -I -B tools/slice-3/ring-pins.py [out.json]
+    ../References/python/orix/bin/python -I -B tools/slice-3/ring-pins.py [out.json]
 
 It writes Tests/DiffractoGeometryTests/Fixtures/slice-3-ring-pins.json BEFORE the Swift tests read it. Deterministic: no
 clock, no random numbers; two runs give the same bytes. Ported from macTEM 9482831 tools/ring-calibration-parity/

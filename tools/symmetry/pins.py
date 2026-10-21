@@ -1,7 +1,7 @@
 """Generate symmetry fixtures using the pinned pymatgen environment, under suite tools/memcap.sh.
 
 From this worktree:
-  ../../tools/memcap.sh -- ../../References/DiffractoKit/pymatgen-venv/bin/python -I -B tools/symmetry/pins.py
+  ../../tools/memcap.sh -- ../../References/python/orix/bin/python -I -B tools/symmetry/pins.py
 
 MACEM_SUITE_ROOT overrides suite discovery for another checkout. No oracle files are written.
 Calls the separate pinned py4DSTEM interpreter, and compiles read-only git-show app source for native keys/samples.
@@ -108,7 +108,7 @@ def main():
             'foldedDirections':[fold(d,ops).tolist() for d in directions] if generic else [],
             'samples':[{'count':n,'directions':sample(n,ops)} for n in [0,1,2,3,8,16]] if generic else []})
     pyreq = {'symbols':SYMBOLS,'directions':directions.tolist(), 'matrices':matrices.tolist(),'groups':result['groups']}
-    proc=subprocess.run([str(SUITE/'References/CuboKit/py4dstem-venv/bin/python'),'-I','-B',str(KIT/'tools/symmetry/pins-py4dstem.py')],
+    proc=subprocess.run([str(SUITE/'References/python/py4dstem/bin/python'),'-I','-B',str(KIT/'tools/symmetry/pins-py4dstem.py')],
         input=json.dumps(pyreq),text=True,capture_output=True,check=True,
         env={**os.environ,'MPLCONFIGDIR':str(KIT/'.build/symmetry-mpl'),'XDG_CACHE_HOME':str(KIT/'.build/symmetry-cache')})
     result['py4dstem']=json.loads(proc.stdout)

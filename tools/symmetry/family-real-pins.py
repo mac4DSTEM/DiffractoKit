@@ -2,7 +2,7 @@
 pymatgen's (`SpacegroupAnalyzer(structure).get_point_group_operations()`, duplicates removed), not the sorted list of the
 harness in family-pins.py, and where several operators put a direction inside the plan sector the first in the list wins.
 
-  ../tools/memcap.sh -- ../References/CuboKit/py4dstem-venv/bin/python -I -B tools/symmetry/family-real-pins.py
+  ../tools/memcap.sh -- ../References/python/py4dstem/bin/python -I -B tools/symmetry/family-real-pins.py
 
 For each Laue class, representative space groups (centrosymmetric, a generic atom expanded with pymatgen's
 `Structure.from_spacegroup`; hexagonal cells for the trigonal groups, R-3m and R-3c in hexagonal axes) build a real py4DSTEM
