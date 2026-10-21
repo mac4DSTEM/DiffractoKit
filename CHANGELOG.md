@@ -293,7 +293,7 @@ identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the
 and loosening coverage needs both `RingCalibration.Policy.minimumOccupiedAngularBins` and the ellipse policy's
 `degeneracyBoundBins`; removing the `ReflectionList.Policy` caps removes the memory and time protection (a k_max of 100 reached
 10 GB). Error texts quote the default bounds. A kinematic pattern cannot tell +c from −c on a polar structure: no consumer may
-claim a polarity from a kinematic match. Earlier per-release migration notes are in `docs/consumers-0.0.3.md` to `docs/consumers-0.3.0.md` and in git history.
+claim a polarity from a kinematic match. Earlier per-release migration notes are archived (see the 0.1.0 entry) and in git history.
 
 **Phase mapping.** An application that carried its own vector matching can delete it when it adopts the kit's. For code moving from such an implementation: `Crystal` becomes `CrystalStructure` (`PhaseDefinition.crystal`); a structure the
 kit refuses throws `PhaseReferenceLibrary.Failure.structureRefused`; `BraggVectors` becomes `scan:scanWidth:scanHeight:` with
@@ -313,3 +313,5 @@ the CI type-check fixes.
 Cells of the seven systems, symmetry from the atoms, CIF import, reflections, absences, orbits and rings;
 electron scattering factors and structure factors; the wavelength, ring and ellipse calibration, camera length, indexing and
 zone axes; error texts; progress and cancellation of the fits.
+
+Consumer notes for 0.0.1 to 0.3.0 are archived.

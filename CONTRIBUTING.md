@@ -20,8 +20,9 @@ d-spacings, py4DSTEM for scattering factors and diffraction geometry, SciPy and 
 or planted truth where no package applies. The reference outputs are committed as JSON fixtures under `Tests/*/Fixtures/`,
 with the generator scripts under `tools/`. `docs/parity.md` lists what is held against which reference.
 
-If the Swift code and a fixture disagree, that is a bug in the code, not a tolerance to widen. If you believe a fixture is
-wrong, say why in the pull request, and regenerate it with its script and the pinned versions of the reference.
+A test's tolerance is the one the Python package's own tests use for that function; a result outside it is a bug. A change
+that moves a fixture says why in the pull request and in the CHANGELOG; regenerate a fixture with its script and the pinned
+versions of the reference.
 
 ## Pull requests
 

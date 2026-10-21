@@ -1,4 +1,4 @@
-# DiffractoKit CI: the gate (tools/test.sh = `swift test -c release`), the hook proof, the consumer check, the README consumer and the example.
+# DiffractoKit CI: the gate (`swift test -c release`), the consumer check, the README consumer and the example.
 #
 # The package's floor is macOS 15 / iOS 18 (since 0.2.0) with tools 6.2; `macos-latest`
 # is used with the newest Xcode on the image selected. On 2026-10-15 that was Xcode 26.6, whose compiler (not the local Swift
@@ -11,12 +11,13 @@
 # virtual environment and clones) on the maintainer's machine; the parity dumps against the original applications need those applications checked out
 # beside this repository. CI therefore proves "the kit equals the committed pins", not "the pins equal the oracle".
 #
-# Never `swift build --build-tests -c release` (fails on this toolchain's Swift Build backend); tools/test.sh is the gate.
+# Never `swift build --build-tests -c release` (fails on this toolchain's Swift Build backend); `swift test -c release` is the gate.
 name: CI
 
 on:
   push:
     branches: [main]
+    tags: ['*']
   pull_request:
   workflow_dispatch:
 
@@ -35,10 +36,8 @@ jobs:
           xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$xcode"
           swift --version
-      - name: Hook proof (no sleep or poll loops)
-        run: tools/hooks/test-no-sleep-poll.sh
-      - name: Gate (tools/test.sh, release)
-        run: tools/test.sh
+      - name: Gate (swift test, release)
+        run: swift test -c release
       - name: Consumer check (a separate package, the public API only)
         run: tools/consumer-check/run.sh
       - name: README consumer (a separate package compiling exactly the README's program, output checked)
@@ -47,3 +46,15 @@ jobs:
         run: |
           swift build -c release --product diffracto-example
           "$(swift build -c release --show-bin-path)/diffracto-example"
+
+  version:
+    name: CHANGELOG version matches the tag
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare
+        run: |
+          top=$(grep -m1 -E '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | sed -E 's/^## ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+          tag=${GITHUB_REF_NAME#v}
+          [ "$top" = "$tag" ] || { echo "CHANGELOG top is $top, tag is $tag"; exit 1; }

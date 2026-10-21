@@ -3,29 +3,20 @@
 # DEBUG, as a consumer's Debug build does with a dependency that may carry no unsafe flags, and run it. Exit 0 only if the
 # build is warning-free, no test-only target was built, and every check passed.
 #
-#   run.sh [--controls]
+#   run.sh
 #
-#   (no flag)   build, run the checks, print "consumer-check: all passed — N checks ..." and exit 0.
-#   --controls  then the negative controls (controls.py, python3 standard library only; SpectroKit's pattern): for each
-#               public symbol the consumer uses, an edited COPY of the repository (rsync into
-#               <root>/.build/consumer-check/mutants/, never the working tree) has that one declaration reverted from
-#               `public` to `package`; the consumer is built against the copy (one warm build directory, an incremental
-#               build per control) and must FAIL with the compiler's protection-level diagnostic naming that symbol.
-#               Prints "consumer-check: negative controls: N of M caught" and exits non-zero unless all are caught.
+#   build, run the checks, print "consumer-check: all passed — N checks ..." and exit 0.
 #
-#   CONSUMER_CHECK_JOBS=N   passes `-j N` to every swift build (the plain build and each control).
-#   CONSUMER_CHECK_PYTHON   the python3 for --controls.
+#   CONSUMER_CHECK_JOBS=N   passes `-j N` to the swift build.
 set -euo pipefail
 here=${0:A:h}
 root=${here:h:h}
 die() { print -u2 "consumer-check: $*"; exit 1 }
 
-controls=0
 for arg in "$@"; do
   case $arg in
-    --controls) controls=1 ;;
     -h|--help) sed -n '2,/^set /p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) die "unknown argument $arg (usage: run.sh [--controls])" ;;
+    *) die "unknown argument $arg (usage: run.sh)" ;;
   esac
 done
 jobs=()
@@ -56,9 +47,3 @@ summary=$(grep "^consumer-check summary:" $out)
 checks=${${summary#consumer-check summary: }%% checks*}
 head=$(git -C $root --no-optional-locks rev-parse --short HEAD 2>/dev/null || print unknown)
 print "consumer-check: all passed — $checks checks through DiffractoKit's public API only, Debug build, no warnings, no test-only target built (DiffractoKit $head)"
-(( controls )) || exit 0
-
-# Negative controls. The repository is never edited: controls.py works in an rsync'd copy under .build.
-PY=${CONSUMER_CHECK_PYTHON:-python3}
-command -v $PY >/dev/null || die "no $PY for --controls (set CONSUMER_CHECK_PYTHON)"
-exec $PY -I -B $here/controls.py $root

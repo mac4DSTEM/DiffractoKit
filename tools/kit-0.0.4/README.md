@@ -1,6 +1,6 @@
 # tools/kit-0.0.4: pins and break-once runs of DiffractoKit 0.0.4
 
-Registered in `docs/registration-0.0.4.md`. Each script works in a copy of the repository, never the working tree.
+Registered in the design note (archived in the suite's private folder). Each script works in a copy of the repository, never the working tree.
 
 | Script | What | Result (2026-10-15) |
 |---|---|---|

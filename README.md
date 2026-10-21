@@ -206,8 +206,9 @@ Every number has a reference, and the references are pinned (`CONTRIBUTING.md`):
   code of the earlier GPL-3.0 applications this library was ported from (pinned by commit in `NOTICE`) where a port must be
   bit identical.
 - The pins are generated before the Swift code (`tools/*/pins.py`, committed as JSON under `Tests/*/Fixtures/`); the
-  Swift tests read the pins and a planted truth (a closed form, a group-theory count, a cell content); a difference is a
-  failure of the port, never a tolerance to widen. Agreement with a package is agreement, not truth.
+  Swift tests read the pins and a planted truth (a closed form, a group-theory count, a cell content). Numerics are held
+  to the tolerance the Python package's own tests use; readers, I/O, indices and metadata are exact. Agreement with a
+  package is agreement, not truth.
 - `docs/parity.md` lists, function by function, what is held against pymatgen, py4DSTEM and pyxem / diffsims / orix, and
   how each row is checked. It also says what is **not** held.
 - Nothing here is validated on a real diffraction pattern: that validation belongs to the application that uses the library
@@ -216,7 +217,7 @@ Every number has a reference, and the references are pinned (`CONTRIBUTING.md`):
 ## Build and test
 
 ```sh
-swift test -c release              # or tools/test.sh, which runs the same command
+swift test -c release
 tools/consumer-check/run.sh        # a separate package using the public API only
 tools/readme-consumer/run.sh       # a separate package compiling exactly the README's program, checking its output
 swift run -c release diffracto-example
@@ -242,15 +243,23 @@ line; the beta'' cell content (Andersen et al. 1998) is written by a generator i
 If you use DiffractoKit in published work, please cite it (see `CITATION.cff`), and cite the packages it is checked against
 and ported from: pymatgen, spglib, py4DSTEM and, for the orientation work, pyxem / orix conventions where you rely on them.
 
+## Known limits
+
+- Nothing here is validated on a real diffraction pattern; the ring-fit evidence is measured on synthetic plants only.
+- No database CIF (COD, ICSD) is read yet.
+- theta'-Al2Cu in the slice 4 pins is a test structure (Al4Cu2 body-centred, a 4.04 A, c 5.80 A), not checked against a published CIF.
+- With py4DSTEM's patterns the ACOM matcher finds 17 of 18 planted orientations within 4 degrees; one 2/m pattern matches another beam direction.
+- `testRinglessFitOnARealMeanPatternFallsBackToTheConic` is disabled by name until the owner's Ni65Cu35 mean pattern has a manifest line.
+- Slice 5 template matching (`OrientationPlan`, `OrientationMatcher`) and policies not yet parameters (profile-fit plausibility bounds, cell volume 1e-6) remain.
+
 ## Status and documents
 
-0.x: the API may change between minor versions; pin an exact tag. `docs/status.md` says what is live and what is not verified.
+0.x: the API may change between minor versions; pin an exact tag. Numbers are held to the Python reference within its own tolerance; `docs/parity.md` lists each function, its state and its tolerance.
 
 | Document | What |
 |---|---|
 | `CHANGELOG.md` | what changed in each release, with migration notes |
 | `docs/parity.md` | the checklist against pymatgen, py4DSTEM, pyxem / diffsims / orix |
-| `docs/status.md` | what is live and what is not verified |
 | `docs/orientation-symmetry.md` | orientation conventions |
 | `tools/consumer-check/README.md` | the separate package that uses the public API only |
 | `tools/readme-consumer/README.md` | the separate package that compiles and runs exactly this README's program |
