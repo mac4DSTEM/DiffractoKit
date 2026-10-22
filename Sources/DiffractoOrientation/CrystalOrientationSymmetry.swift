@@ -36,6 +36,8 @@ public enum OrientationSymmetryError: Error, Sendable, Equatable {
     case invalidSampleCount
     /// No longer thrown since 0.6.0 (every class has a native key); kept so existing `switch` statements compile.
     case nativeKeyUnavailable(LaueClass)
+    /// Two orientations compared with `Orientation.angle(with:)` carry different symmetry groups (orix raises as well).
+    case differentSymmetry
 }
 
 /// Proper orientation symmetry for every Laue class, without an unknown-class fallback.
