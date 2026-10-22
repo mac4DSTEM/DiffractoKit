@@ -5,3 +5,4 @@
 *.xcresult
 tools/benchmarks/inputs/
 tools/benchmarks/.build/
+.docs-site/
