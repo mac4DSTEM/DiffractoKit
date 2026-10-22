@@ -241,5 +241,6 @@ runACOMChecks(&report)
 runMacTEMPiecesChecks(&report)
 runPhaseOrientationChecks(&report)
 
+report.section("0.10.0: misorientation, variants, assignment, pattern measurements") { try release0100Checks(&$0) }
 exit(report.finish())
 

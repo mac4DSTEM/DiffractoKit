@@ -42,10 +42,10 @@ and are counted apart.
 | Package | held | partly | not held | rows |
 |---|---|---|---|---|
 | pymatgen | 15 | 18 | 32 | 65 |
-| py4DSTEM | 4 | 23 | 15 | 42 |
-| orix | 2 | 11 | 20 | 33 |
+| py4DSTEM | 4 | 24 | 14 | 42 |
+| orix | 3 | 12 | 18 | 33 |
 | diffsims / pyxem (documentation only) | 0 | 6 | 2 | 8 |
-| **all** | 21 | 58 | 69 | 148 |
+| **all** | 22 | 60 | 66 | 148 |
 
 | Plan | rows | held | partly | not held |
 |---|---|---|---|---|
@@ -254,14 +254,13 @@ as a pinned f050d207 environment the pins run (P14, P18). The remaining unexecut
 | `process.diffraction.crystal_phase.CrystalPhase` (`quantify_single_pattern`, `quantify_phase`: phase weights by non-negative least squares on orientation-matched Bragg peaks) | `PhaseVectorMatcher.map`, `classify`, `classifyKnownVariants` (vector matching after Thronsen et al. 2024), `PhaseReferenceLibrary`, `PhaseVectorSettings` | not held | study | tests not shipped; assert_allclose defaults (D17) | a different method; the kit's verdicts are checked against the apps' code (P16) and planted truth, not against py4DSTEM. Roadmap item 1 (diagnosed in 0.9.0): `minimumVectors` = 2 makes "matrix" by exclusion and the cross-phase winner ignores completeness; the opt-in `minimumMatrixEvidence` and `completenessAwareCrossPhaseRanking` are in the rows below |
 | (no py4DSTEM counterpart) "the matrix, by exclusion" needing evidence: `CrystalPhase` has no matrix class | `PhaseVectorSettings.minimumMatrixEvidence` (default 0, off; with n > 0 the verdict "matrix" by exclusion needs at least n vectors removed as the matrix's, else "not indexed"; both classification rules) | **partly** | study | none upstream; verdicts are exact (D17) | no Python output exists. `PhaseVectorMatchingTests.matrixByExclusionCanRequireTheMatrixToHaveBeenSeen` (constructed plants: one stray peak is the shipped matrix verdict, `.notIndexed` with the setting at 1, a pattern the matrix explains stays matrix; both rules) and `ScanInputTests` (default 0). Whether it helps on real scans needs the owner's labelled study scan (`docs/open-items.md`). Added 0.9.0 |
 | `Crystal.calibrate_pixel_size`, `calibrate_unit_cell`, `calculate_bragg_peak_histogram` (multi-peak fit of the pixel size or the unit cell to a Bragg-peak histogram) | `RingCalibration.calibrate(radius:d:highTensionVolts:pixelPitchMM:)` (one ring of known d); `LinearScale.estimate` (innermost reflection over many positions) | not held | study | tests not shipped; function arguments `k_step=0.002`, `k_broadening=0.002` (pixel size) and `0.005`, `0.02` (unit cell) | the kit has the single-ring closed form and the linear-scale estimate, not py4DSTEM's multi-peak fit |
-| (kit) which shell is the first observed ring: the ring-sequence assignment of the known-crystal Q calibration | `LinearScale.assign`, `LinearScale.estimateAssigned`, `LinearScaleAssignment`, `LinearScaleAssignmentError` (0.10.0) | **held** | study | no Python reference (py4DSTEM does not do this); `validation: "none"` | `LinearScaleAssignmentTests`: planted Al [001] (rings {200}, {220}, {400}: assigned {200}, delta q 0.0100 to 1e-9, 0.5 % with noise and a 1 px descan; the old assumption reads 13.4 % low), the ambiguous, no-match and single-ring cases, the prior-scale tie rule, the sweep that pins three rings and the 20 % position share |
 
 ### 2.5 Calibration (`process.calibration`, `data.Calibration`)
 
 | Python function or option group | DiffractoKit symbol | State | Plan | Upstream tolerance (test file) | How checked |
 |---|---|---|---|---|---|
 | `Calibration.set_Q_pixel_size` (A^-1 per pixel, no 2 pi), `qpixelsize.get_Q_pixel_size(q_meas, q_known)` | `RingCalibration.qPerPixel(d:radius:)`, `q(radius:cameraLengthPixels:wavelengthAngstroms:)`, `radius(q:...)` | **partly** | study | tests not shipped; assert_allclose defaults (D17) | P8 (decimal truth, 1e-7; the exact form, not the small-angle one); py4DSTEM not run |
-| `qpixelsize.get_dq_from_indexed_peaks(qs, hkl, a)` (least-squares pixel size from indexed peaks) | none (`LinearScale.estimate` uses one shell, not an hkl list) | not held | study | tests not shipped; assert_allclose defaults (D17) | ring and q calibration |
+| `qpixelsize.get_dq_from_indexed_peaks(qs, hkl, a)` (least-squares pixel size from indexed peaks) | `LinearScale.fit(ringRadiiPixels:indexedInvAngstrom:weights:)`, `LinearScaleFit` (0.10.0; with a standard error) | **partly** | study | tests not shipped; assert_allclose defaults (D17) | `PatternMeasurementTests`: planted truth only, no py4DSTEM number compared: exact on planted rings, the standard error covers the truth in 68 % of 400 noisy draws (measured band 55 to 82 %); `validation: "none"` |
 | `ellipse.fit_ellipse_1D(ar, center, fitradii, mask)` | `EllipseCalibration.fit1D(pattern:centerQX:centerQY:innerRadius:outerRadius:...)` | **partly** | study | tests not shipped; assert_allclose defaults (D17) | P10 (bit identical to the apps' port, which is py4DSTEM's conic fit with the apps' changes) and P11 (SciPy optimum of its objective; centre 1e-5 px, axes 1e-7 relative: the default rtol 1e-7 at centres of 54 to 80 px, so not stricter than D17); py4DSTEM's output is not compared. Row index is `qx`, column `qy`, as py4DSTEM; theta in [0, pi) |
 | `ellipse.fit_ellipse_amorphous_ring(data, center, fitradii, p0, mask)` | `EllipseCalibration.fitAmorphousRing(pattern:initial:...)`, `fitBestAvailable(...)` | **partly** | study | tests not shipped; assert_allclose defaults (D17) | P10; the model is py4DSTEM's 11-parameter central Gaussian + two-sided ring Gaussian, optimised in (a, b, theta) by a bounded Levenberg-Marquardt instead of (A, B, C): a stated deviation; py4DSTEM's output is not compared |
 | `ellipse.constrain_degenerate_ellipse`, `double_sided_gaussian` | `EllipseCalibration.Policy` (degeneracy bound, sparse floor), `EllipseProfileParameters` | **partly** | study | tests not shipped; assert_allclose defaults (D17) | the degeneracy rules are the apps' (P10); py4DSTEM's are not compared |
@@ -271,6 +270,17 @@ as a pinned f050d207 environment the pins run (P14, P18). The remaining unexecut
 | `calibration.origin` (`get_origin`, `fit_origin`, `get_origin_friedel`), `rotation` (`compare_QR_rotation`), `probe`; `find_Bragg_disks` | none | not held | not planned (CuboKit's or the apps') | tests not shipped; assert_allclose defaults (D17) |  |
 | `process.latticevectors.*` (`fit_lattice_vectors`, `index_bragg_directions`) | none | not held | not planned (strain is CuboKit's) | tests not shipped; assert_allclose defaults (D17) |  |
 | `Crystal.plot_structure`, `plot_structure_factors`, `plot_scattering_intensity`, `plot_orientation_zones`, `plot_orientation_plan`, `plot_diffraction_pattern`, `plot_fiber_orientation_maps`, `plot_clusters`, `plot_ring_pattern` | none | not held | not planned (plotting is not a kit's job) | tests not shipped; assert_allclose defaults (D17) |  |
+
+## 2.6 Kit additions without an upstream function (not counted in the summary)
+
+Single-pattern and calibration helpers the apps asked for that no Python package has as such; planted truth only, every result carries `validation: "none"`.
+
+| What | DiffractoKit symbol | Checked by |
+|---|---|---|
+| Which shell is the first observed ring (known-crystal Q; the app's `ShellAssignment` moved here) | `LinearScale.assign`, `LinearScale.estimateAssigned`, `LinearScaleAssignment`, `LinearScaleAssignmentError` (3 rings read, a ring needs 20 % of the positions, 4 starting shells) | `LinearScaleAssignmentTests`: planted Al [001] (rings {200}, {220}, {400}: assigned {200}, delta q 0.0100 to 1e-9, 0.5 % with noise and a 1 px descan; the old assumption reads 13.4 % low), the ambiguous, no-match and single-ring cases, the prior-scale tie rule, the sweep that pins the ring count and the share |
+| The centre of the unscattered beam in one pattern | `PatternCentre.find(pattern:)`, `PatternCentreFit` (a Gaussian beam with rings and 1 % noise to 0.02 px, a flat-top disc at subpixel positions to 0.05 px; nil for no beam, a beam at the edge, a tiny or NaN pattern; a beam stop is refused, not guessed) | `PatternMeasurementTests` |
+| An ellipse-corrected radial profile about a centre | `PatternRadialProfile.about(pattern:centerRow:centerColumn:ellipse:binWidth:maximumRadius:)` (the correction is `EllipseTransform`, py4DSTEM's) | `PatternMeasurementTests` (a planted elliptical ring is as sharp as a circular one after the correction, not before; a circular "ellipse" changes nothing) |
+| The subpixel centre of a spot of a pattern | `PatternSpot.refine(pattern:row:column:half:)` | `PatternMeasurementTests` (Gaussian spots at subpixel positions to 0.05 px from clicks up to 3 px off) |
 
 ## 3. orix 0.15.0, diffsims, pyxem (orix source and tests walked from `References/python/orix/lib/python3.12/site-packages/orix`; executed for P26, P27, P32, P33)
 
