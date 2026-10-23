@@ -3,6 +3,37 @@
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
 reproduces, and against what, are in `docs/parity.md`.
 
+## 0.10.0 (2026-10-22) — misorientation, orientation-relationship variants, ring-sequence assignment and the apps' kit asks
+
+ROADMAP task 35 and the asks of both apps' open items. Additive except one case in an error enum (see Migration).
+
+### Added
+- **Misorientation and orientation** (`DiffractoOrientation`, orix 0.15.0): `Misorientation(matrix, source:, target:)` with `equivalent(grainExchange:)` and `reduce()` /
+  `mapIntoSymmetryReducedZone()` between two different groups; `Orientation` with `reduce()`, `angle(with:)` and `inEulerFundamentalRegion()` (Bunge, the MTEX
+  procedure, all 11 Laue classes and -3m in both settings). Pinned to orix on 12 group pairs and every class (1e-15). **Deviation:** orix's `reduce()` is not the
+  smallest angle on 4 of 492 draws (2.18 against 0.92 rad on one); the kit returns the smallest angle (`docs/parity.md` P36).
+- **Orientation-relationship variants:** `OrientationVariantSet` (variants, `nearestVariant(of:)`), `OrientationRelationship.variants(of:matrix:precipitate:)` and
+  `.rotation(_:_:precipitate:matrix:)` (the relation from two "parallel to" statements, as `PhaseDefinition` already states them), `observedRelation` for ACOM and phase-map
+  orientation matrices. beta'' (Mg5Si6) in Al: 12 variants, four needle variants per <001> axis, variant angles 0/90/120/180, the relation's own disorientation arctan(2/3)
+  (planted truth; no Python reference computes the set).
+- **`LinearScale.assign`** (and `estimateAssigned`, `LinearScaleAssignment`, `LinearScaleAssignmentError`): which of the crystal's first shells is the first observed ring,
+  from the sequence of rings, with named refusals; Al [001] reads {200} and delta q is exact (the old assumption of {111} read 13.4 % low). Moved from mac4DSTEM's `ShellAssignment`.
+- **`LinearScale.fit`** (`LinearScaleFit`): delta q from several indexed rings by least squares with a standard error (macTEM ask 2).
+- **Single-pattern measurements:** `PatternCentre.find` (the unscattered beam's centre), `PatternRadialProfile.about` (ellipse-corrected radial profile), `PatternSpot.refine` (subpixel
+  spot centre); macTEM asks 1, 3 and 9. Planted truth, `validation: "none"`.
+- `ReflectionFamily` has a public initialiser. `OrientationSymmetryError.differentSymmetry`.
+
+### Diagnosed
+- The {111} ring fit reading 0.1 % low (macTEM open item): the cause is the tail of the neighbouring {200} ring inside the annulus, which the one-ring profile model absorbs. A single
+  ring is exact to 3e-8 px; the bias is -0.041 px for the annulus 29 to 37, -0.003 px for 29 to 36 and -3e-6 px for 29 to 35, and linear in the neighbour's amplitude
+  (`RingFitNeighbourTailTests`). No number changed: end the annulus before the neighbour's tail.
+- Already true, now tested: `CIFImportError`, `KinematicError` and `EllipseCalibration.FitError` are `LocalizedError`s with the kit's own text (since 0.2.0); a CIF that names its
+  group by Hermann-Mauguin symbol alone is held to the same completeness as one named by number (since 0.9.0).
+
+### Migration
+`OrientationSymmetryError` has a new case, `differentSymmetry`: a `switch` over it that has no `default` must handle it. Nothing else changes for a consumer. mac4DSTEM can delete
+`ShellAssignment` (marked `delete at DiffractoKit 0.10.x`) and call `LinearScale.assign`; macTEM can delete its `refineSpot` interim.
+
 ## 0.9.1 (2026-10-21)
 
 Tests, docs and one speed fix. No number, default or public symbol changes.

@@ -6,3 +6,7 @@
 tools/benchmarks/inputs/
 tools/benchmarks/.build/
 .docs-site/
+
+# Local session rules, kept on disk only
+CLAUDE.md
+.claude/

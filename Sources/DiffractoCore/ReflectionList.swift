@@ -71,6 +71,12 @@ public struct ReflectionFamily: Sendable, Equatable {
 
     public var d: Double { 1 / g }
     public var multiplicity: Int { members.count }
+
+    /// Public memberwise initialiser (0.10.0): a consumer can build a family, for example to test a view of one. `members` and `orbits` are
+    /// kept as given (the list's own families are descending lexicographic).
+    public init(g: Double, members: [MillerIndex], orbits: [MillerIndex], name: String) {
+        self.g = g; self.members = members; self.orbits = orbits; self.name = name
+    }
 }
 
 public struct ReflectionList: Sendable, Equatable {

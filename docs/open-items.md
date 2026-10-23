@@ -1,5 +1,7 @@
 # Open items
 
+- **0.10.0 left open:** a beam centre for a pattern whose beam is blocked (Friedel-pair symmetry; `PatternCentre.find` refuses it); `fitRing` at R 600 px on 2048² (tens of seconds; a coarse-then-fine annulus or Metal); a one-ring profile model that tolerates a neighbouring ring (the {111} bias of `RingFitNeighbourTailTests` is the model's, not a bug); Hall-symbol-only CIF groups and a partial operation list of the right count but the wrong operations; `Orientation.from_euler(symmetry:)`, `dot`, `dot_outer`, `get_distance_matrix` and the orientation (Rodrigues) fundamental zone; orix's `reduce()` disagreement with the smallest angle (reported in parity P36, not reported upstream yet).
+
 A plain list, worst first. Each line: the item, the cause where it is known, what would close it.
 
 - **`cif_import` is 27 times slower than pymatgen's `CifParser` on a 32-atom P1 supercell (about 67 ms against 2.5 ms; 351 ms
