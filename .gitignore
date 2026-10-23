@@ -5,3 +5,7 @@
 *.xcresult
 tools/benchmarks/inputs/
 tools/benchmarks/.build/
+
+# Local session rules, kept on disk only
+CLAUDE.md
+.claude/
