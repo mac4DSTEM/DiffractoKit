@@ -1,6 +1,6 @@
 """orix Misorientation / Orientation pins (DiffractoKit 0.10.0, ROADMAP task 35).
 
-  ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/orix/misorientation-pins.py
+  ../References/python/orix/bin/python -I -B tools/orix/misorientation-pins.py
 
 Writes Tests/DiffractoOrientationTests/Fixtures/orix-misorientation-pins.json. The oracle is orix 0.15.0:
   * `Misorientation(M, symmetry=(Gl, Gr))`: `equivalent(grain_exchange)` = Gr * M * Gl, `reduce()` (the smallest rotation angle).

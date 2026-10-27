@@ -5,14 +5,14 @@ tests read the file these write. A difference is a failure of the port, never a 
 named under "Measured floors and open points").
 
 ```
-../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/slice-4/pins.py     # about 3 s, peak about 330 MB, deterministic
+../References/python/orix/bin/python -I -B tools/slice-4/pins.py     # about 3 s, peak about 330 MB, deterministic
 ```
 
 - `pins.py` runs on the pymatgen venv (Python 3.14.7, NumPy 2.5.4, SciPy 1.18.1, pymatgen 2026.9.24) and starts
   `pins-py4dstem.py` as a subprocess with `../References/python/py4dstem/bin/python -I -B` (Python 3.12.4, NumPy 2.5.0,
   SciPy 1.18.0, py4DSTEM 0.14.19 = f050d207; read-only, nothing installed into it). The helper checks that the installed
   py4DSTEM files (`crystal.py`, `single_atom_scatter.py`, `utils.py`, the scattering table) are byte equal to the source tree at the
-  lock and that the table's sha256 is the lock (`be845d1d...`). One `memcap.sh` covers both (the helper is a child). SciPy 1.18.1
+  lock and that the table's sha256 is the lock (`be845d1d...`). One memory cap covers both (the helper is a child). SciPy 1.18.1
   exists only in the pymatgen venv, so the Euler pins are there.
 - Output: `Tests/DiffractoOrientationTests/Fixtures/slice-4-pins.json` (about 1.9 MB, sorted keys, two runs give the same bytes).
 - Exit status: 0 all self-checks and predictions hold; 1 a self-check failed (assert); 3 the file was written but a registered or

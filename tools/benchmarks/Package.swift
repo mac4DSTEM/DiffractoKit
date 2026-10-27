@@ -1,6 +1,6 @@
 // swift-tools-version: 6.2
 // DiffractoKit benchmark: a SEPARATE package that depends on DiffractoKit by path (like tools/acom-benchmark). Prints JSON lines,
-// never asserts. Run with run.sh, under ../../../tools/memcap.sh, one benchmark at a time machine-wide.
+// never asserts. Run with run.sh, under a memory cap, one benchmark at a time machine-wide.
 import Foundation
 import PackageDescription
 

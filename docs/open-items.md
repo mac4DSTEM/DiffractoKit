@@ -30,7 +30,7 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
 - **CIF symmetry.** Still unchecked: a group named by Hall symbol only, and a partial list whose count equals the primitive
   group's order but whose operations are the wrong ones (a count cannot see that).
 - **Python pins.** `References/python/orix` and `py4dstem` hold pymatgen-core 2026.10.16 under a `pymatgen` 2026.9.24 metapackage
-  (dist-info of both); `CLAUDE.md` and `docs/parity.md` say 2026.9.24, the older fixtures record pymatgen-core 2026.9.23 (a
+  (dist-info of both); the README and `docs/parity.md` say 2026.9.24, the older fixtures record pymatgen-core 2026.9.23 (a
   previous venv). `cif-symmetry-pins.json` records `pymatgen` 2026.9.24 (a literal in `pins.py`) and was generated on this
   install, so on pymatgen-core 2026.10.16: regenerating it on 2026-10-21 gave a byte-identical file. The other fixtures were not
   regenerated; re-generate and re-pin them together at the next fixture change.

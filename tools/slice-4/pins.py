@@ -2,7 +2,7 @@
 
 Run, from any directory, under the memory cap, with the pymatgen venv (Python 3.14, NumPy 2.5.4, SciPy 1.18.1):
 
-    tools/memcap.sh -- References/python/orix/bin/python -I -B DiffractoKit/tools/slice-4/pins.py
+    References/python/orix/bin/python -I -B DiffractoKit/tools/slice-4/pins.py
 
 It writes Tests/DiffractoOrientationTests/Fixtures/slice-4-pins.json BEFORE any Swift of slice 4 is trusted. Deterministic: no
 clock, seeded random numbers (np.random.default_rng), sorted keys, so two runs give the same bytes.
@@ -851,7 +851,7 @@ def main():
         "header": {
             "purpose": "slice 4 (vector matching and phase mapping, DiffractoOrientation 0.3.0): oracle pins, registration docs/registration-slice-4.md section 6",
             "generator": "tools/slice-4/pins.py + tools/slice-4/pins-py4dstem.py",
-            "commands": ["tools/memcap.sh -- References/python/orix/bin/python -I -B DiffractoKit/tools/slice-4/pins.py",
+            "commands": ["References/python/orix/bin/python -I -B DiffractoKit/tools/slice-4/pins.py",
                          "(started by pins.py) References/python/py4dstem/bin/python -I -B DiffractoKit/tools/slice-4/pins-py4dstem.py < request.json"],
             "versions": {"pins.py": {"python": sys.version, "numpy": np.__version__, "scipy": scipy.__version__,
                                      "pymatgen": dist_version("pymatgen"), "pymatgen_core": dist_version("pymatgen-core")},

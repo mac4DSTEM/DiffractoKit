@@ -38,7 +38,7 @@ space-group operations on the cell as given (get_symmetry_operations; centring t
 translations not), and the order of the Laue group (2 x the point-group's proper part: the count of {+-R}).
 """
 # Run under the suite's memory cap (a process cannot cap itself on macOS 27):
-#   ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
+#   ../References/python/orix/bin/python -I -B tools/kit-0.0.4/tetragonal-pins.py
 import json
 import math
 import os

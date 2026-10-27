@@ -1,6 +1,6 @@
 """py4DSTEM `symmetry_reduce_directions` pins (DiffractoKit 0.6.0): the three direction families of an orientation matrix.
 
-  ../tools/memcap.sh -- ../References/python/py4dstem/bin/python -I -B tools/symmetry/family-pins.py
+  ../References/python/py4dstem/bin/python -I -B tools/symmetry/family-pins.py
 
 Needs symmetry-pins.json (tools/symmetry/pins.py) for the proper operators (kit frame, sorted by their fractional
 matrices) and the plan sector `range` of each class. Uses the same harness as pins-py4dstem.py: py4DSTEM's own

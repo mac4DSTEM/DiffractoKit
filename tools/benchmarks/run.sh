@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds the benchmark package and prints the kit's JSON lines. Run under ../../../tools/memcap.sh, with the machine otherwise
+# Builds the benchmark package and prints the kit's JSON lines. Run under a memory cap, with the machine otherwise
 # quiet (the numbers are this Mac at that moment). DIFFRACTO_BENCH_LARGE=1 for the nightly sizes.
 set -euo pipefail
 cd ${0:A:h}

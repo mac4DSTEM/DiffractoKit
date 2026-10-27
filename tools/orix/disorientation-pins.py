@@ -1,6 +1,6 @@
 """orix (Mis)orientation reduction pins for the eleven Laue classes (DiffractoKit 0.6.0).
 
-  ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/orix/disorientation-pins.py
+  ../References/python/orix/bin/python -I -B tools/orix/disorientation-pins.py
 
 Writes Tests/DiffractoOrientationTests/Fixtures/orix-disorientation-pins.json. Convention: the kit's matrix M (columns =
 lab axes in crystal coordinates, py4DSTEM) is orix's Orientation matrix directly (orix applies the symmetry on the left:

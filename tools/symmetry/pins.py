@@ -1,7 +1,7 @@
-"""Generate symmetry fixtures using the pinned pymatgen environment, under suite tools/memcap.sh.
+"""Generate symmetry fixtures using the pinned pymatgen environment, under a memory cap.
 
 From this worktree:
-  ../../tools/memcap.sh -- ../../References/python/orix/bin/python -I -B tools/symmetry/pins.py
+  ../../References/python/orix/bin/python -I -B tools/symmetry/pins.py
 
 MACEM_SUITE_ROOT overrides suite discovery for another checkout. No oracle files are written.
 Calls the separate pinned py4DSTEM interpreter, and compiles read-only git-show app source for native keys/samples.

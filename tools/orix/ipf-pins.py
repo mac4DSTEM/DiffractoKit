@@ -1,7 +1,7 @@
 """orix IPF colour key and fundamental-sector pins for the eleven Laue classes (DiffractoKit 0.6.0).
 
-Run from the kit root with the pinned orix venv (References/python/orix, provision: tools/orix/tools/setup-python-refs.sh):
-  ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/orix/ipf-pins.py
+Run from the kit root with the pinned orix venv (References/python/orix):
+  ../References/python/orix/bin/python -I -B tools/orix/ipf-pins.py
 
 Writes Tests/DiffractoOrientationTests/Fixtures/orix-ipf-pins.json and Sources/DiffractoOrientation/OrixIPFSectors.swift.
 orix is the oracle (MTEX is MATLAB and is not used). orix works in its own settings (2/m with the twofold on z, -3m with
