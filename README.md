@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/banner.png" width="100%" alt="DiffractoKit: crystallography and electron diffraction as a Swift package"></p>
+<p align="center"><img src="docs/banner.png" width="100%" alt="DiffractoKit: from a CIF to the reflections you see, with unit cells, structure factors, zone axes and calibration"></p>
 
 # DiffractoKit
 
