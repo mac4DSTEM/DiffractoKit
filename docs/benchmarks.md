@@ -14,7 +14,7 @@ Float64 unless the function is Float32 by design (ACOM, ellipse pattern pixels).
 | Pin note | `References/python/orix` runs pymatgen-core **2026.10.16** under a `pymatgen` 2026.9.24 metapackage; the fixtures record `pymatgen` 2026.9.24 and, except `cif-symmetry-pins.json` (generated 2026-10-21 on this install, byte-identical on regeneration), `pymatgen-core` 2026.9.23. Nothing here compares numbers, only time |
 | 0.9.1 | The `symmetry_detection` and `cif_import` rows above are the 2026-10-21 measurement of 0.9.0. 0.9.1 replaced the closure check that took 95 % of them (see `docs/open-items.md`); measured in-process on the same `al_super2.cif` (machine load 3.6): `cif_import` typical median 67 ms (min 67, max 77), against 297 ms (one run at load 9) before the change and the table's 351 ms. Not yet re-run through `run.sh`; the nightly's row replaces these |
 
-Re-run: `tools/benchmarks/gen_inputs.py` (References/python/orix Python), then `../../tools/memcap.sh --gb 8 -- tools/benchmarks/run.sh`
+Re-run: `tools/benchmarks/gen_inputs.py` (References/python/orix Python), then `tools/benchmarks/run.sh`
 for the kit and `tools/benchmarks/bench_python.py pymatgen|py4dstem` for Python, merged by `merge.py`. The raw lines are
 `tools/benchmarks/results/2026-10-21.jsonl`.
 

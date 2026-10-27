@@ -1,6 +1,6 @@
 """DiffractoKit ACOM matcher: the pin generator (docs/parity.md row P25).
 
-    tools/memcap.sh --gb 4 -- References/python/py4dstem/bin/python -I -B tools/acom-matcher/pins.py
+    References/python/py4dstem/bin/python -I -B tools/acom-matcher/pins.py
 
 writes Tests/DiffractoOrientationTests/Fixtures/acom-matcher-pins.json. The py4DSTEM venv is the one of CuboKit (py4DSTEM
 f050d207 = 0.14.19, NumPy, SciPy; versions are written into the fixture). Nothing here is generated from the new Swift.

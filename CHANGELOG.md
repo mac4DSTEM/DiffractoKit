@@ -137,7 +137,7 @@ The one numeric piece mac4DSTEM still carried that belongs here. No existing num
 mac4DSTEM: build `radiiPerPosition` from its Bragg vectors (distance of each peak from the origin) and delete
 `KnownCrystalQCalibration.estimate` (keep the app's `QCalibrationEstimate` façade or typealias to the kit's).
 
-Not moved, by design: `ACOMCrystalSymmetry` / `OrientationMap` / `MetalACOMMatcher` (app, per its CLAUDE.md); the open phase-matching, ACOM-mirror and CIF-symmetry items are diagnose-first behaviour questions, not missing code.
+Not moved, by design: `ACOMCrystalSymmetry` / `OrientationMap` / `MetalACOMMatcher` (app, by the app's own design); the open phase-matching, ACOM-mirror and CIF-symmetry items are diagnose-first behaviour questions, not missing code.
 
 ## 0.7.1 (2026-10-21)
 

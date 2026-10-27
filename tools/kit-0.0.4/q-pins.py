@@ -38,7 +38,7 @@ a, l_px, lambda_A, note}] }. A number that is not finite is written as the strin
 Exit 0: every self-check holds. 1: one failed (printed).
 """
 # Run under the suite's memory cap (a process cannot cap itself on macOS 27):
-#   ../tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/kit-0.0.4/q-pins.py
+#   ../References/python/orix/bin/python -I -B tools/kit-0.0.4/q-pins.py
 import json
 import math
 import os

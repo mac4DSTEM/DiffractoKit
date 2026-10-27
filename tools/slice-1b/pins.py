@@ -3,7 +3,7 @@
 Run, from any directory, with the pinned oracle, UNDER THE SUITE MEMORY WATCHDOG (owner, 2026-10-15 12:30: setrlimit and
 `ulimit -v` fail on macOS 27, so the cap is the watchdog's, 8 GB, exit 137; one such worker at a time):
 
-    <suite>/tools/memcap.sh -- ../References/python/orix/bin/python -I -B tools/slice-1b/pins.py
+    ../References/python/orix/bin/python -I -B tools/slice-1b/pins.py
 
 It writes Tests/DiffractoCoreTests/Fixtures/slice-1b-pins.json BEFORE any Swift for the reduction exists.
 

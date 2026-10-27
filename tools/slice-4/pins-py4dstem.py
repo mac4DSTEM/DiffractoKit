@@ -1,7 +1,7 @@
 """DiffractoKit slice 4: the py4DSTEM half of the pin generator (registration docs/registration-slice-4.md, sections 4, 5, 6).
 
 Not run by hand: tools/slice-4/pins.py starts it with the py4DSTEM venv's interpreter, sends the phases as JSON on stdin and
-reads the JSON on stdout. Run through pins.py the whole chain sits under ONE tools/memcap.sh.
+reads the JSON on stdout. Run through pins.py the whole chain sits under ONE memory cap.
 
     References/python/py4dstem/bin/python -I -B tools/slice-4/pins-py4dstem.py < request.json > answer.json
 

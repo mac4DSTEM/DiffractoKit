@@ -159,12 +159,12 @@ not bit equality between different floating-point types. The measured Double-to-
 From the worktree, with the existing pinned references (no installation or network access):
 
 ```sh
-../../tools/memcap.sh -- ../../References/python/orix/bin/python -I -B tools/symmetry/pins.py
+../../References/python/orix/bin/python -I -B tools/symmetry/pins.py
 swift test -c release --jobs 4
 ```
 
 The orix pins (`tools/orix/ipf-pins.py`, `tools/orix/disorientation-pins.py`) use the orix venv, provisioned by
-macEM-suite `tools/setup-python-refs.sh orix` (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file in
+a pinned-environment setup script (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file in
 `References/python/orix/freeze.txt`); the direction-family pins use the py4DSTEM venv. `MACEM_SUITE_ROOT` can locate references from a differently placed checkout. `pins.py` invokes the pinned py4DSTEM
 interpreter and compiles only a `git show` extraction of the app's symmetry classes at c809679c into this worktree's
 `.build/symmetry-generator`. It does not build or modify the app. The JSON contains seed 20261016, package versions,
