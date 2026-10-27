@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/banner.png" width="100%" alt="DiffractoKit: crystallography and electron diffraction as a Swift package"></p>
+
 # DiffractoKit
 
 Crystallography and electron diffraction as a Swift package: the numbers a scientist reads, never UI. DiffractoKit
