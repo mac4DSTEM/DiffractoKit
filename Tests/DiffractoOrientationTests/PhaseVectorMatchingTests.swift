@@ -1396,7 +1396,6 @@ import DiffractoOrientation
         #expect(PhaseVectorSettings().knownVariantsMinimumSpecificReflections == 1)
     }
 
-
     /// (5) Partial explanation loses: an entry explaining 2 of 12 survivors
     /// at 0.003 Å⁻¹ and leaving the other 10 far away must lose to an entry
     /// explaining all 12 at 0.008 Å⁻¹ -- the measured θ′ edge-on -> T1

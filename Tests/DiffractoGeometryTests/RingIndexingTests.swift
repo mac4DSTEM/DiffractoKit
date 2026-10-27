@@ -17,7 +17,6 @@ import DiffractoCore
 import DiffractoScattering
 import DiffractoGeometry
 
-
 struct RingIndexingTests {
 
     typealias Index = RingIndexing
