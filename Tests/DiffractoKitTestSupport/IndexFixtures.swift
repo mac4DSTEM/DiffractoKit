@@ -51,7 +51,7 @@ package enum IndexPresets {
         lines += ["loop_", "_atom_site_label", "_atom_site_type_symbol", "_atom_site_fract_x", "_atom_site_fract_y",
                   "_atom_site_fract_z"]
         lines += sites.map { "  \($0.0) \($0.1) \($0.2) \($0.3) \($0.4)" }
-        // The CIF parse cannot fail on this fixed text; a failure is a slice-1 regression the CIF tests name.
+        // The CIF parse cannot fail on this fixed text; a failure is a CIF-parser regression the CIF tests name.
         return (try? CIFImport.read(lines.joined(separator: "\n")).structure)!
     }
 

@@ -163,9 +163,8 @@ From the worktree, with the existing pinned references (no installation or netwo
 swift test -c release --jobs 4
 ```
 
-The orix pins (`tools/orix/ipf-pins.py`, `tools/orix/disorientation-pins.py`) use the orix venv, provisioned by
-a pinned-environment setup script (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file in
-`References/python/orix/freeze.txt`); the direction-family pins use the py4DSTEM venv. `MACEM_SUITE_ROOT` can locate references from a differently placed checkout. `pins.py` invokes the pinned py4DSTEM
+The orix pins (`tools/orix/ipf-pins.py`, `tools/orix/disorientation-pins.py`) use the orix venv (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file in
+`References/python/orix/freeze.txt`; see `CONTRIBUTING.md`); the direction-family pins use the py4DSTEM venv. `MACEM_SUITE_ROOT` can locate references from a differently placed checkout. `pins.py` invokes the pinned py4DSTEM
 interpreter and compiles only a `git show` extraction of the app's symmetry classes at c809679c into this worktree's
 `.build/symmetry-generator`. It does not build or modify the app. The JSON contains seed 20261016, package versions,
 source digests (including pymatgen symm_data.json), every proper group, random rotations, half-turn/boundary cases, original native Float colour bits and
