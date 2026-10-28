@@ -2,7 +2,7 @@
 //  RingIndexing.swift
 //  Role: the (hkl) family a measured |q| belongs to, against a ring list (DiffractoScattering's `KinematicFamily`, or DiffractoCore's
 //        `ReflectionFamily`), and the decision of when it is NOT to be named. The decision is reference commit 9482831
-//        `DSpacingIndexing.index` (ADR 022, S2c ADR 024), generalised: the list is DiffractoCore's family rule over any
+//        `DSpacingIndexing.index` (macTEM ADR 022 and ADR 024), generalised: the list is DiffractoCore's family rule over any
 //        crystal system ("RingIndexing"), so the lattice, orbit and
 //        family-construction code of the seed is not ported and `unsupportedLattice` / `unsupportedElement` cannot occur
 //        here (the list builder refuses an element without a form factor, and every system has a Laue group).

@@ -1,6 +1,6 @@
 //
 //  ReductionTests.swift
-//  Slice 1b, the lattice reduction (registration docs/registration-slice-1b.md sections 1 to 3): the Niggli-reduced
+//  The lattice reduction: the Niggli-reduced
 //  cell against spglib and pymatgen on every pinned cell and 2800 random cells, and against the Niggli conditions
 //  written out from the text; the transformation is unimodular and reproduces the reduced metric.
 //
@@ -38,7 +38,7 @@ struct ReductionTests {
     }
 
     /// The reduced cell's six parameters equal spglib's and pymatgen's (two independent implementations of the same
-    /// algorithm) to 1e-5, the functions' own tol (D17; was 1e-10; relative on the lengths, degrees on the angles).
+    /// algorithm) to 1e-5, the functions' own tol (the reference's tolerance; was 1e-10; relative on the lengths, degrees on the angles).
     @Test func testNiggliReducedCellAgreesWithSpglibAndPymatgen() {
         var worstSpglib = 0.0, worstPymatgen = 0.0
         for c in Self.cases {
@@ -50,7 +50,7 @@ struct ReductionTests {
             #expect(ds <= 1e-5, "\(c.name) vs spglib: \(mine) \(c.spglib)")
             #expect(dp <= 1e-5, "\(c.name) vs pymatgen: \(mine) \(c.pymatgen)")
         }
-        print("slice 1b reduction: \(Self.cases.count) cells, worst deviation from spglib \(worstSpglib), from pymatgen \(worstPymatgen)")
+        print("reduction: \(Self.cases.count) cells, worst deviation from spglib \(worstSpglib), from pymatgen \(worstPymatgen)")
     }
 
     /// The Niggli conditions, checked directly on the reduced basis (not through the oracle); P is an integer matrix of

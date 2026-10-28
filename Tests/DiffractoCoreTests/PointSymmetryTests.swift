@@ -1,8 +1,8 @@
 //
 //  PointSymmetryTests.swift
-//  Planted truth for the groups (registration 5.2): the holohedry orders, closure, determinants and finite orders;
+//  Planted truth for the groups: the holohedry orders, closure, determinants and finite orders;
 //  the Laue class of each group by the 3.5 rule; orbit sizes at general and special positions; the canonical forms
-//  and names the reference implementations use today (3.6). Group theory only; no reference code.
+//  and names the reference implementations use today. Group theory only; no reference code.
 //
 
 import DiffractoKitTestSupport
@@ -25,9 +25,9 @@ struct PointSymmetryTests {
         (.triclinic, 2, .oneBar),
     ]
 
-    /// Every holohedry has its registered order, is closed, every element has determinant ±1 and finite order, and
+    /// Every holohedry has its expected order, is closed, every element has determinant ±1 and finite order, and
     /// its Laue class is the holohedry's. Mutant: a generator with a wrong entry (closure runs to 200 or the order moves).
-    @Test func testHolohedriesAreTheRegisteredGroups() {
+    @Test func testHolohedriesAreTheExpectedGroups() {
         for (family, order, laue) in Self.holohedries {
             let group = PointSymmetry.holohedry(of: family)
             #expect(group.order == order, "\(family)")
@@ -75,7 +75,7 @@ struct PointSymmetryTests {
         #expect(PointSymmetry(rotations: [.identity, .inversion, Self.c4z]).laueClass == nil)
     }
 
-    /// General-position orbit sizes (5.2). Mutant: the orbit as hkl R⁻¹ (the 6-fold's orbit changes size for no hkl but
+    /// General-position orbit sizes. Mutant: the orbit as hkl R⁻¹ (the 6-fold's orbit changes size for no hkl but
     /// its members do: covered by the pins), the mirror dropped from 2/m (orbits halve).
     @Test func testGeneralOrbitSizes() {
         let general = MillerIndex(1, 2, 3)
@@ -97,7 +97,7 @@ struct PointSymmetryTests {
         }
     }
 
-    /// Special positions (5.2): the reference implementations' multiplicities. Mutant: C₂ about a instead of b ({h0l} becomes 4).
+    /// Special positions: the reference implementations' multiplicities. Mutant: C₂ about a instead of b ({h0l} becomes 4).
     @Test func testSpecialOrbitSizes() {
         let mono = PointSymmetry.holohedry(of: .monoclinic(uniqueAxis: .b))
         #expect(mono.orbit(of: MillerIndex(2, 0, 1)).count == 2)
@@ -121,7 +121,7 @@ struct PointSymmetryTests {
         #expect(hex.orbit(of: MillerIndex(1, 1, 0)).contains(MillerIndex(-1, -1, 0)), "(1 1 0) and (-1 -1 0) are one orbit")
 
         // 4/m keeps {2 1 0} and {1 2 0} apart; 4/mmm joins them. hk0 is a special form (the mirror ⊥ c fixes it):
-        // 4 under 4/m and 8 under 4/mmm; the general hkl are 8 and 16 (registration 5.2, amended 2026-10-14).
+        // 4 under 4/m and 8 under 4/mmm; the general hkl are 8 and 16 (amended 2026-10-14).
         #expect(Self.fourOverM.orbit(of: MillerIndex(2, 1, 0)).count == 4)
         #expect(Self.fourOverM.orbit(of: MillerIndex(1, 2, 0)).count == 4)
         #expect(!(Self.fourOverM.orbit(of: MillerIndex(2, 1, 0)).contains(MillerIndex(1, 2, 0))))
@@ -130,7 +130,7 @@ struct PointSymmetryTests {
         #expect(PointSymmetry.holohedry(of: .tetragonal(uniqueAxis: .c)).orbit(of: MillerIndex(2, 1, 3)).count == 16)
     }
 
-    /// The one canonical rule reproduces the reference implementations' names (3.6). Mutant: the key without the non-negative count
+    /// The one canonical rule reproduces the reference implementations' names. Mutant: the key without the non-negative count
     /// (hexagonal {1 1 -2 0} becomes {2 -1 -1 0}); the sign of l not tied to h in 2/m.
     @Test func testCanonicalFormsAndNamesMatchTheApps() {
         let cubic = PointSymmetry.holohedry(of: .cubic)

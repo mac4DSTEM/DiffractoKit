@@ -1,6 +1,6 @@
 //
 //  CIFImportTests.swift
-//  Planted truth for the importer (registration 5.3, 5.4): cell contents the files' formulas state, Laue classes by
+//  Planted truth for the importer: cell contents the files' formulas state, Laue classes by
 //  the structure, absences by the operations, the reference implementations' family counts and names, and the refusals. β″ first.
 //
 
@@ -43,8 +43,8 @@ struct CIFImportTests {
         for r in list.reflections { #expect(r.isAllowed == ((r.hkl.h + r.hkl.k) % 2 == 0), "\(r.hkl)") }
     }
 
-    /// The registered predictions: 1448 allowed reflections and 419 families at k_max 1.2 Å⁻¹ (the reference implementation's S2c record:
-    /// gemmi's 1448; the reference implementations' 1442 is after the |F| cut, slice 2's), and the first ten families by name, d and
+    /// The predictions written before the code: 1448 allowed reflections and 419 families at k_max 1.2 Å⁻¹ (the reference implementation's
+    /// record: gemmi's 1448; the reference implementations' 1442 is after DiffractoScattering's |F| cut), and the first ten families by name, d and
     /// multiplicity. Mutants: the family tolerance at 1e-4 or 0; the multiplicity as the orbit count.
     @Test func testBetaDoublePrimePredictedListAndFamilies() throws {
         let s = try CIFImport.read(Fixtures.betaDoublePrimeCIF).structure
@@ -113,7 +113,7 @@ struct CIFImportTests {
 
     /// One atom and the four centring translations: a legal loop that declares less than the atoms have (Laue -1 by
     /// the loop, m-3m by the cell it builds). The structure's operations are detected from the expanded cell
-    /// (amendment 2); the loop is kept and is a subset of them.
+    ///; the loop is kept and is a subset of them.
     @Test func testGoldWithCentringOperationsExpandsToFourSitesAndDetectsFm3m() throws {
         let doc = try read("gold_centring_ops.cif")
         let s = doc.structure
@@ -128,7 +128,7 @@ struct CIFImportTests {
     }
 
     /// Silicon: Fd-3m; {2 0 0}, {4 2 0}, {6 0 0} absent by the operations; {2 2 2} and {4 4 2} allowed by them (their
-    /// structure factor is zero by the basis, slice 2's), so 12 allowed families at 1.2 where the reference implementations list 10.
+    /// structure factor is zero by the basis, removed by DiffractoScattering's cut), so 12 allowed families at 1.2 where the reference implementations list 10.
     @Test func testSiliconAbsencesAndFamilies() throws {
         let s = try read("silicon_Fd-3m.cif").structure
         #expect(s.sites.count == 8)
@@ -156,7 +156,7 @@ struct CIFImportTests {
         #expect(s.laueClass == .sixOverMmm)
         #expect(!ReflectionList.isAllowed(MillerIndex(0, 0, 1), by: s.operations), "the 6₃ screw: 000l with l odd")
         // 25 symmetry-allowed rings: the reference implementation's 24 plus {3 0 -3 1}, allowed by P6₃/mmc's operations and zero by the basis
-        // (amendment 5; slice 2's |F| cut removes it, as Si's {2 2 2}).
+        // (DiffractoScattering's |F| cut removes it, as Si's {2 2 2}).
         let families = try s.reflections(kMax: 1.2).families()
         #expect(families.count == 25)
         #expect(families.contains { $0.name == "{3 0 -3 1}" })
@@ -226,7 +226,7 @@ struct CIFImportTests {
         let hcp = try read("ideal_hcp_P1.cif").structure
         #expect(hcp.laueClass == .sixOverMmm)
         let hcpFamilies = try hcp.reflections(kMax: 1.2).families()
-        #expect(hcpFamilies.count == 24, "23 after the |F| cut (slice 2)")
+        #expect(hcpFamilies.count == 24, "23 after the |F| cut")
         let ring = try #require(hcpFamilies.first { $0.orbits.count == 2 })
         #expect(ring.name == "{3 0 -3 2} + {0 0 0 6}")
         #expect(ring.multiplicity == 14)
@@ -240,7 +240,7 @@ struct CIFImportTests {
         #expect(seededPyrite.laueClass == .mThreeBar)
     }
 
-    // MARK: Refusals and precision (5.4)
+    // MARK: Refusals and precision
 
     static let goldP1 = """
     data_gold

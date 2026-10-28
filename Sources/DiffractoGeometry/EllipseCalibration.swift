@@ -699,7 +699,7 @@ public enum EllipseCalibration {
               hasSignal(dynamicRange: dynamicRange, maximum: maximum, relative: policy.minimumRelativeSignal) else {
             throw FitError.insufficientSignal
         }
-        // Registration-0.0.4 §1.2: a range below 0.5 runs normalised by an exact power of two; I0, I1 and the background are
+        // A range below 0.5 runs normalised by an exact power of two; I0, I1 and the background are
         // scaled back at the end, so the fit of amplitude 2^-k A is the fit of amplitude A, bit for bit.
         let scale = normalisingScale(dynamicRange)
         if scale != 1 {

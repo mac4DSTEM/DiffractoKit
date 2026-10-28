@@ -1,6 +1,6 @@
 //
 //  ErrorTextTests.swift
-//  Registration 0.0.4 section 5 (tier 2): the typed errors of DiffractoCore are `LocalizedError`s whose
+//  The typed errors of DiffractoCore are `LocalizedError`s whose
 //  `localizedDescription` is their `description`, so an app that shows `error.localizedDescription` shows the kit's text
 //  rather than Foundation's "The operation couldn't be completed. (DiffractoCore.CIFImportError error 0.)".
 //
@@ -49,7 +49,7 @@ struct ErrorTextTests {
         #expect(!error.localizedDescription.contains("couldn’t be completed"))
     }
 
-    /// Registration 0.2.0, ask 2 (tier 3, a text test): a cell too large for the default limit says how many reflections it
+    /// A cell too large for the default limit says how many reflections it
     /// holds, what the default limit is, and which policy field sets another; an invalid cell says it is not a lattice.
     @Test func testTheTooLargeRefusalNamesItsNumbersAndTheField() throws {
         let text = ReflectionListError.cellTooLargeOrInvalid(estimatedReflections: 3e9).description

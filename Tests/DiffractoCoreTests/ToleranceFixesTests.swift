@@ -1,7 +1,6 @@
 //
 //  ToleranceFixesTests.swift
-//  DiffractoKit 0.2.0, the Gate B findings on tolerances (tier 1 for F5, F6 and F8, whose outcomes a scientist reads;
-//  tier 2 for F3): the position tolerance is refused where it cannot work and no structure is ever returned without the
+//  DiffractoKit 0.2.0, the review findings on tolerances: the position tolerance is refused where it cannot work and no structure is ever returned without the
 //  identity operation; the metric tolerances read NaN, negative and infinite as 0; an absurd cell and an invalid Niggli
 //  epsilon never trap and are never reported as reduced. Every test names under "RED UNDER" the production change that
 //  turns it red.

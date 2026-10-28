@@ -1,8 +1,7 @@
 //
 //  FastDetectionTests.swift
-//  Slice 1b, the Cartesian tolerance and the cell-list permutation test (registration
-//  docs/registration-slice-1b.md sections 1 and 3): the cell list returns slice 1's operations bit for bit on every
-//  slice-1 and slice-2 fixture, a 500-atom symmetric P1 cell is detected in under 2 s, and `.cartesian` tells apart a
+//  The Cartesian tolerance and the cell-list permutation test: the cell list returns the plain scan's operations bit for
+//  bit on every core and scattering fixture, a 500-atom symmetric P1 cell is detected in under 2 s, and `.cartesian` tells apart a
 //  pseudo-symmetry that `.fractional` cannot in a large cell.
 //
 
@@ -35,13 +34,13 @@ struct FastDetectionTests {
         }
     }()
 
-    /// Every fixture the kit has as (name, cell, sites): slice 1b's pins (slice-1 fixtures and the named cells), slice 2's
-    /// presets, and the CIFs of the fixtures directory.
+    /// Every fixture the kit has as (name, cell, sites): the conventional-setting pins (the core fixtures and the named cells), the
+    /// scattering presets, and the CIFs of the fixtures directory.
     private static var everyFixture: [(String, UnitCell, [AtomSite])] {
         var out = Pins1b.shared.structures.map { ($0.name, $0.cell.unitCell, $0.atomSites) }
         out += slice2Presets
         // near-coincident rows (1.3e-3 apart, both inside the tolerance) and their inversion about a general point: the
-        // target of an image is ambiguous, so the choice of slice 1 (the lowest unclaimed index) decides the translation
+        // target of an image is ambiguous, so the plain scan's choice (the lowest unclaimed index) decides the translation
         let u: [SIMD3<Double>] = [[0.10, 0.20, 0.30], [0.1013, 0.20, 0.30], [0.62, 0.31, 0.12], [0.62, 0.3113, 0.12]]
         let centre = SIMD3<Double>(0.35, 0.6, 0.8)
         let cluster = (u + u.map { centre - $0 }).map { AtomSite(z: 6, fractional: wrapFractional($0)) }
@@ -143,7 +142,7 @@ struct FastDetectionTests {
         var detected: CrystalStructure?
         let elapsed = clock.measure { detected = CrystalStructure.detectingSymmetry(cell: cell, sites: sites) }
         let s = detected!
-        print("slice 1b: 500-atom symmetric P1 cell, \(s.operations.count) operations, \(elapsed)")
+        print("500-atom symmetric P1 cell, \(s.operations.count) operations, \(elapsed)")
         #expect(s.operations.count == 48 && s.laueClass == .mThreeBarM)
         #expect(elapsed < .seconds(2), "\(elapsed)")
         // the reference path returns the same operations
@@ -160,15 +159,15 @@ struct FastDetectionTests {
         let clock = ContinuousClock()
         var detection: SymmetryDetection.Result?
         let elapsed = clock.measure { detection = SymmetryDetection.detect(sites: sites, cell: .cubic(a: 5 * 4.0782)) }
-        print("slice 1b: 500-atom 5×5×5 gold supercell, \(detection!.operations.count) operations, \(elapsed)")
+        print("500-atom 5×5×5 gold supercell, \(detection!.operations.count) operations, \(elapsed)")
         #expect(detection!.operations.count == 125 * 4 * 48)
-        #expect(elapsed < .seconds(30), "\(elapsed)")      // slice 1: about 30 s for 500 atoms at N³
+        #expect(elapsed < .seconds(30), "\(elapsed)")      // the plain scan: about 30 s for 500 atoms at N³
     }
 
     // MARK: The Cartesian tolerance
 
     /// A pseudo-centring of 0.013 Å in a 50 Å cell: a fractional 5e-3 is 0.25 Å and reads it as symmetry, a Cartesian 1e-3 Å
-    /// does not (Gate B F6).
+    /// does not.
     @Test func testCartesianToleranceSeparatesAPseudoCentringFractionalCannotSee() {
         let shift = 0.013 / 50
         let sites = [AtomSite(z: 26, fractional: [0, 0, 0]), AtomSite(z: 26, fractional: [0.5, 0.5, 0.5 + shift])]

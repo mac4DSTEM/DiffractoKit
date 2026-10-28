@@ -2,7 +2,7 @@
 //  MaterialsProjectImportTests.swift
 //  The Materials Project JSON models, the document-to-structure route and the expectation verdicts. Numerics against
 //  pymatgen SpacegroupAnalyzer (fixtures/mp-import/pymatgen-pins.json, tools/mp-import/pins.py; pymatgen 2026.9.24,
-//  spglib 2.8.0): the conventional cell's volume and site count (volume 1e-7 relative (D17; was 1e-9): the MP inputs carry their cell to 3-4
+//  spglib 2.8.0): the conventional cell's volume and site count (volume 1e-7 relative (the reference's tolerance; was 1e-9): the MP inputs carry their cell to 3-4
 //  digits and pymatgen's standard cell is rebuilt from lengths and angles), the Laue class and the metric family exact.
 //  Verdicts, refusals and the formula parser are exact logic. Nothing touches the network.
 //
