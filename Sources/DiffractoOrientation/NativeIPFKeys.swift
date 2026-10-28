@@ -368,4 +368,3 @@ internal enum NativeMonoclinicSymmetry {
         return SIMD3(Float(rgb.x), Float(rgb.y), Float(rgb.z))
     }
 }
-

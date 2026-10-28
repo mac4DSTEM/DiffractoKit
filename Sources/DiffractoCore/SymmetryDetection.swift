@@ -444,7 +444,6 @@ public enum SymmetryDetection {
     }
 }
 
-
 // MARK: - Position matching and the cell list (slice 1b)
 
 /// The rule that calls two fractional positions the same site.

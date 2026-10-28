@@ -395,7 +395,6 @@ struct CIFImportTests {
     }
 }
 
-
 // MARK: Completeness of the operation list (0.9.0: symbol-only declarations, primitive C-monoclinic with beta = 90)
 
 struct CIFSymmetryCompletenessTests {

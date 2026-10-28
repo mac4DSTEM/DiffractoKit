@@ -503,7 +503,7 @@ func runAll(outPath: String) throws {
             if x >= 8 && y < 8 { extraCandidate = thetaOR }
             else if x >= 8 && y >= 8 { extraCandidate = ((x * 3 + y * 5) % 7 == 0) ? auFirst011 + 12 : betaFirst010 + 25 }
             else if (2...4).contains(x) && (10...12).contains(y) { extraCandidate = thetaFirst011 + 40 }
-            else if (x == 6 && y >= 8) { extraCandidate = betaFirst001 + 40 }
+            else if x == 6 && y >= 8 { extraCandidate = betaFirst001 + 40 }
             if let c = extraCandidate {
                 qs += strongVectors(main.entries[c], limit: 10, minLength: 0.2, maxLength: 1.2)
                 truth += " + \(describe(c))"

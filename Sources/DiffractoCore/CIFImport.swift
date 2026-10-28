@@ -643,7 +643,7 @@ public enum CIFImport {
                         i += 1
                         guard i < t.count, t[i].isNumber else { return nil }
                         i += 1
-                    } else if i < t.count, t[i].isNumber, bareScrews, i == 1, axis.count == 1, (i + 1 == t.count || t[i + 1] == "/"),
+                    } else if i < t.count, t[i].isNumber, bareScrews, i == 1, axis.count == 1, i + 1 == t.count || t[i + 1] == "/",
                               screws.contains(axis + String(t[i])) {
                         i += 1
                     }
