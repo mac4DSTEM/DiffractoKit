@@ -6,7 +6,8 @@ abstract: "A Swift library for crystallography and electron diffraction: unit ce
 authors:
   - family-names: Lobpreis
     given-names: Paul
-    # TODO(Paul): add orcid: "https://orcid.org/…" and affiliation: "…" here
+version: 0.10.0
+date-released: 2026-10-22
 license: GPL-3.0
 repository-code: "https://github.com/mac4DSTEM/DiffractoKit"
 keywords:
@@ -34,3 +35,8 @@ references:
     authors:
       - name: "The pyxem developers"
     url: "https://github.com/pyxem/pyxem"
+  - type: software
+    title: "orix"
+    authors:
+      - name: "The pyxem developers"
+    url: "https://github.com/pyxem/orix"
