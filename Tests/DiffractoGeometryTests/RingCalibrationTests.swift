@@ -1,7 +1,7 @@
 //
 //  RingCalibrationTests.swift
 //  The closed forms (λ, 2θ, L_px, Δq, L_mm) against hand arithmetic,
-//  and every refusal by its own name. Ported from reference commit 9482831 Tests/RingCalibrationTests.swift (30 tests, same
+//  and every refusal by its own name. Ported from macTEM before v1.0.0 (history squashed) Tests/RingCalibrationTests.swift (30 tests, same
 //  names, literals unchanged) to Swift Testing. No fit, no Python at run time: the expected numbers below were worked once,
 //  by hand, in 60-digit decimal arithmetic from the CODATA 2018 constants stated in ElectronWavelength.swift (h and c and e
 //  exact, m₀ = 9.1093837015e-31 kg) and are typed here as literals. The many-case parity with a 60-digit decimal script is

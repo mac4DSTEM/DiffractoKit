@@ -1,7 +1,7 @@
 //
 //  RingFitCalibrationTests.swift
 //  The fit-driven calibration (`RingCalibration.fit`) on rings planted here, in Swift, with their truth
-//  known. Ported from reference commit 9482831 Tests/RingFitCalibrationTests.swift (8 tests, same names, same plant, same bands),
+//  known. Ported from macTEM before v1.0.0 (history squashed) Tests/RingFitCalibrationTests.swift (8 tests, same names, same plant, same bands),
 //  RUN ON THE KIT'S FIT, which is reference commit 7d6fdbd1's `EllipseCalibration` (ADR 069: two starts and the 0.30 px floor guard);
 //  the reference implementation's own copy there is the pre-ADR-069 file. No number of these eight moved: every assertion holds as the reference implementation wrote it
 //  (said they might, the measured values are in tools/slice-3b/README.md).

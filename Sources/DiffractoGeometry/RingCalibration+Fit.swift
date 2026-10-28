@@ -3,7 +3,7 @@
 //  Role: the fit-driven calibration: a ring of known d fitted in a pattern, the fit's numbers checked against every
 //        refusal, and Δq and the camera length computed from the fitted radius only when nothing refuses them.
 //
-//  SEED: reference commit 9482831 `Sources/TEMCore/Analysis/RingCalibration+Fit.swift`, logic unchanged. The one difference is the
+//  SEED: macTEM before v1.0.0 (history squashed) `Sources/TEMCore/Analysis/RingCalibration+Fit.swift`, logic unchanged. The one difference is the
 //  fit it runs: the reference implementation's own `EllipseCalibration` copy there is the pre-ADR-069 file; this runs the kit's
 //  `EllipseCalibration` (reference commit 7d6fdbd1, with ADR 069's two starts and the 0.30 px ring-width floor), so the numbers
 //  the reference implementation measured on its copy move when it imports the kit.
