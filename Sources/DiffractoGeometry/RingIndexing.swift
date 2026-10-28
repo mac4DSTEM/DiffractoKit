@@ -1,9 +1,9 @@
 //
 //  RingIndexing.swift
-//  Role: the (hkl) family a measured |q| belongs to, against a ring list (slice 2's `KinematicFamily`, or slice 1's
+//  Role: the (hkl) family a measured |q| belongs to, against a ring list (DiffractoScattering's `KinematicFamily`, or DiffractoCore's
 //        `ReflectionFamily`), and the decision of when it is NOT to be named. The decision is reference commit 9482831
-//        `DSpacingIndexing.index` (ADR 022, S2c ADR 024), generalised: the list is slice 1's family rule over any
-//        crystal system (registration docs/registration-slice-3.md §1, "RingIndexing"), so the lattice, orbit and
+//        `DSpacingIndexing.index` (ADR 022, S2c ADR 024), generalised: the list is DiffractoCore's family rule over any
+//        crystal system ("RingIndexing"), so the lattice, orbit and
 //        family-construction code of the seed is not ported and `unsupportedLattice` / `unsupportedElement` cannot occur
 //        here (the list builder refuses an element without a form factor, and every system has a Laue group).
 //
@@ -13,7 +13,7 @@
 //  gives a confident wrong index. k is a Gaussian coverage factor (default 3). `kMax` is the k_max the list was built to
 //  (Å⁻¹): the list is complete only below it, which is what `beyondKMax` guards.
 //
-//  THE DEFINITION (registered, docs/registration-slice-3.md §1; tools/slice-3/index-pins.py is written from the same text):
+//  THE DEFINITION (tools/slice-3/index-pins.py is written from the same text):
 //    z, δ       z = |q − g| / σ_q; the signed deviation δ = (d_meas − d)/d = g/q − 1; |Δd|/d = |δ|. Candidates order by
 //               (z, g).
 //    margin     between two candidates, their log-likelihood ratio (z₂² − z₁²)/2; accepting needs ≥ ln 19 (the next at
@@ -142,10 +142,10 @@ public enum RingIndexing {
         public var errorDescription: String? { reason }
     }
 
-    /// The family `q` (Å⁻¹) belongs to among the kinematic rings (slice 2's list after the |F| cut), given its standard
+    /// The family `q` (Å⁻¹) belongs to among the kinematic rings (DiffractoScattering's list after the |F| cut), given its standard
     /// uncertainty `sigma` (Å⁻¹), the k_max the list was built to and the coverage factor k; or the first refusal that
     /// applies (the header's order).
-    /// The decision against a kinematic list, with the k_max it was built to (Gate B on slice 3a, F7: a free k_max larger
+    /// The decision against a kinematic list, with the k_max it was built to (a free k_max larger
     /// than the list's turns the beyondKMax guard off; this overload cannot be given one).
     public static func index(q: Double, sigma: Double, in list: KinematicReflectionList,
                              coverage k: Double = defaultCoverage,
@@ -159,7 +159,7 @@ public enum RingIndexing {
         try index(q: q, sigma: sigma, in: families.map(\.family), kMax: kMax, coverage: k, minimumMargin: margin)
     }
 
-    /// The same over slice 1's rings (any list of families).
+    /// The same over DiffractoCore's rings (any list of families).
     public static func index(q: Double, sigma: Double, in families: [ReflectionFamily], kMax: Double,
                              coverage k: Double = defaultCoverage,
                              minimumMargin margin: Double = minimumMargin) throws(Refusal) -> Assignment {

@@ -2,8 +2,7 @@
 //  EllipseCalibration.swift
 //  Role: detector-ellipse calibration of a ring pattern, in detector PIXELS. The conic path matches py4DSTEM
 //        `fit_ellipse_1D`; the profile path ports `fit_ellipse_amorphous_ring`'s 11-parameter central Gaussian +
-//        asymmetric ("Janus") Gaussian ring model; `fitBestAvailable` chains them. Slice 3b of DiffractoKit
-//        (docs/registration-slice-3.md section 2).
+//        asymmetric ("Janus") Gaussian ring model; `fitBestAvailable` chains them.
 //
 //  SEED: reference commit 7d6fdbd1 `Core/Analysis/EllipseCalibration.swift` (853 lines), ported verbatim in arithmetic
 //  (every constant, every boundary, operation order): coverage 36 / 30 / 12 azimuthal bins, residual caps 0.2 / 0.4 / 0.22,
@@ -67,8 +66,7 @@ public struct EllipseCalibrationFit: Sendable, Equatable {
     public let sparseCoverage: Bool
     /// What the data say about the ring at this fit (`EllipseCalibration.ringEvidence`), attached by
     /// `fitBestAvailable(..., requireRingEvidence: true)` (and so by `RingCalibration.fit` and `fitRing`); nil from every
-    /// other call, including `fitAmorphousRing`, whose flag only governs the one-sided floor. DiffractoKit 0.1.0
-    /// (registration-0.0.4 §1.3, §1.4).
+    /// other call, including `fitAmorphousRing`, whose flag only governs the one-sided floor. DiffractoKit 0.1.0.
     public let ringEvidence: RingEvidence?
 
     // Explicit so the memberwise initializer is `public` (synthesized ones are internal).
@@ -160,14 +158,14 @@ public enum EllipseCalibration {
             sparseCoverage: fit.sparseCoverage, ringEvidence: evidence)
     }
 
-    // MARK: Impulses, scale and cancellation (DiffractoKit 0.1.0, registration-0.0.4 §1.1, §1.2, §4)
+    // MARK: Impulses, scale and cancellation (DiffractoKit 0.1.0)
     //
     // DEVIATION from the reference implementations (7d6fdbd1), on inputs their code refused or that hold an isolated impulse only:
     // - an annulus pixel outside the range of its finite in-pattern 8-neighbours (at least 3) by more than twice the
-    //   annulus's robust range (P99.5 − P0.5, nearest rank) is skipped like a non-finite pixel (slice 3b's F3: one hot
+    //   annulus's robust range (P99.5 − P0.5, nearest rank) is skipped like a non-finite pixel (one hot
     //   pixel refused a perfect ring as insufficientAngularCoverage(1));
     // - the signal test is relative (range above |maximum| × 1e-6 and at least the least normal double; the reference implementations' floor of
-    //   1 made it absolute: slice 3b's F6), and a range below 0.5 is brought into [0.5, 1) by an exact power of two
+    //   1 made it absolute), and a range below 0.5 is brought into [0.5, 1) by an exact power of two
     //   before the optimisers run, so their absolute floors act on the normalised problem (amended 2026-10-15 from
     //   "below 1 into [1, 2)": a unit ring's Float maximum lies just below 1, and that rule rescaled the parity rings).
     // A pattern without impulses and with a range of at least 0.5 runs the reference implementations' arithmetic unchanged (the parity gate).
@@ -205,12 +203,12 @@ public enum EllipseCalibration {
         dynamicRange < 0.5 ? Double(sign: .plus, exponent: -dynamicRange.exponent - 1, significand: 1) : 1
     }
 
-    /// The relative signal test (registration-0.0.4 §1.2).
+    /// The relative signal test.
     static func hasSignal(dynamicRange: Double, maximum: Double, relative: Double = 1e-6) -> Bool {
         dynamicRange.isFinite && dynamicRange >= .leastNormalMagnitude && dynamicRange > abs(maximum) * relative
     }
 
-    /// Throws `CancellationError` when the task is cancelled or the caller's closure says so (registration-0.0.4 §4).
+    /// Throws `CancellationError` when the task is cancelled or the caller's closure says so.
     static func checkCancellation(_ isCancelled: (@Sendable () -> Bool)?) throws {
         if Task.isCancelled || isCancelled?() == true { throw CancellationError() }
     }
@@ -228,7 +226,7 @@ public enum EllipseCalibration {
         }
     }
 
-    /// width × height equals the pixel count, without an Int overflow trap (Gate B on slice 3b, F5: a width of
+    /// width × height equals the pixel count, without an Int overflow trap (a width of
     /// Int.max/2 + 1 trapped in the product). DEVIATION from the reference implementations: they multiply unchecked.
     static func patternSizeIsConsistent(_ pattern: DiffractionPattern) -> Bool {
         let (count, overflow) = pattern.height.multipliedReportingOverflow(by: pattern.width)
@@ -236,7 +234,7 @@ public enum EllipseCalibration {
     }
 
     /// The outer radius is finite and at most twice the pattern's diagonal: beyond that no pixel is added, and an infinite
-    /// or huge radius trapped in `Int(...)` or allocated gigabytes of bins (Gate B on slice 3b, F4). DEVIATION from the
+    /// or huge radius trapped in `Int(...)` or allocated gigabytes of bins. DEVIATION from the
     /// apps, which check only outer > inner; no annulus inside the pattern is affected.
     static func outerRadiusIsSane(_ outerRadius: Double, _ pattern: DiffractionPattern) -> Bool {
         let diagonal = (Double(pattern.width) * Double(pattern.width) + Double(pattern.height) * Double(pattern.height)).squareRoot()
@@ -262,7 +260,7 @@ public enum EllipseCalibration {
     }
 
     /// The annulus pixels (inner < r ≤ outer when `includeOuter`, else inner < r < outer) about the start centre, row
-    /// order, finite and not an isolated impulse (registration-0.0.4 §1.1), with the impulse threshold used.
+    /// order, finite and not an isolated impulse, with the impulse threshold used.
     static func annulusPixels(_ pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
                               innerRadius: Double, outerRadius: Double, includeOuter: Bool,
                               impulseFactor: Double = 2)
@@ -321,7 +319,7 @@ public enum EllipseCalibration {
         guard hasSignal(dynamicRange: dynamicRange, maximum: maximum, relative: policy.minimumRelativeSignal) else {
             throw FitError.insufficientSignal
         }
-        // A range below 0.5 is brought into [0.5, 1) by an exact power of two (registration-0.0.4 §1.2): the conic's
+        // A range below 0.5 is brought into [0.5, 1) by an exact power of two: the conic's
         // geometry and residual are invariant, and its absolute floors then act on the normalised problem.
         let scale = normalisingScale(dynamicRange)
         if scale != 1 {
@@ -344,7 +342,7 @@ public enum EllipseCalibration {
         //
         // WHY FIVE SIXTHS AND NOT A THIRD (2026-09-14). A third was written to
         // stop "a plausible conic from four peaks", and it does. It does not
-        // stop one from several GRAINS: on the demo cube the owner's fit
+        // stop one from several GRAINS: on the demo cube one fit
         // reported a = 43.68, b = 39.72 — 10 % distortion — on a detector that
         // is isotropic by construction, because grains at different radii in
         // different azimuthal sectors let one ellipse thread through them.
@@ -367,7 +365,7 @@ public enum EllipseCalibration {
         // distortion measured from the arrangement of three grains can no
         // longer reach a strain map.
         //
-        // THE ANYWAY PATH (2026-09-15). The owner decided a caller may assert,
+        // THE ANYWAY PATH (2026-09-15). A caller may assert,
         // per annulus, "this holds exactly one ring" (`acceptSparseCoverage`)
         // and get the fit anyway, MARKED `sparseCoverage`. That re-admits the
         // legitimate sparse case the bound above costs, down to a restored
@@ -581,7 +579,7 @@ public enum EllipseCalibration {
             acceptSparseCoverage: acceptSparseCoverage,
             requireRingEvidence: requireRingEvidence, span: span.sub(0, 0.97), isCancelled: isCancelled, policy: policy)
         guard requireRingEvidence else { span(1); return fit }
-        // DiffractoKit 0.1.0 (registration-0.0.4 §1.4): what the data say about the ring at the fit that is returned.
+        // DiffractoKit 0.1.0: what the data say about the ring at the fit that is returned.
         try checkCancellation(isCancelled)
         let evidence = ringEvidence(pattern: pattern, fit: fit, centerQX: centerQX, centerQY: centerQY,
                                     innerRadius: innerRadius, outerRadius: outerRadius, policy: policy.evidence,
@@ -683,7 +681,7 @@ public enum EllipseCalibration {
         let annulus = annulusPixels(pattern, centerQX: centerQX, centerQY: centerQY, innerRadius: innerRadius,
                                     outerRadius: outerRadius, includeOuter: false,
                                     impulseFactor: policy.impulseRangeFactor)
-        // The global maximum skips isolated impulses too (registration-0.0.4 §1.1); a pixel is tested only when it would
+        // The global maximum skips isolated impulses too; a pixel is tested only when it would
         // raise the maximum, so a pattern without impulses gives the reference implementations' maximum.
         for (index, value) in pattern.pixels.enumerated() where value.isFinite {
             let v = Double(value)
@@ -906,7 +904,7 @@ public enum EllipseCalibration {
             // A ring sigma within 0.05 px of its 0.25 px floor is a fit that drained the ring into
             // the background and the central Gaussian: a, b and the centre then
             // carry no ring information (`archive/v5/ring-fit-two-start-gateD-2026-10-14.md`).
-            // DiffractoKit 0.1.0 (registration-0.0.4 §1.5, slice 3b's F7): with `requireRingEvidence`, ONE sigma at the
+            // DiffractoKit 0.1.0: with `requireRingEvidence`, ONE sigma at the
             // floor is a sharp edge when the data hold the ring at this fit (its ring evidence passes); both at the
             // floor is still refused.
             let floorBound = policy.ringWidthFloor + policy.ringWidthFloorTolerance
@@ -919,7 +917,7 @@ public enum EllipseCalibration {
 
         /// The fit from refined parameters. A fit with one ring sigma at the floor (only with `requireRingEvidence`) is
         /// kept when its ring evidence passes, after one more refinement with that floor lowered to 0.01 px, so a ring
-        /// edge sharper than 0.25 px does not bias the radius (registration-0.0.4 §1.5, amended).
+        /// edge sharper than 0.25 px does not bias the radius.
         func accept(_ refined: [Double], residual refinedResidual: Double, oneSidedFloor: Bool,
                     progress: ProgressSpan) throws -> EllipseCalibrationFit {
             var parameters = refined, residual = refinedResidual

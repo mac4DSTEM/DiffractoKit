@@ -1,6 +1,6 @@
 //
 //  RingOverlay.swift
-//  Ported from macTEM `TEMCore/Diffraction/RingOverlay.swift` (the app's source is the oracle; pins in P22). The ring geometry on the image (slice 1a, R1 and R4): a fitted ring as an ellipse in IMAGE
+//  Ported from macTEM `TEMCore/Diffraction/RingOverlay.swift` (the app's source is the oracle; pins in P22). The ring geometry on the image: a fitted ring as an ellipse in IMAGE
 //        coordinates (x = column, y = row), the polyline the room draws, the predicted ring of another family scaled from the
 //        calibrating ring, and the distance of a point to an ellipse (the nearest-ring hit, and the harness's own check).
 //
@@ -57,7 +57,7 @@ public enum RingOverlay {
     }
 
     /// The ellipse of a ring of another family, predicted from the calibrating ring: the same centre, b/a and angle, both
-    /// semi-axes scaled by `radius / ring.radius` (R4). nil unless every number is finite and positive.
+    /// semi-axes scaled by `radius / ring.radius`. nil unless every number is finite and positive.
     public static func predicted(from ring: RingEllipse, radius: Double) -> RingEllipse? {
         guard radius.isFinite, radius > 0, ring.radius.isFinite, ring.radius > 0 else { return nil }
         let scale = radius / ring.radius
