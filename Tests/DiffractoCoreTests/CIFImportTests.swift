@@ -112,8 +112,7 @@ struct CIFImportTests {
     }
 
     /// One atom and the four centring translations: a legal loop that declares less than the atoms have (Laue -1 by
-    /// the loop, m-3m by the cell it builds). The structure's operations are detected from the expanded cell
-    ///; the loop is kept and is a subset of them.
+    /// the loop, m-3m by the cell it builds). The structure's operations are detected from the expanded cell; the loop is kept and is a subset of them.
     @Test func testGoldWithCentringOperationsExpandsToFourSitesAndDetectsFm3m() throws {
         let doc = try read("gold_centring_ops.cif")
         let s = doc.structure

@@ -32,8 +32,7 @@ public struct CrystalStructure: Sendable, Equatable {
         case operationsGiven
         /// Found from the sites by the holohedry test.
         case detected
-        /// A file's loop expanded the asymmetric unit, then the operations were detected from the expanded cell
-        ///; the loop is `fileOperations`.
+        /// A file's loop expanded the asymmetric unit, then the operations were detected from the expanded cell; the loop is `fileOperations`.
         case detectedAfterFileExpansion
     }
 
