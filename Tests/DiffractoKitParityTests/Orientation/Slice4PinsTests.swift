@@ -1,7 +1,6 @@
 //
 //  Slice4PinsTests.swift
-//  Role: the kit against the pins written BEFORE its code (registration docs/registration-slice-4.md, gates G2, G3, G4 and
-//        amendment 2026-10-15 15:55), read from Fixtures/slice-4-pins.json (tools/slice-4/pins.py):
+//  Role: the kit against the pins written BEFORE its code (the checks G2, G3 and G4 below), read from Fixtures/slice-4-pins.json (tools/slice-4/pins.py):
 //    G2  the reference library against py4DSTEM f050d207 (lambda -> 0) and against the NumPy float64 reference: hkl sets,
 //        |q|, the kit's q rotated by the frame map, relative intensity; before the intensity floor and the density cap
 //        (`entries`) and after both (`library`), and through `PhaseReferenceLibrary.build`.
@@ -179,14 +178,14 @@ private func report(_ gate: String, _ label: String, _ items: [(String, Double)]
 
 // MARK: - G2: the reference library against py4DSTEM and the NumPy float64 reference
 
-@Suite("Slice 4 G2: reference library vs py4DSTEM and NumPy")
+@Suite("Orientation pins G2: reference library vs py4DSTEM and NumPy")
 struct Slice4G2Tests {
-    // The registered bars (amendment 2026-10-15 15:55, 1).
-    static let qTolerance = 1e-7               // D17 (was 1e-12); |q| and the rotated q against py4DSTEM, Å⁻¹
+    // The stated bars.
+    static let qTolerance = 1e-7               // the reference's tolerance (was 1e-12); |q| and the rotated q against py4DSTEM, Å⁻¹
     static let intensityVsPy4DSTEM = 5e-5      // relative (py4DSTEM holds |F|² in complex64)
     static let intensityVsNumPy = 1e-12        // relative, against the float64 reference
 
-    /// Axes where a reflection far below the floor exceeds the registered 1e-12 against the float64 reference.
+    /// Axes where a reflection far below the floor exceeds the stated 1e-12 against the float64 reference.
     static let weakReflectionCases: Set<String> = ["theta_prime_Al2Cu [0 1 1]"]
 
     /// Every excited reflection, before the intensity floor and the density cap.
@@ -212,7 +211,7 @@ struct Slice4G2Tests {
         #expect(dn <= 1e-7, "n differs from the pin by \(dn)")
         #expect(d1 <= 1e-7, "e1 differs from the pin by \(d1)")
         #expect(d2 <= 1e-7, "e2 differs from the pin by \(d2)")
-        // The pinned frame map is a rotation of the plane (det +1), the registered conversion for a reader of py4DSTEM.
+        // The pinned frame map is a rotation of the plane (det +1), the stated conversion for a reader of py4DSTEM.
         let m = z.frameMap
         #expect(m.handedness == "rotation")
         let c0 = cos(m.phiPyRad), s0 = sin(m.phiPyRad)
@@ -264,9 +263,9 @@ struct Slice4G2Tests {
         #expect(wRot <= Self.qTolerance, "rotated q vs py4DSTEM \(wRot)")
         #expect(wIpy <= Self.intensityVsPy4DSTEM, "relative intensity vs py4DSTEM \(wIpy)")
         if Self.weakReflectionCases.contains(c.name) {
-            // FINDING (see the report): the registered 1e-12 is exceeded on a reflection far below the intensity floor,
+            // FINDING: the stated 1e-12 is exceeded on a reflection far below the intensity floor,
             // where |F|² is a small difference of large terms. The same axis passes after the floor (next test).
-            withKnownIssue("relative intensity of a sub-floor reflection vs NumPy float64 exceeds the registered 1e-12") {
+            withKnownIssue("relative intensity of a sub-floor reflection vs NumPy float64 exceeds the stated 1e-12") {
                 #expect(wInp <= Self.intensityVsNumPy, "relative intensity vs NumPy \(wInp) at \(worstNumPyHKL)")
             }
             #expect(wInp <= 1e-9, "the excess is bounded (a parity row, not a gate): \(wInp)")
@@ -333,7 +332,7 @@ struct Slice4G2Tests {
             var byHKL: [HKL: [Double]] = [:]
             for r in z.library { byHKL[HKL(h: Int(r[0]), k: Int(r[1]), l: Int(r[2]))] = r }
             #expect(entries[0].vectors.count == z.library.count)
-            // Entry k: the pinned vectors rotated by theta_k = k 2pi/N (the registered definition).
+            // Entry k: the pinned vectors rotated by theta_k = k 2pi/N (the stated definition).
             for k in [0, 1, 7, 90, 179] {
                 let theta = Double(k) * (2 * Double.pi / 180)
                 #expect(entries[k].inPlaneRotationRad == theta)
@@ -385,12 +384,12 @@ private enum EulerGroup: String, CaseIterable, Sendable, CustomTestStringConvert
     }
 }
 
-@Suite("Slice 4 G3: Euler angles, matrices and the frame vs SciPy")
+@Suite("Orientation pins G3: Euler angles, matrices and the frame vs SciPy")
 struct Slice4G3Tests {
     static let matrixTolerance = 2e-7           // the round trip, and the cases where the two gimbal rules differ
     static let exactMatrixTolerance = 1e-12     // from_euler on the same angles
 
-    @Test("the pin sets are the registered ones: 1000 random, the gimbal ladder, 37 py4DSTEM matrices")
+    @Test("the pin sets are the stated ones: 1000 random, the gimbal ladder, 37 py4DSTEM matrices")
     func pinCounts() {
         #expect(S4.pins.euler.random.count == 1000)
         #expect(S4.pins.euler.gimbal.count == 48)
@@ -412,17 +411,17 @@ struct Slice4G3Tests {
         "gimbal-Phi=1e-7-phi1=-2.5-phi2=2.0",
         "gimbal-Phi=1e-6-phi1=0.7-phi2=-1.1", "gimbal-Phi=1e-6-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-6-phi1=3.0-phi2=3.0",
         "gimbal-Phi=1e-5-phi1=0.7-phi2=-1.1", "gimbal-Phi=1e-5-phi1=-2.5-phi2=2.0",
-        // Since the gimbal fix (amendment 16:26) these fold into phi1 as SciPy does; only Phi's acos precision is left.
+        // Since the gimbal fix (2026-10-15) these fold into phi1 as SciPy does; only Phi's acos precision is left.
         "gimbal-Phi=0-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-9-phi1=-2.5-phi2=2.0", "gimbal-Phi=1e-10-phi1=-2.5-phi2=2.0",
         "gimbal-Phi=5e-9-phi1=-2.5-phi2=2.0",
     ]
-    /// FINDING 2 (the lock is not detected): the registered lock |sin Phi| <= 1e-8 is applied to Phi = acos(R22), whose
+    /// FINDING 2 (the lock is not detected): the stated lock |sin Phi| <= 1e-8 is applied to Phi = acos(R22), whose
     /// smallest non-zero value is 1.49e-8 (R22 = 1 - 2^-53), so a rotation at Phi = 0, pi or within 1e-8 of them is locked
     /// only when R22 is exactly +-1. Otherwise the unlocked formula is used: a valid but different split of the same
     /// rotation (phi1, phi2 as generated, Phi 1.5e-8), where SciPy puts everything in phi1. One row loses the rotation.
-    /// Fixed (amendment 16:26): the general branch now also needs R20, R21 to carry the angle, so every such row is locked.
+    /// Fixed (2026-10-15): the general branch now also needs R20, R21 to carry the angle, so every such row is locked.
     static let lockNotDetectedRows: Set<String> = []
-    /// The one random rotation whose round trip exceeds the registered 2e-7 (2.10e-7): three Float roundings.
+    /// The one random rotation whose round trip exceeds the stated 2e-7 (2.10e-7): three Float roundings.
     static let floatRoundTripRow = "random-579"
 
     @Test("M -> angles equal SciPy's after Float rounding (rtol 1e-7 + atol 1e-12, modulo 2π); where the two gimbal rules differ, the rotation matrix within 2e-7; the two findings are pinned as known issues",
@@ -436,7 +435,7 @@ struct Slice4G3Tests {
         for row in group.rows {
             let e = EulerAngles(py4DSTEMOrientationMatrix: mat3(row.M))
             if row.rulesAgree == false {
-                // Amendment 3: SciPy locks below ~1e-7, the source at |sin Phi| <= 1e-8: the same rotation, split differently.
+                // SciPy locks below ~1e-7, the source at |sin Phi| <= 1e-8: the same rotation, split differently.
                 let d = maxAbsDiff(e.crystalToLabMatrix, mat3(row.crystalToLab))
                 worstMatrix = max(worstMatrix, d)
                 matrixChecked += 1
@@ -447,7 +446,7 @@ struct Slice4G3Tests {
             var bad: [Int] = []
             for i in 0..<3 {
                 let pinned = row.angles[i]
-                // D17: SciPy's assert_allclose defaults (rtol 1e-7, atol 1e-12); the Float storage rounds by at most 6e-8 relative.
+                // SciPy's assert_allclose defaults (rtol 1e-7, atol 1e-12); the Float storage rounds by at most 6e-8 relative.
                 let tolerance = 1e-7 * abs(pinned) + 1e-12
                 let d = circularDifference(kit[i], pinned)
                 if Self.phiPrecisionRows.contains(row.label) && i == 1 { worstPhi = max(worstPhi, d) } else {
@@ -466,7 +465,7 @@ struct Slice4G3Tests {
                note: "phi_only_known=\(phiOnly.count) lock_missed_known=\(lockMissed.count)")
         #expect(failures.isEmpty, "\(failures.count) failures, first: \(failures.prefix(6))")
         if group == .gimbal { #expect(matrixChecked == 11) } else { #expect(matrixChecked == 0) }
-        // The known rows are exactly the registered list: a row that starts to pass, or a new one that fails, is a change.
+        // The known rows are exactly the stated list: a row that starts to pass, or a new one that fails, is a change.
         if group == .gimbal {
             withKnownIssue("Phi = acos(R22) misses SciPy's Phi by more than rtol 1e-7 + atol 1e-12 for Phi <= 1e-5") {
                 #expect(phiOnly.isEmpty)
@@ -521,7 +520,7 @@ struct Slice4G3Tests {
                 else { failures.append("\(row.label): \(d)") }
             }
             // The rigorous Float bound: each matrix entry is 1-Lipschitz in each angle, so rounding three angles to Float
-            // moves it by at most the sum of half ulps (+1e-12 for the double arithmetic, + Phi's conditioning below). (The Phi = 0 row that lost its rotation before amendment 16:26 is held to it too.)
+            // moves it by at most the sum of half ulps (+1e-12 for the double arithmetic, + Phi's conditioning below). (The Phi = 0 row that lost its rotation before the gimbal fix is held to it too.)
             // Phi = acos(R22) also carries its own conditioning error, about 2.3e-16 / sin Phi, capped by the resolution of
             // R22 near 1 (the acos of 1 - 2^-53 is 1.49e-8): allowed for here, it is finding 1.
             let sinPhi = abs(sin(Double(e.Phi)))
@@ -541,7 +540,7 @@ struct Slice4G3Tests {
         }
         #expect(Set(over.keys) == expected, "rows over 2e-7: \(over)")
         if !expected.isEmpty {
-            withKnownIssue("registered round trip 2e-7: three Float roundings can reach 2.1e-7 (random-579); (the Phi = 0 row that lost its rotation is fixed, amendment 16:26)") {
+            withKnownIssue("stated round trip 2e-7: three Float roundings can reach 2.1e-7 (random-579); (the Phi = 0 row that lost its rotation is fixed, 2026-10-15)") {
                 #expect(over.isEmpty)
             }
         }
@@ -580,7 +579,7 @@ struct Slice4G3Tests {
 
 // MARK: - G4: the closed forms
 
-@Suite("Slice 4 G4: closed forms")
+@Suite("Orientation pins G4: closed forms")
 struct Slice4G4Tests {
     /// |a - b| <= 1e-15 |b|; exact when b is 0.
     private static func relativeDifference(_ a: Double, _ b: Double) -> Double {
@@ -710,7 +709,7 @@ struct Slice4G4Tests {
         #expect(kit.first == 0)
     }
 
-    @Test("the registered step set covers 11 and 13 (rounding differs from truncation) and 0, -1, nan, 400, 360, 0.3")
+    @Test("the stated step set covers 11 and 13 (rounding differs from truncation) and 0, -1, nan, 400, 360, 0.3")
     func stepSetIsComplete() {
         let steps = Set(S4.pins.closedForms.inPlaneSteps.cases.map(\.step))
         for s in ["11", "13", "0", "-1", "nan", "400", "360", "0.3"] { #expect(steps.contains(s), "missing step \(s)") }

@@ -1,7 +1,7 @@
 //
 //  OrientationResultTests.swift
 //  Role: the value types of an orientation result: the Euler angles in both directions, the zone-axis frame and its switch of
-//        reference axis (registration slice 4, section 4). The comparison with SciPy on 1000 seeded rotations is gate G3 and
+//        reference axis. The comparison with SciPy on 1000 seeded rotations is check G3 and
 //        lives with the pins; these are the closed forms.
 //
 
@@ -70,8 +70,8 @@ import DiffractoOrientation
 
     /// A rotation about z whose R22 rounds to 1 − 2⁻⁵³ (acos gives Φ = 1.49e-8, sin Φ above the 1e-8 threshold) while R20, R21,
     /// R02 and R12 are exactly 0: the source's general branch took atan2(0, 0) for both angles and lost the rotation (round trip
-    /// 0.479 off; the slice 4 pins' gimbal row "Φ = 0, φ1 = −2.5, φ2 = 2.0"). The kit folds it into φ1 (registration slice 4,
-    /// amendment 16:26). Mutation: the general branch taken on sin Φ alone.
+    /// 0.479 off; the orientation pins' gimbal row "Φ = 0, φ1 = −2.5, φ2 = 2.0"). The kit folds it into φ1 (fixed
+    /// 2026-10-15). Mutation: the general branch taken on sin Φ alone.
     @Test func aRotationAboutTheBeamWithR22JustBelowOneKeepsItsAngle() {
         let angle = -0.5
         let r22 = 1 - 0x1p-53

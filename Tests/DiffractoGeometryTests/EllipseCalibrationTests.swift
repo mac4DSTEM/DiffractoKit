@@ -141,7 +141,7 @@ struct EllipseCalibrationTests {
     // MARK: The annulus boundaries
 
     /// The conic's annulus is `inner < r <= outer` and the profile's `inner < r < outer` (kept for bit identity with the reference implementations).
-    On a lattice centred on a pixel the radii 10 and 20 are hit exactly by pixels such as (6, 8) and
+    /// On a lattice centred on a pixel the radii 10 and 20 are hit exactly by pixels such as (6, 8) and
     /// (12, 16), so the counts differ by exactly the pixels on the boundaries; the expected counts are worked in integers.
     /// RED UNDER: `<=` for `<` or `<` for `<=` at either outer boundary; `>=` for `>` at the inner one.
     @Test func testTheAnnulusBoundariesAreInnerExcludedAndOuterIncludedForTheConicOnly() throws {

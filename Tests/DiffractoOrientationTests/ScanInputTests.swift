@@ -1,6 +1,6 @@
 //
 //  ScanInputTests.swift
-//  Role: the scan as the kit takes it (registration slice 4, section 2.2 to 2.4): the two input forms, the refusal of a
+//  Role: the scan as the kit takes it: the two input forms, the refusal of a
 //        malformed scan, the worker count that moves no number, progress and cancellation, and the documented defaults of
 //        the two settings structs.
 //
@@ -60,7 +60,7 @@ private func sameResult(_ a: PhaseVectorResult, _ b: PhaseVectorResult) -> Bool 
         }
     }
 
-    /// Mutation 16 of the registration: the experimental vector computed in Double before the subtraction. The pixel form
+    /// Mutation: the experimental vector computed in Double before the subtraction. The pixel form
     /// subtracts the origin in Float, converts, then scales. Positions are chosen so that the Float difference is inexact
     /// (a large coordinate and a small origin), where the two orders differ.
     @Test func thePixelFormSubtractsInFloatAndTheCalibratedFormIsExact() {
@@ -108,7 +108,7 @@ private func sameResult(_ a: PhaseVectorResult, _ b: PhaseVectorResult) -> Bool 
         }
     }
 
-    /// The worker count moves no number (registration gate G1 runs 1 and 8): each position's result depends only on its
+    /// The worker count moves no number: each position's result depends only on its
     /// own vectors. Compared bit for bit, NaN scores included.
     @Test func theWorkerCountMovesNoNumber() throws {
         let library = try library()
@@ -202,7 +202,7 @@ private func sameResult(_ a: PhaseVectorResult, _ b: PhaseVectorResult) -> Bool 
         #expect(a.matrixEntryIndex == b.matrixEntryIndex)
     }
 
-    /// Registration section 3: the 24 settings and their documented defaults, and `default` is the empty initialiser.
+    /// The 24 settings and their documented defaults, and `default` is the empty initialiser.
     @Test func theDocumentedDefaultsAreTheTunedValues() {
         let v = PhaseVectorSettings.default
         #expect(v == PhaseVectorSettings())

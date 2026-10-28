@@ -1,6 +1,6 @@
 //
 //  PinsTests.swift
-//  Agreement with pymatgen (registration section 4), read from slice-1-pins.json (tools/slice-1/pins.py, run in
+//  Agreement with pymatgen, read from slice-1-pins.json (tools/slice-1/pins.py, run in
 //  ../References/python/orix before any Swift existed). Agreement is agreement, not truth; a difference is a failure of
 //  the port, never a tolerance to widen.
 //
@@ -34,7 +34,7 @@ struct PinsTests {
 
     private func assertMatrix(_ got: [SIMD3<Double>], _ want: [[Double]], scale: Double, _ name: String) {
         for i in 0..<3 { for j in 0..<3 {
-            // D17: numpy assert_allclose defaults (rtol 1e-7), with an absolute floor of 1e-12 of the matrix scale for exact zeros.
+            // numpy assert_allclose defaults (rtol 1e-7), with an absolute floor of 1e-12 of the matrix scale for exact zeros.
             #expect(abs(got[i][j] - want[i][j]) <= 1e-12 * scale + 1e-7 * abs(want[i][j]), "\(name) [\(i)][\(j)]")
         } }
     }
@@ -120,7 +120,7 @@ struct PinsTests {
                 #expect(s.operations.contains { $0.isEquivalent(to: op.operation, translationTolerance: 0.01 / max(s.cell.a, s.cell.b, s.cell.c)) }, "\(name): missing \(op.xyz)")
             }
             #expect(Set(s.laueGroup.rotations) == Set(pin.laueRotations.map { IntegerMatrix($0) }), "\(name) Laue rotations")
-            // The file's loop against the detected set (amendment 2).
+            // The file's loop against the detected set.
             #expect(s.fileOperations?.count == pin.fileOperations?.count, "\(name) file operations")
             #expect(s.fileOperationsAreSymmetries == pin.fileOperations?.subsetOfDetected, "\(name) file operations are symmetries")
             if let file = pin.fileOperations {
