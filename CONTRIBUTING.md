@@ -30,7 +30,7 @@ versions of the reference.
 - Tests use Swift Testing (`import Testing`, `@Test`, `#expect`).
 - Public API only: new types and functions are `public`, and the separate package in `tools/consumer-check` must still build.
 - Add a line to `CHANGELOG.md` for anything a user can see.
-- By contributing you agree that your contribution is licensed under GPL-3.0, like the rest of the library.
+- By contributing you agree that your contribution is licensed under GPL-3.0-only, like the rest of the library.
 
 ## Reporting issues
 
