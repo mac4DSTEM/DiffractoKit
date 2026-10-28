@@ -15,7 +15,7 @@ def per(r, name):
     for k in ("median_ms", "min_ms", "max_ms"):
         r[k] = r[k] / r["n"]
     return r
-fmt = lambda r: "nightly" if r is None or r.get("median_ms") is None else f"{r['median_ms']:.3g} ms ({r['min_ms']:.3g}-{r['max_ms']:.3g})"
+fmt = lambda r: "not measured yet" if r is None or r.get("median_ms") is None else f"{r['median_ms']:.3g} ms ({r['min_ms']:.3g}-{r['max_ms']:.3g})"
 print("| Function | Size | n | Kit | Python | Kit / Python (first Python row) |")
 print("|---|---|---|---|---|---|")
 for name in order:
