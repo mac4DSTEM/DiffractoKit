@@ -1,6 +1,6 @@
 //
 //  EllipseCalibrationTests.swift
-//  DiffractoKit slice 3b (docs/registration-slice-3.md section 3): `EllipseCalibration` on small clean patterns planted here, in
+//  `EllipseCalibration` on small clean patterns planted here, in
 //  Swift, with their truth known: the constants, the input guards, the annulus boundaries, the coverage bound and the "fit
 //  anyway" path, the one-ring check, the 0.30 px ring-width floor guard (ADR 069), the profile residual cap, a clean circle's
 //  radius on both paths, and the row / column convention on a non-square pattern. The noisy plants of the reference implementations are
@@ -9,7 +9,7 @@
 //
 //  Written for the kit (the seed has these checks only as tools/ellipse-calibration-test, a scientific harness); the numbers
 //  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equal the kit's, which
-//  EllipseAppsParityTests checks exactly, as a D12 quick check).
+//  EllipseAppsParityTests checks exactly).
 //
 //  Every test names under "RED UNDER" the production mutation that turns it red.
 //
@@ -69,7 +69,7 @@ struct EllipseCalibrationTests {
     /// 36 azimuthal bins, 30 needed by default (five sixths), 12 on the anyway path (one third); the calibration's own bounds are
     /// the same numbers (RingCalibrationTests holds them to the literals; this is the equality its header promised).
     /// RED UNDER: any of the three constants changed; the ring fit's bin count different from `RingCalibration`'s.
-    @Test func testTheBinConstantsAreTheRegisteredOnesAndEqualTheCalibrationsOwn() {
+    @Test func testTheBinConstantsAreTheDocumentedOnesAndEqualTheCalibrationsOwn() {
         #expect(EllipseCalibration.angularBinCount == 36)
         #expect(EllipseCalibration.degeneracyBoundBins == 30)
         #expect(EllipseCalibration.sparseFloorBins == 12)
@@ -140,8 +140,8 @@ struct EllipseCalibrationTests {
 
     // MARK: The annulus boundaries
 
-    /// The conic's annulus is `inner < r <= outer` and the profile's `inner < r < outer` (kept for bit identity with the reference implementations,
-    /// registration section 2). On a lattice centred on a pixel the radii 10 and 20 are hit exactly by pixels such as (6, 8) and
+    /// The conic's annulus is `inner < r <= outer` and the profile's `inner < r < outer` (kept for bit identity with the reference implementations).
+    On a lattice centred on a pixel the radii 10 and 20 are hit exactly by pixels such as (6, 8) and
     /// (12, 16), so the counts differ by exactly the pixels on the boundaries; the expected counts are worked in integers.
     /// RED UNDER: `<=` for `<` or `<` for `<=` at either outer boundary; `>=` for `>` at the inner one.
     @Test func testTheAnnulusBoundariesAreInnerExcludedAndOuterIncludedForTheConicOnly() throws {
@@ -307,7 +307,7 @@ struct EllipseCalibrationTests {
     // MARK: Truth: a clean circle
 
     /// A clean circular ring of width s about a known centre, on both paths: the conic's objective puts its radius at
-    /// R (1 + 1.75 (s/R)^2) (a property of the objective, registered in the header: +0.4375 % at R 30, s 3), the profile fit
+    /// R (1 + 1.75 (s/R)^2) (a property of the objective, in the header: +0.4375 % at R 30, s 3), the profile fit
     /// recovers R and its width s; a/b is 1 on both. Plant: the reference implementations' stop-rule ring 1 (96 px, R 30, s 3).
     /// RED UNDER: the profile model's radius taken from the conic; the profile's sigmas swapped with the central one.
     @Test func testACleanCircleGivesTheBiasedRadiusOnTheConicAndTheTrueRadiusOnTheProfile() throws {

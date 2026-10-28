@@ -1,8 +1,8 @@
 //
 //  ZoneAxisTests.swift
-//  Zone-axis primitives (registration docs/registration-slice-3.md §1 "ZoneAxis", §4 "Truth"): the 49 low-index axes by
+//  Zone-axis primitives ("ZoneAxis", "Truth"): the 49 low-index axes by
 //  value, the Cartesian axis of a cell against closed forms and the zone law, the detector basis, and the projection with
-//  the flat and the curved Ewald sphere. Source mutants (break-once): the detector-basis reference threshold, the sign of
+//  the flat and the curved Ewald sphere. Source mutations (each broken once): the detector-basis reference threshold, the sign of
 //  the curvature term, the slab test (<= to <), the Cartesian axis over the reciprocal rows.
 //
 
@@ -288,7 +288,7 @@ struct ZoneAxisTests {
     /// The DEVIATION in sign, stated and tested: py4DSTEM f050d207 writes s_g = (2 g_z - lambda |g|^2)/(2 - 2 lambda g_z) with
     /// k0 = [0, 0, -1/lambda], and its lab z is the NEGATIVE of this beam direction, so g_z = -(g . n). To first order
     /// (the denominator dropped) its s_g is then -(g . n) - lambda |g|^2 / 2, exactly the negative of this kit's s_g. A
-    /// mutant with the opposite curvature sign fails here and in testCurvedSphereAddsHalfLambdaGSquared.
+    /// mutation with the opposite curvature sign fails here and in testCurvedSphereAddsHalfLambdaGSquared.
     @Test func testCurvatureSignIsTheNegativeOfPy4DSTEMsInTheLabFrameOfTheBeam() throws {
         let s = IndexPresets.magnesium
         let n = try #require(ZoneAxis(0, 0, 1).cartesian(in: s.cell))

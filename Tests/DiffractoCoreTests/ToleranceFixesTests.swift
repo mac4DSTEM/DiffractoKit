@@ -33,7 +33,7 @@ struct ToleranceFixesTests {
         .cartesian(1e-300), .cartesian(5e-324), .cartesian(1e-10), .cartesian(1e300), .cartesian(5), .cartesian(1000),
     ]
 
-    // MARK: F5 and F6
+    // MARK: The position tolerance
 
     /// `CIFImport.read` refuses every such position tolerance with `invalidStructure` and a message naming the tolerance;
     /// none traps and none imports a structure.
@@ -129,7 +129,7 @@ struct ToleranceFixesTests {
         }
     }
 
-    // MARK: F3
+    // MARK: The metric tolerances
 
     /// A metric tolerance that is NaN, negative or infinite is read as 0 (every length and angle exactly equal): the
     /// silicon cell is still read cubic at 0 because its lengths are written equal; a cell written with a 1e-12 difference
@@ -161,7 +161,7 @@ struct ToleranceFixesTests {
     }
 }
 
-// MARK: - F8: absurd cells and the Niggli epsilon
+// MARK: - Absurd cells and the Niggli epsilon
 
 struct AbsurdCellTests {
     /// The fluorapatite file with its first cell length replaced.

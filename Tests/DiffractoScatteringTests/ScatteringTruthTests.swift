@@ -1,6 +1,6 @@
 //
 //  ScatteringTruthTests.swift
-//  Planted truth for slice 2 (registration docs/registration-slice-2.md §5), independent of every oracle: exact
+//  Planted truth for the structure factors, independent of every oracle: exact
 //  extinctions, closed forms of F, the reference implementations' ring counts after the |F| cut, the weak cut, and f_e's own shape.
 //
 
@@ -37,7 +37,7 @@ enum Presets {
                                     AtomSite(z: 29, fractional: [0, 0, 0], occupancy: 0.4)]
                   + fcc.dropFirst().map { AtomSite(z: 29, fractional: $0) })
     }
-    /// The β″ CIF exactly as the generator writes it (slice 1's fixture builder).
+    /// The β″ CIF exactly as the generator writes it (the core fixture builder).
     static var betaDoublePrime: CrystalStructure {
         let sites: [(String, String, Double, Double, Double, Double)] = [
             ("Mg1", "Mg", 0.0, 0.0, 0.0, 0.5), ("Mg2", "Mg", 0.3459, 0.0, 0.089, 1.0), ("Mg3", "Mg", 0.430, 0.0, 0.652, 0.8),
@@ -154,7 +154,7 @@ struct ScatteringTruthTests {
         #expect(dropped == [MillerIndex(3, 3, 3), MillerIndex(14, 0, 1)], "\(dropped)")
     }
 
-    /// β″ at 1.6 and 2.0 Å⁻¹: 953 and 1805 rings (the reference implementation's S2c predictions).
+    /// β″ at 1.6 and 2.0 Å⁻¹: 953 and 1805 rings (the reference implementation's predictions).
     @Test func testBetaDoublePrimeRingsAtHigherKMax() throws {
         let s = Presets.betaDoublePrime
         #expect(try s.kinematicReflections(kMax: 1.6).families.count == 953)
@@ -216,7 +216,7 @@ struct ScatteringTruthTests {
         #expect(ElectronScatteringFactors.parameters.allSatisfy { $0.count == 10 })
     }
 
-    /// Refusals: an element without a form factor, before any F; a bad cut; slice 1's k_max refusal passed through.
+    /// Refusals: an element without a form factor, before any F; a bad cut; DiffractoCore's k_max refusal passed through.
     @Test func testRefusals() throws {
         let rf = Presets.structure(.cubic(a: 4), [AtomSite(z: 104, fractional: [0, 0, 0])])
         #expect(throws: KinematicError.unsupportedElements([104])) { try rf.kinematicReflections(kMax: 1.2) }

@@ -1,6 +1,6 @@
 //
 //  EllipseTransformTests.swift
-//  DiffractoKit slice 3b: `EllipseTransform` (reference commit 7d6fdbd1 `Calibration.ellipseTransform` / `ellipseCorrectedOffset` /
+//  `EllipseTransform` (reference commit 7d6fdbd1 `Calibration.ellipseTransform` / `ellipseCorrectedOffset` /
 //  `ellipseUncorrectedOffset` / `acceptedEllipse`) against hand arithmetic, and the four `CalibrationEllipseRow29Tests` of the
 //  seed re-expressed on the kit's type (same names, same numbers; the seed's `Calibration` becomes the failable `EllipseTransform`
 //  and its static `correctedOffset`, which leaves the offset alone where the seed's `hasEllipse` was false).
