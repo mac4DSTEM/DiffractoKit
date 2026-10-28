@@ -1,8 +1,7 @@
 //
 //  PhaseReferenceLibrary.swift
 //  Role: the LIBRARY half of vector-matched phase mapping: for each phase, each sampled beam direction and each in-plane
-//        rotation, the set of reciprocal-lattice vectors that would appear in the detector plane (registration
-//        docs/registration-slice-4.md, section 1).
+//        rotation, the set of reciprocal-lattice vectors that would appear in the detector plane.
 //
 //  Method: Thronsen, Hjelen, Holmestad et al., "Studying GPB zones and precipitates in Al-Cu-Li with scanning precession
 //  electron diffraction", Ultramicroscopy 255 (2024) 113861, CC BY 4.0 (attribution in NOTICE). The method is
@@ -475,7 +474,7 @@ public struct PhaseReferenceLibrary: Sendable {
     /// of `structure` with 0 < |g| ≤ `kMaxInvAngstrom` and |F| above the default cut (`StructureFactors.defaultCut`),
     /// `g` Cartesian in Å⁻¹ without 2π and `structureFactor.intensity` = |F|².
     ///
-    /// THE ORDER (registration section 2.1). The density cap's sort and the final length sort break ties on input order,
+    /// THE ORDER. The density cap's sort and the final length sort break ties on input order,
     /// so the input order is part of the definition. The original reflection list was enumerated h, k, l ascending
     /// lexicographically, filtered, then sorted by increasing |g| with a stable sort: equal |g| (to the last bit) kept
     /// the enumeration order, so ties are ordered by (h, k, l) ASCENDING. The kit's own list orders ties within 1e-12

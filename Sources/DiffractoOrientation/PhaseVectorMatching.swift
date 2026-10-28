@@ -2,7 +2,7 @@
 //  PhaseVectorMatching.swift
 //  Role: the MATCHER half of vector-matched phase mapping: for each scan position, remove the matrix's reflections, score
 //        what survives against every candidate entry of a `PhaseReferenceLibrary`, and return a phase label, a distance, and
-//        an explicit "not indexed" (registration docs/registration-slice-4.md, section 1).
+//        an explicit "not indexed".
 //
 //  Method: Thronsen et al., Ultramicroscopy 255 (2024) 113861, CC BY 4.0 (attribution in NOTICE). The decision rule of
 //  `.knownVariants` and its two constants (direct-matrix count 1, residual cutoff 0.07 Å⁻¹) are as the paper describes them;
@@ -24,7 +24,7 @@
 //
 //  NOT SCORED AGAINST THE PUBLISHED GROUND TRUTH. Scoring this against the published ground truth of Thronsen et al. needs
 //  a ~7.4 GB download and has not been run; the verdict rules have no reference implementation (py4DSTEM's phase tool is
-//  a different method), so every number this file produces is an output of the definitions in the registration, not a
+//  a different method), so every number this file produces is an output of the definitions written in this file, not a
 //  measurement against an independent oracle.
 //
 //  THE INPUT. A scan is `[[SIMD2<Double>]]`, one array of peak positions per scan position, row-major (`scanWidth` ×
