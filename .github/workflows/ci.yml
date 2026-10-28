@@ -50,6 +50,15 @@ jobs:
         run: |
           swift build -c release --product diffracto-example
           "$(swift build -c release --show-bin-path)/diffracto-example"
+
+  post-merge:
+    name: iOS build (after merge)
+    # Not on pull requests: the free plan's macOS runners are scarce, so the extra builds run on main, tags and by hand.
+    if: github.event_name != 'pull_request'
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
       - name: Build the libraries for iOS (Simulator, not run)
         run: xcodebuild -scheme DiffractoKit-Package -destination 'generic/platform=iOS Simulator' -quiet build
 
