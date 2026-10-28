@@ -1,4 +1,4 @@
-"""DiffractoKit slice 1: the pin generator (registration docs/registration-slice-1.md, sections 3, 4, 5.1, 5.3, amendment 8).
+"""DiffractoKit slice 1: the pin generator for cells, symmetry and reflections.
 
 Run, from any directory, with the pinned oracle:
 
@@ -8,8 +8,8 @@ It writes Tests/DiffractoCoreTests/Fixtures/slice-1-pins.json BEFORE any Swift e
 pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7) is the oracle for the cell, the expanded sites, the
 space-group number, the point-group symbol, the symmetry operations, the (h, k, l) set with |g| <= k_max and d.
 The Laue orbit, the canonical form, the absence test and the families are NOT pymatgen functions: they are written
-here, in NumPy, from the definitions of registration section 3 (3.5, 3.6, 3.8, 3.9), not from any Swift.
-Agreement with pymatgen is agreement, not truth; truth is registration section 5 (closed forms are checked below too).
+here, in NumPy, from the definitions in the comments below, not from any Swift.
+Agreement with pymatgen is agreement, not truth; truth is the closed forms and planted structures checked below.
 
 File:line pins into the pymatgen-core clone (References/pymatgen-core-ae9a834/src/pymatgen/):
   core/lattice.py       Lattice.from_parameters (vesta=True branch) 389-445, metric_tensor 206, volume 182,
@@ -52,14 +52,14 @@ OUT = os.path.join(FIXTURES, "slice-1-pins.json")
 # ----------------------------------------------------------------------------------------------------------------
 # The registered constants
 # ----------------------------------------------------------------------------------------------------------------
-K_MAX = 1.2                 # Angstrom^-1 (registration 4)
+K_MAX = 1.2                 # Angstrom^-1
 EXTRA_K_MAX = (1.6, 2.0)    # beta'' only, counts only
-FAMILY_TOL = 1e-9           # registration 3.9
-TIE_TOL = 1e-12             # registration 3.8: equal |g| within 1e-12 relative
-SYMPREC = 1e-4              # registration 2 / 4
+FAMILY_TOL = 1e-9           # the ring rule: a reflection joins while g <= g0 (1 + 1e-9)
+TIE_TOL = 1e-12             # equal |g| within 1e-12 relative
+SYMPREC = 1e-4              # spglib's symprec, Angstrom
 ORBIT_ITEMS = 24            # reflections per structure that carry their "orbit" in the pins (canonical is on every item)
-ABSENCE_TOL = 1e-9          # registration 3.8: (h k l) . t an integer within 1e-9
-HEX_AXES_CLASSES = ("-3", "-3m", "6/m", "6/mmm")   # registration 3.6: four Miller-Bravais indices
+ABSENCE_TOL = 1e-9          # (h k l) . t an integer within 1e-9
+HEX_AXES_CLASSES = ("-3", "-3m", "6/m", "6/mmm")   # four Miller-Bravais indices
 
 # The 32 -> 11 table. Keys are spglib/pymatgen point-group symbols.
 LAUE_OF_POINT_GROUP = {
@@ -76,7 +76,7 @@ LAUE_OF_POINT_GROUP = {
     "432": "m-3m", "-43m": "m-3m", "m-3m": "m-3m",
 }
 
-# Cell contents the registration (5.3) states, per fixture (the cell content the file's formula states).
+# Cell contents stated before the run, per fixture (the cell content the file's formula states).
 EXPECTED_SITES = {
     "beta_double_prime": 22, "beta_double_prime_P1": 22,
     "gold_P1": 4, "gold_centring_ops": 4, "silicon_Fd-3m": 8, "magnesium_P63mmc": 2,
@@ -85,7 +85,7 @@ EXPECTED_SITES = {
     # extras beyond the 5.3 list
     "magnesium_P63mmc_24ops": 2, "tetragonal_a_equals_c_4ops": 5, "alpha_quartz_P3221_as_seeded": 12, "pyrite_Pa-3_as_seeded": 8,
 }
-# Fixtures in the order of registration 5.3 (monoclinic first), then the extras.
+# Fixtures in the planted-truth order (monoclinic first), then the extras.
 FIXTURE_ORDER = [
     "gold_P1", "gold_centring_ops", "silicon_Fd-3m", "magnesium_P63mmc", "rocksalt_Fm-3m_192ops",
     "alpha_quartz_P3221", "calcite_R-3c_hex", "fluorapatite_P63m", "pyrite_Pa-3", "ws2_2H", "cdi2_P-3m1",
@@ -93,7 +93,7 @@ FIXTURE_ORDER = [
     "magnesium_P63mmc_24ops", "tetragonal_a_equals_c_4ops", "alpha_quartz_P3221_as_seeded", "pyrite_Pa-3_as_seeded",
 ]
 
-# Registration 5.1: the seven parameter cells (monoclinic first).
+# The seven parameter cells (monoclinic first).
 PARAMETER_CELLS = [
     ("monoclinic", (15.16, 4.05, 6.74, 90.0, 105.3, 90.0)),
     ("cubic", (4.0, 4.0, 4.0, 90.0, 90.0, 90.0)),
@@ -119,7 +119,7 @@ def check(name, ok, detail=""):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Lattice (registration 3.1)
+# Lattice
 # ----------------------------------------------------------------------------------------------------------------
 def lattice_block(a, b, c, alpha, beta, gamma):
     """pymatgen's vesta=True lattice (a along x, b in xy) and everything the pin file records about it."""
@@ -134,13 +134,13 @@ def lattice_block(a, b, c, alpha, beta, gamma):
     check(f"{tag}: a along x, b in xy", abs(A[0, 1]) == 0 and abs(A[0, 2]) == 0 and abs(A[1, 2]) == 0)
     # reciprocal rows: a_i . b_j = delta_ij
     check(f"{tag}: a_i . b_j = delta_ij", np.allclose(A @ B.T, np.eye(3), rtol=0, atol=1e-12))
-    # registration 3.1: B = G^-1 A and G = A A^T
+    # B = G^-1 A and G = A A^T
     check(f"{tag}: B = G^-1 A", np.allclose(B, np.linalg.inv(G) @ A, rtol=0, atol=1e-12))
     # volume: |det A| equals the closed form to 1e-12 relative
     ca, cb, cg = (math.cos(math.radians(x)) for x in (alpha, beta, gamma))
     v_closed = a * b * c * math.sqrt(1 - ca * ca - cb * cb - cg * cg + 2 * ca * cb * cg)
     check(f"{tag}: volume closed form", abs(V - v_closed) <= 1e-12 * v_closed, f"{V} {v_closed}")
-    # registration 3.1's third row
+    # the third row of A
     sg = math.sin(math.radians(gamma))
     a3 = np.array([c * cb, -c * (cb * cg - ca) / sg, V / (a * b * sg)])
     check(f"{tag}: third lattice row closed form", np.allclose(A[2], a3, rtol=0, atol=1e-12 * max(a, b, c)))
@@ -154,7 +154,7 @@ def g_vectors(H, B):
 
 
 def hkl_range_table(L, B, lo=-3, hi=3):
-    """Every h, k, l in lo..hi except 0,0,0 with |g| and d (registration 5.1)."""
+    """Every h, k, l in lo..hi except 0,0,0 with |g| and d."""
     H = np.array([h for h in itertools.product(range(lo, hi + 1), repeat=3) if h != (0, 0, 0)], dtype=np.int64)
     _, g = g_vectors(H, B)
     d = 1.0 / g
@@ -219,7 +219,7 @@ def check_truth_5_1(system, params, table):
 
 
 def check_monoclinic_anchors(table):
-    # macTEM S2c hand anchors, registration 5.1 (5-6 significant digits as written there)
+    # macTEM's hand anchors (5-6 significant digits as written there)
     want = {(2, 0, 0): 7.31135, (0, 0, 1): 6.50112, (0, 2, 0): 2.025, (1, 1, 0): 3.90306,
             (2, 0, 1): 4.32457, (2, 0, -1): 5.65554}
     by = {tuple(e["hkl"]): e["d"] for e in table}
@@ -228,7 +228,7 @@ def check_monoclinic_anchors(table):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Symmetry: operations, Laue group, Laue class (registration 3.3, 3.5)
+# Symmetry: operations, Laue group, Laue class
 # ----------------------------------------------------------------------------------------------------------------
 I3 = np.eye(3, dtype=np.int64)
 
@@ -318,7 +318,7 @@ def check_group_closed(name, Rs):
 
 
 def laue_class_from_group(Rs, proper_only=True):
-    """Registration 3.5: by the order and the axis orders present. 'A 4-fold / a 6-fold' is read as a PROPER rotation
+    """By the order and the axis orders present. 'A 4-fold / a 6-fold' is read as a PROPER rotation
     (det +1) of that order; read over every element (improper ones included) the table fails, because -3 has order 6
     (see the report): proper_only=False reproduces the literal reading for the diagnostic."""
     n = len(Rs)
@@ -347,7 +347,7 @@ def laue_class_from_group(Rs, proper_only=True):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Reflections (registration 3.6, 3.8, 3.9)
+# Reflections
 # ----------------------------------------------------------------------------------------------------------------
 def enumerate_hkl(L, A, B, kmax):
     """pymatgen's get_points_in_sphere on the crystallographic reciprocal lattice, cross-checked against a brute-force
@@ -415,7 +415,7 @@ class OrbitCache:
 
 
 def allowed_flags(H, Rs, ts):
-    """Registration 3.8: absent iff some operation has (hkl) R == (hkl) and (hkl) . t not an integer within 1e-9."""
+    """Absent iff some operation has (hkl) R == (hkl) and (hkl) . t not an integer within 1e-9."""
     HR = np.einsum("mi,nij->mnj", H, Rs)
     fixed = np.all(HR == H[:, None, :], axis=2)
     dot = H.astype(float) @ np.asarray(ts, dtype=float).T
@@ -431,7 +431,7 @@ def orbit_name(c, hex_axes):
 
 
 def build_families(seq, cache, hex_axes):
-    """seq: [(hkl tuple, g)] already in sweep order. Registration 3.9."""
+    """seq: [(hkl tuple, g)] already in sweep order."""
     fams = []
     cur = []
     g0 = None
@@ -578,7 +578,7 @@ def check_truth_5_3(name, entry):
         check("5.3 pyrite: 12 sites, m-3 (not m-3m), 205", entry["laue_class"] == "m-3" and entry["space_group_number"] == 205)
         fa = entry["families_all"]
         # the two orbits of the (2 1 0) ring under m-3 have canonical forms (2 1 0) and (2 0 1) by 3.6's key (the cyclic
-        # permutation carries (1 2 0) to (2 0 1)); the registration's prose calls them {2 1 0} and {1 2 0}
+        # permutation carries (1 2 0) to (2 0 1)); the prose of the prediction calls them {2 1 0} and {1 2 0}
         fam_all = [n for n in fa["first_names"] if n == "{2 1 0} + {2 0 1}"]
         check("5.3 pyrite: the (2 1 0) ring is two orbits of 12 on the full list", len(fam_all) == 1, f"{fa['first_names']}")
     if name == "ws2_2H":

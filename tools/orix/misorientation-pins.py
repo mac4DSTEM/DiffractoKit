@@ -1,4 +1,4 @@
-"""orix Misorientation / Orientation pins (DiffractoKit 0.10.0, ROADMAP task 35).
+"""orix Misorientation / Orientation pins (DiffractoKit 0.10.0).
 
   ../References/python/orix/bin/python -I -B tools/orix/misorientation-pins.py
 
