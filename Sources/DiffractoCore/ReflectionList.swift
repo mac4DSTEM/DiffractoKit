@@ -3,7 +3,7 @@
 //  Role: every (h, k, l) with 0 < |g| ≤ k_max, its d, whether the space-group operations allow it, and the rings
 //        (families) the list falls into. The enumeration is reference commit 7448401b `Crystal.reflections` without the
 //        structure factor (the per-axis index bound, DEVIATION of 2026-09-14, complete for oblique cells); the absence
-//        rule is registration 3.8; the family rule is reference commit a58c84c `DSpacingIndexing.families` (ADR 022), 3.9.
+//        rule is the general reflection condition; the family rule is reference commit a58c84c `DSpacingIndexing.families`.
 //
 
 import Foundation
@@ -12,7 +12,7 @@ import simd
 public enum ReflectionListError: Error, Equatable, Sendable, CustomStringConvertible {
     /// k_max must be finite, positive and at most `ReflectionList.maximumKMax` Å⁻¹. (A reflection with |g| equal to k_max
     /// is in or out by the last bit of |g|, which can differ by one ulp between two settings of the same lattice: the
-    /// lists of a file's cell and of its conventional cell may differ by such a reflection; Gate B on 4876b18.)
+    /// lists of a file's cell and of its conventional cell may differ by such a reflection.)
     case invalidKMax(Double)
     /// The cell is not a valid lattice (`UnitCell.issues`), or so large that the list would exceed
     /// `ReflectionList.maximumReflections` (about (4/3)π k_max³ V reflections; 255 bytes each).
@@ -33,7 +33,7 @@ public enum ReflectionListError: Error, Equatable, Sendable, CustomStringConvert
     }
 }
 
-/// `localizedDescription` (what an app shows) is the same text as `description` (registration 0.0.4 section 5).
+/// `localizedDescription` (what an app shows) is the same text as `description`.
 extension ReflectionListError: LocalizedError {
     public var errorDescription: String? { description }
 }
@@ -135,7 +135,7 @@ public struct ReflectionList: Sendable, Equatable {
     /// above it the list is refused, never trapped.
     public static let maximumReflections = 10_000_000
     /// The most (h, k, l) the enumeration box may hold: a needle-shaped cell has few reflections by volume but a long box
-    /// (Gate B on slice 2: a = 1e7, b = c = 1e-3 Å passed the volume estimate and enumerated 24 million).
+    /// (a = 1e7, b = c = 1e-3 Å passed the volume estimate and enumerated 24 million).
     public static let maximumEnumeration = 100_000_000
 
     public let kMax: Double
@@ -149,7 +149,7 @@ public struct ReflectionList: Sendable, Equatable {
 
     /// Whether orbit names print four Miller–Bravais indices: a hexagonal-axes Laue class (-3, -3m, 6/m, 6/mmm) in a
     /// cell whose metric is hexagonal (a = b, γ = 120°). A trigonal structure in rhombohedral axes keeps three
-    /// indices (Gate B amendment, 2026-10-15).
+    /// indices.
     public let usesMillerBravais: Bool
 
     /// The list for `cell` with the absences of `operations` and the orbits of `laueGroup`.
@@ -211,11 +211,10 @@ public struct ReflectionList: Sendable, Equatable {
         }
     }
 
-    /// The general reflection condition (registration 3.8): absent when an operation (R, t) with (h k l) R = (h k l)
+    /// The general reflection condition: absent when an operation (R, t) with (h k l) R = (h k l)
     /// has (h k l) · t further than 1e-9 from an integer. For such an operation h · t does not depend on the origin,
     /// and a detected translation is the least-squares one, whose rounding error (ē − R ē, ē the sites' mean rounding)
-    /// has h · (ē − R ē) = 0 exactly when h R = h: so a shifted or coarsely written cell gives the exact answer
-    /// (Gate B amendment, 2026-10-15).
+    /// has h · (ē − R ē) = 0 exactly when h R = h: so a shifted or coarsely written cell gives the exact answer.
     public static func isAllowed(_ hkl: MillerIndex, by operations: [SymmetryOperation],
                                  tolerance: Double = 1e-9) -> Bool {
         let bound = tolerance.isFinite && tolerance >= 0 ? tolerance : 0
@@ -254,7 +253,7 @@ public struct ReflectionList: Sendable, Equatable {
 
     public var allowed: [Reflection] { reflections.filter(\.isAllowed) }
 
-    /// The rings (registration 3.9), on the allowed reflections by default; `allowedOnly: false` groups every
+    /// The rings, on the allowed reflections by default; `allowedOnly: false` groups every
     /// reflection of the lattice.
     public func families(allowedOnly: Bool = true) -> [ReflectionFamily] {
         ReflectionList.families(of: allowedOnly ? allowed : reflections, laueGroup: laueGroup,
@@ -262,7 +261,7 @@ public struct ReflectionList: Sendable, Equatable {
     }
 
     /// The ring rule on any reflections in the list's order (increasing |g|): a reflection joins the current ring while
-    /// |g| ≤ g₀(1 + `familyTolerance`); orbits and names by `laueGroup` (slice 2 applies it after the |F| cut).
+    /// |g| ≤ g₀(1 + `familyTolerance`); orbits and names by `laueGroup` (DiffractoScattering applies it after the |F| cut).
     public static func families(of reflections: [Reflection], laueGroup: PointSymmetry,
                                 millerBravais: Bool, familyTolerance: Double = ReflectionList.familyTolerance)
         -> [ReflectionFamily] {

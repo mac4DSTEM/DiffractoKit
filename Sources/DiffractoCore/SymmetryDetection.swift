@@ -1,8 +1,8 @@
 //
 //  SymmetryDetection.swift
 //  Role: the operations of a structure from its sites, found by testing every element of the metric's holohedry
-//        (and any rotation a file's loop names) on the sites (registration section 3.4b, amended 2026-10-14: always
-//        run, also after a file's expansion). The permutation test is reference commit 7448401b's `CIFImport.isSymmetry`
+//        (and any rotation a file's loop names) on the sites, always
+//        also after a file's expansion. The permutation test is reference commit 7448401b's `CIFImport.isSymmetry`
 //        (candidate translations from site 0 onto every compatible site, targets distinct, positions within a FIXED
 //        5e-3 fractional, occupancies within 0.02), generalised from two generators of two families to the whole
 //        holohedry of seven, and extended to keep every translation that works, so a centred cell yields its centring
@@ -10,7 +10,7 @@
 //
 //        Each translation is REFINED by least squares over the matched sites (the mean of the residuals), then taken
 //        from the file's loop when the loop has the same operation, else moved to the nearest k/24 only when it lies
-//        within three times its own uncertainty of it (Gate B amendment, 2026-10-15: a fixed 5e-3 snap moved genuine
+//        within three times its own uncertainty of it (a fixed 5e-3 snap moved genuine
 //        off-grid translations of a shifted origin and lost or merged operations).
 //
 
@@ -24,12 +24,12 @@ public enum SymmetryDetection {
     /// Occupancies are dimensionless and refined ones differ by thousandths between equivalent sites.
     public static let occupancyTolerance = 0.02
     /// Through `CrystalStructure.detectingSymmetry(conventional: true)` (the default) only the LENGTH tolerance reaches the
-    /// lattice-symmetry test that finds the cell and its Bravais lattice; the angle tolerance has no effect there (Gate B
-    /// on 4876b18, F3), and spglib's symprec corresponds to a length tolerance of about 1e-5, not 1e-9: a bcc primitive
+    /// lattice-symmetry test that finds the cell and its Bravais lattice; the angle tolerance has no effect there,
+    /// and spglib's symprec corresponds to a length tolerance of about 1e-5, not 1e-9: a bcc primitive
     /// cell written with 109.4712° is hR at the default and Im-3m from 1e-5.
-    /// The metric family is proposed at the ring rule's tolerance (1e-9 relative on lengths, 1e-9° on angles; the
-    /// registration's 3.2 default): a rotation that is a symmetry then preserves every |g| to the 1e-9 the families are
-    /// grouped by, so an orbit never splits across two rings (Gate B amendment, 2026-10-15; the reference implementations' 1e-3 / 0.05°
+    /// The metric family is proposed at the ring rule's tolerance (1e-9 relative on lengths, 1e-9° on angles):
+    /// a rotation that is a symmetry then preserves every |g| to the 1e-9 the families are
+    /// grouped by, so an orbit never splits across two rings (the reference implementations' 1e-3 / 0.05°
     /// called a cell with c/a = 1.0005 cubic and split its rings).
     public static let defaultMetricLengthTolerance = 1e-9
     public static let defaultMetricAngleToleranceDeg = 1e-9
@@ -71,20 +71,20 @@ public enum SymmetryDetection {
         }
     }
 
-    /// How two positions are called the same site (slice 1b). `.fractional(5e-3)` is slice 1's rule and the default:
+    /// How two positions are called the same site. `.fractional(5e-3)` is the default:
     /// the Euclidean distance in fractional coordinates, whatever the cell's size. `.cartesian(Å)` is spglib's sense:
     /// the minimum-image distance in Å, so a pseudo-symmetry of 0.013 Å reads as symmetry in a 50 Å cell at the
-    /// fractional default and not at `.cartesian(1e-3)`. The default stays fractional until a measured comparison is
-    /// registered.
+    /// fractional default and not at `.cartesian(1e-3)`. The default stays fractional until a measured comparison
+    /// supports a change.
     ///
     /// The Cartesian value is spglib's `symprec` in the sense that it is a distance in Å, but it is NOT the same
-    /// threshold: measured against spglib (Gate B on 4876b18, F4), an operation is kept here only while the displacement
+    /// threshold: measured against spglib, an operation is kept here only while the displacement
     /// that breaks it is below about HALF of `t`, and is lost at displacements of 0.5 to 0.9 `t`, where spglib with
     /// `symprec = t` still finds it up to 1.0 to 1.1 `t`. The set of operations is also closed under composition at this
     /// bound (`closedSubset`). Roughly, `.cartesian(2 * s)` here corresponds to spglib's symprec `s`, and the
     /// proposed `1e-3` to a symprec of about 5e-4 Å. The default is unchanged.
     ///
-    /// **The domain** (DiffractoKit 0.2.0, the Gate B findings F5 and F6). Whichever sense is used, the tolerance acts as a
+    /// **The domain** (DiffractoKit 0.2.0). Whichever sense is used, the tolerance acts as a
     /// window in fractional coordinates along each cell axis: `t` itself for `.fractional(t)`, `t` times the reciprocal axis
     /// length |bᵢ| for `.cartesian(t)`. Every window must lie in `minimumWindow` (1e-9) up to, not including,
     /// `maximumWindow` (0.5). The floor is the scale at which the cell wrap snaps a coordinate to the cell edge
@@ -136,7 +136,7 @@ public enum SymmetryDetection {
     }
 
     /// How the permutation test finds the target of an image: a cell list (bins of the position tolerance, O(1) per
-    /// image) or slice 1's scan of every site (the reference path, O(N)). They return identical operations bit for bit.
+    /// image) or the plain scan of every site (the reference path, O(N)). They return identical operations bit for bit.
     public enum Search: Sendable, Equatable {
         case cellList
         case bruteForce
@@ -253,7 +253,7 @@ public enum SymmetryDetection {
     /// The operations a space group can be made of: the set is closed under composition (mod lattice translations,
     /// within `positionTolerance`). Pseudo-symmetry within the fractional tolerance can pass single operations whose
     /// products do not pass (the reference implementations' split-atom gold: 40 operations, rotations of m-3m, not a group); an operation
-    /// that composes out of the set is dropped and the test repeated until the set is closed (2026-10-15). Sets above
+    /// that composes out of the set is dropped and the test repeated until the set is closed. Sets above
     /// `closureCheckLimit` operations are returned as found (a 500-atom symmetric supercell has 24000).
     public static let closureCheckLimit = 2048
 
@@ -348,7 +348,7 @@ public enum SymmetryDetection {
             let refined = wrapFractional(trial + mean)
             // The candidates for the final translation, best first: the file's exact one, the k/24 grid point, the
             // least-squares one, the trial. Each is RE-VERIFIED as a permutation before it is taken: moving a
-            // translation after the test is how a non-symmetry got in (found 2026-10-15 while fixing Gate B's F1).
+            // translation after the test is how a non-symmetry got in (found 2026-10-15).
             var options: [(SIMD3<Double>, Double)] = []
             if let exact = preferred.first(where: { SymmetryDetection.translationsEqual($0.translation, refined, 3 * u + 1e-9) }) {
                 options.append((exact.translationMod1, 0))
@@ -397,7 +397,7 @@ public enum SymmetryDetection {
         assignment.reserveCapacity(sites.count)
         for site in sites {
             let image = wrapFractional(rotation.apply(site.fractional) + translation)
-            // The same target slice 1 picks: the LOWEST index among the unclaimed sites that match.
+            // The same target the plain scan picks: the LOWEST index among the unclaimed sites that match.
             var target = Int.max
             index.forEachCandidate(near: image) { j in
                 if j < target, !claimed[j], sites[j].z == site.z,
@@ -411,7 +411,7 @@ public enum SymmetryDetection {
         return assignment
     }
 
-    /// Slice 1's scan of every site for every image (the CPU reference path of the cell list).
+    /// The plain scan of every site for every image (the CPU reference path of the cell list).
     static func permutationReference(_ rotation: IntegerMatrix, _ translation: SIMD3<Double>, of sites: [AtomSite],
                                      matcher: PositionMatcher,
                                      occupancyTolerance: Double = occupancyTolerance) -> [Int]? {
@@ -444,7 +444,7 @@ public enum SymmetryDetection {
     }
 }
 
-// MARK: - Position matching and the cell list (slice 1b)
+// MARK: - Position matching and the cell list
 
 /// The rule that calls two fractional positions the same site.
 struct PositionMatcher: Sendable {
@@ -479,7 +479,7 @@ struct PositionMatcher: Sendable {
     }
 
     /// Whether `a` and `b` (fractional, any image) are the same position within the tolerance. The argument order is
-    /// slice 1's: a site, then the image looked for.
+    /// the plain scan's: a site, then the image looked for.
     func matches(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Bool {
         switch tolerance {
         case .fractional(let t):

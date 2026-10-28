@@ -3,8 +3,7 @@
 //  Role: a, b, c, α, β, γ and everything the metric alone determines: the real and reciprocal lattices, the metric
 //        tensors, the volume, d(hkl) and g(hkl), the crystal family of the metric at a stated tolerance. Ported from
 //        reference commit 7448401b `Crystal.swift` (the py4DSTEM / VESTA convention: a along x, b in the xy plane; reciprocal
-//        vectors without 2π, |g| in Å⁻¹, d = 1/|g| in Å) and generalised to the seven systems; registration
-//        docs/registration-slice-1.md sections 3.1 and 3.2.
+//        vectors without 2π, |g| in Å⁻¹, d = 1/|g| in Å) and generalised to the seven systems.
 //
 
 import Foundation
@@ -146,14 +145,14 @@ public struct UnitCell: Sendable, Equatable {
             out.append(.invalidAngles)
         }
         // A cell flatter than V = 1e-6 · a b c is coplanar up to rounding (α = β = γ = 120° gives V ≈ 3e-6 Å³ for 5 Å
-        // edges, and structure factors of 1e6): refused (Gate B on slice 2, 2026-10-15).
+        // edges, and structure factors of 1e6): refused.
         if !volume.isFinite || volume <= 0 || volume < 1e-6 * a * b * c { out.append(.degenerateVolume) }
         return out
     }
 
     public var isValid: Bool { issues.isEmpty }
 
-    // MARK: The crystal family of the metric (registration 3.2)
+    // MARK: The crystal family of the metric
 
     public enum Axis: Int, Sendable, Equatable, CaseIterable {
         case a = 0, b = 1, c = 2
@@ -185,7 +184,7 @@ public struct UnitCell: Sendable, Equatable {
         let ra = angle(alphaDeg, 90), rb = angle(betaDeg, 90), rc = angle(gammaDeg, 90)
         if ab && ac && ra && rb && rc { return .cubic }
         if ab && ra && rb && angle(gammaDeg, 120) { return .hexagonal }
-        // Tetragonal about whichever axis is the odd one (registration 0.0.4 section 6): a = c ≠ b and b = c ≠ a were
+        // Tetragonal about whichever axis is the odd one: a = c ≠ b and b = c ≠ a were
         // read orthorhombic, so the 4-fold was never tested. The hexagonal 6-fold along a or b is not handled here.
         if ab && !ac && ra && rb && rc { return .tetragonal(uniqueAxis: .c) }
         if ac && !ab && ra && rb && rc { return .tetragonal(uniqueAxis: .b) }

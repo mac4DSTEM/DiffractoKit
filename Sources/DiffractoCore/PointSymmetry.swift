@@ -1,10 +1,9 @@
 //
 //  PointSymmetry.swift
 //  Role: a finite group of integer rotation matrices in the fractional basis: the holohedry of a metric, the Laue
-//        group of a structure, the orbit of a reflection and its canonical form and name. Registration
-//        docs/registration-slice-1.md sections 3.4 (the holohedry generators), 3.5 (the Laue class of a group) and 3.6
-//        (orbits: (h k l) R; the canonical form is the orbit member greatest under (number of non-negative indices,
-//        lexicographic), the one rule that reproduces the reference implementations' cubic, hexagonal and monoclinic names).
+//        group of a structure, the orbit of a reflection and its canonical form and name.
+//        Orbits are (h k l) R; the canonical form is the orbit member greatest under (number of non-negative indices,
+//        lexicographic), the one rule that reproduces the reference implementations' cubic, hexagonal and monoclinic names.
 //
 
 import Foundation
@@ -50,7 +49,7 @@ public struct PointSymmetry: Sendable, Equatable {
         PointSymmetry(rotations: rotations + rotations.map(\.negated))
     }
 
-    /// The holohedry (the full Laue group of the lattice) of a metric family (section 3.4): the conventional setting, with
+    /// The holohedry (the full Laue group of the lattice) of a metric family: the conventional setting, with
     /// the 4-fold of a tetragonal metric about its odd axis and the unique axis of a monoclinic one where the metric puts it.
     public static func holohedry(of family: UnitCell.MetricFamily) -> PointSymmetry {
         let c2x = IntegerMatrix([1, 0, 0], [0, -1, 0], [0, 0, -1])
@@ -107,7 +106,7 @@ public struct PointSymmetry: Sendable, Equatable {
     /// The proper rotations (determinant +1).
     public var properRotations: [IntegerMatrix] { rotations.filter { $0.determinant == 1 } }
 
-    /// The Laue class by the order and the axis orders present (section 3.5); nil when the group is not closed, lacks
+    /// The Laue class by the order and the axis orders present; nil when the group is not closed, lacks
     /// the inversion, or has an order no Laue group has.
     public var laueClass: LaueClass? {
         guard containsInversion, isClosed else { return nil }
@@ -126,7 +125,7 @@ public struct PointSymmetry: Sendable, Equatable {
         }
     }
 
-    // MARK: Orbits (section 3.6)
+    // MARK: Orbits
 
     /// {(h k l) R : R in the group}.
     public func orbit(of hkl: MillerIndex) -> Set<MillerIndex> {

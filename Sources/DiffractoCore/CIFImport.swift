@@ -1,11 +1,11 @@
 //
 //  CIFImport.swift
 //  Role: the subset of CIF that defines a structure (cell, the atom-site loop, the symmetry-operation loop), read into
-//        a `CrystalStructure`. Ported from reference commit 7448401b `CIFImport.swift` (registration section 3.7): the
+//        a `CrystalStructure`. Ported from reference commit 7448401b `CIFImport.swift`: the
 //        tokenizer, the `(3)` uncertainty suffix, the element symbol rule, the written-precision half-step, the
 //        expansion that merges images within the propagated half-step AND 0.10 Å, and the refusals that protect the
 //        structure. Generalised: every crystal system is admitted; a file without operations has its symmetry
-//        detected from the sites (3.4b); the two app-specific refusals (point group, scattering factor) are gone.
+//        detected from the sites; the two app-specific refusals (point group, scattering factor) are gone.
 //        Errors are user-facing: every case names the offending tag, value or symbol so a scientist can find and fix
 //        the problem in their own file.
 //
@@ -93,7 +93,7 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
     }
 }
 
-/// `localizedDescription` (what an app shows) is the same text as `description` (registration 0.0.4 section 5).
+/// `localizedDescription` (what an app shows) is the same text as `description`.
 extension CIFImportError: LocalizedError {
     public var errorDescription: String? { description }
 }
@@ -181,7 +181,7 @@ public enum CIFImport {
         let cell = UnitCell(a: parsed.a, b: parsed.b, c: parsed.c,
                             alphaDeg: parsed.alpha, betaDeg: parsed.beta, gammaDeg: parsed.gamma)
         let name = displayName(dataBlockName: parsed.dataBlockName, fileBaseName: fileBaseName)
-        // The symmetry is detected from the (expanded) cell either way (registration 3.4, amended 2026-10-14): a
+        // The symmetry is detected from the (expanded) cell either way: a
         // file's loop may declare less than its atoms have.
         let structure = CrystalStructure.detectingSymmetry(
             cell: cell, sites: parsed.sites, fileOperations: parsed.operations,
@@ -768,7 +768,7 @@ public enum CIFImport {
                     propagate(op.rotation.rows[0], site.halfStep),
                     propagate(op.rotation.rows[1], site.halfStep),
                     propagate(op.rotation.rows[2], site.halfStep))
-                // Only images of the SAME row merge (Gate B amendment, 2026-10-15): two rows on one position are two
+                // Only images of the SAME row merge: two rows on one position are two
                 // species sharing a site (Fe2+ and Fe3+ in magnetite), each with its own occupancy; at full
                 // occupancy they are refused by the close-contact rule, never silently merged.
                 let isDuplicate = kept.contains { existing in

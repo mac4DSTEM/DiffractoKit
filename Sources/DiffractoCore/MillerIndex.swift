@@ -1,10 +1,10 @@
 //
 //  MillerIndex.swift
 //  Role: (h, k, l), the integer triple that names a reflection or a lattice plane, and the integer 3 × 3 matrices the
-//        symmetry operations rotate it with. The covariant action is the one that matters here (registration section
-//        3.6): a rotation R acting on fractional coordinates as p' = R p sends the reflection (h k l) to the row
+//        symmetry operations rotate it with. The covariant action is the one that matters here:
+//        a rotation R acting on fractional coordinates as p' = R p sends the reflection (h k l) to the row
 //        vector (h k l) R, so |F| is preserved along that orbit and a reflection fixed by R is absent unless
-//        (h k l) · t is an integer (section 3.8).
+//        (h k l) · t is an integer.
 //
 
 import Foundation
@@ -32,7 +32,7 @@ public struct MillerIndex: Sendable, Hashable, Comparable, CustomStringConvertib
     }
 
     /// The row vector (h k l) times `rotation`: where a symmetry operation with that rotation part sends this
-    /// reflection (registration section 3.6).
+    /// reflection.
     public func applying(_ rotation: IntegerMatrix) -> MillerIndex {
         MillerIndex(
             h * rotation.rows[0].x + k * rotation.rows[1].x + l * rotation.rows[2].x,
@@ -48,7 +48,7 @@ public struct MillerIndex: Sendable, Hashable, Comparable, CustomStringConvertib
         Double(h) * v.x + Double(k) * v.y + Double(l) * v.z
     }
 
-    /// Of the orbit-canonical key (registration 3.6): how many indices are non-negative.
+    /// Of the orbit-canonical key: how many indices are non-negative.
     public var nonNegativeCount: Int {
         (h >= 0 ? 1 : 0) + (k >= 0 ? 1 : 0) + (l >= 0 ? 1 : 0)
     }
