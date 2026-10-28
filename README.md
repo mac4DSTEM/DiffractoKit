@@ -231,7 +231,7 @@ under "Oracles and pins" above, and `tools/*/pins.py` are the generators.
 
 ## Licence
 
-GPL-3.0 (`LICENSE`, `NOTICE`). The code is ported from earlier GPL-3.0 applications by the same author (named, with their commits, in `NOTICE`), whose
+GPL-3.0-only (`LICENSE`, `NOTICE`). The code is ported from earlier GPL-3.0 applications by the same author (named, with their commits, in `NOTICE`), whose
 lattice and reflection conventions follow py4DSTEM's `Crystal` class (GPL-3.0): the real-lattice matrix with a along x and b in
 the xy plane, reciprocal vectors without 2 pi, the per-axis index bound. The electron scattering table of
 `DiffractoScattering` is py4DSTEM's (Lobato and Van Dyck 2014), also GPL-3.0. **pymatgen** (MIT) is an oracle: cells,

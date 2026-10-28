@@ -1,4 +1,5 @@
 // swift-tools-version: 6.2
+// SPDX-License-Identifier: GPL-3.0-only
 // DiffractoKit — a crystallography and diffraction library: cells, symmetry, CIF import, d-spacings and
 // reflection orbits (DiffractoCore); scattering and structure factors (DiffractoScattering); pattern
 // geometry, calibration, camera length, zone axes and indexing (DiffractoGeometry); orientation results and Euler
