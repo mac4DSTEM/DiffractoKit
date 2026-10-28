@@ -1,10 +1,10 @@
 //
 //  StructureFactors.swift
 //  Role: kinematic structure factors F(hkl) = (1/V) Σ_sites f(Z, |g|²) · occ · exp(2πi (h x + k y + l z)) in Å⁻² (f in Å
-//        over V in Å³; py4DSTEM's and the reference implementations' "A" label names f's unit, not F's: Gate B, 2026-10-15), and the
-//        reflection list after the |F| cut with its rings (registration docs/registration-slice-2.md §1, §3.2, §3.3).
+//        over V in Å³; py4DSTEM's and the reference implementations' "A" label names f's unit, not F's), and the
+//        reflection list after the |F| cut with its rings.
 //        The loop is reference commit 7d6fdbd1's `Crystal.reflections(kMax:tolerance:)`, in the same order of operations, so
-//        the numbers can be bit identical to the reference implementations'; the enumeration and the ring rule are slice 1's.
+//        the numbers can be bit identical to the reference implementations'; the enumeration and the ring rule are DiffractoCore's.
 //
 
 import Foundation
@@ -36,7 +36,7 @@ public struct StructureFactor: Sendable, Equatable {
 public enum StructureFactors {
 
     /// The reference implementations' |F| cut-off (Å⁻²): a reflection is kept when |F| > cut. A fixed number against a quantity that scales as
-    /// 1/V: a large cell keeps fewer reflections at the same cut (registration slice 2 §7).
+    /// 1/V: a large cell keeps fewer reflections at the same cut.
     public static let defaultCut = 1e-4
 
     /// F(hkl) for `structure`, with the electron form factor unless another is given. nil when a site's element has
@@ -70,7 +70,7 @@ public enum StructureFactors {
 public enum KinematicError: Error, Equatable, Sendable, CustomStringConvertible {
     /// Atomic numbers the form factor has no entry for; checked before any F is computed.
     case unsupportedElements([Int])
-    /// Slice 1's refusal of the reflection list (k_max, or a cell too large or invalid).
+    /// DiffractoCore's refusal of the reflection list (k_max, or a cell too large or invalid).
     case reflectionList(ReflectionListError)
     /// The cut is not a finite number ≥ 0.
     case invalidCut(Double)
@@ -95,18 +95,18 @@ public enum KinematicError: Error, Equatable, Sendable, CustomStringConvertible 
     }
 }
 
-/// `localizedDescription` (what an app shows) is the same text as `description` (registration 0.0.4 section 5).
+/// `localizedDescription` (what an app shows) is the same text as `description`.
 extension KinematicError: LocalizedError {
     public var errorDescription: String? { description }
 }
 
-/// A reflection of slice 1's list with its structure factor.
+/// A reflection of DiffractoCore's list with its structure factor.
 public struct KinematicReflection: Sendable, Equatable {
     public let reflection: Reflection
     public let structureFactor: StructureFactor
 }
 
-/// A ring after the cut: slice 1's family of the kept reflections, with Σ|F|² over its members.
+/// A ring after the cut: DiffractoCore's family of the kept reflections, with Σ|F|² over its members.
 public struct KinematicFamily: Sendable, Equatable {
     public let family: ReflectionFamily
     /// Σ|F|² over the members (Å⁻⁴).
@@ -117,23 +117,23 @@ public struct KinematicFamily: Sendable, Equatable {
 public struct KinematicReflectionList: Sendable, Equatable {
     public let kMax: Double
     public let cut: Double
-    /// Every reflection of slice 1's list (allowed or absent), in its order, with F. EMPTY when the list was built with
+    /// Every reflection of DiffractoCore's list (allowed or absent), in its order, with F. EMPTY when the list was built with
     /// `retainingAll: false` (`CrystalStructure.kinematicReflections`): `kept` and `families` are then the same values.
     public let all: [KinematicReflection]
     /// |F| > cut, in the same order.
     public let kept: [KinematicReflection]
-    /// Slice 1's ring rule on `kept`.
+    /// DiffractoCore's ring rule on `kept`.
     public let families: [KinematicFamily]
 
     /// Kept reflections that the detected space-group operations forbid: their |F| is non-zero only because the sites'
     /// written coordinates break the symmetry slightly (⅓ written as 0.333 gives |F| up to 3e-4 in magnesium). The reference implementations
-    /// keep them by |F| alone and so does the list; this names them so a caller can tell (Gate B F4, 2026-10-15).
+    /// keep them by |F| alone and so does the list; this names them so a caller can tell.
     public var keptButOperationAbsent: [KinematicReflection] { kept.filter { !$0.reflection.isAllowed } }
 }
 
 extension CrystalStructure {
 
-    /// The kinematic list (registration slice 2 §1): slice 1's reflections, F by `formFactor`, the cut, the rings.
+    /// The kinematic list: DiffractoCore's reflections, F by `formFactor`, the cut, the rings.
     ///
     /// **Memory (`retainingAll`).** By default the list keeps every reflection before the cut in `all` (and the Core list
     /// it came from is held while it is built): a 30 Å cell at k_max 2.5 Å⁻¹ peaks at some hundreds of megabytes, and the
@@ -165,7 +165,7 @@ extension CrystalStructure {
             guard let f = StructureFactors.compute(r.hkl, g: r.g, sites: sites, volume: cell.volume,
                                                    formFactor: formFactor)
             else {
-                // A form factor that has no value at this g² for some element: name the elements (Gate B F3).
+                // A form factor that has no value at this g² for some element: name the elements.
                 let gSq = r.gLength * r.gLength
                 throw .unsupportedElements(Array(Set(sites.map(\.z).filter { formFactor($0, gSq) == nil })).sorted())
             }

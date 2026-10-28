@@ -1,8 +1,8 @@
 //
 //  ElectronScatteringFactors.swift
 //  Role: electron scattering factors f_e(Z, g²) by the Lobato & Van Dyck parameterisation (Acta Cryst. A70, 636–649,
-//        2014), the table py4DSTEM ships (`py4DSTEM/process/utils/scattering_factors.txt` at f050d207, sha256 be845d1d…;
-//        registration docs/registration-slice-2.md §2, §3.1). The 103 rows are reference commit 7d6fdbd1's
+//        2014), the table py4DSTEM ships (`py4DSTEM/process/utils/scattering_factors.txt` at f050d207, sha256 be845d1d…).
+//        The 103 rows are reference commit 7d6fdbd1's
 //        `ScatteringFactors.swift` table, carried by a script, not by hand; a test holds every parameter to the fetched
 //        file bit for bit.
 //
