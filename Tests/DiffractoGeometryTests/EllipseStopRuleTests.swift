@@ -3,7 +3,7 @@
 //  `EllipseCalibration.fit1D`'s Levenberg-Marquardt loop (the reference implementation 2026-10-12) once tested convergence only
 //  after an ACCEPTED step. At the optimum the cost change of a step is roundoff, every step was refused, damping grew until the
 //  candidate equalled the point, and the 100-pass cap threw `didNotConverge` on about one clean ring in seven
-//  (reference `archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`). Ported from reference commit 7d6fdbd1
+//  (measured 2026-10-12). Ported from reference commit 7d6fdbd1
 //  `EllipseStopRuleTests.swift` (one test, same name, same four rings, same bands).
 //
 //  These four rings are clean 96 x 96 plants the old rule refused (the reference implementations scanned 675 such plants, 111 of them refused, with

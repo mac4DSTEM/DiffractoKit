@@ -8,8 +8,7 @@
 //  The profile ring fit (`EllipseCalibration.fitAmorphousRing`, behind `fitBestAvailable`) is refined from py4DSTEM's start, both
 //  ring sigmas at max(1, ringWidth / 4), 10-17 px for a +-20 px annulus around a 3 px ring. On a noisy ring the 11-parameter LM
 //  from there can fall into a basin that carries no ring information, and the residual cap does not refuse it: noise inflates the
-//  normalised residual of any model (reference `archive/v5/ring-fit-two-start-gateD-2026-10-14.md`, and
-//  `archive/v5/ring-sigma-start-gateD-2026-10-13.md` for the first step). A second start at the ring's half-maximum width escapes
+//  normalised residual of any model (measured 2026-10-13 and 2026-10-14). A second start at the ring's half-maximum width escapes
 //  those basins, but alone it ends in a worse one on a 1/r^2 tail with noise. The fit therefore refines from both starts and keeps
 //  the lower-cost fit (ADR 069).
 //

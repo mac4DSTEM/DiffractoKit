@@ -147,7 +147,7 @@ public enum EllipseCalibration {
     /// That is a floor, not a correction: background and the annulus width
     /// move it, and the coefficient is the Gaussian's. A caller applies only
     /// b/a and θ (`EllipseTransform`), so a and b are not a
-    /// calibrated ring radius (`archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`).
+    /// calibrated ring radius.
     /// The fit with its ring evidence attached (DiffractoKit 0.1.0).
     static func attaching(_ evidence: RingEvidence?, to fit: EllipseCalibrationFit) -> EllipseCalibrationFit {
         EllipseCalibrationFit(
@@ -478,7 +478,7 @@ public enum EllipseCalibration {
                 // until the candidate equals the point, and with `converged`
                 // set only on an accepted step the 100-pass cap threw
                 // didNotConverge AT the optimum: 12 of 84 clean planted rings
-                // (the reference implementation's report, `docs/archive/v5/ellipse-stop-rule-gateD-2026-10-12.md`).
+                // (measured on the reference implementation, 2026-10-12).
                 // A step this small that roundoff will not let lower the cost is
                 // converged; the fit returns the last accepted point. py4DSTEM's
                 // `leastsq` (MINPACK) tests its xtol whether or not the step is
@@ -903,7 +903,7 @@ public enum EllipseCalibration {
             }
             // A ring sigma within 0.05 px of its 0.25 px floor is a fit that drained the ring into
             // the background and the central Gaussian: a, b and the centre then
-            // carry no ring information (`archive/v5/ring-fit-two-start-gateD-2026-10-14.md`).
+            // carry no ring information.
             // DiffractoKit 0.1.0: with `requireRingEvidence`, ONE sigma at the
             // floor is a sharp edge when the data hold the ring at this fit (its ring evidence passes); both at the
             // floor is still refused.
@@ -974,7 +974,7 @@ public enum EllipseCalibration {
         // (ro - ri)/4. On a noisy ring that start (10-17 px for a 3 px ring)
         // can end in a minimum with no ring information, and a start at the
         // ring's own half-maximum width can end worse on a sloping background
-        // (`archive/v5/ring-fit-two-start-gateD-2026-10-14.md`). Both are
+        // (measured 2026-10-14). Both are
         // refined and the fit with the lower cost on the same pixels is kept.
         if let ringSigma = halfMaximumRingSigma(
             values: samples.map(\.value), xs: samples.map(\.x), ys: samples.map(\.y),
