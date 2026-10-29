@@ -1,7 +1,7 @@
 // swift-tools-version: 6.2
 // DiffractoKit readme-consumer: a SEPARATE package that depends on DiffractoKit by path and compiles, from outside the
-// package, exactly the program in the README's "First ten minutes" (Sources/readme-consumer/main.swift is that code and
-// nothing else; run.sh checks it). See README.md.
+// package, exactly the program in the README's "First ten minutes" (Sources/readme-consumer is a symbolic link to the
+// kit's Examples/diffracto-example, whose main.swift is that code and nothing else; run.sh checks it). See README.md.
 import Foundation
 import PackageDescription
 
