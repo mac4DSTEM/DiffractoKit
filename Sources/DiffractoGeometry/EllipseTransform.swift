@@ -1,7 +1,7 @@
 //
 //  EllipseTransform.swift
 //  Role: the detector-distortion correction a fitted ellipse (a, b, theta) defines, applied to a detector offset, and its
-//        exact inverse. Slice 3b of DiffractoKit (docs/registration-slice-3.md section 2).
+//        exact inverse.
 //
 //  SEED: reference commit 7d6fdbd1 `Core/Data/Calibration.swift`, `hasEllipse`, `acceptedEllipse`, `ellipseTransform`,
 //  `ellipseCorrectedOffset` and `ellipseUncorrectedOffset` only (about 50 lines; none of that type's provenance machinery).

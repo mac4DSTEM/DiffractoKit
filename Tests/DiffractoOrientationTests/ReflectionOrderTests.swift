@@ -1,6 +1,6 @@
 //
 //  ReflectionOrderTests.swift
-//  Role: the order of the reflections a library is made from (registration slice 4, section 2.1). The density cap's sort and
+//  Role: the order of the reflections a library is made from. The density cap's sort and
 //        the final length sort break ties on input order, so the input order is part of the definition: it must be the
 //        order of the original reflection list (h, k, l enumerated ascending, filtered, then sorted by increasing |g| with
 //        a stable sort), not the kit's own order of equal |g| (descending h, k, l). These tests re-derive the original

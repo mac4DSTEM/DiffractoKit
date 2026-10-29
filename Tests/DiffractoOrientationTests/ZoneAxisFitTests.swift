@@ -1,7 +1,7 @@
 //
 //  ZoneAxisFitTests.swift
 //  Role: asking the data which beam direction the specimen is on: the planted-family recovery, the two nulls, the total order
-//        of the ranking (registration slice 4, gate G5).
+//        of the ranking.
 //
 
 import DiffractoKitTestSupport

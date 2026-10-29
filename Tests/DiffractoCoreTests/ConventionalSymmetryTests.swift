@@ -1,6 +1,6 @@
 //
 //  ConventionalSymmetryTests.swift
-//  Slice 1b, the symmetry of any cell setting (registration docs/registration-slice-1b.md sections 1 to 3): the
+//  The symmetry of any cell setting: the
 //  operations, Laue class, Bravais lattice and rings of every pinned structure in the file's setting and in the
 //  conventional setting, against spglib; and the planted truth (primitive fcc, bcc and β″, rutile with its 4-fold along
 //  a, magnesium with γ = 60°, corundum in rhombohedral axes, a skewed hexagonal lattice).
@@ -75,7 +75,7 @@ struct ConventionalSymmetryTests {
                 }
             }
         }
-        print("slice 1b rings: \(rings) rings compared in g and multiplicity; names compared \(namesCompared), skipped \(namesSkipped) (conventional cell differs from spglib's in parameters: \(differentCells))")
+        print("conventional rings: \(rings) rings compared in g and multiplicity; names compared \(namesCompared), skipped \(namesSkipped) (conventional cell differs from spglib's in parameters: \(differentCells))")
         #expect(namesCompared >= 1200)
     }
 
@@ -101,7 +101,7 @@ struct ConventionalSymmetryTests {
         }
     }
 
-    // MARK: Planted truth (registration section 3)
+    // MARK: Planted truth
 
     @Test func testPrimitiveCellsOfFccBccAndBetaDoublePrimeDetectTheirConventionalSymmetry() throws {
         let au = Self.named("au_fcc_primitive")
@@ -128,7 +128,7 @@ struct ConventionalSymmetryTests {
         #expect(fe.operations.count == 48 && feConv.operations.count == 96 && feConv.laueClass == .mThreeBarM && feConv.bravais == .cI)
         #expect(abs(feConv.cell.a - 2.8665) <= 1e-9 && feConv.sites.count == 2)
 
-        // β″: C-centred primitive cell, 2/m, 8 operations in the conventional cell, the registered 1448 and 419
+        // β″: C-centred primitive cell, 2/m, 8 operations in the conventional cell, the predicted 1448 and 419
         let beta = Self.named("beta_double_prime_primitive")
         let betaConv = try #require(beta.conventionalSetting)
         #expect(beta.operations.count == 4 && betaConv.operations.count == 8 && betaConv.laueClass == .twoOverM && betaConv.bravais == .mC)
@@ -172,7 +172,7 @@ struct ConventionalSymmetryTests {
         let cFirstNameWords: Int? = cRings.first.map { (f: ReflectionFamily) -> Int in f.name.split(separator: " ").count }
         let cFirstName: String? = cRings.first?.name
         #expect(cFirstNameWords == 4, "Miller-Bravais names in the hexagonal axes: \(String(describing: cFirstName))")
-        // in the rhombohedral file cell the names keep three indices (slice 1, Gate B F4)
+        // in the rhombohedral file cell the names keep three indices
         let fileRings = try corundum.reflections(kMax: 1.2).families()
         let fileFirstNameWords: Int? = fileRings.first.map { (f: ReflectionFamily) -> Int in f.name.split(separator: " ").count }
         #expect(fileFirstNameWords == 3)
@@ -186,7 +186,7 @@ struct ConventionalSymmetryTests {
     }
 
     /// A file in its conventional setting keeps its numbers and its identity transformation; `conventional: false` is
-    /// slice 1's detection in the file's cell.
+    /// the plain detection in the file's cell.
     @Test func testConventionalFalseIsSliceOnesDetectionAndConventionalFilesAreUnchanged() throws {
         for (pin, s) in Self.detected where pin.source == "slice-1" {
             let plain = CrystalStructure.detectingSymmetry(cell: pin.cell.unitCell, sites: pin.atomSites, conventional: false)
@@ -211,7 +211,7 @@ struct ConventionalSymmetryTests {
 
 extension ConventionalSymmetryTests {
     /// Two rows of one element on one position (Fe²⁺ and Fe³⁺ at 0.5 each) in a primitive fcc cell stay two sites each
-    /// in the conventional cell: 8 sites, not 4 (Gate B F2 carried into the conventional setting).
+    /// in the conventional cell: 8 sites, not 4 (carried into the conventional setting).
     @Test func testCoSitedRowsAreNotMergedByTheCentringImages() throws {
         let a = 4.0782 / 2.0.squareRoot()
         let cell = UnitCell.rhombohedral(a: a, alphaDeg: 60)

@@ -1,6 +1,6 @@
 //
 //  UnitCellTests.swift
-//  Planted truth for the cell (registration 5.1): the closed-form d of each system on rational cells, the volume by
+//  Planted truth for the cell: the closed-form d of each system on rational cells, the volume by
 //  both formulas, d by the metric and by the vector, the reciprocal rows dual to the real ones, and the metric
 //  family of each constructor. No reference code is read.
 //
@@ -59,7 +59,7 @@ struct UnitCellTests {
         }
     }
 
-    /// The textbook formulas, one per system (5.1), to 1e-12 relative. Mutants: β read from α; the per-axis tile.
+    /// The textbook formulas, one per system, to 1e-12 relative. Mutants: β read from α; the per-axis tile.
     @Test func testClosedFormDPerSystem() {
         func check(_ cell: UnitCell, _ name: String, _ oneOverDSquared: (Double, Double, Double) -> Double) {
             for hkl in Self.indices {
@@ -102,7 +102,7 @@ struct UnitCellTests {
         }
     }
 
-    /// the reference implementation's S2c hand anchors for β″ (d in Å). Mutant: β read from α (d(200) becomes a/2).
+    /// the reference implementation's hand anchors for β″ (d in Å). Mutant: β read from α (d(200) becomes a/2).
     @Test func testBetaDoublePrimeHandAnchors() {
         let cell = Fixtures.betaDoublePrimeCell
         let anchors: [(MillerIndex, Double)] = [
@@ -127,7 +127,7 @@ struct UnitCellTests {
         #expect(UnitCell.cubic(a: 4).metricFamily() == .cubic)
         #expect(UnitCell.hexagonal(a: 3, c: 5).metricFamily() == .hexagonal)
         #expect(UnitCell.tetragonal(a: 3, c: 5).metricFamily() == .tetragonal(uniqueAxis: .c))
-        // The odd axis carries the 4-fold wherever it is (registration 0.0.4 section 6).
+        // The odd axis carries the 4-fold wherever it is.
         #expect(UnitCell.orthorhombic(a: 3, b: 5, c: 3).metricFamily() == .tetragonal(uniqueAxis: .b))
         #expect(UnitCell.orthorhombic(a: 5, b: 3, c: 3).metricFamily() == .tetragonal(uniqueAxis: .a))
         #expect(UnitCell.orthorhombic(a: 3, b: 4, c: 5).metricFamily() == .orthorhombic)

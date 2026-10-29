@@ -1,9 +1,9 @@
 //
 //  RingFitAmendmentTests.swift
-//  DiffractoKit 0.1.0: the ring-fit amendment (docs/registration-0.0.4.md §1). Each slice 3b Gate B gap (registration-slice-3
-//  §7, F1, F2, F3, F6, F7) and the reference implementation's `refuse-bound` plant, on plants rendered here with fresh parameters and seeds (not
-//  the refuter's). Every test names under "RED UNDER" the production mutation that turns it red
-//  (tools/kit-0.0.4/mutants-ringfit.py).
+//  DiffractoKit 0.1.0: the ring-fit evidence. Each gap an independent review found in the ring fit (noise in a gap, things
+//  that are not one ring, isolated impulses, scale, one sharp edge) and the reference implementation's `refuse-bound`
+//  plant, on plants rendered here with fresh parameters and seeds (not the reviewer's). Every test names under
+//  "RED UNDER" the production mutation that turns it red.
 //
 //  The plant renderer: a function of (row offset, column offset) from the plant's centre, float32, rows x columns with
 //  columns fastest, plus Gaussian noise from SplitMix64 + Box-Muller (the parity renderer's generator, seeded here).
@@ -87,10 +87,10 @@ struct RingFitAmendmentTests {
 
     static func names(_ result: RingFitCalibration) -> [String] { result.refusals.map(\.name) }
 
-    // MARK: F1: noise in an angular gap
+    // MARK: Noise in an angular gap
 
     /// A ring with a 95-125 degree gap and Gaussian noise is not calibrated: the noise makes pixels in the gap bright, not a
-    /// ring at the fitted radius. Slice 3b's F1 calibrated such rings with the centre 0.7-2.7 px off and R -0.9 to -3.5 %.
+    /// ring at the fitted radius. Before 0.1.0 such rings were calibrated with the centre 0.7-2.7 px off and R -0.9 to -3.5 %.
     /// RED UNDER: the evidence's occupancy bound (alpha >= 0.5 A) dropped; the coverage refusal from the evidence removed.
     @Test(arguments: [(95.0, 0.30, UInt64(11)), (110.0, 0.25, UInt64(12)), (125.0, 0.35, UInt64(13)), (110.0, 0.40, UInt64(14))])
     func aNoisyRingWithAWideGapIsNotCalibrated(gap: Double, noise: Double, seed: UInt64) throws {
@@ -104,8 +104,8 @@ struct RingFitAmendmentTests {
 
     /// The same rings without the gap are still calibrated (the evidence does not refuse noise on a whole ring). The radius
     /// band is 1 %: at noise 0.4 of the peak the profile's radius trades against its asymmetry (σ_in 3.27, σ_out 2.76 fitted
-    /// on a symmetric 3 px ring) and reads +0.78 %, before and after 0.1.0 (registration-0.0.4 §1.8 amendment; a radius
-    /// uncertainty is the reference implementation's ask G3).
+    /// on a symmetric 3 px ring) and reads +0.78 %, before and after 0.1.0 (a radius uncertainty is an open ask of the
+    /// reference implementation).
     /// RED UNDER: the significance bound raised (alpha >= 30 SE).
     @Test(arguments: [(0.30, UInt64(11)), (0.40, UInt64(14))])
     func theSameNoisyRingWithoutAGapIsCalibrated(noise: Double, seed: UInt64) throws {
@@ -122,7 +122,7 @@ struct RingFitAmendmentTests {
 
     /// A ring whose 120 degrees hold 0.35 of its amplitude (noise-free, so every sector is significant; above the pre-fit
     /// coverage threshold of 0.2 of the range, so the fit runs) is not covered:
-    /// a sector holds the ring only at half the median amplitude (registration-0.0.4 §1.3).
+    /// a sector holds the ring only at half the median amplitude.
     /// RED UNDER: the occupancy fraction lowered from 0.5 to 0.05.
     @Test func aRingWithAWeakSectorIsNotCovered() throws {
         let pattern = Self.render { dr, dc in
@@ -162,9 +162,9 @@ struct RingFitAmendmentTests {
                 == ["notARingPeak", "ringGeometryInconsistent", "noHighTension"])
     }
 
-    // MARK: F2: things that are not one ring
+    // MARK: Things that are not one ring
 
-    /// A bright disk's blurred edge is not a ring: its profile does not fall on the inner side. Slice 3b's F2 calibrated
+    /// A bright disk's blurred edge is not a ring: its profile does not fall on the inner side. Before 0.1.0 the fit calibrated
     /// such edges at -10 to -18 %.
     /// RED UNDER: the peak test's inner drop not required.
     @Test(arguments: [1.0, 2.5])
@@ -188,7 +188,7 @@ struct RingFitAmendmentTests {
     }
 
     /// A circular ring whose intensity varies as 0.25 + 0.75 cos^2 of the azimuth (texture) is not read as an ellipse:
-    /// slice 3b's F2 read such a ring as 4.6 % ellipticity. The kit either fits it as the circle it is (b/a within 0.2 %)
+    /// before 0.1.0 the fit read such a ring as 4.6 % ellipticity. The kit either fits it as the circle it is (b/a within 0.2 %)
     /// or refuses it by name.
     /// RED UNDER: the geometry check's ellipse shift bound removed.
     @Test(arguments: [(36.0, 0.0), (36.0, 30.0), (48.0, 75.0)])
@@ -206,7 +206,7 @@ struct RingFitAmendmentTests {
         }
     }
 
-    /// Two rings closer than about twice their width are one ring to the fit (registration-0.0.4 §1.6, not claimed): the
+    /// Two rings closer than about twice their width are one ring to the fit (not claimed): the
     /// fitted radius lies between them, within the separation of the stronger. A bound, not a refusal.
     @Test(arguments: [(1.5, 0.7), (3.0, 0.7), (3.0, 1.0)])
     func twoRingsCloserThanTheirWidthAreFittedBetweenThem(separation: Double, secondAmplitude: Double) throws {
@@ -220,7 +220,7 @@ struct RingFitAmendmentTests {
         }
     }
 
-    /// A second ring inside the annulus never gives a wrong number (Gate B on the 0.1.0 candidate, F1: such fits landed on the other ring
+    /// A second ring inside the annulus never gives a wrong number (before 0.1.0 such fits landed on the other ring
     /// or between the two, 1-2.3 % off): the calibration is refused by name, or reads the intended ring within 0.3 %.
     /// Measured: at 9 px (3σ) the dip between the rings is 0.23 of the amplitude, under the 0.25 bound, and the fit reads
     /// R 44.096 (0.2 %); at 14 and 24 px it is refused as secondRingInAnnulus.
@@ -250,10 +250,10 @@ struct RingFitAmendmentTests {
         #expect(result.calibration != nil, "refused as \(Self.names(result))")
     }
 
-    // MARK: F3: isolated impulses
+    // MARK: Isolated impulses
 
     /// One hot pixel on the ring (5x, 20x, 1000x its peak) does not refuse a perfect ring, and one strongly negative pixel
-    /// does not move it: the fit equals the ring without it within 0.05 px and 0.05 %. Slice 3b's F3 refused the hot one as
+    /// does not move it: the fit equals the ring without it within 0.05 px and 0.05 %. Before 0.1.0 the fit refused the hot one as
     /// insufficientAngularCoverage(1).
     /// RED UNDER: the impulse exclusion removed; its factor raised from 2 to 2000 robust ranges.
     @Test(arguments: [5.0, 20.0, 1000.0, -5.0, -50.0])
@@ -274,13 +274,13 @@ struct RingFitAmendmentTests {
         #expect(result.calibration != nil)
     }
 
-    // MARK: F6: scale
+    // MARK: Scale
 
     /// The fit does not depend on the pattern's scale. Ranges below 0.5 run normalised into [0.5, 1) by an exact power of
     /// two, so a ring of amplitude 2^-40 gives the amplitude-2^-3 fit bit for bit; across scales (2^-40, 1e-6, 1e-3, 1e3,
     /// 1e6 against amplitude 1, background in proportion) the fit agrees within 1e-6 relative (the Float pixels round s·v
-    /// unlike v by up to 6e-8 relative, and the optimisers' step scales differ by less than 2 between the regimes;
-    /// registration amended). Slice 3b's F6 refused amplitudes of 1e-6 and below as insufficientSignal.
+    /// unlike v by up to 6e-8 relative, and the optimisers' step scales differ by less than 2 between the regimes).
+    /// Before 0.1.0 the fit refused amplitudes of 1e-6 and below as insufficientSignal.
     /// RED UNDER: the power-of-two normalisation removed (the 2^-40 case refused); the signal test made absolute again.
     @Test(arguments: [0x1p-40, 1e-6, 1e-3, 1e3, 1e6])
     func theFitDoesNotDependOnScale(scale: Double) throws {
@@ -303,10 +303,10 @@ struct RingFitAmendmentTests {
         }
     }
 
-    // MARK: F7: one sharp edge
+    // MARK: One sharp edge
 
-    /// A ring with one edge sharper than the 0.30 px floor guard is fitted and calibrated when the data hold the ring
-    /// (registration-0.0.4 §1.5). Slice 3b's F7 refused it as ringWidthAtFloor.
+    /// A ring with one edge sharper than the 0.30 px floor guard is fitted and calibrated when the data hold the ring.
+    /// Before 0.1.0 the fit refused it as ringWidthAtFloor.
     /// RED UNDER: the one-sided floor kept as a refusal.
     @Test(arguments: [0.15, 0.05])
     func aRingWithOneSharpEdgeIsCalibrated(sigmaOut: Double) throws {
@@ -326,7 +326,7 @@ struct RingFitAmendmentTests {
     // MARK: the reference implementation's refuse-bound plant (its ring-fit-parity line 37)
 
     /// A 3 px ring at R 120 on a 1/r^3 background at the ring's peak, annulus +-20 px: the fit reads the ring and the kit
-    /// calibrates it (Δq within 0.05 %); `sigmaAtAnnulusWidth` was the plant's wrong expectation (registration-0.0.4 §1.7).
+    /// calibrates it (Δq within 0.05 %); `sigmaAtAnnulusWidth` was the plant's wrong expectation.
     @Test func referenceRefuseBoundPlantIsCalibrated() throws {
         let scene = Scene(rows: 320, cols: 316, row0: 158.41, col0: 160.27)
         let pattern = Self.render(scene) { dr, dc in
@@ -338,8 +338,8 @@ struct RingFitAmendmentTests {
         #expect(abs(calibration.deltaQ / ((1 / 2.3546) / 120) - 1) < 5e-4)
     }
 
-    /// A ring whose sigma reaches the annulus width is refused by name (σ 16 px in a 16 px annulus; registration-0.0.4 §1.7
-    /// amended: σ 8 px there is half the width, fitted and refused for its geometry).
+    /// A ring whose sigma reaches the annulus width is refused by name (σ 16 px in a 16 px annulus;
+    /// σ 8 px there is half the width, fitted and refused for its geometry).
     @Test func aRingWiderThanItsAnnulusIsRefusedAsSigmaAtAnnulusWidth() throws {
         let pattern = Self.render { dr, dc in Self.ring(dr, dc, radius: 40, sigmaIn: 16, sigmaOut: 16) + 0.1 }
         let result = try? Self.calibrate(pattern, inner: 32, outer: 48)
@@ -352,7 +352,7 @@ struct RingFitAmendmentTests {
     }
 }
 
-// MARK: G1 and G7 (registration-0.0.4 §2, §4)
+// MARK: The fit and calibration split, and cancellation
 
 struct RingFitSplitAndCancellationTests {
     typealias T = RingFitAmendmentTests
@@ -439,7 +439,7 @@ struct RingFitSplitAndCancellationTests {
         }
         #expect(calls.values.count == 4)
 
-        // Monotone also through the one-sided-floor refit (Gate B on the 0.1.0 candidate, F2: it reported backwards by up to 0.04).
+        // Monotone also through the one-sided-floor refit (F2: it reported backwards by up to 0.04).
         let sharp = RingFitAmendmentTests.render { dr, dc in
             RingFitAmendmentTests.ring(dr, dc, radius: 40, sigmaIn: 3, sigmaOut: 0.1) }
         let sharpBox = Box()

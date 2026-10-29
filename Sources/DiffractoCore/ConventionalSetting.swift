@@ -1,9 +1,9 @@
 //
 //  ConventionalSetting.swift
-//  Role: the symmetry of a structure in ANY cell setting (registration docs/registration-slice-1b.md section 1). The
+//  Role: the symmetry of a structure in ANY cell setting. The
 //        sites are carried into the conventional cell of the lattice (x_conventional = P⁻¹ x_file, wrapped, the lattice
 //        centring added as images and merged within the position tolerance), the operations are detected there by
-//        slice 1's rule (a conventional cell has its holohedry in the standard position), and the result is reported
+//        the conventional-cell rule (a conventional cell has its holohedry in the standard position), and the result is reported
 //        in BOTH settings: `CrystalStructure` carries the file setting's operations (conjugated back, R' = P R P⁻¹,
 //        t' = P t) and `ConventionalSetting` the conventional cell's own structure, operations, Laue class (so its
 //        absences and ring names) and the transformation between the two.
@@ -102,7 +102,7 @@ extension CrystalStructure {
         let conventional = cell.conventionalCell(tolerance: metricLengthTolerance)
         let p = conventional.transformation
         if p == .identity || sites.isEmpty {
-            // The file's cell is the conventional cell: nothing moves, slice 1's detection is the detection.
+            // The file's cell is the conventional cell: nothing moves, the plain detection is the detection.
             let detection = SymmetryDetection.detect(
                 sites: sites, cell: cell, coarsestHalfStep: coarsestHalfStep,
                 extraCandidates: fileOperations?.map(\.rotation) ?? [], preferredOperations: fileOperations ?? [],
@@ -187,7 +187,7 @@ extension CrystalStructure {
                                 spaceGroupNumber: spaceGroupNumber, name: name)
     }
 
-    /// The identity first, then by rotation and translation: slice 1's order.
+    /// The identity first, then by rotation and translation: the order `SymmetryDetection` returns.
     static func operationOrder(_ lhs: SymmetryOperation, _ rhs: SymmetryOperation) -> Bool {
         if lhs.rotation.isIdentity != rhs.rotation.isIdentity { return lhs.rotation.isIdentity }
         let l = lhs.rotation.rows.flatMap { [$0.x, $0.y, $0.z] }, r = rhs.rotation.rows.flatMap { [$0.x, $0.y, $0.z] }
@@ -198,7 +198,7 @@ extension CrystalStructure {
 
     /// The centring images of ONE site, without any that coincides with an earlier image of the same site (a centring
     /// translation listed twice). Rows are never merged with each other: two rows on one position (a mixed-occupancy
-    /// site written as two rows of one element) are two sites in the conventional cell too (Gate B F2).
+    /// site written as two rows of one element) are two sites in the conventional cell too.
     static func mergingCoincident(images: [AtomSite], matcher: PositionMatcher) -> [AtomSite] {
         var kept: [AtomSite] = []
         for image in images where !kept.contains(where: { matcher.matches($0.fractional, image.fractional) }) {

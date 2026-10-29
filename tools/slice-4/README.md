@@ -1,7 +1,7 @@
 # tools/slice-4: the pin generators
 
-Registration `docs/registration-slice-4.md` (sections 4, 5, 6, 7). Written before the Swift of slice 4 is trusted; the Swift
-tests read the file these write. A difference is a failure of the port, never a tolerance to widen (except the amendments
+Written before the Swift of slice 4 (DiffractoOrientation) was trusted; the Swift
+tests read the file these write. A difference is a failure of the port, never a tolerance to widen (except the changes
 named under "Measured floors and open points").
 
 ```
@@ -23,7 +23,7 @@ named under "Measured floors and open points").
 
 | Name | What | Where in the JSON |
 |---|---|---|
-| V2, the reference | NumPy float64 from the registration's definitions: f_e from the sha-locked py4DSTEM table, F = (1/V) sum f_e occ exp(2 pi i h.x), every hkl with `|F| > 1e-4` (strict) and `|g| <= kMax` enumerated by the bound `|h| <= kMax |a_1|` (cannot miss a lattice point), `s = g.n`, `I = |F|^2 exp(-(s/w)^2)`, kept when `|s| <= slab`, `1e-9 < |q| <= kMax`, `I > 0`; frame `e1 = normalise(n x r)`, `e2 = n x e1`; floor, cap, relative intensity, sort by `|q|` | `phases[].zone_axes[].entries` (pre-cap, pre-floor) and `.library` (after floor and cap) |
+| V2, the reference | NumPy float64 from the written definitions: f_e from the sha-locked py4DSTEM table, F = (1/V) sum f_e occ exp(2 pi i h.x), every hkl with `|F| > 1e-4` (strict) and `|g| <= kMax` enumerated by the bound `|h| <= kMax |a_1|` (cannot miss a lattice point), `s = g.n`, `I = |F|^2 exp(-(s/w)^2)`, kept when `|s| <= slab`, `1e-9 < |q| <= kMax`, `I > 0`; frame `e1 = normalise(n x r)`, `e2 = n x e1`; floor, cap, relative intensity, sort by `|q|` | `phases[].zone_axes[].entries` (pre-cap, pre-floor) and `.library` (after floor and cap) |
 | V0, py4DSTEM | `Crystal.generate_diffraction_pattern` at 1e30 V (lambda about 1.2e-26 A), `sigma_excitation_error = w/sqrt(2)`, `tol_excitation_error_mult = slab/sigma`, `tol_intensity = 0`, `k_max = kMax`, `keep_qz`; (0 0 0) dropped; `parse_orientation(zone_axis_lattice=uvw)` | the `py4dstem_*` columns of `entries`, `py4dstem`, `frame_map` |
 | V1 | NumPy flat excitation on py4DSTEM's own hkl, g and float32 `|F|^2` | only its residual against V0, `counts.lambda0_vs_flat_numpy_on_py4dstem_table` |
 | 200 kV | the same call at `setup_diffraction(200e3)`, curved Ewald sphere | `zone_axes[].kv200` |
@@ -56,7 +56,7 @@ matches by hkl).
   boundary), `containsFriedelPair` (20 + the boundary), `inPlaneSteps` (13 steps), `lowIndexZoneAxes`, `PhaseVectorResolution`
   (not pinned, see below).
 
-## Measured floors and open points (the report to the registration)
+## Measured floors and open points
 
 1. **lambda -> 0 works through py4DSTEM's own API**: `setup_diffraction(1e30)` gives s = g.n exactly in practice. Against NumPy
    flat excitation on py4DSTEM's own table the residual is 0 on six phases and 1.5e-14 relative on beta'' (the `exp(-s^2/(2 sigma^2))`
@@ -65,7 +65,7 @@ matches by hkl).
 2. **py4DSTEM's structure factors are complex64.** `calculate_structure_factors` accumulates `struct_factors` as `complex64`
    (`|F|^2` float32), so its relative intensity differs from the float64 value by up to 1.15e-5 (beta'', the weak reflections),
    3.1e-6 (theta'), 1.8-3.6e-7 on the others, and `|F|^2` by up to 1.3e-5. **G2's "relative intensity within 1e-9" cannot hold against
-   py4DSTEM**; proposed amendment: hkl sets equal and `|q|` within 1e-12 against py4DSTEM (measured 8.9e-16), relative intensity within
+   py4DSTEM**; adopted instead: hkl sets equal and `|q|` within 1e-12 against py4DSTEM (measured 8.9e-16), relative intensity within
    5e-5 against py4DSTEM (the float32 floor, measured 1.2e-5), within 1e-12 against the float64 reference V2 (the `entries` /
    `library` columns); the kit's q rotated by phi_py equals py4DSTEM's x', y' within 1e-12 (measured 8.9e-16).
 3. **|F|^2 against slice 2** (kit float64, Al, Au, Mg, beta'' at kMax 1.2, kept sets equal): max relative difference 1.6e-15 (Al),
@@ -80,18 +80,18 @@ matches by hkl).
 6. **200 kV, curved Ewald sphere** (the same sigma and tolerance): the slab set changes only for theta' [112] (6 hkl enter, 0 leave),
    theta' [123] (21 in, 0 out), beta'' [111] (51 in, 0 out), beta'' [123] (0 in, 54 out); the other 33 zone axes are identical sets
    (relative intensities differ by 1-24%, `max_abs_dI_relative_common`). A parity row, not a gate.
-7. **The low-index zone axes: the registration says 62, the stated definition gives 49** (98 primitive vectors in the box, divided by
+7. **The low-index zone axes: the first prediction said 62, the stated definition gives 49** (98 primitive vectors in the box, divided by
    2 for sign). 62 is the count of the 124 nonzero vectors deduplicated up to sign without the gcd reduction; both lists are in the
-   file (`axes`, `alternative_unreduced`). The apps-parity dump of the source decides; the amendment is the registration's.
-8. **SciPy's gimbal rule is not the registered one.** SciPy 1.18.1 locks (sets the third angle to 0) when the middle angle is below
-   1e-7 (100% at 9.9e-8, 50% at exactly 1e-7, 0% at 1.01e-7), registration 4 says |sin Phi| <= 1e-8. Cases with Phi in {2e-8, 5e-8,
-   9e-8, 1e-7} are marked `rules_agree: false`; tests skip them or the registration amends the threshold to SciPy's. Phi = 1e-5, 1e-6
-   and 1e-3 are unlocked in both, so mutant 13 (1e-4) is caught.
-9. **Definitions the registration does not give** (so the pins hold a stated reading, flagged in the file): `chanceMatchFraction` guards
+   file (`axes`, `alternative_unreduced`). The apps-parity dump of the source decides.
+8. **SciPy's gimbal rule is not the one first written.** SciPy 1.18.1 locks (sets the third angle to 0) when the middle angle is below
+   1e-7 (100% at 9.9e-8, 50% at exactly 1e-7, 0% at 1.01e-7), the written rule was |sin Phi| <= 1e-8. Cases with Phi in {2e-8, 5e-8,
+   9e-8, 1e-7} are marked `rules_agree: false`; tests skip them. Phi = 1e-5, 1e-6
+   and 1e-3 are unlocked in both, so the threshold mutation (1e-4) is caught.
+9. **Definitions not written before the run** (so the pins hold a stated reading, flagged in the file): `chanceMatchFraction` guards
    (R <= 0, non-finite inputs: not pinned), `score` (pinned as the nearest-assignment reading; the any-pair reading is recorded and the
    cases where they differ are flagged; none differ in the 20 seeded cases), `containsFriedelPair` (some pair with |v_i + v_j| <= radius),
-   the unit of `inPlaneSteps` rounding (half away from zero). `PhaseVectorResolution` and `scaledToDetector` are **not pinned**: section 4
-   does not define them and the oracle may not read the Swift.
+   the unit of `inPlaneSteps` rounding (half away from zero). `PhaseVectorResolution` and `scaledToDetector` are **not pinned**: the written
+   definitions do not cover them and the oracle may not read the Swift.
 10. theta'-Al2Cu has no definition in the apps or the kit. Pinned: body-centred tetragonal 4.04 / 5.80 A, Cu 2a (0,0,0), (1/2,1/2,1/2),
    Al 4d (0,1/2,1/4), (1/2,0,1/4), (0,1/2,3/4), (1/2,0,3/4) (the fluorite-derived arrangement), sites written out. The triclinic cell is
-   registration-slice-1's (4, 5, 6, 80, 85, 95) with two invented sites: the kit has no triclinic CIF fixture.
+   slice 1's (4, 5, 6, 80, 85, 95) with two invented sites: the kit has no triclinic CIF fixture.

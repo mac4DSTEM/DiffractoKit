@@ -2,7 +2,7 @@
 //  Misorientation.swift
 //  Role: orix 0.15.0's `Misorientation((Gl, Gr))` (`equivalent`, `reduce` = `map_into_symmetry_reduced_zone`) and `Orientation`
 //        (`angle_with`, `in_euler_fundamental_region`) on the kit's rotation matrices and `CrystalOrientationSymmetry` groups
-//        (docs/parity.md, ROADMAP task 35). Pins: Tests/DiffractoOrientationTests/Fixtures/orix-misorientation-pins.json.
+//        (docs/parity.md). Pins: Tests/DiffractoOrientationTests/Fixtures/orix-misorientation-pins.json.
 //
 //  CONVENTIONS. A `Misorientation` carries a rotation matrix R that maps vectors of the SOURCE crystal to vectors of the TARGET crystal
 //  (v_target = R v_source). Its symmetrically equivalent forms are g_t R g_s, g_t a proper rotation of the target group, g_s of the source

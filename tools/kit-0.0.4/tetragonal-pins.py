@@ -1,4 +1,4 @@
-"""DiffractoKit 0.0.4, registration section 6 (tier 1): the tetragonal pins, in three axis settings.
+"""DiffractoKit 0.0.4: the tetragonal pins, in three axis settings.
 
 Run, from any directory, with the pinned oracle:
 

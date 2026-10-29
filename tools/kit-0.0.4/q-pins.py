@@ -1,4 +1,4 @@
-"""DiffractoKit 0.0.4, G2 (docs/registration-0.0.4.md section 3): the pin generator for the exact q from a ring radius and its inverse.
+"""DiffractoKit 0.0.4: the pin generator for the exact q from a ring radius and its inverse.
 
 Run, from any directory, with the pinned oracle:
 
@@ -22,7 +22,7 @@ relative before anything is written:
 NumPy 2.5.4's float64 route (np.sin(np.arctan(R / L) / 2) * 2 / lambda; L * np.tan(2 * np.arcsin(q lambda / 2))) is stored beside
 the truth (`numpy_*`), and the script fails if it leaves 1e-12 of the truth.
 
-THE GRID (as the registration): V in {60, 80, 120, 200, 300} kV, L_px in {500, 2000, 14082.307097295722, 1e5}, R in {1, 40, 150,
+THE GRID: V in {60, 80, 120, 200, 300} kV, L_px in {500, 2000, 14082.307097295722, 1e5}, R in {1, 40, 150,
 600, 2000} px (100 forward cases); the inverse on the q those give (100) plus q at 0.99 of the Bragg limit, q lambda / 2 =
 0.99 / sqrt(2) (20: every V and L); THE IDENTITY: slice 3a's 320 cases, q(R, L_px(R, 2 theta), lambda) = 1/d (stored with the
 decimal 1/d and the decimal q of the same float64 inputs, which must agree to 1e-12: L_px is rounded to float64 there);

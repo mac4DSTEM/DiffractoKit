@@ -36,7 +36,7 @@ package enum IndexPresets {
         structure(.cubic(a: 3), [AtomSite(z: 29, fractional: [0, 0, 0]),
                                  AtomSite(z: 29, fractional: [0.5, 0.5, 0.5], occupancy: 0.9981472011156598)])
     }
-    /// The β″ CIF exactly as the generator writes it (slice 1's fixture builder).
+    /// The β″ CIF exactly as the generator writes it (the core fixture builder).
     package static var betaDoublePrime: CrystalStructure {
         let sites: [(String, String, Double, Double, Double, Double)] = [
             ("Mg1", "Mg", 0.0, 0.0, 0.0, 0.5), ("Mg2", "Mg", 0.3459, 0.0, 0.089, 1.0), ("Mg3", "Mg", 0.430, 0.0, 0.652, 0.8),
@@ -51,7 +51,7 @@ package enum IndexPresets {
         lines += ["loop_", "_atom_site_label", "_atom_site_type_symbol", "_atom_site_fract_x", "_atom_site_fract_y",
                   "_atom_site_fract_z"]
         lines += sites.map { "  \($0.0) \($0.1) \($0.2) \($0.3) \($0.4)" }
-        // The CIF parse cannot fail on this fixed text; a failure is a slice-1 regression the CIF tests name.
+        // The CIF parse cannot fail on this fixed text; a failure is a CIF-parser regression the CIF tests name.
         return (try? CIFImport.read(lines.joined(separator: "\n")).structure)!
     }
 
@@ -64,7 +64,7 @@ package enum IndexPresets {
     }
     package static var mP: CrystalStructure { mono(7.2, 4.9, 5.6, 104) }
     package static var mC: CrystalStructure { mono(7.2, 4.9, 5.6, 104, sites: alCentred) }
-    /// a = c and cos β = −1/4 make this metric C-centred orthorhombic: full detection (slice 1b, `conventional: true`)
+    /// a = c and cos β = −1/4 make this metric C-centred orthorhombic: full detection (`conventional: true`)
     /// reads mmm and relates {1 0 0} and {0 0 1} by symmetry. the reference implementation's accidental-coincidence case is the file setting's
     /// 2/m, so this preset is detected in the file's setting only (`conventional: false`).
     package static var mSq: CrystalStructure {
@@ -73,7 +73,7 @@ package enum IndexPresets {
     }
     package static var mSqFull: CrystalStructure { mono(5, 4, 5, acos(-0.25) * 180 / .pi) }
 
-    /// The rings of `s` after the |F| cut, slice 1's families.
+    /// The rings of `s` after the |F| cut, DiffractoCore's families.
     package static func rings(_ s: CrystalStructure, kMax: Double = 1.2) throws -> [ReflectionFamily] {
         try s.kinematicReflections(kMax: kMax).families.map(\.family)
     }

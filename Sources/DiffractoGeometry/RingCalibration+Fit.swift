@@ -1,13 +1,12 @@
 //
 //  RingCalibration+Fit.swift
 //  Role: the fit-driven calibration: a ring of known d fitted in a pattern, the fit's numbers checked against every
-//        registered refusal, and Δq and the camera length computed from the fitted radius only when nothing refuses them.
-//        Slice 3b of DiffractoKit (docs/registration-slice-3.md section 2).
+//        refusal, and Δq and the camera length computed from the fitted radius only when nothing refuses them.
 //
 //  SEED: reference commit 9482831 `Sources/TEMCore/Analysis/RingCalibration+Fit.swift`, logic unchanged. The one difference is the
 //  fit it runs: the reference implementation's own `EllipseCalibration` copy there is the pre-ADR-069 file; this runs the kit's
 //  `EllipseCalibration` (reference commit 7d6fdbd1, with ADR 069's two starts and the 0.30 px ring-width floor), so the numbers
-//  the reference implementation registered on its copy move when it imports the kit (stated in the consumers note).
+//  the reference implementation measured on its copy move when it imports the kit.
 //
 //  THE PATH: `EllipseCalibration.fitBestAvailable` (the conic `fit1D` seeds py4DSTEM's 11-parameter asymmetric-Gaussian ring
 //  and falls back to the conic when the profile does not fit), with the coverage bound held (`acceptSparseCoverage:
@@ -22,10 +21,10 @@
 //  ring was fitted at all, and reaches the caller as thrown. An impossible d, V or pixel pitch is the caller's mistake
 //  and throws `Refusal.invalidInput` before any fit runs.
 //
-//  THE SPLIT (DiffractoKit 0.1.0, registration-0.0.4 §2, the reference implementation's ask G1): `fitRing` fits the ring and decides the fit's
+//  THE SPLIT (DiffractoKit 0.1.0): `fitRing` fits the ring and decides the fit's
 //  own refusals with no spacing, so a caller can measure a ring before it knows which family it is; `calibrating` adds d, V
 //  and the pitch. `fit` is exactly `calibrating(fitRing(...), d:...)`. Since 0.1.0 the fit runs with
-//  `requireRingEvidence: true` (registration-0.0.4 §1.4): the report carries the ring evidence and the annulus's radii, so
+//  `requireRingEvidence: true`: the report carries the ring evidence and the annulus's radii, so
 //  a ring outside its annulus, a profile that is not a peak, an inconsistent geometry and too few sectors holding the ring
 //  are refused by name, and one ring sigma at the 0.30 px floor is kept when the evidence passes.
 //

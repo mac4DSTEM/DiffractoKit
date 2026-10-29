@@ -1,6 +1,6 @@
 //
 //  EllipseNoisyRingTests.swift
-//  DiffractoKit slice 3b (docs/registration-slice-3.md section 3): the profile ring fit on the three noisy plants of reference commit
+//  The profile ring fit on the three noisy plants of reference commit
 //  7d6fdbd1 `EllipseNoisyRingTests` (same names, same plants, same bands), with the plant renderer (SplitMix64 + Box-Muller,
 //  Float pixels) ported into this file. The renderer is also the one tools/slice-3b/apps-parity/main.swift carries a copy of;
 //  EllipseAppsParityTests proves the two render the same pixels (FNV-1a hash of every case) before it compares any fit.
@@ -8,8 +8,7 @@
 //  The profile ring fit (`EllipseCalibration.fitAmorphousRing`, behind `fitBestAvailable`) is refined from py4DSTEM's start, both
 //  ring sigmas at max(1, ringWidth / 4), 10-17 px for a +-20 px annulus around a 3 px ring. On a noisy ring the 11-parameter LM
 //  from there can fall into a basin that carries no ring information, and the residual cap does not refuse it: noise inflates the
-//  normalised residual of any model (reference `archive/v5/ring-fit-two-start-gateD-2026-10-14.md`, and
-//  `archive/v5/ring-sigma-start-gateD-2026-10-13.md` for the first step). A second start at the ring's half-maximum width escapes
+//  normalised residual of any model (measured 2026-10-13 and 2026-10-14). A second start at the ring's half-maximum width escapes
 //  those basins, but alone it ends in a worse one on a 1/r^2 tail with noise. The fit therefore refines from both starts and keeps
 //  the lower-cost fit (ADR 069).
 //
@@ -25,7 +24,7 @@
 //  Neither fit may be refused or fall back to the conic: the profile model finds the ring on all three, and the tests assert the
 //  ring's mean radius, its b / a (what a caller applies to every Bragg vector) and its centre, against the plant.
 //
-//  RED UNDER (measured by the break-once run in tools/slice-3b/mutants.py): the second start dropped turns the dead ring and the
+//  RED UNDER (measured by breaking the code once per mutation): the second start dropped turns the dead ring and the
 //  drifting ring red; the first start dropped turns the tail ring red.
 //
 
@@ -86,11 +85,11 @@ struct EllipseNoisyRingTests {
     /// the fit accepts a ring-less profile fit there (I1 0, a ring sigma at the 0.25 px floor, b/a 0.947, where the conic gives
     /// 0.989 and the wider annulus 0.970); with it, the fit falls back to the conic and says why.
     ///
-    /// DISABLED, not skipped silently: the pattern is derived from the owner's data, which this kit never copies, and
+    /// DISABLED, not skipped silently: the pattern is derived from the maintainer's data, which this kit never copies, and
     /// `../data/README.md` holds no manifest line for it yet. When the line exists (the file under `$MACEM_DATA`, default
     /// `../data`, at the path below), remove the trait and set the path. The floor guard itself is held by
     /// EllipseCalibrationTests (`testARingFittedWithinPointThreePxOfTheFloorIsRefusedAndFallsBackToTheConic`).
-    @Test(.disabled("owner's data, manifest line pending"))
+    @Test(.disabled("maintainer's data, manifest line pending"))
     func testRinglessFitOnARealMeanPatternFallsBackToTheConic() throws {
         let root = ProcessInfo.processInfo.environment["MACEM_DATA"]
             ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()

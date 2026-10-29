@@ -3,7 +3,7 @@
 //  Role: the pins of tools/slice-1b/pins.py (spglib 2.8.0 and pymatgen as oracles for the reduced cell, the lattice's
 //        Bravais name and conventional cell, the operation counts and the rings in the conventional setting), and the
 //        Niggli conditions written out from the text, so the tests check the reduced cell directly and not only the
-//        oracle (registration docs/registration-slice-1b.md sections 2 and 3).
+//        oracle.
 //
 
 import DiffractoKitTestSupport
@@ -104,7 +104,7 @@ func transformedVectors(_ cell: UnitCell, _ p: IntegerMatrix) -> [SIMD3<Double>]
     }
 }
 
-/// The Niggli main conditions (Křivý & Gruber 1976; International Tables A, section 9.2) on the reduced basis, written
+/// The Niggli main conditions (Křivý & Gruber 1976, International Tables A) on the reduced basis, written
 /// out from the text, each within `eps` (Å²). Returns the conditions that fail.
 func niggliViolations(_ v: [SIMD3<Double>], eps: Double) -> [String] {
     let a = dot(v[0], v[0]), b = dot(v[1], v[1]), c = dot(v[2], v[2])

@@ -1,7 +1,5 @@
 # Open items
 
-- **0.10.0 left open:** a beam centre for a pattern whose beam is blocked (Friedel-pair symmetry; `PatternCentre.find` refuses it); `fitRing` at R 600 px on 2048² (tens of seconds; a coarse-then-fine annulus or Metal); a one-ring profile model that tolerates a neighbouring ring (the {111} bias of `RingFitNeighbourTailTests` is the model's, not a bug); Hall-symbol-only CIF groups and a partial operation list of the right count but the wrong operations; `Orientation.from_euler(symmetry:)`, `dot`, `dot_outer`, `get_distance_matrix` and the orientation (Rodrigues) fundamental zone; orix's `reduce()` disagreement with the smallest angle (reported in parity P36, not reported upstream yet).
-
 A plain list, worst first. Each line: the item, the cause where it is known, what would close it.
 
 - **`cif_import` is 27 times slower than pymatgen's `CifParser` on a 32-atom P1 supercell (about 67 ms against 2.5 ms; 351 ms
@@ -21,16 +19,19 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   absence flag, the rings and their orbits. Close by timing the kit's own enumeration without the ring grouping if it matters.
 - **Phase matching.** Defaults unchanged. (a) `minimumMatrixEvidence` (new, off) keeps vacuum and stray-peak positions out of the
   matrix class; (b) `completenessAwareCrossPhaseRanking` stays off: it loses at small noise and wins near the pair radius
-  (`PhaseDiagnosisTests`). Both need one labelled scan to be switched on: the owner's study scan with the phases marked.
+  (`PhaseDiagnosisTests`). Both need one labelled scan to be switched on: a study scan with the phases marked.
 - **ACOM.** 7 of 200 off-grid self-recoveries land 36 or 60 degrees away (zone axes whose centrosymmetric pattern has a symmetry
   of its own; not separable on spots alone). "Zone axis misses up to 12.8 degrees beyond the bank sampling" (mac4DSTEM's note)
   is not reproduced here: within 2.9 degrees of a template the nearest-bank gap is at most 1.6 degrees at 600 axes; a pattern
   between templates in a sparse corner of the zone is untested. Metal is not faster than all CPU cores up to 1 024 patterns
-  at 600 axes; 16 384 patterns and 2 400 axes are the nightly's.
+  at 600 axes; 16 384 patterns and 2 400 axes are not timed yet.
 - **CIF symmetry.** Still unchecked: a group named by Hall symbol only, and a partial list whose count equals the primitive
   group's order but whose operations are the wrong ones (a count cannot see that).
-- **Python pins.** `References/python/orix` and `py4dstem` hold pymatgen-core 2026.10.16 under a `pymatgen` 2026.9.24 metapackage
-  (dist-info of both); the README and `docs/parity.md` say 2026.9.24, the older fixtures record pymatgen-core 2026.9.23 (a
-  previous venv). `cif-symmetry-pins.json` records `pymatgen` 2026.9.24 (a literal in `pins.py`) and was generated on this
-  install, so on pymatgen-core 2026.10.16: regenerating it on 2026-10-21 gave a byte-identical file. The other fixtures were not
-  regenerated; re-generate and re-pin them together at the next fixture change.
+- **Beam centre for a blocked beam.** `PatternCentre.find` refuses a pattern whose beam is blocked; Friedel-pair symmetry would
+  find it.
+- **Ring fit.** `fitRing` at R 600 px on 2048² takes tens of seconds (a coarse-then-fine annulus, or Metal). A one-ring profile
+  model that tolerates a neighbouring ring is missing (the {111} bias of `RingFitNeighbourTailTests` is the model's, not a bug).
+- **orix API gaps.** `Orientation.from_euler(symmetry:)`, `dot`, `dot_outer`, `get_distance_matrix` and the orientation
+  (Rodrigues) fundamental zone. orix's `reduce()` disagrees with the smallest angle (parity P36); not reported upstream yet.
+- **Not yet used by a known consumer** (0.10.0): `PatternCentre.find`, `PatternRadialProfile.about`, `LinearScale.fit` and
+  `Misorientation`. Revisit at 0.12.

@@ -1,6 +1,6 @@
 //
 //  ConventionalRingsTests.swift
-//  Slice 1b truth that needs slice 2's cut (registration docs/registration-slice-1b.md section 3): the rings after the
+//  Conventional-setting truth that needs the |F| cut: the rings after the
 //  |F| cut of a PRIMITIVE cell, taken in its conventional setting, are the conventional cell's rings exactly (names,
 //  g to 1e-12, multiplicities): Au 8, Si 10, and β″'s 417 rings from 1442 kept reflections.
 //

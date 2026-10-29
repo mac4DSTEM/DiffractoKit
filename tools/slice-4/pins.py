@@ -1,4 +1,4 @@
-"""DiffractoKit slice 4: the pin generator (registration docs/registration-slice-4.md, sections 4, 5, 6, 7).
+"""DiffractoKit slice 4: the pin generator for the orientation and phase-matching module.
 
 Run, from any directory, under the memory cap, with the pymatgen venv (Python 3.14, NumPy 2.5.4, SciPy 1.18.1):
 
@@ -13,10 +13,10 @@ from stdout. SciPy 1.18.1 and the NumPy oracle are here, because the py4DSTEM ve
 
 What is an oracle for what
 --------------------------
-V2  "reference": NumPy float64 written from the registration's DEFINITIONS (section 4), the structure factors from the
+V2  "reference": NumPy float64 written from the DEFINITIONS in this file, the structure factors from the
     py4DSTEM electron-scattering table (slice 2's sha-locked file) with the cell/g conventions py4DSTEM uses, every hkl with
     |F| > 1e-4 (strict, slice 2) and |g| <= kMax enumerated by a bound that cannot miss a lattice point, the FLAT excitation
-    s = g.n, I = |F|^2 exp(-(s/w)^2), the in-plane frame (e1, e2) of the registration. This is what the Swift library must equal
+    s = g.n, I = |F|^2 exp(-(s/w)^2), the in-plane frame (e1, e2) of `ZoneAxisFrame`. This is what the Swift library must equal
     (G4, and the pre-cap entries of G2).
 V0  py4DSTEM f050d207 as it is called (Crystal.generate_diffraction_pattern at a huge accelerating voltage, sigma = w/sqrt(2),
     tol_excitation_error_mult = slab/sigma, tol_intensity 0): its hkl set, g in its projected frame, relative intensity.
@@ -58,7 +58,7 @@ OUT_DIR = os.path.join(KIT, "Tests", "DiffractoOrientationTests", "Fixtures")
 OUT = os.path.join(OUT_DIR, "slice-4-pins.json")
 
 # ----------------------------------------------------------------------------------------------------------------
-# The registered constants (registration section 3: the defaults; section 4: the method's constants)
+# The registered constants (the defaults and the method's constants)
 # ----------------------------------------------------------------------------------------------------------------
 TABLE_SHA256 = "be845d1d541cdb75ae16f8928cd9e56a9ea38af8a3cc43da9137e73cc72bb6f4"
 K_MAX = 1.6
@@ -162,7 +162,7 @@ def structure_factors(table, vol, H, glen, sites):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# The phases (registration 6)
+# The phases
 # ----------------------------------------------------------------------------------------------------------------
 FCC = [(0.0, 0.0, 0.0), (0.5, 0.5, 0.0), (0.5, 0.0, 0.5), (0.0, 0.5, 0.5)]
 HCP = [(0.0, 0.0, 0.0), (2.0 / 3.0, 1.0 / 3.0, 0.5)]
@@ -252,10 +252,10 @@ def phases():
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# The reference (V2): the registration's definitions, in float64
+# The reference (V2): the definitions, in float64
 # ----------------------------------------------------------------------------------------------------------------
 def kit_frame(n):
-    """Registration 4, 'The frame': e1 = normalise(n x r), e2 = n x e1, r = x-hat if |n_x| < 0.9 else y-hat."""
+    """The frame: e1 = normalise(n x r), e2 = n x e1, r = x-hat if |n_x| < 0.9 else y-hat."""
     r = np.array([1.0, 0.0, 0.0]) if abs(n[0]) < BASIS_SWITCH else np.array([0.0, 1.0, 0.0])
     e1 = np.cross(n, r)
     e1 = e1 / np.linalg.norm(e1)
@@ -269,7 +269,7 @@ def cartesian_axis(A, uvw):
 
 
 def excited_entries(H, g, F2, n, e1, e2, kmax=K_MAX, slab=SLAB, width=WIDTH):
-    """The pre-cap, pre-floor set of registration 4, 'Reference vector'. Returns arrays (all in the input order)."""
+    """The pre-cap, pre-floor set of reference vectors. Returns arrays (all in the input order)."""
     s = g @ n
     q1, q2 = g @ e1, g @ e2
     qlen = np.sqrt(q1 * q1 + q2 * q2)
@@ -334,7 +334,7 @@ def euler_block(rng, orientation_matrices):
     for i in range(1000):
         cases.append(euler_case(f"random-{i}", rots[i]))
     # gimbal and near-gimbal: Phi = 0, pi and 1e-9, 1e-10 away from each; 5e-9 (inside |sin Phi| <= 1e-8), then 2e-8, 1e-7,
-    # 1e-6, 1e-5, 1e-3 (outside; a threshold of 1e-4 would treat 1e-5 and 1e-6 as locked, which the registration does not)
+    # 1e-6, 1e-5, 1e-3 (outside; a threshold of 1e-4 would treat 1e-5 and 1e-6 as locked, which the definition does not)
     pairs = [(0.7, -1.1), (-2.5, 2.0), (3.0, 3.0)]
     phis = [("0", 0.0), ("pi", math.pi), ("1e-9", 1e-9), ("1e-10", 1e-10), ("pi-1e-9", math.pi - 1e-9), ("pi-1e-10", math.pi - 1e-10),
             ("5e-9", 5e-9), ("2e-8", 2e-8), ("5e-8", 5e-8), ("9e-8", 9e-8), ("1e-7", 1e-7), ("1e-6", 1e-6), ("1e-5", 1e-5), ("1e-3", 1e-3),
@@ -359,7 +359,7 @@ def euler_block(rng, orientation_matrices):
 
 
 def rz_cases(rng, frames):
-    """Registration 4: matrix(detectorBasis: B, inPlaneAngle: a) = B . R_z(a), R_z columns (c, -s, 0), (s, c, 0), (0, 0, 1)."""
+    """matrix(detectorBasis: B, inPlaneAngle: a) = B . R_z(a), R_z columns (c, -s, 0), (s, c, 0), (0, 0, 1)."""
     out = []
     bases = [(f"frame-{lbl}", B) for lbl, B in frames[:10]]
     rots = Rotation.random(10, rng=rng).as_matrix()
@@ -375,10 +375,10 @@ def rz_cases(rng, frames):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Closed forms (NumPy from the registration's words)
+# Closed forms (NumPy from the written definitions)
 # ----------------------------------------------------------------------------------------------------------------
 def chance_match_fraction(V, rho, R):
-    """p = min(1, V rho^2 / R^2), registration 4 'Matching'. Defined here for V >= 0, rho >= 0, R > 0."""
+    """p = min(1, V rho^2 / R^2), the matching's chance fraction. Defined here for V >= 0, rho >= 0, R > 0."""
     return min(1.0, V * rho * rho / (R * R))
 
 

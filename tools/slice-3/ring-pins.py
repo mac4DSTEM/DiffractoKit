@@ -1,4 +1,4 @@
-"""DiffractoKit slice 3a: the ring-calibration pin generator (registration docs/registration-slice-3.md sections 1, 3, 4, 5).
+"""DiffractoKit slice 3a: the ring-calibration pin generator.
 
 Run, from any directory, with the pinned oracle:
 
@@ -37,7 +37,7 @@ is geometric: a flat detector perpendicular to the beam shows no ring at 2 theta
 decided in decimal arithmetic. Radius (10 plants): FitReport.radius = (a + b)/2 on axes planted with 3 % ellipticity, the
 major axis either way; the expected radius is numpy's mean, checked against the decimal sum of the two float64 axes.
 
-Slice 3a additions to the seed: `truth` (the registration's section 4 literals recomputed in decimal and asserted equal to
+Slice 3a additions to the seed: `truth` (the literals of RingCalibrationTests recomputed in decimal and asserted equal to
 the typed ones: lambda at 80/120/200/300 kV, Au {111} at R 150 px, 200 kV, p 0.014 mm; the small-angle excess; the
 ellipticity-bound gap), and the mutation list, written into the fixture beside the quantity each moves.
 
@@ -64,7 +64,7 @@ from decimal import Decimal, getcontext
 import numpy as np
 
 NUMPY = "2.5.4"
-TOL = 1e-12            # the registration's P1: the formula and lambda to 1e-12 relative
+TOL = 1e-12            # P1: the formula and lambda to 1e-12 relative
 getcontext().prec = 60
 
 # CODATA 2018, as exact decimal strings (see the docstring)
@@ -79,7 +79,7 @@ PITCHES_MM = [0.014, 0.05]
 MATERIALS = [("Au", 4.0782, [(1, 1, 1), (2, 0, 0), (2, 2, 0), (3, 1, 1), (4, 2, 2)]),
              ("Al", 4.0495, [(1, 1, 1), (2, 0, 0), (2, 2, 0)])]
 
-# The registered refusal thresholds (ROADMAP.md "Refused, each by its own error")
+# The refusal thresholds (each refused by its own error)
 ANGULAR_BINS = 36
 MIN_BINS = 30            # fewer than 30 of 36 azimuthal bins
 RESIDUAL_CAP = 0.22      # the profile fit's cap on the normalised residual
@@ -87,7 +87,7 @@ ELLIPTICITY_CAP = 0.093  # a/b - 1; derived in main()
 REFERENCE_HT_V = 200000.0
 NAN, INF = float("nan"), float("inf")
 
-# the refusal names (the Swift enum's `name`) and the check each is held under (the registration's mutation names)
+# the refusal names (the Swift enum's `name`) and the check each is held under (the mutation names)
 CHECK_OF = {"accepted": "accept", "modelNotAsymmetricGaussian": "refuse-conic", "insufficientAngularCoverage": "refuse-bins",
             "sparseCoverage": "refuse-gap", "sigmaAtAnnulusWidth": "refuse-bound", "excessiveResidual": "refuse-residual",
             "excessiveEllipticity": "refuse-ellipticity", "noHighTension": "refuse-noV", "invalidInput": "refuse-invalid",
@@ -192,7 +192,7 @@ def finite_positive(x):
 
 
 def decide(c):
-    """The ordered list of (name, value) the registration's thresholds give: model, coverage, sigma, residual, ellipticity,
+    """The ordered list of (name, value) the thresholds give: model, coverage, sigma, residual, ellipticity,
     high tension. `value` is the number the refusal reports (bins, widest sigma, residual, a/b - 1), None where it has none.
     A number that is not finite and positive, or a bin count out of range, is invalidInput alone."""
     sigmas = [s for s in (c["inner_sigma"], c["outer_sigma"]) if s is not None]
@@ -342,13 +342,13 @@ DEFAULT_OUT = os.path.join(HERE, "..", "..", "Tests", "DiffractoGeometryTests", 
 
 
 def truth_section():
-    """The registration's section 4 literals, recomputed in 60-digit decimal and asserted equal to the typed ones."""
+    """The literals of RingCalibrationTests, recomputed in 60-digit decimal and asserted equal to the typed ones."""
     typed_lambda = {80: 0.041757160772834212, 120: 0.033492152726723738, 200: 0.025079340450548003, 300: 0.019687489006848796}
     for kv, want in typed_lambda.items():
         got = float(dec_wavelength_a(kv * 1000.0))
         if abs(got - want) > 1e-15 * want:
             fail("lambda(%d kV) = %r, the registration's literal is %r" % (kv, got, want))
-    # The registration worked these in decimal from the DECIMAL d = 2.3546 and p = 0.014 (not from the float64 nearest to them);
+    # These were worked in decimal from the DECIMAL d = 2.3546 and p = 0.014 (not from the float64 nearest to them);
     # L_px differs from the typed literal by one ulp (1.3e-16 relative), far inside the 1e-12 band.
     lam, two_theta, l_px, dq, l_mm = dec_chain(200000.0, Decimal("2.3546"), 150.0, Decimal("0.014"))
     typed = {"two_theta_rad": 0.010651260937060768, "l_px": 14082.307097295722, "dq_per_A_per_px": 0.0028313372405787253,
@@ -525,7 +525,7 @@ def main():
         print("ring-pins: mutation %-17s -> %-22s %-10s %s" % (mut, target, check, what))
         if not ok:
             fail("mutation %s does not move its target %s %s enough (%s)" % (mut, target, check, what))
-    # the small-angle error the registration quotes, as a printed fact
+    # the quoted small-angle error, as a printed fact
     for name in ("Au111-200kV-R200-p0.014", "Au422-80kV-R200-p0.014"):
         c = by_name[name]
         print("ring-pins: small-angle L = R d / lambda is off by %.2e at %s (registration: 4e-5 at 200 kV {111}, 9.5e-4 at 80 kV {422})"

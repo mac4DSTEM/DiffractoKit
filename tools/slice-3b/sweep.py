@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""DiffractoKit slice 3b, optional gate (registration docs/registration-slice-3.md section 3): the clean sweep against SciPy.
+"""DiffractoKit slice 3b, optional check: the clean sweep against SciPy.
 
 Reads the 20 clean sweep rings tools/slice-3b/apps-parity/run.sh dumped (the raw Float32 pixels the Swift renderer made,
 .build/apps-parity-3b/sweep/sweep-<n>.f32, and their parameters in .build/apps-parity-3b/dump-O.json), reads the annulus fit1D

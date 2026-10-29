@@ -1,6 +1,6 @@
 //
 //  OrientationRelationship.swift
-//  Role: the variants of an orientation relationship between a precipitate and its matrix (ROADMAP task 35, study step 6), for ACOM and
+//  Role: the variants of an orientation relationship between a precipitate and its matrix, for ACOM and
 //        phase-map orientations: the matrix group enumerates the crystallographically equivalent placements of the precipitate, the
 //        precipitate group identifies those that differ only by one of its own symmetry operations. beta'' (Mg5Si6, C2/m) in Al has
 //        24 / 2 = 12 variants, four needle variants for each of the three <001> axes.

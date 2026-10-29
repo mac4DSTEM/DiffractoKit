@@ -1,7 +1,7 @@
 //
 //  PhaseVectorReviewFindingTests.swift
 //  Role: the two review findings (2026-09-12) that were fixed in the matcher rather than only recorded; both were invisible to
-//        every check that existed at the time (registration slice 4, gate G5).
+//        every check that existed at the time.
 //
 
 import DiffractoKitTestSupport

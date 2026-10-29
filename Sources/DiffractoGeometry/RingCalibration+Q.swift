@@ -1,8 +1,7 @@
 //
 //  RingCalibration+Q.swift
-//  Role: the exact scattering vector q of a pixel radius on a flat detector, and its inverse. DiffractoKit 0.1.0
-//        (docs/registration-0.0.4.md section 3, G2), added to the closed forms of `RingCalibration.swift` without touching
-//        them.
+//  Role: the exact scattering vector q of a pixel radius on a flat detector, and its inverse. DiffractoKit 0.1.0,
+//        added to the closed forms of `RingCalibration.swift` without touching them.
 //
 //  THE FORMULAS (exact; nothing here is a small-angle form):
 //    θ  = ½ atan(R / L)               the Bragg angle of a ring at radius R on a flat detector perpendicular to the beam
@@ -26,7 +25,7 @@ extension RingCalibration {
     /// R may be as large as you like against L: 2θ stays below 180° and q below 2/λ, so there is no other limit.
     /// VALIDITY: against 60-digit arithmetic (tools/kit-0.0.4/q-pins.py, 100 cases, V 60 to 300 kV, L 500 px to 1e5 px, R 1 px
     /// to 2000 px) the worst relative error is 8.2e-16: atan2 and sin each round once and neither amplifies (the form has no
-    /// subtraction). The 1/d identity on slice 3a's 320 cases holds to 5.5e-16. The trig-free form
+    /// subtraction). The 1/d identity on the 320 ring-calibration pin cases holds to 5.5e-16. The trig-free form
     /// 2 sin(½ atan(R/L)) = (R/h) / √((1 + L/h)/2), h = hypot(R, L), was measured too and is no better (both 2.2e-16 in
     /// NumPy on the grid), so the atan2/sin form stays.
     public static func q(radius: Double, cameraLengthPixels: Double, wavelengthAngstroms: Double) -> Double {

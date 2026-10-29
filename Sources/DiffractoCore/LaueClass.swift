@@ -2,7 +2,6 @@
 //  LaueClass.swift
 //  Role: the seven crystal systems and the eleven Laue classes (the point groups a kinematic pattern can tell apart,
 //        since Friedel's law adds the inversion), with the 32 → 11 table and the properties the orbit naming needs.
-//        Registration docs/registration-slice-1.md sections 3.5 and 3.6.
 //
 
 import Foundation

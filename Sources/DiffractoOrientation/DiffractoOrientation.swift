@@ -1,6 +1,6 @@
 //
 //  DiffractoOrientation.swift
-//  Role: the module overview. DiffractoOrientation holds (registration docs/registration-slice-4.md):
+//  Role: the module overview. DiffractoOrientation holds:
 //
 //    - `PhaseReferenceLibrary` and its value types (`PhaseDefinition`, `PhaseReferenceSettings`, `PhaseOrientationReference`,
 //      `ReferenceVector`, `LatticeVector`, `OrientationRelationship`): for each phase, zone axis and in-plane rotation, the
@@ -14,7 +14,7 @@
 //    - `ACOMTemplateLibrary` and `ACOMMatcher` (+ `ACOMTemplateSettings`, `ACOMExcitationModel`, `ACOMReflection`, `ACOMPeak`,
 //      `ACOMError`): the apps' simplified polar-correlation ACOM route (docs/parity.md P25); not py4DSTEM's SO(3) correlogram.
 //
-//  py4DSTEM's SO(3) correlogram matcher and pyxem's template matching are not ported (slice 5); the ACOM route above is the apps' simplified one. CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
+//  py4DSTEM's SO(3) correlogram matcher and pyxem's template matching are not ported; the ACOM route above is the apps' simplified one. CrystalOrientationSymmetry implements eleven-class minimum-angle reduction,
 //  native direction sampling, disorientation, the py4DSTEM direction families and explicit IPFColorKey conventions (native, py4DSTEM, orix); PhaseModel (validation, orientation class, Materials Project models) (docs/orientation-symmetry.md).
 //  Depends on DiffractoCore, DiffractoScattering and ImagoKit's ImagoFFT (FFT1D, for the ring FFTs).
 //

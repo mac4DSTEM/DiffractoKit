@@ -1,7 +1,7 @@
 //
 //  PhaseVectorMatchingTests.swift
 //  Role: the planted-truth and unit-level tests of the reference library and the vector matcher, moved to Swift Testing from the
-//        application tests of the ported types with every expectation kept (registration slice 4, gate G5). Each test's comment
+//        application tests of the ported types with every expectation kept. Each test's comment
 //        names the mutation it catches.
 //
 
@@ -992,8 +992,8 @@ import DiffractoOrientation
                         role: .candidate, zoneAxes: [SIMD3(0, 1, 0)])
     }
 
-    /// An exact tie between phases is broken by the lower phase index, not by the process's hash seed (registration slice 4,
-    /// amendment 16:08 item 5). Eight identical candidate phases score identically on a pattern of one of them; the label
+    /// An exact tie between phases is broken by the lower phase index, not by the process's hash seed.
+    /// Eight identical candidate phases score identically on a pattern of one of them; the label
     /// must be the first, the runner-up the second. Under the source (a Dictionary sorted by score alone) both hold in about
     /// 1 run in 56. Mutation: the phase-index tie-break dropped.
     @Test func anExactTieBetweenPhasesGoesToTheLowerPhaseIndex() throws {

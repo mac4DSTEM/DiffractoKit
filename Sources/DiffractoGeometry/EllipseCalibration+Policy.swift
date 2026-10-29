@@ -1,6 +1,6 @@
 //
 //  EllipseCalibration+Policy.swift
-//  Role: the choices the ellipse fit makes that physics does not fix (DiffractoKit 0.2.0, docs/registration-0.2.0.md §1):
+//  Role: the choices the ellipse fit makes that physics does not fix (DiffractoKit 0.2.0):
 //        the azimuthal coverage rule, the residual caps, the one-ring ratio, the robust-refit cut, the ring-width floors
 //        and the thresholds of the pre-fit checks. Each is a field with its documented default; `Policy.default` is the
 //        set every earlier release used, and the fits run bit for bit as before with it.
@@ -10,8 +10,8 @@ import Foundation
 
 extension EllipseCalibration {
 
-    /// The policy of the ellipse fit: every number below was chosen by the suite (measured on its fixtures and on the
-    /// owner's data, or derived and rounded), none is a physical constant. `Policy.default` is what the fits used before
+    /// The policy of the ellipse fit: every number below was chosen by the suite (measured on its fixtures and on
+    /// real data, or derived and rounded), none is a physical constant. `Policy.default` is what the fits used before
     /// 0.2.0, and a fit given `.default` is bit identical to one given no policy.
     ///
     /// An invalid policy (see `isValid`) is refused by every fit that takes it with `FitError.invalidInput`, and gives

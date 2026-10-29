@@ -1,6 +1,6 @@
 //
 //  ZoneAxis.swift
-//  Role: zone-axis primitives (registration docs/registration-slice-3.md §1, "ZoneAxis"): the 49 low-index beam
+//  Role: zone-axis primitives ("ZoneAxis"): the 49 low-index beam
 //        directions, a direction [u v w] as a Cartesian unit vector of a cell, the detector basis of a beam direction,
 //        and the projection of a reflection list onto it with the excitation error. Seeds, read at reference commit 7d6fdbd1
 //        by `git show`: `PhaseReferenceLibrary.lowIndexZoneAxes` and `cartesianZoneAxis`, `ACOMOrientation.detectorBasis`
@@ -53,8 +53,7 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
 
     /// The detector basis of a unit beam direction `n`: columns e₁, e₂, n, orthonormal and right-handed. The reference is
     /// x unless |n.x| ≥ 0.9, then y; e₁ = normalize(n × reference), e₂ = n × e₁ (reference `ACOMOrientation.detectorBasis`).
-    /// `n` must be a unit vector (`cartesian(in:)` returns one); `isUnitDirection` says whether it is (Gate B on slice 3a,
-    /// F4: a non-unit n gave a non-orthonormal or NaN basis silently).
+    /// `n` must be a unit vector (`cartesian(in:)` returns one); `isUnitDirection` says whether it is (a non-unit n gave a non-orthonormal or NaN basis silently).
     public static func detectorBasis(_ n: SIMD3<Double>) -> simd_double3x3 {
         let reference: SIMD3<Double> = abs(n.x) < 0.9 ? [1, 0, 0] : [0, 1, 0]
         let e1 = simd_normalize(simd_cross(n, reference))
@@ -89,12 +88,12 @@ public struct ZoneAxis: Sendable, Hashable, CustomStringConvertible {
     ///
     /// DEVIATION (overall sign) from py4DSTEM f050d207, `Crystal.excitation_errors`: it writes s_g = (2 g_z − λ|g|²) /
     /// (2 − 2λ g_z) with k₀ = [0, 0, −1/λ], so its lab z is −n and its s_g = −s_g(here) / (1 + λ g · n): the whole
-    /// expression has the opposite sign, both terms flip together, the zero locus is the same (Gate B on slice 3a, F6
-    /// corrected the earlier wording, which said only the curvature term flips). The denominator is not applied: s_g here
+    /// expression has the opposite sign, both terms flip together, the zero locus is the same
+    /// (not only the curvature term). The denominator is not applied: s_g here
     /// is the first-order form (the factor differs from 1 by under 1e-3 near the sphere).
     ///
     /// A reflection is kept when |s_g| ≤ `sgMax` (a non-finite s_g is never kept).
-    /// Nothing is kept for a non-unit or non-finite `n`, or a wavelength that is not finite and ≥ 0 (Gate B F4, F5).
+    /// Nothing is kept for a non-unit or non-finite `n`, or a wavelength that is not finite and ≥ 0.
     public static func project(_ reflections: [KinematicReflection], onto n: SIMD3<Double>,
                                wavelengthAngstroms: Double? = nil, sgMax: Double) -> [Projected] {
         guard isUnitDirection(n) else { return [] }

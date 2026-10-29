@@ -1,10 +1,10 @@
 //
 //  RingFitCalibrationTests.swift
-//  DiffractoKit slice 3b: the fit-driven calibration (`RingCalibration.fit`) on rings planted here, in Swift, with their truth
+//  The fit-driven calibration (`RingCalibration.fit`) on rings planted here, in Swift, with their truth
 //  known. Ported from reference commit 9482831 Tests/RingFitCalibrationTests.swift (8 tests, same names, same plant, same bands),
 //  RUN ON THE KIT'S FIT, which is reference commit 7d6fdbd1's `EllipseCalibration` (ADR 069: two starts and the 0.30 px floor guard);
 //  the reference implementation's own copy there is the pre-ADR-069 file. No number of these eight moved: every assertion holds as the reference implementation wrote it
-//  (registration section 2 said they might; the measured values are in tools/slice-3b/README.md).
+//  (said they might, the measured values are in tools/slice-3b/README.md).
 //
 //  The plant is the one tools/ring-fit-parity's plants.py draws: a Gaussian ring on an elliptical coordinate,
 //  I = exp(-((rho - 1) R)^2 / 2s^2), rho^2 = u^2/a^2 + v^2/b^2 in the frame rotated by theta, R = (a + b)/2, inside the
@@ -76,8 +76,8 @@ struct RingFitCalibrationTests {
 
     // MARK: A clean ring
 
-    /// The planted ring calibrates to its own Δq and L within the registered 0.1 %, its centre within 0.05 px, and the
-    /// whole chain is the closed forms of slice 3a applied to the fitted radius.
+    /// The planted ring calibrates to its own Δq and L within the documented 0.1 %, its centre within 0.05 px, and the
+    /// whole chain is the closed forms of RingCalibration applied to the fitted radius.
     /// RED UNDER: the radius handed to `calibrate` taken as `fit.a` (1.0 % off at 2 % ellipticity); the d argument
     /// ignored for a fixed one. (Swapping the START centre's row and column is not caught: the fit converges from that
     /// 5 px-off start to the same ring; measured by the reference implementation 2026-10-13.)

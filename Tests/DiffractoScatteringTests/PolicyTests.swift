@@ -1,10 +1,10 @@
 //
 //  PolicyTests.swift
-//  DiffractoKit 0.2.0 (docs/registration-0.2.0.md §1, §2): the policies of DiffractoScattering. The |F| cut is a parameter
-//  since slice 2; the list's refusal bounds and ring rule and the structure validation reach the kinematic list through
-//  `policy:` and `validation:`. Tier 2: a non-default value moves the outcome in the stated direction, an invalid one is
+//  DiffractoKit 0.2.0: the policies of DiffractoScattering. The |F| cut has always been a
+//  parameter; the list's refusal bounds and ring rule and the structure validation reach the kinematic list through
+//  `policy:` and `validation:`. A non-default value moves the outcome in the stated direction, an invalid one is
 //  refused or taken as documented. Every test names under "RED UNDER" the production mutation that turns a default-path test
-//  red (tools/kit-0.2.0/mutants-policy.py).
+//  red.
 //
 
 import DiffractoKitTestSupport

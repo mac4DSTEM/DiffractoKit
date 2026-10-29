@@ -1,6 +1,6 @@
 //
 //  TestSupport.swift
-//  Role: the structures and scan fixtures the slice 4 tests build. The structures are the cells and sites the planted-truth
+//  Role: the structures and scan fixtures the orientation tests build. The structures are the cells and sites the planted-truth
 //        tests of vector matching use (an fcc cell, the hexagonal and monoclinic cells, the published beta-double-prime
 //        refinement), built as `CrystalStructure` with the identity operation only: a vector-matching library reads the
 //        kinematic reflections, not the symmetry. The scan fixtures wrap the kit's `[[SIMD2<Double>]]` scan form.

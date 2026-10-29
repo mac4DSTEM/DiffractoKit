@@ -1,12 +1,12 @@
 //
 //  RingIndexingTests.swift
-//  The indexing decision (registration docs/registration-slice-3.md §1 "RingIndexing", §4 "Truth"), on the kit's own ring
-//  lists (slice 2's `kinematicReflections(kMax: 1.2).families`). It ports every test of reference commit 9482831
+//  The indexing decision ("RingIndexing", "Truth"), on the kit's own ring
+//  lists (DiffractoScattering's `kinematicReflections(kMax: 1.2).families`). It ports every test of reference commit 9482831
 //  `DSpacingIndexingTests` (28) and `MonoclinicIndexingTests` (13) that concerns the decision or the family lists,
-//  re-expressed on the kit's rings; the ones that test what slices 1 and 2 own are mapped to a comment at the end.
+//  re-expressed on the kit's rings; the ones that test what DiffractoCore and DiffractoScattering own are mapped to a comment at the end.
 //  The dyadic lists are the kit's rings of an exactly-scaled orthorhombic cell (a 2, b 1, c 1/2 Å: g = h/2, k, 2 l, so
 //  g in {1, 1.5, 2, 3, ...} is exact), so z, the k test, the margin and the reach are pinned to the last bit.
-//  Each test names the source mutants (tools/slice-3/mutants.py or the break-once run) that turn it red.
+//  Each test names the source mutations that turn it red.
 //
 
 import DiffractoKitTestSupport
@@ -229,7 +229,7 @@ struct RingIndexingTests {
         #expect(Index.minimumMargin == log(19.0))
     }
 
-    /// The registered margin plant: Au {331} -> {420}, sigma = gap/5.7, z = 2.5 (next 3.2, margin 1.995 < ln 19):
+    /// The margin plant stated before the code: Au {331} -> {420}, sigma = gap/5.7, z = 2.5 (next 3.2, margin 1.995 < ln 19):
     /// `ambiguous`. (reference testAuMarginPlantIsAmbiguous.) Mutants: the margin clause dropped; the margin as z2 - z1.
     @Test func testAuMarginPlantIsAmbiguous() throws {
         let au = try IndexPresets.rings(IndexPresets.gold)
@@ -260,7 +260,7 @@ struct RingIndexingTests {
     }
 
     /// q + R = k_max exactly is accepted (the clause is `q + R > k_max`): the same measurement with k_max one ulp below the
-    /// reach is `beyondKMax`, one ulp above is accepted. (The registration's "q + R = kMax exactly" boundary.) Mutant:
+    /// reach is `beyondKMax`, one ulp above is accepted. (The "q + R = kMax exactly" boundary.) Mutant:
     /// `>=` for `>`.
     @Test func testReachEqualToKMaxIsAccepted() throws {
         let list = try IndexPresets.dyadic([1, 1.5, 2])
@@ -410,7 +410,7 @@ struct RingIndexingTests {
     // MARK: The refusals, by name and in order
 
     /// `invalidInput` from `index`: q, sigma, k and k_max each at 0, -1, NaN, +/-infinity. (reference
-    /// testInvalidInputIsRefusedByName; the list builder's own k_max refusal is slice 1's `ReflectionListError.invalidKMax`,
+    /// testInvalidInputIsRefusedByName; the list builder's own k_max refusal is DiffractoCore's `ReflectionListError.invalidKMax`,
     /// tested in ScatteringTruthTests.testRefusals.) Mutants: sigma = 0 accepted, k_max unchecked.
     @Test func testInvalidInputIsRefusedByName() throws {
         let au = try IndexPresets.rings(IndexPresets.gold)
@@ -464,7 +464,7 @@ struct RingIndexingTests {
 
     // MARK: The overloads, and beta''
 
-    /// The two overloads (slice 2's `KinematicFamily` and slice 1's `ReflectionFamily`) give one answer, in the same
+    /// The two overloads (DiffractoScattering's `KinematicFamily` and DiffractoCore's `ReflectionFamily`) give one answer, in the same
     /// payloads, for an accepted, an ambiguous and a refused plant.
     @Test func testKinematicAndReflectionOverloadsAgree() throws {
         let kin = try IndexPresets.mSq.kinematicReflections(kMax: 1.2).families
@@ -499,7 +499,7 @@ struct RingIndexingTests {
         #expect(Set(c.map(\.family.name)).isSuperset(of: ["{3 1 5}", "{7 3 0}"]), "every ring within k sigma is named, these two among them")
     }
 
-    /// reference ADR 024, registered: at s = 0 (q = g of each ring) and sigma_q = u q, the number of beta'' rings that are
+    /// reference ADR 024, stated before the code: at s = 0 (q = g of each ring) and sigma_q = u q, the number of beta'' rings that are
     /// accepted is 8 at u = 1e-2, 23 at 3e-3 and 4 at 3e-2; at 1e-2 they are {2 0 0}, {0 0 1}, {2 0 -1}, {2 0 1}, {1 1 0},
     /// {1 1 -1}, {3 1 0}, {3 1 -1}. Mutants: z <= k to z < k, the margin clause moved, reach without the next ring.
     @Test func testBetaDoublePrimeAcceptedCountsAtZeroOffset() throws {
@@ -589,7 +589,7 @@ struct RingIndexingTests {
         #expect(o10m1.d > o101.d)
     }
 
-    /// M-C: no member with h + k odd; beta'' (C-centred) the same, and its first ten rings are the registered ones (d to 4
+    /// M-C: no member with h + k odd; beta'' (C-centred) the same, and its first ten rings are the predicted ones (d to 4
     /// decimals, multiplicity, name). (reference testCentredCellsAndTheFirstBetaFamilies.) Mutant: absences kept.
     @Test func testCentredCellsAndTheFirstBetaFamilies() throws {
         for s in [IndexPresets.mC, IndexPresets.betaDoublePrime] {
@@ -617,7 +617,7 @@ struct RingIndexingTests {
         let a = try family(l, containing: hkl(1, 0, 0))
         #expect(a.name == "{1 0 0} + {0 0 1}")
         #expect(a.multiplicity == 4)
-        // With its full symmetry (slice 1b) the same cell's {1 0 0} and {0 0 1} are one orbit, not a coincidence.
+        // With its full symmetry the same cell's {1 0 0} and {0 0 1} are one orbit, not a coincidence.
         let full = try IndexPresets.rings(IndexPresets.mSqFull)
         let merged = try family(full, containing: hkl(1, 0, 0))
         #expect(merged.multiplicity == 4)
@@ -650,7 +650,7 @@ struct RingIndexingTests {
 
     /// beta'' through CIFImport: 22 sites, space group 12, 417 rings, 1442 reflections at k_max 1.2, 113 rings of
     /// multiplicity 2 and 304 of 4, none with several orbits. (reference testBetaDoublePrimeFromCIFText; the CIF reading
-    /// itself is slice 1's CIFImportTests.)
+    /// itself is DiffractoCore's CIFImportTests.)
     @Test func testBetaDoublePrimeFromCIFText() throws {
         let s = IndexPresets.betaDoublePrime
         #expect(s.sites.count == 22)

@@ -2,7 +2,7 @@
 //  TestSupport.swift
 //  Role: the fixtures directory (read by #filePath, not as resources), the β″ CIF text rebuilt from the pinned
 //        generator's values (tools/crystal-structures/make_beta_double_prime.py, verbatim from reference commit 7448401b; the
-//        pins carry its sha256), and the pins file written by tools/slice-1/pins.py (registration section 4).
+//        pins carry its sha256), and the pins file written by tools/slice-1/pins.py.
 //
 
 import Foundation
@@ -170,7 +170,7 @@ package struct ReflectionPin: Decodable {
     package let canonical: [Int]
 }
 
-/// What the file's loop is against the detected set (amendment 2).
+/// What the file's loop is against the detected set.
 package struct FileOperationsPin: Decodable {
     package let count: Int
     package let equalsDetected: Bool
@@ -203,7 +203,7 @@ package struct StructurePin: Decodable {
     package let metric: [[Double]]
     package let volume: Double
     package let reciprocal: [[Double]]
-    /// As pymatgen expanded them (coordinates within 1e-4 of ⅓ and ⅔ snapped to the fraction, amendment 4).
+    /// As pymatgen expanded them (coordinates within 1e-4 of ⅓ and ⅔ snapped to the fraction).
     package let sites: [SitePin]
     /// The sites with the written coordinates, where pymatgen snapped any; what the port is compared with.
     package let sitesAsWritten: [SitePin]?
