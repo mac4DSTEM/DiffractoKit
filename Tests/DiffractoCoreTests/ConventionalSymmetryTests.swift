@@ -14,10 +14,10 @@ import DiffractoCore
 
 struct ConventionalSymmetryTests {
 
-    static let pins = Pins1b.shared
+    static let pins = ConventionalCellPins.shared
 
     /// Every pinned structure, detected once (default `conventional: true`).
-    static let detected: [(pin: StructurePin1b, structure: CrystalStructure)] = pins.structures.map {
+    static let detected: [(pin: ConventionalStructurePin, structure: CrystalStructure)] = pins.structures.map {
         ($0, CrystalStructure.detectingSymmetry(cell: $0.cell.unitCell, sites: $0.atomSites))
     }
 

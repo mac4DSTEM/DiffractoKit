@@ -13,7 +13,7 @@
 //  gives a confident wrong index. k is a Gaussian coverage factor (default 3). `kMax` is the k_max the list was built to
 //  (Å⁻¹): the list is complete only below it, which is what `beyondKMax` guards.
 //
-//  THE DEFINITION (tools/slice-3/index-pins.py is written from the same text):
+//  THE DEFINITION (tools/pins/ring-indexing/pins.py is written from the same text):
 //    z, δ       z = |q − g| / σ_q; the signed deviation δ = (d_meas − d)/d = g/q − 1; |Δd|/d = |δ|. Candidates order by
 //               (z, g).
 //    margin     between two candidates, their log-likelihood ratio (z₂² − z₁²)/2; accepting needs ≥ ln 19 (the next at

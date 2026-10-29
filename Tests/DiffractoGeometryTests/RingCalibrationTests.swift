@@ -5,7 +5,7 @@
 //  names, literals unchanged) to Swift Testing. No fit, no Python at run time: the expected numbers below were worked once,
 //  by hand, in 60-digit decimal arithmetic from the CODATA 2018 constants stated in ElectronWavelength.swift (h and c and e
 //  exact, m₀ = 9.1093837015e-31 kg) and are typed here as literals. The many-case parity with a 60-digit decimal script is
-//  RingCalibrationPinsTests (tools/slice-3/ring-pins.py).
+//  RingCalibrationPinsTests (tools/pins/ring-calibration/ring-pins.py).
 //
 //  Every test names under "RED UNDER" the production mutation that turns it red.
 //  One change from the seed: `testTheBoundsAreTheDocumentedOnesAndTheBinsTheFitsOwn` held the bin constants equal to the

@@ -365,9 +365,9 @@ struct EllipseCalibrationTests {
         let scipy: String
         let rings: [Ring]
         static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("Fixtures/slice-3b-sweep.json")
+            .appendingPathComponent("Fixtures/scipy-ellipse-sweep-pins.json")
         static let shared: Sweep = {
-            do { return try JSONDecoder().decode(Sweep.self, from: Data(contentsOf: url)) } catch { fatalError("slice-3b-sweep.json: \(error)") }
+            do { return try JSONDecoder().decode(Sweep.self, from: Data(contentsOf: url)) } catch { fatalError("scipy-ellipse-sweep-pins.json: \(error)") }
         }()
     }
 
@@ -378,7 +378,7 @@ struct EllipseCalibrationTests {
 
     /// The 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing; plant and start
     /// read from the sweep fixture) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
-    /// weighted-conic objective, tools/slice-3b/sweep.py: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad (not on a circle,
+    /// weighted-conic objective, tools/pins/ellipse/sweep.py: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad (not on a circle,
     /// where it is undefined), the same pixel and bin counts, and the centre within 0.05 px of the plant (0.1 px for the rings with an arc missing, see below). These are the bands of
     /// reference tools/ellipse-calibration-test (measured there: 1.1e-7 px, 6.4e-10, 1.7e-8 rad). This pins the OBJECTIVE: an
     /// unweighted or sqrt-weighted variant lands on a different minimum and fails here.

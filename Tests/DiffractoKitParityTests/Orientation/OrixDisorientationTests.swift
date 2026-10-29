@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// Pins: tools/orix/disorientation-pins.py (orix 0.15.0). The kit's py4DSTEM matrix is orix's Orientation matrix (symmetry on
+/// Pins: tools/pins/orix/disorientation-pins.py (orix 0.15.0). The kit's py4DSTEM matrix is orix's Orientation matrix (symmetry on
 /// the left). Tolerances, written per quantity: angles 1e-9 rad (Double arithmetic against orix's float64; arccos near a
 /// half-turn is the only conditioning loss), reduced matrix entries 1e-9 where the minimum is unique (next-best angle more
 /// than 1e-6 rad away), the Float diagnostic angle of `reduce` 2e-7 rad (Float rounding of an angle below pi).

@@ -48,7 +48,7 @@ samplers preserve their seeds, candidate counts and arithmetic. Other classes se
 use at least 192 candidates or 16 per requested point. This is a deterministic coverage policy, not py4DSTEM's angular
 sampling grid or a claim of optimal covering radius. Counts outside 0...4096 throw before allocation.
 
-Both are cross-checked against orix 0.15.0 (`tools/orix/direction-pins.py`, `OrixDirectionTests`): the kit's zone is not orix's (orix's
+Both are cross-checked against orix 0.15.0 (`tools/pins/orix/direction-pins.py`, `OrixDirectionTests`): the kit's zone is not orix's (orix's
 `fundamental_sector` is a different representative region), so the comparison is of orbits under orix's own Laue group in the kit frame. On
 3 765 poles (300 seeded random and 20 designed per class, twelve class/setting entries) the reduced pole lies in the orbit of the input and of orix's
 folded pole (worst gap 1.1e-15), and every member of an orbit reduces to the same pole (9e-16), so the kit's zone holds exactly one pole per
@@ -71,7 +71,7 @@ All keys return RGB as `SIMD3<Float>`, without UI or a map container. The conven
   `Vector3d.in_fundamental_sector` (MTEX `project2FundamentalRegion`), then coloured by the polar coordinates about the
   sector centre (the 1000-point corrected azimuth for three-vertex sectors, hue from azimuth, lightness `0.5 + polar/2`).
   The sectors, the centres, orix's element order for ties and the frame below are a generated table
-  (`OrixIPFSectors.swift`, `tools/orix/ipf-pins.py`). Measured against orix on 2 777 poles (240 seeded signed random poles
+  (`OrixIPFSectors.swift`, `tools/pins/orix/ipf-pins.py`). Measured against orix on 2 777 poles (240 seeded signed random poles
   per class plus the axes, sector vertices and centres, and points beside the vertices): worst RGB gap 2.98e-8, the Float
   rounding (the test tolerance is 1e-7). The measured distance between the app's native keys and orix's is recorded by a
   test: m-3m 3.5e-6 (the app's key is the same construction), 6/mmm 0.30 and 2/m 1.0 (different conventions).
@@ -105,7 +105,7 @@ crystal over their symmetry equivalents: with the py4DSTEM matrix convention of 
 `Orientation` matrix: lab to crystal, symmetry on the left) the misorientation is `to * from^T` and the result is the
 minimum-angle `S * to * from^T`. Because `angle(S1 M S2)` equals `angle(M S2 S1)`, the two-sided reduction of orix's
 `Misorientation((sym, sym)).reduce()` and the one-sided one are the same angle. The cross-check against orix 0.15.0
-(`tools/orix/disorientation-pins.py`; 150 seeded random orientations, 10 designed ones (the identity and small, medium and large rotations) and 150 pairs per class, all eleven
+(`tools/pins/orix/disorientation-pins.py`; 150 seeded random orientations, 10 designed ones (the identity and small, medium and large rotations) and 150 pairs per class, all eleven
 classes, `OrixDisorientationTests`): `reduce`'s Float angle within 1.19e-7 rad, the reduced matrix within 6.7e-16 wherever the
 minimum is unique (next-best angle more than 1e-6 rad away), the Double pair angle within 1.4e-14 rad. The kit's reduction
 needed no change. Notes from the comparison:
@@ -127,13 +127,13 @@ case). The operator list is selected with `order:`. `.pymatgen` (the default) is
 `SpacegroupAnalyzer(structure).get_point_group_operations()` (pymatgen's order, identity first, duplicates removed; transposed to
 `lat_inv.T @ R.T @ lat_real`), twice over for -3. The kit ships the order of the first space group of each class (P-1, P2/m, Pmmm, P4/m,
 P4/mmm, P-3, P-31m for -31m, P-3m1 for -3m1, P6/m, P6/mmm, Pm-3, Pm-3m) as a generated table (`PymatgenOperatorTable.swift`,
-`tools/symmetry/family-real-pins.py`); other space groups of a class that list the operators differently (Fddd; the origin-choice-2 groups of 4/m, 4/mmm,
+`tools/pins/orientation-symmetry/family-real-pins.py`); other space groups of a class that list the operators differently (Fddd; the origin-choice-2 groups of 4/m, 4/mmm,
 m-3, m-3m) gave identical families on all pinned matrices. `.sortedFractional` is the pin harness's: the proper operators sorted by their fractional
 matrices, then their negatives. They differ in the fallback operator, which is the first one: for 2/m and -3m (-31m) a column that no
 operator maps into the automatic sector (which is not a fundamental domain there) keeps the first, a twofold in the sorted list and the identity in a real crystal's.
 Pinned on real crystals (57 `Crystal`s of centrosymmetric space groups, 8 607 matrices, `Py4DSTEMRealFamilyTests`): family entries within 4.4e-16, all twelve class/setting
 entries; against the same crystals the sorted order disagrees on 139 of 151 matrices for 2/m and 136 of 151 for -31m. Under the harness order, pinned
-(`tools/symmetry/family-pins.py` runs the real function; `Py4DSTEMFamilyTests`): 2 387
+(`tools/pins/orientation-symmetry/family-pins.py` runs the real function; `Py4DSTEMFamilyTests`): 2 387
 matrices, all eleven classes, 7 161 columns, family entries identical (worst gap 0.0); 171 columns lying within 1e-12 of a
 sector wall (the identity's columns on the 6/m wall, for example) are not compared, because whether the exact `>= 0` test
 passes there is BLAS rounding noise in NumPy. For example, native cubic folding uses [001]-[101]-[111], while the automatic
@@ -159,11 +159,11 @@ not bit equality between different floating-point types. The measured Double-to-
 From the worktree, with the existing pinned references (no installation or network access):
 
 ```sh
-../../References/python/orix/bin/python -I -B tools/symmetry/pins.py
+../../References/python/orix/bin/python -I -B tools/pins/orientation-symmetry/pins.py
 swift test -c release --jobs 4
 ```
 
-The orix pins (`tools/orix/ipf-pins.py`, `tools/orix/disorientation-pins.py`) use the orix venv (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file in
+The orix pins (`tools/pins/orix/ipf-pins.py`, `tools/pins/orix/disorientation-pins.py`) use the orix venv (orix 0.15.0, NumPy 2.5.4, SciPy 1.18.1, Python 3.12, freeze file in
 `References/python/orix/freeze.txt`; see `CONTRIBUTING.md`); the direction-family pins use the py4DSTEM venv. `MACEM_SUITE_ROOT` can locate references from a differently placed checkout. `pins.py` invokes the pinned py4DSTEM
 interpreter and compiles only a `git show` extraction of the app's symmetry classes at c809679c into this worktree's
 `.build/symmetry-generator`. It does not build or modify the app. The JSON contains seed 20261016, package versions,

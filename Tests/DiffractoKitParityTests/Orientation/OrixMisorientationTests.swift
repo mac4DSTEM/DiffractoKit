@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// Pins: tools/orix/misorientation-pins.py (orix 0.15.0). Tolerances: angles atol 1e-4 (orix's test_misorientation tolerance; measured 1e-15),
+/// Pins: tools/pins/orix/misorientation-pins.py (orix 0.15.0). Tolerances: angles atol 1e-4 (orix's test_misorientation tolerance; measured 1e-15),
 /// equivalent sets and reduced matrices atol 1e-9 where the smallest angle is unique, the Euler angles atol 1e-9. Where orix's `reduce` is not
 /// the smallest angle (documented in Misorientation.swift) the kit is compared with the minimum, not with orix.
 private struct Pins: Decodable {

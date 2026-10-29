@@ -16,7 +16,7 @@ import DiffractoScattering
 // MARK: - EllipseCalibration.Policy
 
 struct EllipsePolicyTests {
-    typealias T = RingFitAmendmentTests
+    typealias T = RingFitRobustnessTests
     typealias Policy = EllipseCalibration.Policy
 
     static func clean(epsilon: Double = 0.02, thetaDeg: Double = 35) -> DiffractionPattern {
@@ -343,7 +343,7 @@ struct EllipsePolicyTests {
     /// RED UNDER: the floor, its tolerance or the lowered floor ignored.
     @Test func theRingWidthFloorAndItsToleranceAreParameters() throws {
         func thin(_ sigma: Double) -> DiffractionPattern {
-            let scene = RingFitAmendmentTests.Scene(rows: 64, cols: 64, row0: 31.4, col0: 32.3)
+            let scene = RingFitRobustnessTests.Scene(rows: 64, cols: 64, row0: 31.4, col0: 32.3)
             return T.render(scene) { dr, dc in exp(-(hypot(dr, dc) - 20) * (hypot(dr, dc) - 20) / (2 * sigma * sigma)) }
         }
         func profile(_ pattern: DiffractionPattern, _ policy: Policy) throws -> EllipseCalibrationFit {
@@ -389,7 +389,7 @@ struct EllipsePolicyTests {
     /// or the inlier share at 100 % no refit runs, and the two agree.
     /// RED UNDER: the robust cut or the inlier percentage ignored.
     @Test func theRobustRefitIsParameterised() throws {
-        let scene = RingFitAmendmentTests.Scene()
+        let scene = RingFitRobustnessTests.Scene()
         let base = T.render(scene, noise: 0.05, seed: 5) { dr, dc in T.ring(dr, dc, radius: 42, epsilon: 0.03, thetaDeg: 40) }
         var pixels = base.pixels
         let blocks: [(Int, Int)] = [(40, 63), (92, 70), (66, 100), (62, 26), (45, 90), (85, 40)]
@@ -560,7 +560,7 @@ struct RingCalibrationPolicyTests {
     /// at the default amplitude fraction and 30 or more at 0.05; sectors need pixels: none are read with 100000 demanded.
     /// RED UNDER: the amplitude fraction, the significance or the sector pixels ignored by `ringEvidence`.
     @Test func theMeasurementBoundsActOnTheSectors() throws {
-        typealias T = RingFitAmendmentTests
+        typealias T = RingFitRobustnessTests
         let pattern = T.render { dr, dc in
             T.ring(dr, dc, radius: 42, epsilon: 0.01, thetaDeg: 15) * (T.inGap(dr, dc, start: 200, width: 120) ? 0.35 : 1)
         }
@@ -587,7 +587,7 @@ struct RingCalibrationPolicyTests {
     /// reaches the evidence the fit measures.
     /// RED UNDER: `fitRing` not passing the policy to the refusals; the evidence policy not reaching the fit.
     @Test func thePolicyReachesTheFit() throws {
-        typealias T = RingFitAmendmentTests
+        typealias T = RingFitRobustnessTests
         let pattern = T.render(noise: 0.05, seed: 3) { dr, dc in T.ring(dr, dc, radius: 42, epsilon: 0.02, thetaDeg: 30) }
         func ring(_ policy: P) throws -> RingRadiusFit {
             try RingCalibration.fitRing(pattern: pattern, centerQX: 64.47, centerQY: 60.89, innerRadius: 28, outerRadius: 56,

@@ -1,7 +1,7 @@
 //
 //  RingOverlayTests.swift
 //  `RingOverlay` (ported from macTEM's RingOverlay.swift; the app source is the oracle, no Python reference). Pins
-//  (Fixtures/ring-overlay-pins.json) come from tools/mactem-pieces/ring-overlay-pins.py, a pure-Python transcription of the
+//  (Fixtures/ring-overlay-pins.json) come from tools/pins/ring-display/ring-overlay-pins.py, a pure-Python transcription of the
 //  app source, NOT from this Swift. Closed forms (circle, axis vertex) are hand-derived and checked beside them.
 //
 

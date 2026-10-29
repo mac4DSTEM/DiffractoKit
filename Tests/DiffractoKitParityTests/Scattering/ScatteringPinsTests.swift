@@ -1,7 +1,7 @@
 //
 //  ScatteringPinsTests.swift
 //  The kit against the pins written BEFORE its code:
-//    slice-2-pins.json  tools/slice-2/pins.py: NumPy from the definitions, pymatgen's Laue group and X-ray pattern
+//    numpy-structure-factor-pins.json  tools/pins/structure-factors/pins.py: NumPy from the definitions, pymatgen's Laue group and X-ray pattern
 //  Public API only (DiffractoScattering and DiffractoCore). A failure is a failure of the port, never a tolerance to widen.
 //
 
@@ -68,7 +68,7 @@ enum ScatteringFixtures {
         return try d.decode(type, from: data)
     }
 
-    fileprivate static let pinsResult: Result<Pins, any Error> = Result { try decode(Pins.self, "slice-2-pins.json") }
+    fileprivate static let pinsResult: Result<Pins, any Error> = Result { try decode(Pins.self, "numpy-structure-factor-pins.json") }
     fileprivate static func pins() throws -> Pins { try pinsResult.get() }
 
     fileprivate static func pin(_ name: String) throws -> PinStructure {

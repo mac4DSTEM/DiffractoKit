@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// Pins: tools/orix/direction-pins.py (orix 0.15.0 `Vector3d.in_fundamental_sector`, orix's Laue groups in the kit frame).
+/// Pins: tools/pins/orix/direction-pins.py (orix 0.15.0 `Vector3d.in_fundamental_sector`, orix's Laue groups in the kit frame).
 /// The kit's zone is not orix's (largest-(z,x,y) orbit member, or the apps' native sector for m-3m, 6/mmm, 2/m), so the
 /// comparison is of orbits under orix's own group. Written tolerances: 1e-5 (orix's allclose; was 1e-9) on unit-vector components for orbit membership against orix, 1e-9 for the kit's own invariance check; formerly one 1e-9 for orbit
 /// membership and for the reduced pole being the same for every orbit member (the kit's own ties are compared at 1e-13;

@@ -1,7 +1,7 @@
 //
 //  CellStandardisationTests.swift
 //  Materials Project import numerics against pymatgen SpacegroupAnalyzer (fixtures/mp-import/pymatgen-pins.json,
-//  tools/mp-import/pins.py: pymatgen 2026.9.24, pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4). The inputs are
+//  tools/pins/mp-import/pins.py: pymatgen 2026.9.24, pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4). The inputs are
 //  committed MP-shaped JSON; nothing here touches the network.
 //
 

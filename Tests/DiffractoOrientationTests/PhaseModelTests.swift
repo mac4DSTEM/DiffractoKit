@@ -6,7 +6,7 @@ import DiffractoCore
 import DiffractoOrientation
 
 /// The phase model: validation, orientation-class detection, provenance and the Materials Project route. Detection is
-/// checked against pymatgen / spglib point groups (`Fixtures` of DiffractoCoreTests/presets-pins.json, tools/presets/pins.py):
+/// checked against pymatgen / spglib point groups (`Fixtures` of DiffractoCoreTests/presets-pins.json, tools/pins/presets/pins.py):
 /// whenever `orientationClass(of:)` names a class it is spglib's Laue class (exact), and the groups that return nil are the
 /// ones whose standard operators are not in the kit's setting. Provenance, fingerprint and refusals are exact logic.
 private struct OrientationPins: Decodable {

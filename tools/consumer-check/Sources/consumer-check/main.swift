@@ -234,12 +234,12 @@ report.section("0.1.0: tetragonal along a, b or c") { r in
 }
 
 runGeometryChecks(&report)
-runGeometry004Checks(&report)
+runRingFitChecks(&report)
 runConventionalChecks(&report)
 runPolicyChecks(&report)
 runACOMChecks(&report)
-runMacTEMPiecesChecks(&report)
+runRingDisplayChecks(&report)
 runPhaseOrientationChecks(&report)
 
-report.section("0.10.0: misorientation, variants, assignment, pattern measurements") { try release0100Checks(&$0) }
+report.section("0.10.0: misorientation, variants, assignment, pattern measurements") { try runOrientationAndScaleChecks(&$0) }
 exit(report.finish())

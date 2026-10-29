@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// Pins: tools/orix/ipf-pins.py (orix 0.15.0, DirectionColorKeyTSL). Tolerance: the Swift key is Double arithmetic
+/// Pins: tools/pins/orix/ipf-pins.py (orix 0.15.0, DirectionColorKeyTSL). Tolerance: the Swift key is Double arithmetic
 /// transcribed from orix; the public colour is Float, so the written tolerance is 1e-5 absolute (orix's allclose; was 1e-7) on RGB in [0, 1]
 /// (Float rounding is 6e-8; the rest is the order of floating-point operations in the 1000-point azimuth table).
 private struct OrixPins: Decodable {

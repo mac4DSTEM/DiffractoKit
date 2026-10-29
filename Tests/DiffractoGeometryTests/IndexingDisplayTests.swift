@@ -1,7 +1,7 @@
 //
 //  IndexingDisplayTests.swift
 //  `IndexingDisplay` (ported from macTEM's IndexingDisplay.swift; the app source is the oracle, no Python reference).
-//  Displayed numbers are pinned (Fixtures/indexing-display-pins.json) by tools/mactem-pieces/indexing-display-pins.py, a
+//  Displayed numbers are pinned (Fixtures/indexing-display-pins.json) by tools/pins/ring-display/indexing-display-pins.py, a
 //  pure-Python transcription of the app source's formulas, NOT this Swift. The decision itself is the kit's RingIndexing (P9);
 //  these tests check the derived sigma_q, delta, z, margin, odds and the text, the refusal names, and that the decision is untouched.
 //

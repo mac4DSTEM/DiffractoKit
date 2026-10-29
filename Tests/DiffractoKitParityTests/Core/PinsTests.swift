@@ -1,6 +1,6 @@
 //
 //  PinsTests.swift
-//  Agreement with pymatgen, read from slice-1-pins.json (tools/slice-1/pins.py, run in
+//  Agreement with pymatgen, read from pymatgen-cells-pins.json (tools/pins/cells/pins.py, run in
 //  ../References/python/orix before any Swift existed). Agreement is agreement, not truth; a difference is a failure of
 //  the port, never a tolerance to widen.
 //
@@ -15,7 +15,7 @@ import DiffractoCore
 struct PinsTests {
 
     static let pins: Pins = {
-        do { return try Pins.load() } catch { fatalError("slice-1-pins.json: \(error)") }
+        do { return try Pins.load() } catch { fatalError("pymatgen-cells-pins.json: \(error)") }
     }()
 
     @Test func testPinsCarryTheirVersions() {

@@ -4,7 +4,7 @@ import Testing
 import simd
 import DiffractoCore
 
-/// PresetPins: tools/presets/pins.py (pymatgen 2026.9.24, spglib 2.8.0). The pins build each structure independently, from the
+/// PresetPins: tools/pins/presets/pins.py (pymatgen 2026.9.24, spglib 2.8.0). The pins build each structure independently, from the
 /// published cell and Wyckoff positions with `Structure.from_spacegroup`. Tolerances, written per quantity: lattice
 /// parameters, volume and d(hkl) 1e-7 relative (the reference's tolerance; was 1e-12, closed forms in float64 on both sides); fractional site positions 1e-7
 /// (the kit's hand lists carry 2/3 as a Double, pymatgen's orbit expansion computes it); counts, Z, space-group number

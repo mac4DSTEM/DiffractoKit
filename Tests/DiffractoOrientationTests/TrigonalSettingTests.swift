@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// The two -3m settings (twofolds between the axes, -31m, and on the axes, -3m1). Pins: tools/symmetry/trigonal-pins.py (pymatgen
+/// The two -3m settings (twofolds between the axes, -31m, and on the axes, -3m1). Pins: tools/pins/orientation-symmetry/trigonal-pins.py (pymatgen
 /// 2026.9.24 / spglib 2.8.0: `SpacegroupAnalyzer(from_spacegroup(n)).get_point_group_operations()` for space groups 162-167). The
 /// operator comparison is on sets of 3x3 matrices, tolerance 1e-12 absolute (entries are 0, +-1, +-0.5, +-sqrt(3)/2: pure Double
 /// arithmetic); the fractional matrices are integers and compared exact.

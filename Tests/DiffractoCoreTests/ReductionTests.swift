@@ -13,7 +13,7 @@ import DiffractoCore
 
 struct ReductionTests {
 
-    static let pins = Pins1b.shared
+    static let pins = ConventionalCellPins.shared
 
     private struct Case { let name: String; let cell: UnitCell; let spglib: [Double]; let pymatgen: [Double] }
 

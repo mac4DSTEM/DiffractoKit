@@ -1,7 +1,7 @@
 //
 //  RingCalibrationQTests.swift
 //  DiffractoKit 0.1.0: `RingCalibration.q(radius:cameraLengthPixels:wavelength
-//  Angstroms:)` and its inverse `radius(q:cameraLengthPixels:wavelengthAngstroms:)` against the pins tools/kit-0.0.4/q-pins.py
+//  Angstroms:)` and its inverse `radius(q:cameraLengthPixels:wavelengthAngstroms:)` against the pins tools/pins/ring-calibration/q-pins.py
 //  writes (Fixtures/q-pins.json): the closed forms q = 2 sin(atan(R/L)/2)/λ and R = L tan(2 asin(qλ/2)) in 60-digit decimal
 //  arithmetic (two independent evaluations that agree to 1e-50), on 100 forward and 120 inverse cases; the round trip; the
 //  identity q(R, L_px, λ) = 1/d on the ring-calibration pins' 320 cases; and the NaN plants. Band 1e-7 relative (the reference's tolerance since 0.9.1; it was 1e-12); a
