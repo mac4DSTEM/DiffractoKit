@@ -192,7 +192,7 @@ extension LinearScale {
     }
 
     /// "{2 0 0}" is written "{200}" when every index is a single digit; anything else is kept.
-    public static func compactShellLabel(_ name: String) -> String {
+    package static func compactShellLabel(_ name: String) -> String {
         let inner = name.dropFirst().dropLast()
         let indices = inner.split(separator: " ")
         guard name.hasPrefix("{"), name.hasSuffix("}"), !name.contains("+"), indices.allSatisfy({ $0.count == 1 && $0.first!.isNumber }) else {
