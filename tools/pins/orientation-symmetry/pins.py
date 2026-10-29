@@ -62,7 +62,7 @@ def sample(count, ops):
 
 def main():
     assert md.version('pymatgen') == '2026.9.24'
-    assert md.version('pymatgen-core') == '2026.9.23'
+    assert md.version('pymatgen-core') == '2026.10.16'
     assert md.version('numpy') == '2.5.4'
     assert md.version('scipy') == '1.18.1'
     import pymatgen.symmetry.groups as groups

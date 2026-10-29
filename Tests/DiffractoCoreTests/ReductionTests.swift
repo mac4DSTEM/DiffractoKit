@@ -27,7 +27,7 @@ struct ReductionTests {
     @Test func testPinsCarryTheirVersionsAndSizes() {
         let v = Self.pins.versions
         #expect(v["spglib"] == "2.8.0")
-        #expect(v["pymatgen_core"] == "2026.9.23")
+        #expect(v["pymatgen_core"] == "2026.10.16")
         #expect(v["numpy"] == "2.5.4")
         #expect(Self.pins.structures.count == 27)
         #expect(Self.pins.randomCells.count == 14 * 200)

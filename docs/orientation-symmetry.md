@@ -171,4 +171,4 @@ source digests (including pymatgen symm_data.json), every proper group, random r
 sample positions, executed py4DSTEM RGB and Float bits, and the new sectors/samples computed from pymatgen orbits.
 Python's family reducer is called only by the generator to obtain representative colour inputs.
 
-The generator enforces NumPy 2.5.4 / SciPy 1.18.1 in the pymatgen environment and NumPy 2.5.0 / SciPy 1.18.0 in the py4DSTEM environment. It also regenerates the colour-basis Swift table.
+The generator enforces NumPy 2.5.4 / SciPy 1.18.1 in the pymatgen environment and NumPy 2.5.4 / SciPy 1.18.1 in the py4DSTEM environment. It also regenerates the colour-basis Swift table.

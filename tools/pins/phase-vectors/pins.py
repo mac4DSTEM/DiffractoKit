@@ -9,7 +9,7 @@ clock, seeded random numbers (np.random.default_rng), sorted keys, so two runs g
 
 Two interpreters, one memory cap: this script runs the py4DSTEM half (tools/pins/phase-vectors/pins-py4dstem.py) as a subprocess with
 References/python/py4dstem/bin/python (Python 3.12, py4DSTEM f050d207; read-only, never installed into) and reads its JSON
-from stdout. SciPy 1.18.1 and the NumPy oracle are here, because the py4DSTEM venv carries SciPy 1.18.0.
+from stdout. SciPy 1.18.1 and the NumPy oracle are here.
 
 What is an oracle for what
 --------------------------

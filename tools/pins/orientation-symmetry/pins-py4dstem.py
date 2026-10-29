@@ -38,8 +38,8 @@ for module in [viz,acom,utils,crystal_module]:
     assert p.read_bytes()==(clone/'py4DSTEM/process/diffraction'/p.name).read_bytes()
     hashes[p.name]=hashlib.sha256(p.read_bytes()).hexdigest()
 
-assert np.__version__ == '2.5.0'
-assert scipy.__version__ == '1.18.0'
+assert np.__version__ == '2.5.4'
+assert scipy.__version__ == '1.18.1'
 assert py4DSTEM.__version__ == '0.14.19'
 req=json.load(sys.stdin)
 records=[]

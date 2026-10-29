@@ -335,8 +335,8 @@
   ],
   "numpy": "2.5.4",
   "pymatgen": "2026.9.24",
-  "pymatgenCore": "2026.9.23",
-  "python": "3.14.7",
+  "pymatgenCore": "2026.10.16",
+  "python": "3.12.14",
   "spglib": "2.8.0",
   "symprec": 0.0001
 }

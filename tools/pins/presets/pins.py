@@ -19,7 +19,7 @@ import spglib
 from pymatgen.core import Lattice, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-assert version('pymatgen') == '2026.9.24' and version('pymatgen-core') == '2026.9.23'
+assert version('pymatgen') == '2026.9.24' and version('pymatgen-core') == '2026.10.16'
 assert np.__version__ == '2.5.4' and spglib.__version__ == '2.8.0'
 OUT = Path(__file__).resolve().parents[3] / 'Tests/DiffractoCoreTests/Fixtures/presets-pins.json'
 HKL = [(1, 0, 0), (1, 1, 0), (1, 1, 1), (2, 0, 0), (2, 2, 0), (3, 1, 1), (0, 0, 2), (1, 0, 1), (1, 0, 2), (2, 1, 1), (0, 2, 0), (-2, 0, 1), (1, -1, 3), (2, 2, 2), (0, 0, 4)]

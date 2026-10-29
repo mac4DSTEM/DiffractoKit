@@ -20,11 +20,11 @@ struct PinsTests {
 
     @Test func testPinsCarryTheirVersions() {
         let v = Self.pins.versions
-        #expect(v["pymatgen_core"] == "2026.9.23")
+        #expect(v["pymatgen_core"] == "2026.10.16")
         #expect(v["pymatgen"] == "2026.9.24")
         #expect(v["spglib"] == "2.8.0")
         #expect(v["numpy"] == "2.5.4")
-        #expect(v["python"]?.hasPrefix("3.14.7") ?? false, "\(String(describing: v["python"]))")
+        #expect(v["python"]?.hasPrefix("3.12.") ?? false, "\(String(describing: v["python"]))")
         #expect(!Self.pins.generatedAt.isEmpty)
         #expect(Self.pins.structures.count >= 14)
         #expect(Self.pins.cells.count == 7)

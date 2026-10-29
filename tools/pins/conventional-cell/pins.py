@@ -8,7 +8,7 @@ Run, from any directory, with the pinned oracle, UNDER A MEMORY CAP (setrlimit a
 It writes Tests/DiffractoCoreTests/Fixtures/spglib-conventional-cell-pins.json BEFORE any Swift for the reduction exists.
 
 Oracles (all from the pinned venv): spglib 2.8.0 `niggli_reduce` and `get_symmetry_dataset` / `standardize_cell`;
-pymatgen-core 2026.9.23 `Lattice.get_niggli_reduced_lattice` as the second, independent Niggli implementation. The ring
+pymatgen-core 2026.10.16 `Lattice.get_niggli_reduced_lattice` as the second, independent Niggli implementation. The ring
 list in the conventional setting uses slice 1's own definitions (tools/pins/cells/pins.py, imported, not copied) on spglib's
 standardised cell. Agreement is agreement, not truth: truth (the Niggli conditions, P unimodular, the group-theory
 counts) is checked in the Swift tests directly.

@@ -2,8 +2,8 @@
 
 Run: ../References/python/pymatgen/bin/python -I -B tools/pins/cif-symmetry/pins.py
 Versions: spglib 2.8.0; the fixture's "pymatgen" key is a literal, 2026.9.24, the metapackage version. The code on disk in
-References/python/pymatgen is pymatgen-core 2026.10.16 (checked 2026-10-21: regenerating gave a byte-identical file, so the numbers
-are the same under both). Other fixtures record pymatgen-core 2026.9.23 from an earlier venv.
+References/python/pymatgen is pymatgen-core 2026.10.16 (checked 2026-10-21: regenerating gave a byte-identical
+file). The other pymatgen fixtures were regenerated on it on 2026-10-29.
 
 Writes Tests/DiffractoCoreTests/Fixtures/cif-symmetry-pins.json:
   symbols: every Hermann-Mauguin spelling spglib lists (short, full, unspaced, alternative settings) with its IT number;

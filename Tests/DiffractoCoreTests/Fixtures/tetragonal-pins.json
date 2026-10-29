@@ -1,10 +1,10 @@
 {
  "versions": {
-  "pymatgen_core": "2026.9.23",
+  "pymatgen_core": "2026.10.16",
   "pymatgen": "2026.9.24",
   "spglib": "2.8.0",
   "numpy": "2.5.4",
-  "python": "3.14.7"
+  "python": "3.12.14"
  },
  "symprec": 0.0001,
  "k_max": 1.2,

@@ -7,7 +7,7 @@ Swift tests read them and the planted truth. A difference is a failure of the po
 ../References/python/pymatgen/bin/python -I -B tools/pins/cells/pins.py      # from any directory, about 5 s, deterministic
 ```
 
-The oracle is pymatgen 2026.9.24 with pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7 (read at run
+The oracle is pymatgen 2026.9.24 with pymatgen-core 2026.10.16, spglib 2.8.0, NumPy 2.5.4, Python 3.12 (read at run
 time into `versions`). The beta'' CIF is written first by `tools/crystal-structures/make_beta_double_prime.py` into the
 gitignored `References/crystal-structures/`; its sha256 and full text are in the pins (`cif_text`) so the Swift tests
 rebuild it byte for byte. Every other CIF is a fixture in `Tests/DiffractoCoreTests/Fixtures/` whose first line is

@@ -54,7 +54,7 @@ struct TetragonalSettingTests {
     @Test func testPinsCarryTheirVersionsAndShape() {
         let v = Self.file.versions
         #expect(v["pymatgen"] == "2026.9.24")
-        #expect(v["pymatgen_core"] == "2026.9.23")
+        #expect(v["pymatgen_core"] == "2026.10.16")
         #expect(v["spglib"] == "2.8.0")
         #expect(v["numpy"] == "2.5.4")
         #expect(Self.file.entries.count == 15, "five structures in three settings")

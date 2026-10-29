@@ -8,9 +8,9 @@ named under "Measured floors and open points").
 ../References/python/pymatgen/bin/python -I -B tools/pins/phase-vectors/pins.py     # about 3 s, peak about 330 MB, deterministic
 ```
 
-- `pins.py` runs on the pymatgen venv (Python 3.14.7, NumPy 2.5.4, SciPy 1.18.1, pymatgen 2026.9.24) and starts
-  `pins-py4dstem.py` as a subprocess with `../References/python/py4dstem/bin/python -I -B` (Python 3.12.4, NumPy 2.5.0,
-  SciPy 1.18.0, py4DSTEM 0.14.19 = f050d207; read-only, nothing installed into it). The helper checks that the installed
+- `pins.py` runs on the pymatgen venv (Python 3.12, NumPy 2.5.4, SciPy 1.18.1, pymatgen-core 2026.10.16) and starts
+  `pins-py4dstem.py` as a subprocess with `../References/python/py4dstem/bin/python -I -B` (Python 3.12, NumPy 2.5.4,
+  SciPy 1.18.1, py4DSTEM 0.14.19 = f050d207; read-only, nothing installed into it). The helper checks that the installed
   py4DSTEM files (`crystal.py`, `single_atom_scatter.py`, `utils.py`, the scattering table) are byte equal to the source tree at the
   lock and that the table's sha256 is the lock (`be845d1d...`). One memory cap covers both (the helper is a child). SciPy 1.18.1
   exists only in the pymatgen venv, so the Euler pins are there.

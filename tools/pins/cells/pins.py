@@ -5,7 +5,7 @@ Run, from any directory, with the pinned oracle:
     ../References/python/pymatgen/bin/python -I -B tools/pins/cells/pins.py
 
 It writes Tests/DiffractoCoreTests/Fixtures/pymatgen-cells-pins.json BEFORE any Swift exists. pymatgen 2026.9.24 (with
-pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7) is the oracle for the cell, the expanded sites, the
+pymatgen-core 2026.10.16, spglib 2.8.0, NumPy 2.5.4, Python 3.12) is the oracle for the cell, the expanded sites, the
 space-group number, the point-group symbol, the symmetry operations, the (h, k, l) set with |g| <= k_max and d.
 The Laue orbit, the canonical form, the absence test and the families are NOT pymatgen functions: they are written
 here, in NumPy, from the definitions in the comments below, not from any Swift.

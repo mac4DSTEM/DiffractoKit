@@ -5,7 +5,7 @@ Run, from any directory, with the pinned oracle:
     ../References/python/pymatgen/bin/python -I -B tools/pins/cells/tetragonal-pins.py
 
 It writes Tests/DiffractoCoreTests/Fixtures/tetragonal-pins.json BEFORE the Swift fix exists. Oracle: pymatgen 2026.9.24
-(pymatgen-core 2026.9.23) SpacegroupAnalyzer on spglib 2.8.0, NumPy 2.5.4.
+(pymatgen-core 2026.10.16) SpacegroupAnalyzer on spglib 2.8.0, NumPy 2.5.4.
 
 Tolerance: symprec = 1e-4 (Angstrom, spglib's), as slice 1's pins (tools/pins/cells/pins.py SYMPREC). The inputs are
 exact (coordinates written to 4 decimals and expanded by the space group's own operations, so every equivalent site is

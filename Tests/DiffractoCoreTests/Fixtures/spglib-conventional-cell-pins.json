@@ -1,5 +1,5 @@
-{"versions":{"python":"3.14.7 | packaged by Anaconda, Inc. | (main, Aug 14 2026, 10:13:42) [Clang 20.1.8 ]","pymatgen":"2026.9.24","pymatgen_core":"2026.9.23","spglib":"2.8.0","numpy":"2.5.4"},
-"generated_at":"2026-10-15T10:37:03Z",
+{"versions":{"python":"3.12.14 | packaged by Anaconda, Inc. | (main, Aug 27 2026, 14:38:15) [Clang 20.1.8 ]","pymatgen":"2026.9.24","pymatgen_core":"2026.10.16","spglib":"2.8.0","numpy":"2.5.4"},
+"generated_at":"2026-10-29T14:17:35Z",
 "definitions":{"seed":20261015,"random_per_lattice":200,"symprec":0.0001,"niggli_eps":1e-05,"k_max":1.2,"bravais":"name of spglib's lattice-only dataset (one atom at the origin): family letter + centring letter","conventional_operations":"len(dataset.rotations) of the input cell times the integer ratio of the lattice's conventional-cell volume to the input cell's volume","rings":"slice 1's definitions on spglib's standardised (conventional, idealised) cell, symmetry-allowed reflections at k_max, names in that setting","niggli_agreement":1e-08},
 "random_summary":{"rejected_draws":16,"worst_oracle_difference":2.8421709430404007e-13},
 "structures":[

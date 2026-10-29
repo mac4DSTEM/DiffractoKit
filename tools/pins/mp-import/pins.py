@@ -12,7 +12,7 @@ from pymatgen.core import Structure, Lattice
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import spglib
 assert version('pymatgen') == '2026.9.24'
-assert version('pymatgen-core') == '2026.9.23'
+assert version('pymatgen-core') == '2026.10.16'
 assert np.__version__ == '2.5.4'
 assert spglib.__version__ == '2.8.0'
 root=Path(__file__).resolve().parents[3]/'Tests/DiffractoCoreTests/Fixtures/mp-import'
