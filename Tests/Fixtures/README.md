@@ -1,7 +1,7 @@
 # Test fixtures
 
 One row per committed fixture file under `Tests/*/Fixtures/`: size, the script under `tools/` that names it (the generator or its
-pin script; a few scripts write a whole directory; a script found only by file-name prefix, tool-folder name or test module is marked so), and a note where the origin is not the kit's own pinned reference. 55 files.
+pin script; a few scripts write a whole directory; a script found only by file-name prefix, tool-folder name or test module is marked so), and a note where the origin is not the kit's own pinned reference. 52 files.
 
 Licence: every fixture is generated from this kit's own code and the pinned Python reference (named in the README) and ships under the kit's GPL-3.0-or-later licence, except the rows marked *third party*. No fixture is a copy of a real dataset: the committed text fixtures carry no local path or personal name (checked by search), and real datasets are read from `$MACEM_DATA` and never copied into the repo.
 
@@ -53,18 +53,15 @@ Licence: every fixture is generated from this kit's own code and the pinned Pyth
 | `DiffractoGeometryTests/Fixtures/ring-overlay-pins.json` | 4.5 KB | `tools/mactem-pieces/ring-overlay-pins.py` |  |
 | `DiffractoGeometryTests/Fixtures/slice-3-index-pins.json` | 4.7 MB | `tools/slice-3/index-pins.py` |  |
 | `DiffractoGeometryTests/Fixtures/slice-3-ring-pins.json` | 139.8 KB | `tools/kit-0.0.4/q-pins.py`, `tools/slice-3/ring-pins.py` |  |
-| `DiffractoGeometryTests/Fixtures/slice-3b-apps-onone.json` | 133.3 KB | `tools/slice-3b/apps-parity/run.sh` |  |
-| `DiffractoGeometryTests/Fixtures/slice-3b-apps.json` | 133.3 KB | `tools/slice-3b/apps-parity/main.swift`, `tools/slice-3b/apps-parity/run.sh` |  |
 | `DiffractoGeometryTests/Fixtures/slice-3b-sweep.json` | 8.2 KB | `tools/slice-3b/sweep.py` |  |
 | `DiffractoOrientationTests/Fixtures/acom-matcher-pins.json` | 526.1 KB | `tools/acom-matcher/pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/orix-direction-pins.json` | 1.5 MB | `tools/orix/direction-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/orix-disorientation-pins.json` | 1.5 MB | `tools/orix/disorientation-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/orix-ipf-pins.json` | 484.0 KB | `tools/orix/ipf-pins.py` |  |
+| `DiffractoOrientationTests/Fixtures/orix-misorientation-pins.json` | 896.0 KB | `tools/orix/misorientation-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/py4dstem-family-pins.json` | 1005.7 KB | `tools/symmetry/family-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/py4dstem-family-real-pins.json` | 3.7 MB | `tools/symmetry/family-real-pins.py` |  |
-| `DiffractoOrientationTests/Fixtures/slice-4-apps.json` | 12.9 MB | `tools/slice-4/apps-parity/main.swift`, `tools/slice-4/apps-parity/run.sh` |  |
 | `DiffractoOrientationTests/Fixtures/slice-4-pins.json` | 1.8 MB | `tools/slice-4/pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/symmetry-pins.json` | 397.2 KB | `tools/cif-symmetry/pins.py`, `tools/orix/ipf-pins.py`, `tools/symmetry/color-table.py` +2 |  |
 | `DiffractoOrientationTests/Fixtures/trigonal-pins.json` | 14.0 KB | `tools/orix/ipf-pins.py`, `tools/symmetry/trigonal-pins.py` |  |
-| `DiffractoScatteringTests/Fixtures/slice-2-apps.json` | 2.1 MB | `tools/slice-2/apps-parity/main.swift`, `tools/slice-2/apps-parity/run.sh` |  |
 | `DiffractoScatteringTests/Fixtures/slice-2-pins.json` | 1.6 MB | `tools/slice-2/pins.py`, `tools/slice-3/index-pins.py`, `tools/slice-4/pins.py` |  |

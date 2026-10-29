@@ -2,8 +2,7 @@
 //  EllipseNoisyRingTests.swift
 //  The profile ring fit on the three noisy plants of reference commit
 //  7d6fdbd1 `EllipseNoisyRingTests` (same names, same plants, same bands), with the plant renderer (SplitMix64 + Box-Muller,
-//  Float pixels) ported into this file. The renderer is also the one tools/slice-3b/apps-parity/main.swift carries a copy of;
-//  EllipseAppsParityTests proves the two render the same pixels (FNV-1a hash of every case) before it compares any fit.
+//  Float pixels) ported into this file.
 //
 //  The profile ring fit (`EllipseCalibration.fitAmorphousRing`, behind `fitBestAvailable`) is refined from py4DSTEM's start, both
 //  ring sigmas at max(1, ringWidth / 4), 10-17 px for a +-20 px annulus around a 3 px ring. On a noisy ring the 11-parameter LM

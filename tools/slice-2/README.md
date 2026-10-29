@@ -6,7 +6,6 @@ read the files these write. A difference is a failure of the port, never a toler
 ```
 tools/slice-2/fetch-table.sh                                         # py4DSTEM f050d207 scattering_factors.txt into References/, sha256-locked
 ../References/python/orix/bin/python -I -B tools/slice-2/pins.py      # about 2 s, deterministic (no clock): writes slice-2-pins.json
-tools/slice-2/apps-parity/run.sh                                     # about 4 s: the apps' own code (mac4DSTEM 7d6fdbd1, `git show`) dumped
 ```
 
 - `pins.py` writes `Tests/DiffractoScatteringTests/Fixtures/slice-2-pins.json` (about 1.7 MB): the versions, the table's
@@ -22,6 +21,3 @@ tools/slice-2/apps-parity/run.sh                                     # about 4 s
   (`frac_tolerance = 0`, what `CIFImport` keeps); `sites_snapped` and `snap_effect` carry pymatgen's default.
 - Exit 0: every self-check and every registered predicted count holds. 1: a self-check failed. 3: the file was written but a
   predicted count differs (printed twice; the number is never edited to fit).
-- `apps-parity/` compiles `Crystal.swift` and `ScatteringFactors.swift` of mac4DSTEM 7d6fdbd1 with `main.swift` (swiftc `-O`
-  and `-Onone`, `-swift-version 6 -package-name appsparity`) in `.build/apps-parity/` and writes `slice-2-apps.json`; it
-  compares the two optimisation levels (the -O dump is the reference).

@@ -4,24 +4,17 @@ Seeds, from the apps' history before they were public: mac4DSTEM `7d6fdbd1`
 (`EllipseCalibration.swift`, `DiffractionPattern.swift`, `Calibration.swift`, the noisy, stop-rule and row-29 tests, the
 `tools/ellipse-calibration-test` sweep) and macTEM `9482831` (`RingCalibration+Fit.swift`, its 8 tests).
 
-- `apps-parity/run.sh` (+ `main.swift`): compiles the apps' own `EllipseCalibration.swift` and `DiffractionPattern.swift` at 7d6fdbd1
-  with `swiftc -O`, renders 35 planted rings (3 + 4 noisy, the 4 stop-rule rings, 20 clean sweep rings, 4 sparse rings) with the
-  SplitMix64 + Box-Muller renderer, runs `fit1D` (three ways), `fitAmorphousRing` and `fitBestAvailable` (two ways) on each and
-  writes every field as bit patterns to `Tests/DiffractoGeometryTests/Fixtures/slice-3b-apps.json`; the sweep rings' raw Float32
-  files go to `.build/apps-parity-3b/sweep`. The test `EllipseAppsParityTests` requires the kit equal in every bit.
-- `sweep.py` (`../References/python/orix/bin/python -I -B tools/slice-3b/sweep.py`): SciPy 1.18.1 `least_squares` optimum of fit1D's
-  objective on the 20 sweep rings -> `Fixtures/slice-3b-sweep.json`; held in `EllipseCalibrationTests`.
-
-Order: `apps-parity/run.sh` first (it writes the dump and the pixel files), then `sweep.py`.
+- `sweep.py` (`../References/python/orix/bin/python -I -B tools/slice-3b/sweep.py`): renders the 20 clean sweep rings (a Python
+  port of the planted ring of `Tests/DiffractoKitTestSupport/EllipseFixtures.swift`, hash-equal to the Swift renderer) and writes
+  SciPy 1.18.1's `least_squares` optimum of fit1D's objective on each, with its plant and start, to `Fixtures/slice-3b-sweep.json`;
+  held in `EllipseCalibrationTests`.
 
 ## Results (2026-10-15)
 
-- Bit identity: the kit's `fit1D` / `fitAmorphousRing` / `fitBestAvailable` equal the apps' (mac4DSTEM 7d6fdbd1) in every output bit
-  on 35 rings x 6 calls, compiled -O and compiled -Onone (run.sh kit-check, and `EllipseAppsParityTests` in a Debug `swift test`
-  against the -Onone dump; a release `swift test` reads the -O dump). The apps' own -O and -Onone dumps differ in the last bits of
-  some profile fits (25 ulps in a centre, 98 in a theta: reassociation/contraction at -O), so each build is held to the apps built
-  the same way; this is why there are two fixtures.
-- The parity set does not see three of the nine mutations (floor 0.30, the profile residual cap, the outer annulus boundary: no ring
+- Bit identity (2026-10-15, a one-time port check; the dump and its test were retired in #18): the kit's `fit1D` /
+  `fitAmorphousRing` / `fitBestAvailable` equalled the apps' (mac4DSTEM 7d6fdbd1) in every output bit on 35 rings x 6 calls,
+  compiled -O and -Onone.
+- That parity set did not see three of the nine mutations (floor 0.30, the profile residual cap, the outer annulus boundary: no ring
   of the set ends within 0.30 px of the floor, or at the cap, or has a pixel exactly on the boundary); `EllipseCalibrationTests`
   holds those three.
 - macTEM's 8 `RingFitCalibrationTests` pass unchanged on the 7d6fdbd1 fit. Against macTEM's pre-ADR-069 copy the planted ring's fit

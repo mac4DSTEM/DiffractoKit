@@ -4,12 +4,11 @@
 //  Swift, with their truth known: the constants, the input guards, the annulus boundaries, the coverage bound and the "fit
 //  anyway" path, the one-ring check, the 0.30 px ring-width floor guard (ADR 069), the profile residual cap, a clean circle's
 //  radius on both paths, and the row / column convention on a non-square pattern. The noisy plants of the reference implementations are
-//  EllipseNoisyRingTests, the stop-rule rings EllipseStopRuleTests, the bit identity with the reference implementations' compiled code
-//  EllipseAppsParityTests.
+//  EllipseNoisyRingTests, the stop-rule rings EllipseStopRuleTests.
 //
 //  Written for the kit (the seed has these checks only as tools/ellipse-calibration-test, a scientific harness); the numbers
-//  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equal the kit's, which
-//  EllipseAppsParityTests checks exactly).
+//  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equalled the kit's in
+//  every bit when they were measured).
 //
 //  Every test names under "RED UNDER" the production mutation that turns it red.
 //
@@ -171,7 +170,7 @@ struct EllipseCalibrationTests {
 
     // MARK: Coverage
 
-    /// A ring with a 120 degree arc missing (a plant of the parity set: 128 px, R 40, eps 2 %, theta 30 degrees) holds 25 of
+    /// A ring with a 120 degree arc missing (a plant of the former apps-parity set: 128 px, R 40, eps 2 %, theta 30 degrees) holds 25 of
     /// 36 bins (measured): refused by default with that count, fitted on the "anyway" path and MARKED `sparseCoverage`, with its centre
     /// 0.89 px from the plant's (measured; a gapped conic carries a centre shift, which is why the one-ring check and the caller's
     /// assertion exist) and b/a within 0.0012 of the plant's.

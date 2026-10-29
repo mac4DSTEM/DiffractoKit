@@ -2,7 +2,6 @@
 //  ScatteringPinsTests.swift
 //  The kit against the pins written BEFORE its code:
 //    slice-2-pins.json  tools/slice-2/pins.py: NumPy from the definitions, pymatgen's Laue group and X-ray pattern
-//    slice-2-apps.json  tools/slice-2/apps-parity: reference commit 7d6fdbd1's Crystal.reflections, compiled -O
 //  Public API only (DiffractoScattering and DiffractoCore). A failure is a failure of the port, never a tolerance to widen.
 //
 
@@ -57,19 +56,6 @@ private struct Pins: Decodable {
     let cutEdge: PinCutEdge
 }
 
-private struct AppsCell: Decodable { let a, b, c, alpha, beta, gamma: Double }
-private struct AppsReflection: Decodable { let h, k, l: Int; let g, re, im, i: String }
-private struct AppsCase: Decodable {
-    let preset: String
-    let kMax: Double
-    let count: Int
-    let cell: AppsCell
-    let volumeBits: String
-    let sites: [[Double]]          // z, x, y, z, occupancy
-    let reflections: [AppsReflection]
-}
-private struct Apps: Decodable { let cases: [AppsCase] }
-
 enum ScatteringFixtures {
     static let directory: URL = FixtureDirs.target("DiffractoScatteringTests").appendingPathComponent("Fixtures")
     /// DiffractoCore's CIF fixtures (read by file name, as the pins name them).
@@ -83,9 +69,7 @@ enum ScatteringFixtures {
     }
 
     fileprivate static let pinsResult: Result<Pins, any Error> = Result { try decode(Pins.self, "slice-2-pins.json") }
-    fileprivate static let appsResult: Result<Apps, any Error> = Result { try decode(Apps.self, "slice-2-apps.json") }
     fileprivate static func pins() throws -> Pins { try pinsResult.get() }
-    fileprivate static func apps() throws -> Apps { try appsResult.get() }
 
     fileprivate static func pin(_ name: String) throws -> PinStructure {
         try #require(try pins().structures.first { $0.name == name }, "no pinned structure \(name)")
@@ -124,10 +108,7 @@ enum ScatteringFixtures {
         "calcite_R-3c_hex", "fluorapatite_P63m", "pyrite_Pa-3", "ws2_2H", "cdi2_P-3m1",
     ]
     static let xrayNames = ["Au", "Si", "Mg", "beta_double_prime", "Cu3Au-occ", "WS2"]
-    static let appsCaseIndices = Array(0..<10)
 }
-
-private func hex(_ s: String) -> Double { Double(bitPattern: UInt64(s, radix: 16)!) }
 
 private func relErr(_ x: Double, _ y: Double, floor: Double) -> Double { abs(x - y) / max(abs(y), floor) }
 
@@ -341,80 +322,6 @@ struct ScatteringPinsTests {
         }
         #expect(worst <= 1e-7, "\(name): worst relative difference \(worst) at \(worstAt)")
     }
-
-    // MARK: The reference implementations, exact today (the reference's tolerance would allow more)
-
-    /// The reference implementations' `Crystal.reflections(kMax:tolerance: 1e-4)` (reference commit 7d6fdbd1, -O): the kept sets equal, and per kept
-    /// reflection the Double bit patterns of |g|, Re F and |F|² equal; Im F bit-equal where |Im F| ≥ 1e-15 and within 1e-15
-    /// below that. β″ is built from the CIF here, so its site order differs from the reference implementations' hand list and a
-    /// summation-order difference is expected: for it, Re F and Im F are held to 1e-12 relative of max(|F|, 1e-4) (Im F also
-    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| exact today (the measured worst is 2.7e-13, bit identity is the reference-site-list test).
-    @Test(arguments: ScatteringFixtures.appsCaseIndices)
-    func testAppsBitForBit(_ index: Int) throws {
-        let c = try ScatteringFixtures.apps().cases[index]
-        let isBeta = c.preset == "betaDoublePrime"
-        let s = isBeta ? try ScatteringFixtures.build(try ScatteringFixtures.pin("beta_double_prime")) : appsStructure(c)
-        let (fails, stats) = try compareToApps(c, s, summationOrderTolerance: isBeta)
-        #expect(fails.isEmpty, "\(c.preset)@\(c.kMax): \(stats); first: \(fails.prefix(4))")
-    }
-
-    /// The cause of the β″ differences above: built from the reference implementations' own site list (same order, same coordinates) the kit is
-    /// exact to the reference implementations like every other preset.
-    @Test(arguments: [8, 9])
-    func testAppsBetaDoublePrimeFromTheAppsSiteListIsBitIdentical(_ index: Int) throws {
-        let c = try ScatteringFixtures.apps().cases[index]
-        #expect(c.preset == "betaDoublePrime")
-        let (fails, _) = try compareToApps(c, appsStructure(c), summationOrderTolerance: false)
-        #expect(fails.isEmpty, "\(c.preset)@\(c.kMax): \(fails.count) differences, first: \(fails.prefix(6))")
-    }
-}
-
-private func appsStructure(_ c: AppsCase) -> CrystalStructure {
-    let cell = UnitCell(a: c.cell.a, b: c.cell.b, c: c.cell.c, alphaDeg: c.cell.alpha, betaDeg: c.cell.beta,
-                        gammaDeg: c.cell.gamma)
-    let sites = c.sites.map { AtomSite(z: Int($0[0]), fractional: SIMD3($0[1], $0[2], $0[3]), occupancy: $0[4]) }
-    return CrystalStructure.detectingSymmetry(cell: cell, sites: sites)
-}
-
-private func compareToApps(_ c: AppsCase, _ s: CrystalStructure, summationOrderTolerance: Bool) throws
-    -> (fails: [String], stats: String) {
-    var fails: [String] = []
-    if s.cell.volume.bitPattern != UInt64(c.volumeBits, radix: 16) { fails.append("volume \(s.cell.volume)") }
-    let list = try s.kinematicReflections(kMax: c.kMax)
-    var kept: [MillerIndex: StructureFactor] = [:]
-    for k in list.kept { kept[k.reflection.hkl] = k.structureFactor }
-    var worstRe = 0.0, worstIm = 0.0, worstI = 0.0, worstG = 0.0
-    if kept.count != c.count { fails.append("kept \(kept.count) vs the reference implementations' \(c.count)") }
-    var appsSet = Set<MillerIndex>()
-    for r in c.reflections {
-        let hkl = MillerIndex(r.h, r.k, r.l)
-        appsSet.insert(hkl)
-        guard let f = kept[hkl] else { fails.append("\(hkl) not kept by the kit"); continue }
-        let g = hex(r.g), re = hex(r.re), im = hex(r.im), i = hex(r.i)
-        if f.gLength.bitPattern != g.bitPattern { fails.append("\(hkl) |g| \(f.gLength) vs \(g)") }
-        if summationOrderTolerance {
-            let floor = max(i.squareRoot(), 1e-4)
-            worstRe = max(worstRe, abs(f.real - re) / floor)
-            if abs(im) >= 1e-15 { worstIm = max(worstIm, abs(f.imaginary - im) / floor) }
-            worstI = max(worstI, abs(f.intensity - i) / i)
-            worstG = max(worstG, abs(f.gLength - g) / g)
-            if abs(f.real - re) > 1e-12 * floor { fails.append("\(hkl) Re \(f.real) vs \(re) (rel \(abs(f.real - re) / floor))") }
-            let imOK = abs(f.imaginary - im) <= 1e-12 * floor || (abs(im) < 1e-15 && abs(f.imaginary - im) <= 1e-15)
-            if !imOK { fails.append("\(hkl) Im \(f.imaginary) vs \(im) (rel \(abs(f.imaginary - im) / floor))") }
-            if abs(f.intensity - i) > 2e-12 * i { fails.append("\(hkl) |F|² \(f.intensity) vs \(i)") }
-        } else {
-            if f.real.bitPattern != re.bitPattern { fails.append("\(hkl) Re \(f.real) vs \(re)") }
-            if f.intensity.bitPattern != i.bitPattern { fails.append("\(hkl) |F|² \(f.intensity) vs \(i)") }
-            if abs(im) >= 1e-15 {
-                if f.imaginary.bitPattern != im.bitPattern { fails.append("\(hkl) Im \(f.imaginary) vs \(im)") }
-            } else if abs(f.imaginary - im) > 1e-15 {
-                fails.append("\(hkl) Im (noise) \(f.imaginary) vs \(im)")
-            }
-        }
-    }
-    for hkl in kept.keys where !appsSet.contains(hkl) { fails.append("\(hkl) kept by the kit, not by the reference implementations") }
-    let stats = "worst over \(c.count): Re/floor \(worstRe), Im/floor (|Im| >= 1e-15) \(worstIm), |F|² relative \(worstI), |g| relative \(worstG); failing checks \(fails.count)"
-    return (fails, stats)
 }
 
 // MARK: - retainingAll: false

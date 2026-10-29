@@ -82,7 +82,7 @@ matches by hkl).
    (relative intensities differ by 1-24%, `max_abs_dI_relative_common`). A parity row, not a gate.
 7. **The low-index zone axes: the first prediction said 62, the stated definition gives 49** (98 primitive vectors in the box, divided by
    2 for sign). 62 is the count of the 124 nonzero vectors deduplicated up to sign without the gcd reduction; both lists are in the
-   file (`axes`, `alternative_unreduced`). The apps-parity dump of the source decides.
+   file (`axes`, `alternative_unreduced`). The kit follows the stated definition (49).
 8. **SciPy's gimbal rule is not the one first written.** SciPy 1.18.1 locks (sets the third angle to 0) when the middle angle is below
    1e-7 (100% at 9.9e-8, 50% at exactly 1e-7, 0% at 1.01e-7), the written rule was |sin Phi| <= 1e-8. Cases with Phi in {2e-8, 5e-8,
    9e-8, 1e-7} are marked `rules_agree: false`; tests skip them. Phi = 1e-5, 1e-6
