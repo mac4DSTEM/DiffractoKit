@@ -1,11 +1,12 @@
 # Changelog
 
 All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release may change the API). The numbers each module
-reproduces, and against what, are in `docs/parity.md`.
+reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
+conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
-## 0.10.0 (2026-10-22) — misorientation, orientation-relationship variants, ring-sequence assignment and the apps' kit asks
+## [0.10.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.9.1...0.10.0) (2026-10-22)
 
-ROADMAP task 35 and the asks of both apps' open items. Additive except one case in an error enum (see Migration).
+Misorientation, orientation-relationship variants, ring-sequence assignment, and what the consuming applications asked of the kit. Additive except one case in an error enum (see Migration).
 
 ### Added
 - **Misorientation and orientation** (`DiffractoOrientation`, orix 0.15.0): `Misorientation(matrix, source:, target:)` with `equivalent(grainExchange:)` and `reduce()` /
@@ -18,12 +19,12 @@ ROADMAP task 35 and the asks of both apps' open items. Additive except one case 
   (planted truth; no Python reference computes the set).
 - **`LinearScale.assign`** (and `estimateAssigned`, `LinearScaleAssignment`, `LinearScaleAssignmentError`): which of the crystal's first shells is the first observed ring,
   from the sequence of rings, with named refusals; Al [001] reads {200} and delta q is exact (the old assumption of {111} read 13.4 % low). Moved from mac4DSTEM's `ShellAssignment`.
-- **`LinearScale.fit`** (`LinearScaleFit`): delta q from several indexed rings by least squares with a standard error (macTEM ask 2).
+- **`LinearScale.fit`** (`LinearScaleFit`): delta q from several indexed rings by least squares with a standard error.
 - **Single-pattern measurements:** `PatternCentre.find` (the unscattered beam's centre), `PatternRadialProfile.about` (ellipse-corrected radial profile), `PatternSpot.refine` (subpixel
-  spot centre); macTEM asks 1, 3 and 9. Planted truth, `validation: "none"`.
+  spot centre). Asked for by macTEM. Planted truth, `validation: "none"`.
 - `ReflectionFamily` has a public initialiser. `OrientationSymmetryError.differentSymmetry`.
 
-### Diagnosed
+### Changed: diagnosed, no number changed
 - The {111} ring fit reading 0.1 % low (macTEM open item): the cause is the tail of the neighbouring {200} ring inside the annulus, which the one-ring profile model absorbs. A single
   ring is exact to 3e-8 px; the bias is -0.041 px for the annulus 29 to 37, -0.003 px for 29 to 36 and -3e-6 px for 29 to 35, and linear in the neighbour's amplitude
   (`RingFitNeighbourTailTests`). No number changed: end the annulus before the neighbour's tail.
@@ -34,7 +35,7 @@ ROADMAP task 35 and the asks of both apps' open items. Additive except one case 
 `OrientationSymmetryError` has a new case, `differentSymmetry`: a `switch` over it that has no `default` must handle it. Nothing else changes for a consumer. mac4DSTEM can delete
 `ShellAssignment` (marked `delete at DiffractoKit 0.10.x`) and call `LinearScale.assign`; macTEM can delete its `refineSpot` interim.
 
-## 0.9.1 (2026-10-21)
+## [0.9.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.9.0...0.9.1) (2026-10-21)
 
 Tests, docs and one speed fix. No number, default or public symbol changes.
 
@@ -46,7 +47,7 @@ Tests, docs and one speed fix. No number, default or public symbol changes.
   file: 67 ms (median), the 0.9.0 table's 351 ms. Still about 27 times pymatgen's parser, which does not detect symmetry;
   the rest is in `docs/open-items.md`, which now lists `cif_import` first with the measured cause.
 
-### Tests (D17)
+### Changed: tests
 - The 33 parity rows marked [S] (pins stricter than upstream): 31 loosened, 2 lost only the marker (see below). Loosened to the upstream tolerance stated in each row: rtol 1e-7
   (with a 1e-12 floor for exact zeros) where upstream states none, `tol` 1e-5 for the Niggli reduction, orix's allclose
   (atol 1e-8, rtol 1e-5) for the orix rows, `symprec` 0.01 angstrom (as a fraction of the longest edge) for operation translations,
@@ -56,7 +57,7 @@ Tests, docs and one speed fix. No number, default or public symbol changes.
   TrigonalSettingTests. No fixture moved. Two rows were not stricter and lost the marker only (P11's SciPy optimum; the P25 spot
   bound is [L], float32 upstream). Closure, orthogonality and the kit's own invariance checks keep their tight bounds.
 
-### Docs
+### Changed: docs
 - `docs/parity.md`: no [S] left; the three 0.9.0 numerics have rows (opt-in in-plane parabola refinement: partly, the vertex
   formula is py4DSTEM's but is applied to the kit's own correlation; the mirror flag and pattern-angle planes: partly, no Python
   counterpart; `minimumMatrixEvidence`: partly, no Python counterpart), the Summary counts follow (148 rows, 58 partly).
@@ -68,7 +69,7 @@ Tests, docs and one speed fix. No number, default or public symbol changes.
 ### Migration
 None.
 
-## 0.9.0 (2026-10-21)
+## [0.9.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.8.1...0.9.0) (2026-10-21)
 
 The kit audit: the three diagnose-first items (phase matching, ACOM mirror and in-plane angle, CIF symmetry) diagnosed with
 the experiment named in each test, the parity table and the benchmark table rewritten against the Python sources on disk.
@@ -93,7 +94,7 @@ import and a missed refusal into one.
 - A primitive C-centred monoclinic cell with beta = 90 (two right angles, like the conventional cell) was refused with its
   correct 4-operation list; the listed rotations (not diagonal in a primitive basis) now decide.
 
-### Diagnosed, nothing changed by default (the experiments are tests)
+### Changed: diagnosed, nothing changed by default (the experiments are tests)
 - Phase matching: `minimumVectors` = 2 is the paper's rule (one or no survivor is the matrix) and the survivor count cannot tell
   "the matrix explained everything" from "nothing was there" (`minimumMatrixEvidence` above). The completeness-aware cross-phase
   ranking loses at small noise (23 wrong of 400 against 0 at sigma 0.003 A^-1) and wins only near the pair radius (20 against
@@ -110,7 +111,7 @@ Source-compatible except: (1) `CIFImportError` gains a case, so an exhaustive `s
 `ACOMMatcher(library:refinesInPlaneAngle: true)` for the scan. Phase maps: set `minimumMatrixEvidence = 1` to stop vacuum and stray-peak
 positions counting as matrix once a labelled scan has cleared it.
 
-## 0.8.1 (2026-10-21)
+## [0.8.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.8.0...0.8.1) (2026-10-21)
 
 ### Added
 - `OrientationMapAnalysis` in `DiffractoOrientation`: `eulerText`, `reliabilityThreshold(percentile:)`, `fractionOfMatched`, the per-position planes
@@ -122,7 +123,7 @@ positions counting as matrix once a labelled scan has cleared it.
 mac4DSTEM (`OrientationMap`): forward its methods to `OrientationMapAnalysis` on `results`, wrapping the planes in `FloatImage` / `RGBAImage`.
 Not moved: the learned detector (Paul's decision), `ACOMCrystalSymmetry`'s test-only unreduced fallback; the open phase-matching, ACOM-mirror and CIF-symmetry items are diagnose-first.
 
-## 0.8.0 (2026-10-21)
+## [0.8.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.7.1...0.8.0) (2026-10-21)
 
 The one numeric piece mac4DSTEM still carried that belongs here. No existing number changes.
 
@@ -139,11 +140,11 @@ mac4DSTEM: build `radiiPerPosition` from its Bragg vectors (distance of each pea
 
 Not moved, by design: `ACOMCrystalSymmetry` / `OrientationMap` / `MetalACOMMatcher` (app, by the app's own design); the open phase-matching, ACOM-mirror and CIF-symmetry items are diagnose-first behaviour questions, not missing code.
 
-## 0.7.1 (2026-10-21)
+## [0.7.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.7.0...0.7.1) (2026-10-21)
 
 The ImagoKit dependency accepts `"0.2.0"..<"1.0.0"` (was 0.2.x), so a consumer can take ImagoKit 0.4.0. Only `FFT1D` is used; the ACOM, phase and orientation tests pass against ImagoKit 0.4.0.
 
-## 0.7.0 (2026-10-21)
+## [0.7.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.6.0...0.7.0) (2026-10-21)
 
 The ACOM asks of the apps' kit switch: what mac4DSTEM still carries a copy of around `ACOMMatcher` and `ACOMTemplateLibrary`. No
 number changes: every addition is checked against the existing CPU route (`match`, `matchAll(peaks:)`), which stays the reference.
@@ -170,7 +171,7 @@ number changes: every addition is checked against the existing CPU route (`match
 - `ACOMError` has a new case `cancelled`: an exhaustive `switch` over it needs one more branch.
 - The generic `match`/`matchAll` overloads accept everything the array forms did; no call site changes.
 
-## 0.6.0 (2026-10-20)
+## [0.6.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.5.0...0.6.0) (2026-10-20)
 
 Orientation symmetry beyond the three app classes, pinned to orix; the py4DSTEM direction families; the preset crystals, the
 Materials Project models and the phase model that the two apps carry.
@@ -246,7 +247,7 @@ Materials Project models and the phase model that the two apps carry.
   `PhaseModel.orientationClass`; the apps' `.identity` is `nil`, and the kit also reduces tetragonal, orthorhombic, cubic m-3, trigonal
   and 6/m cells that the apps called unreduced).
 
-## 0.5.0 (2026-10-20)
+## [0.5.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.4.1...0.5.0) (2026-10-20)
 
 ACOM matching over a whole scan, so the apps can drop their own scan loop (mac4DSTEM `OrientationMatching.matchAll`, CPU path).
 
@@ -268,7 +269,7 @@ mapping (a Bragg-vector lattice fit with no crystal in it; it belongs to CuboKit
 Additive: a consumer of 0.4.1 recompiles unchanged. mac4DSTEM replaces its CPU `matchAll` loop and `ACOMScanSelection` with the
 kit's; the Metal path and the `OrientationMap` presentation stay.
 
-## 0.4.1 (2026-10-16)
+## [0.4.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.4.0...0.4.1) (2026-10-16)
 
 Dependency range only; no API, source or number changes.
 
@@ -277,7 +278,7 @@ Dependency range only; no API, source or number changes.
 ### Migration
 None for consumers of 0.4.0 beyond re-pinning to 0.4.1. A consumer may now use any ImagoKit 0.2.x.
 
-## 0.4.0 (2026-10-16)
+## [0.4.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.3.1...0.4.0) (2026-10-16)
 
 Orientation symmetry for all eleven Laue classes, the ACOM matcher, the Materials Project cell import, and helpers for
 application front ends (crystal loading, ring overlay, indexing display, ring scale).
@@ -314,12 +315,12 @@ non-lattice rotations) is included in this tag.
   patterns; one 2/m pattern returns a different beam direction (127 degrees).
 - Dependency: ImagoKit 0.2.0 (exact), for `FFT1D` (ImagoFFT), used by DiffractoOrientation only.
 
-### Conventions
+### Changed: conventions
 - py4DSTEM's direction-family reduction is not ported (returns families, not a rotation). Neither the minimum-angle
   rotation nor the native direction fold substitutes for Python's family array. See `docs/orientation-symmetry.md`.
 - Additive API; no orientation-map container added.
 
-## 0.3.1 (2026-10-15)
+## [0.3.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.3.0...0.3.1) (2026-10-15)
 
 ### Fixed
 - Symmetry detection: a CIF whose operation loop lists rotations that are not symmetries of the cell's lattice (the 48 signed
@@ -329,7 +330,7 @@ non-lattice rotations) is included in this tag.
   class and the atoms decide it. Reflections are unchanged on every pinned structure; `SymmetryDetection.Result.candidates` no longer lists such a rotation.
 - Not a change: hcp written in a cell with γ = 60° is read as 6/mmm (it is hcp); 0.1.0's 2/m was the metric not being recognised.
 
-## 0.3.0
+## [0.3.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.1.1...0.3.0) (2026-10-15)
 
 One release for two steps (there is no separate 0.2.0 tag): the generality pass, where every policy is a parameter with the
 previous value as its documented default, the platform floor is lowered and the docs stand alone (the default path is bit
@@ -400,7 +401,7 @@ identical to 0.1.1 on 31,725 outputs); and vector-matched phase mapping with the
 and loosening coverage needs both `RingCalibration.Policy.minimumOccupiedAngularBins` and the ellipse policy's
 `degeneracyBoundBins`; removing the `ReflectionList.Policy` caps removes the memory and time protection (a k_max of 100 reached
 10 GB). Error texts quote the default bounds. A kinematic pattern cannot tell +c from −c on a polar structure: no consumer may
-claim a polarity from a kinematic match. Earlier per-release migration notes are archived (see the 0.1.0 entry) and in git history.
+claim a polarity from a kinematic match.
 
 **Phase mapping.** An application that carried its own vector matching can delete it when it adopts the kit's. For code moving from such an implementation: `Crystal` becomes `CrystalStructure` (`PhaseDefinition.crystal`); a structure the
 kit refuses throws `PhaseReferenceLibrary.Failure.structureRefused`; `BraggVectors` becomes `scan:scanWidth:scanHeight:` with
@@ -410,15 +411,17 @@ throws; a scan whose position count is not width × height gives nil (or `[]`) f
 `matrixEntryIndex` makes `map` return nil; a cancelled `build` throws `CancellationError`. The decision rule of `.knownVariants` and its
 two constants follow Thronsen et al., Ultramicroscopy 255 (2024) 113861 (CC BY 4.0; NOTICE). No other number moves.
 
-## 0.1.1
+## [0.1.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.1.0...0.1.1) (2026-10-15)
 
 Niggli reduction, the conventional cell in both settings, the Cartesian symmetry tolerance, detection on a cell list;
 the CI type-check fixes.
 
-## 0.1.0
+## [0.1.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.0.3...0.1.0) (2026-10-15)
 
 Cells of the seven systems, symmetry from the atoms, CIF import, reflections, absences, orbits and rings;
 electron scattering factors and structure factors; the wavelength, ring and ellipse calibration, camera length, indexing and
 zone axes; error texts; progress and cancellation of the fits.
 
-Consumer notes for 0.0.1 to 0.3.0 are archived.
+## [0.0.3](https://github.com/mac4DSTEM/DiffractoKit/releases/tag/0.0.3) (2026-10-15)
+
+Pre-releases (0.0.1 to 0.0.3): the first cells, reflections, scattering factors and ring fits, before the API settled. See the git history.
