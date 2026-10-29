@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """DiffractoKit slice 3b, optional check: the clean sweep against SciPy.
 
-Reads the 20 clean sweep rings tools/slice-3b/apps-parity/run.sh dumped (the raw Float32 pixels the Swift renderer made,
-.build/apps-parity-3b/sweep/sweep-<n>.f32, and their parameters in .build/apps-parity-3b/dump-O.json), reads the annulus fit1D
+Renders the 20 clean sweep rings itself (the planted ring of Tests/DiffractoKitTestSupport/EllipseFixtures.swift with no
+noise and no tail, ported line for line to Python floats and stored as Float32; the FNV-1a hash of every ring equals the Swift
+renderer's, checked when this file was written), takes fit1D's start the way the test does (the plant's centre + (1.3, -0.9) px,
+annulus b - 20 to a + 20), reads the annulus fit1D
 reads (radius > inner and <= outer about the start centre, finite pixels), and solves each ring with SciPy 1.18.1's
 `least_squares` for the minimum of fit1D's own objective
 
@@ -10,7 +12,7 @@ reads (radius > inner and <= outer about the start centre, finite pixels), and s
 
 under two parameter scalings that must agree (centre 1e-5 px, ABC 1e-7 relative). The optimum is converted to (a, b, theta)
 by NumPy's symmetric eigensolver (py4DSTEM's convention, a along the smaller eigenvalue's axis, theta in [0, pi)) and written,
-with the pixels' FNV-1a hash and the pixel and bin counts, to Tests/DiffractoGeometryTests/Fixtures/slice-3b-sweep.json. The
+with the plant, the start, the pixels' FNV-1a hash and the pixel and bin counts, to Tests/DiffractoGeometryTests/Fixtures/slice-3b-sweep.json. The
 Swift test (EllipseCalibrationTests, testCleanSweepEqualsSciPysOptimum) fits the same rings with the kit's fit1D and holds it to
 the registered bands: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad. This is the port of the sweep of mac4DSTEM
 tools/ellipse-calibration-test/reference.py (sweep_optimum, axes_of), on the kit's own rings.
@@ -26,7 +28,6 @@ import numpy as np
 from scipy.optimize import least_squares
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-WORK = ROOT / ".build" / "apps-parity-3b"
 OUT = ROOT / "Tests" / "DiffractoGeometryTests" / "Fixtures" / "slice-3b-sweep.json"
 
 
@@ -64,21 +65,66 @@ def optimum(x, y, v, sx, sy, inner, outer):
     return solutions[0], spread_abc, spread_centre
 
 
+SWEEP_THETAS = [20.0, 45.0, 67.5, 90.0, 112.5, 135.0, 160.0]
+
+
+def plants():
+    """The 20 clean sweep rings: square 112, 128 and 144 px, R 32-52 px, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing,
+    theta from the sweep's list, a deterministic seed each (the seed places the centre and the gap)."""
+    out = []
+    for size, radius in [(112, 32.0), (128, 40.0), (144, 52.0)]:
+        for eps in [0.0, 0.01, 0.03]:
+            for gap in [0.0, 60.0]:
+                if len(out) < 20:
+                    out.append((size, radius, eps, SWEEP_THETAS[len(out) % 7] if eps > 0 else 0.0, gap))
+    while len(out) < 20:
+        out.append((128, 44.0, 0.03, SWEEP_THETAS[len(out) % 7], 0.0))
+    rings = []
+    for n, (size, radius, eps, theta, gap) in enumerate(out):
+        rings.append({"name": "sweep %d n%d R%d e%s t%s g%d" % (n, size, int(radius), eps, theta, int(gap)), "size": size,
+                      "radius": radius, "eps": eps, "thetaDegrees": theta, "gap": gap, "seed": 100 + n})
+    return rings
+
+
+def render(p):
+    """EllipsePlant.render with noise 0 and tail 0: I = exp(-((rho - 1) R)^2 / 18), Float32 pixels, row-major (qx the row)."""
+    size, radius, eps, seed, gap = p["size"], p["radius"], p["eps"], p["seed"], p["gap"]
+    b = 2 * radius / (2 + eps)
+    a = b * (1 + eps)
+    cx = size / 2 + 0.37 + 2.5 * math.sin(1.3 * seed + 0.2)
+    cy = size / 2 - 0.41 + 2.5 * math.cos(1.9 * seed + 0.7)
+    t = p["thetaDegrees"] * math.pi / 180
+    sin2, cos2 = math.sin(t) * math.sin(t), math.cos(t) * math.cos(t)
+    A = sin2 / (b * b) + cos2 / (a * a)
+    C = cos2 / (b * b) + sin2 / (a * a)
+    B = 2 * (b * b - a * a) * math.sin(t) * math.cos(t) / (a * a * b * b)
+    mean = (a + b) / 2
+    gap_start = float((47 * seed) % 360)
+    pixels = np.zeros(size * size, dtype="<f4")
+    for qx in range(size):
+        for qy in range(size):
+            dx, dy = qx - cx, qy - cy
+            rho = math.sqrt(max(0.0, A * dx * dx + B * dx * dy + C * dy * dy))
+            distance = (rho - 1) * mean
+            value = math.exp(-(distance * distance) / (2 * 3.0 * 3.0))
+            if gap > 0:
+                angle = math.fmod(math.atan2(dy, dx) * 180 / math.pi - gap_start, 360.0)
+                if angle < 0:
+                    angle += 360
+                if angle < gap:
+                    value = 0.0
+            pixels[qx * size + qy] = value
+    return pixels, cx, cy, a, b
+
+
 def main():
-    dump = json.load(open(WORK / "dump-O.json"))
     rings, spreads = [], []
-    for n, c in enumerate(dump):
-        p = c["plant"]
-        if p["kind"] != "sweep":
-            continue
+    for p in plants():
         size = p["size"]
-        pixels = np.fromfile(WORK / "sweep" / ("sweep-%d.f32" % n), dtype="<f4")
-        assert pixels.size == size * size
-        if fnv(pixels) != c["pixelHash"]:
-            raise SystemExit("sweep.py: %s: the f32 file does not hash to the dump's pixelHash" % p["name"])
+        pixels, cx, cy, a_plant, b_plant = render(p)
+        sx, sy, inner, outer = cx + 1.3, cy - 0.9, b_plant - 20, a_plant + 20
         image = pixels.reshape(size, size)
         qx, qy = np.mgrid[0:size, 0:size].astype(np.float64)
-        sx, sy, inner, outer = c["startQX"], c["startQY"], c["innerRadius"], c["outerRadius"]
         radius = np.hypot(qx - sx, qy - sy)
         inside = (radius > inner) & (radius <= outer) & np.isfinite(image)
         x, y, v = qx[inside], qy[inside], image[inside].astype(np.float64)
@@ -91,7 +137,9 @@ def main():
         spreads.append((spread_abc, spread_centre))
         a, b, theta = axes_of(*sol[2:])
         rings.append({
-            "name": p["name"], "index": n, "pixelHash": c["pixelHash"], "sampleCount": int(v.size), "occupiedBins": bins,
+            "name": p["name"], "size": size, "radius": p["radius"], "eps": p["eps"], "thetaDegrees": p["thetaDegrees"],
+            "gap": p["gap"], "seed": p["seed"], "startQX": sx, "startQY": sy, "innerRadius": inner, "outerRadius": outer,
+            "pixelHash": fnv(pixels), "sampleCount": int(v.size), "occupiedBins": bins,
             "optimumCenterQX": float(sol[0]), "optimumCenterQY": float(sol[1]),
             "optimumA": a, "optimumB": b, "optimumTheta": theta,
             "scipySpreadABC": spread_abc, "scipySpreadCentre": spread_centre,

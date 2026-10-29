@@ -358,7 +358,9 @@ struct EllipseCalibrationTests {
 
     private struct Sweep: Decodable {
         struct Ring: Decodable {
-            let name: String, index: Int, pixelHash: String, sampleCount: Int, occupiedBins: Int
+            let name: String, size: Int, radius: Double, eps: Double, thetaDegrees: Double, gap: Double, seed: Int
+            let startQX: Double, startQY: Double, innerRadius: Double, outerRadius: Double
+            let pixelHash: String, sampleCount: Int, occupiedBins: Int
             let optimumCenterQX: Double, optimumCenterQY: Double, optimumA: Double, optimumB: Double, optimumTheta: Double
         }
         let scipy: String
@@ -375,8 +377,8 @@ struct EllipseCalibrationTests {
         return min(raw, .pi - raw)
     }
 
-    /// The 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing; the pixels are
-    /// the parity set's) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
+    /// The 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing; plant and start
+    /// read from the sweep fixture) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
     /// weighted-conic objective, tools/slice-3b/sweep.py: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad (not on a circle,
     /// where it is undefined), the same pixel and bin counts, and the centre within 0.05 px of the plant (0.1 px for the rings with an arc missing, see below). These are the bands of
     /// reference tools/ellipse-calibration-test (measured there: 1.1e-7 px, 6.4e-10, 1.7e-8 rad). This pins the OBJECTIVE: an
@@ -386,40 +388,26 @@ struct EllipseCalibrationTests {
         let sweep = Sweep.shared
         #expect(sweep.rings.count == 20)
         var worstPlant = 0.0, worstCentre = 0.0, worstAxes = 0.0, worstTheta = 0.0
-        let all = try JSONDecoder().decode([ParityPlant].self, from: Data(contentsOf: ParityPlant.url))
         for ring in sweep.rings {
-            let dumped = try #require(all.first { $0.plant.name == ring.name })
-            let p = dumped.plant
-            let plant = EllipsePlant(size: p.size, radius: p.radius, eps: p.eps, thetaDegrees: p.thetaDegrees, gap: p.gap,
-                                     noise: p.noise, seed: p.seed, tail: p.tail)
-            let fit = try EllipseCalibration.fit1D(pattern: plant.render(), centerQX: dumped.startQX, centerQY: dumped.startQY,
-                                                   innerRadius: dumped.innerRadius, outerRadius: dumped.outerRadius)
+            let plant = EllipsePlant(size: ring.size, radius: ring.radius, eps: ring.eps, thetaDegrees: ring.thetaDegrees, gap: ring.gap,
+                                     noise: 0, seed: ring.seed)
+            let fit = try EllipseCalibration.fit1D(pattern: plant.render(), centerQX: ring.startQX, centerQY: ring.startQY,
+                                                   innerRadius: ring.innerRadius, outerRadius: ring.outerRadius)
             #expect(fit.sampleCount == ring.sampleCount && fit.occupiedAngularBins == ring.occupiedBins, "\(ring.name)")
             let toPlant = max(abs(fit.centerQX - plant.centerQX), abs(fit.centerQY - plant.centerQY))
             let centre = max(abs(fit.centerQX - ring.optimumCenterQX), abs(fit.centerQY - ring.optimumCenterQY))
             let axes = max(abs(fit.a - ring.optimumA) / ring.optimumA, abs(fit.b - ring.optimumB) / ring.optimumB)
-            let theta = p.eps == 0 ? 0 : Self.angleError(fit.theta, ring.optimumTheta)
+            let theta = ring.eps == 0 ? 0 : Self.angleError(fit.theta, ring.optimumTheta)
             worstPlant = max(worstPlant, toPlant); worstCentre = max(worstCentre, centre)
             worstAxes = max(worstAxes, axes); worstTheta = max(worstTheta, theta)
             // The reference implementations' clause is 0.05 px on rings of R 80-200. A conic fitted to a ring with a 60 degree arc missing sits off the
             // plant by an amount that grows as R shrinks (the objective, not the port: SciPy's optimum agrees to 7e-8 px); on these
             // R 32-52 rings it is 0.055-0.094 px (measured), so a gapped ring is held to 0.1 px and an unbroken one to 0.05 px.
-            #expect(toPlant < (p.gap == 0 ? 0.05 : 0.1), "\(ring.name): centre \(toPlant) px from the plant")
+            #expect(toPlant < (ring.gap == 0 ? 0.05 : 0.1), "\(ring.name): centre \(toPlant) px from the plant")
             #expect(centre < 1e-5, "\(ring.name): centre \(centre) px from scipy's")
             #expect(axes < 1e-7, "\(ring.name): axes \(axes) relative")
             #expect(theta < 1e-6, "\(ring.name): theta \(theta) rad")
         }
         print("clean sweep vs scipy \(sweep.scipy): plant \(worstPlant) px, centre \(worstCentre) px, axes \(worstAxes), theta \(worstTheta) rad")
     }
-}
-
-/// The plant parameters and start of a case of Fixtures/slice-3b-apps.json (the parity dump), for the sweep test.
-private struct ParityPlant: Decodable {
-    struct Plant: Decodable {
-        let kind: String, name: String
-        let size: Int, radius: Double, eps: Double, thetaDegrees: Double, gap: Double, noise: Double, seed: Int, tail: Double
-    }
-    let plant: Plant
-    let startQX: Double, startQY: Double, innerRadius: Double, outerRadius: Double
-    static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/slice-3b-apps.json")
 }
