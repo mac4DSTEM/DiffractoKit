@@ -314,7 +314,7 @@ public struct PhaseReferenceLibrary: Sendable {
     /// Explicit because the implicit memberwise initializer of a public
     /// struct is `internal` (SE-0386), which `build()` can call from this
     /// same file but a consumer cannot. Every sibling struct in
-    /// `PhaseVectorMatching.swift` this library feeds (`PhaseVectorSettings`,
+    /// `PhaseVectorTypes.swift` this library feeds (`PhaseVectorSettings`,
     /// `PhaseVectorResult`, `PhaseOrientationReference`) states its own
     /// public init for the same reason: tests build small fixtures
     /// directly, bypassing `build()`'s crystallography so a `.knownVariants`

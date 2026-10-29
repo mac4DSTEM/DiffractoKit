@@ -257,7 +257,7 @@ public struct ReflectionList: Sendable, Equatable {
     /// reflection of the lattice.
     public func families(allowedOnly: Bool = true) -> [ReflectionFamily] {
         ReflectionList.families(of: allowedOnly ? allowed : reflections, laueGroup: laueGroup,
-                                millerBravais: usesMillerBravais, familyTolerance: policy.familyTolerance)
+                                millerBravais: usesMillerBravais, familyTolerance: policy.effectiveFamilyTolerance)
     }
 
     /// The ring rule on any reflections in the list's order (increasing |g|): a reflection joins the current ring while
