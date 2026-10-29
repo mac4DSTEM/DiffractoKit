@@ -18,7 +18,7 @@ read committed fixtures and need no Python.
 Every number a scientist reads is covered by a test against a reference: pymatgen and spglib for cells, symmetry and
 d-spacings, py4DSTEM for scattering factors and diffraction geometry, SciPy and NumPy for numerical results, or a closed form
 or planted truth where no package applies. The reference outputs are committed as JSON fixtures under `Tests/*/Fixtures/`,
-with the generator scripts under `tools/`. `docs/parity.md` lists what is held against which reference.
+with the generator scripts under `tools/pins/`. `docs/parity.md` lists what is held against which reference.
 
 A test's tolerance is the one the Python package's own tests use for that function; a result outside it is a bug. A change
 that moves a fixture says why in the pull request and in the CHANGELOG; regenerate a fixture with its script and the pinned
@@ -26,13 +26,29 @@ versions of the reference.
 
 ## Regenerating fixtures
 
-The generators run in pinned Python virtual environments outside the repository (Python 3.12, NumPy 2.5.4, SciPy 1.18.1;
-pymatgen, spglib and orix in one, py4DSTEM in the other), placed at `../References/python/orix` and
-`../References/python/py4dstem` beside the checkout; each script's header names the one it needs. The current `orix` venv
-holds pymatgen-core 2026.10.16 under a `pymatgen` 2026.9.24 metapackage; the README and `docs/parity.md` say 2026.9.24, and the
-older fixtures record pymatgen-core 2026.9.23 (a previous venv). `cif-symmetry-pins.json` was regenerated on the current
-install on 2026-10-21 and came out byte-identical; the other fixtures were not regenerated. Regenerate and re-pin them
-together at the next fixture change.
+Every fixture generator lives under `tools/pins/<subject>/`, and each script's header names the command that runs it. They
+run in three Python 3.12 virtual environments outside the repository, beside the checkout under `../References/python/`,
+one per oracle, each built from its requirements file:
+
+| Venv | Requirements | Runs |
+|---|---|---|
+| `../References/python/pymatgen` | `tools/pins/requirements/pymatgen.txt` (pymatgen-core 2026.10.16, spglib 2.8.0, NumPy 2.5.4, SciPy 1.18.1) | every generator except the two below |
+| `../References/python/orix` | `tools/pins/requirements/orix.txt` (orix 0.15.0) | `tools/pins/orix` |
+| `../References/python/py4dstem` | `tools/pins/requirements/py4dstem.txt` (py4DSTEM f050d207) | `tools/pins/acom-matcher`, and the py4DSTEM halves the pymatgen scripts of `phase-vectors` and `orientation-symmetry` start themselves |
+
+```sh
+for oracle in pymatgen orix py4dstem; do
+  python3.12 -m venv ../References/python/$oracle
+  ../References/python/$oracle/bin/pip install -r tools/pins/requirements/$oracle.txt
+done
+tools/pins/structure-factors/fetch-table.sh                  # py4DSTEM's scattering table, sha256-locked
+python3 tools/crystal-structures/make_beta_double_prime.py   # the beta'' CIF the cell pins read
+```
+
+The last two write into the checkout's own gitignored `References/`.
+
+Every fixture that records a pymatgen version records pymatgen-core 2026.10.16 (the `pymatgen` metapackage is 2026.9.24).
+A regenerated fixture that moves is its own commit with the reason and a CHANGELOG line.
 
 ## Pull requests
 

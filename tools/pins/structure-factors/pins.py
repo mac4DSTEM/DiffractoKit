@@ -2,7 +2,7 @@
 
 Run, from any directory, with the pinned oracle:
 
-    ../References/python/orix/bin/python -I -B tools/pins/structure-factors/pins.py
+    ../References/python/pymatgen/bin/python -I -B tools/pins/structure-factors/pins.py
 
 It writes Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json BEFORE any Swift exists. Deterministic: no clock, no
 random numbers, sorted sets; two runs give the same bytes.

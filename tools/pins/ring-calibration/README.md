@@ -4,7 +4,7 @@ Written before the Swift tests read it; a difference between
 the Swift and the pins is a failure of the port, never a band to widen.
 
 ```
-../References/python/orix/bin/python -I -B tools/pins/ring-calibration/ring-pins.py [out.json]   # about 2 s, deterministic (no clock)
+../References/python/pymatgen/bin/python -I -B tools/pins/ring-calibration/ring-pins.py [out.json]   # about 2 s, deterministic (no clock)
 ```
 
 - `ring-pins.py` writes `Tests/DiffractoGeometryTests/Fixtures/numpy-ring-calibration-pins.json` (about 143 kB): the CODATA 2018
@@ -29,7 +29,7 @@ the Swift and the pins is a failure of the port, never a band to widen.
 ## q and its inverse
 
 ```
-../References/python/orix/bin/python -I -B tools/pins/ring-calibration/q-pins.py [out.json]
+../References/python/pymatgen/bin/python -I -B tools/pins/ring-calibration/q-pins.py [out.json]
 ```
 
 `q-pins.py`: q and its inverse, 60-digit decimal truth computed two ways (algebraic and series, agreeing to 1e-50) beside

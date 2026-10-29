@@ -5,7 +5,7 @@ read the files these write. A difference is a failure of the port, never a toler
 
 ```
 tools/pins/structure-factors/fetch-table.sh                                         # py4DSTEM f050d207 scattering_factors.txt into References/, sha256-locked
-../References/python/orix/bin/python -I -B tools/pins/structure-factors/pins.py      # about 2 s, deterministic (no clock): writes numpy-structure-factor-pins.json
+../References/python/pymatgen/bin/python -I -B tools/pins/structure-factors/pins.py      # about 2 s, deterministic (no clock): writes numpy-structure-factor-pins.json
 ```
 
 - `pins.py` writes `Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json` (about 1.7 MB): the versions, the table's

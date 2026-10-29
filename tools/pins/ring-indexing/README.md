@@ -4,7 +4,7 @@ Written before the Swift test reads it; a difference is a
 failure of the port, never a tolerance to widen.
 
 ```
-../References/python/orix/bin/python -I -B tools/pins/ring-indexing/pins.py     # about 2 s, deterministic: writes numpy-ring-indexing-pins.json
+../References/python/pymatgen/bin/python -I -B tools/pins/ring-indexing/pins.py     # about 2 s, deterministic: writes numpy-ring-indexing-pins.json
 ```
 
 - `index-pins.py` ports macTEM 9482831 `tools/indexing-parity/reference.py` (read by `git show`) onto the KIT's ring lists:

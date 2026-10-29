@@ -1,7 +1,7 @@
 //
 //  PinsTests.swift
 //  Agreement with pymatgen, read from pymatgen-cells-pins.json (tools/pins/cells/pins.py, run in
-//  ../References/python/orix before any Swift existed). Agreement is agreement, not truth; a difference is a failure of
+//  ../References/python/pymatgen before any Swift existed). Agreement is agreement, not truth; a difference is a failure of
 //  the port, never a tolerance to widen.
 //
 

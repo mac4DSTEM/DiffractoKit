@@ -1,6 +1,6 @@
 """pymatgen / spglib pins for the preset crystals (DiffractoKit 0.6.0, CrystalPresetsTests).
 
-  ../References/python/orix/bin/python -I -B tools/pins/presets/pins.py
+  ../References/python/pymatgen/bin/python -I -B tools/pins/presets/pins.py
 
 Every preset is built here independently of the Swift code, from the published lattice constants and Wyckoff positions with
 `Structure.from_spacegroup` (so the sites are spglib/pymatgen's own orbit expansion, not a copy of the hand lists):

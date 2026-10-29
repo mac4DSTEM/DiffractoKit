@@ -159,7 +159,7 @@ not bit equality between different floating-point types. The measured Double-to-
 From the worktree, with the existing pinned references (no installation or network access):
 
 ```sh
-../../References/python/orix/bin/python -I -B tools/pins/orientation-symmetry/pins.py
+../../References/python/pymatgen/bin/python -I -B tools/pins/orientation-symmetry/pins.py
 swift test -c release --jobs 4
 ```
 

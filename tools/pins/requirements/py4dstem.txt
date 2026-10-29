@@ -1,0 +1,9 @@
+# The py4DSTEM oracle (Python 3.12): tools/pins/acom-matcher, the py4DSTEM halves of tools/pins/phase-vectors and
+# tools/pins/orientation-symmetry, which their pymatgen half starts as a subprocess. Venv: ../References/python/py4dstem
+# (see CONTRIBUTING.md). py4DSTEM is the dev commit f050d207 (version 0.14.19), the commit the scattering table is locked to.
+py4DSTEM @ git+https://github.com/py4dstem/py4DSTEM@f050d207851f8accd3aa550365baaf1f38230428
+pymatgen==2026.9.24
+pymatgen-core==2026.10.16
+spglib==2.8.0
+numpy==2.5.4
+scipy==1.18.1

@@ -21,7 +21,7 @@ registered prediction) and beta'' (macTEM's accepted counts). Non-finite numbers
 "NaN", "Infinity", "-Infinity".
 
 Writes Tests/DiffractoGeometryTests/Fixtures/numpy-ring-indexing-pins.json BEFORE the Swift test is run. Deterministic (no clock,
-no random numbers). Run with ../References/python/orix/bin/python -I -B tools/pins/ring-indexing/pins.py
+no random numbers). Run with ../References/python/pymatgen/bin/python -I -B tools/pins/ring-indexing/pins.py
 Exit 0: every self-check holds. 1: a self-check failed (the file is still written, with the failures listed).
 """
 import json

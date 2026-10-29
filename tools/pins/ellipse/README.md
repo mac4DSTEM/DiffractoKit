@@ -4,7 +4,7 @@ Seeds, from the apps' history before they were public: mac4DSTEM `7d6fdbd1`
 (`EllipseCalibration.swift`, `DiffractionPattern.swift`, `Calibration.swift`, the noisy, stop-rule and row-29 tests, the
 `tools/ellipse-calibration-test` sweep) and macTEM `9482831` (`RingCalibration+Fit.swift`, its 8 tests).
 
-- `sweep.py` (`../References/python/orix/bin/python -I -B tools/pins/ellipse/sweep.py`): renders the 20 clean sweep rings (a Python
+- `sweep.py` (`../References/python/pymatgen/bin/python -I -B tools/pins/ellipse/sweep.py`): renders the 20 clean sweep rings (a Python
   port of the planted ring of `Tests/DiffractoKitTestSupport/EllipseFixtures.swift`, hash-equal to the Swift renderer) and writes
   SciPy 1.18.1's `least_squares` optimum of fit1D's objective on each, with its plant and start, to `Fixtures/scipy-ellipse-sweep-pins.json`;
   held in `EllipseCalibrationTests`.

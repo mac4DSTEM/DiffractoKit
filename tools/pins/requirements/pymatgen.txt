@@ -1,0 +1,8 @@
+# The pymatgen and spglib oracle (Python 3.12), and the NumPy / SciPy pins that need neither: every generator under
+# tools/pins except tools/pins/orix and the py4DSTEM halves. Venv: ../References/python/pymatgen (see CONTRIBUTING.md).
+# pymatgen 2026.9.24 is the metapackage; the code that runs is pymatgen-core, pinned here once for every fixture.
+pymatgen==2026.9.24
+pymatgen-core==2026.10.16
+spglib==2.8.0
+numpy==2.5.4
+scipy==1.18.1

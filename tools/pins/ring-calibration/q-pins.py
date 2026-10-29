@@ -2,7 +2,7 @@
 
 Run, from any directory, with the pinned oracle:
 
-    ../References/python/orix/bin/python -I -B tools/pins/ring-calibration/q-pins.py [out.json]
+    ../References/python/pymatgen/bin/python -I -B tools/pins/ring-calibration/q-pins.py [out.json]
 
 It writes Tests/DiffractoGeometryTests/Fixtures/q-pins.json BEFORE the Swift tests read it. Deterministic: no clock, no random
 numbers; two runs give the same bytes. Reads slice 3a's Fixtures/numpy-ring-calibration-pins.json (320 cases) for the 1/d identity.
@@ -38,7 +38,7 @@ a, l_px, lambda_A, note}] }. A number that is not finite is written as the strin
 Exit 0: every self-check holds. 1: one failed (printed).
 """
 # Run under the suite's memory cap (a process cannot cap itself on macOS 27):
-#   ../References/python/orix/bin/python -I -B tools/pins/ring-calibration/q-pins.py
+#   ../References/python/pymatgen/bin/python -I -B tools/pins/ring-calibration/q-pins.py
 import json
 import math
 import os

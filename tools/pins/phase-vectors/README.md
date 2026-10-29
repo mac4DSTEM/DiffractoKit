@@ -5,7 +5,7 @@ tests read the file these write. A difference is a failure of the port, never a 
 named under "Measured floors and open points").
 
 ```
-../References/python/orix/bin/python -I -B tools/pins/phase-vectors/pins.py     # about 3 s, peak about 330 MB, deterministic
+../References/python/pymatgen/bin/python -I -B tools/pins/phase-vectors/pins.py     # about 3 s, peak about 330 MB, deterministic
 ```
 
 - `pins.py` runs on the pymatgen venv (Python 3.14.7, NumPy 2.5.4, SciPy 1.18.1, pymatgen 2026.9.24) and starts

@@ -2,7 +2,7 @@
 
 Run, from any directory, with the pinned oracle:
 
-    ../References/python/orix/bin/python -I -B tools/pins/cells/pins.py
+    ../References/python/pymatgen/bin/python -I -B tools/pins/cells/pins.py
 
 It writes Tests/DiffractoCoreTests/Fixtures/pymatgen-cells-pins.json BEFORE any Swift exists. pymatgen 2026.9.24 (with
 pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7) is the oracle for the cell, the expanded sites, the

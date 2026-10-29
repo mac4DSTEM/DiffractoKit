@@ -3,7 +3,7 @@
 Run, from any directory, with the pinned oracle, UNDER A MEMORY CAP (setrlimit and
 `ulimit -v` fail on macOS 27, so the cap is an external watchdog's, 8 GB; one such worker at a time):
 
-    ../References/python/orix/bin/python -I -B tools/pins/conventional-cell/pins.py
+    ../References/python/pymatgen/bin/python -I -B tools/pins/conventional-cell/pins.py
 
 It writes Tests/DiffractoCoreTests/Fixtures/spglib-conventional-cell-pins.json BEFORE any Swift for the reduction exists.
 

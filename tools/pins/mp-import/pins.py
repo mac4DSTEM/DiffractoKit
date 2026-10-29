@@ -1,5 +1,5 @@
 """pymatgen standard conventional/primitive cells of committed MP-shaped JSON.
-Run with References/python/orix/bin/python -I -B under a memory cap.
+Run with References/python/pymatgen/bin/python -I -B under a memory cap.
 The input records are copied from pinned app tests, NOT queried from MP in tests.
 The Al v3 envelope is the app's recorded fetch; Si/Mg are synthetic app test inputs.
 No expected value is calculated by the Swift port. Symprec 1e-4 A, angle tolerance 5 deg.
