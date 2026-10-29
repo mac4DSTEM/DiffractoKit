@@ -1,10 +1,10 @@
 //
 //  RingCalibrationQTests.swift
-//  DiffractoKit 0.1.0 (docs/registration-0.0.4.md section 3, G2): `RingCalibration.q(radius:cameraLengthPixels:wavelength
+//  DiffractoKit 0.1.0: `RingCalibration.q(radius:cameraLengthPixels:wavelength
 //  Angstroms:)` and its inverse `radius(q:cameraLengthPixels:wavelengthAngstroms:)` against the pins tools/kit-0.0.4/q-pins.py
 //  writes (Fixtures/q-pins.json): the closed forms q = 2 sin(atan(R/L)/2)/λ and R = L tan(2 asin(qλ/2)) in 60-digit decimal
 //  arithmetic (two independent evaluations that agree to 1e-50), on 100 forward and 120 inverse cases; the round trip; the
-//  identity q(R, L_px, λ) = 1/d on slice 3a's 320 cases; and the NaN plants. Band 1e-7 relative (D17, 0.9.1; it was 1e-12); a
+//  identity q(R, L_px, λ) = 1/d on the ring-calibration pins' 320 cases; and the NaN plants. Band 1e-7 relative (the reference's tolerance since 0.9.1; it was 1e-12); a
 //  difference is a failure of the port, never a band to widen. The fixture is read by #filePath.
 //
 
@@ -53,10 +53,10 @@ private func relative(_ x: Double, _ truth: Double) -> Double { abs(x - truth) /
 
 struct RingCalibrationQTests {
     private let pins = QPins.shared
-    /// The registration's band; the fixture's own tolerance must not be looser.
-    private let band = 1e-7  // D17: assert_allclose default (rtol 1e-7); was 1e-12, measured worst is far below
+    /// The band; the fixture's own tolerance must not be looser.
+    private let band = 1e-7  // assert_allclose default (rtol 1e-7); was 1e-12, measured worst is far below
 
-    @Test func testThePinsAreTheRegisteredSetAndTheirBandIsNotLoosened() {
+    @Test func testThePinsAreTheDocumentedSetAndTheirBandIsNotLoosened() {
         #expect(pins.tolerance <= band)
         #expect(pins.forward.count == 100)           // 5 V x 4 L x 5 R
         #expect(pins.inverse.count == 120)           // the q those give, and 20 at 0.99 of the Bragg limit

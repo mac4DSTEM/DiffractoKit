@@ -1,7 +1,7 @@
 //
 //  IndexingDisplay.swift
 //  Ported from macTEM TEMCore/Diffraction/IndexingDisplay.swift (the app's source is the oracle; pins in P23).
-//  Role: a ring's indexing AS THE ROOM DISPLAYS IT (slice 1a, R6): the kit's `RingIndexing` decision over a kinematic list, with
+//  Role: a ring's indexing AS THE ROOM DISPLAYS IT: the kit's `RingIndexing` decision over a kinematic list, with
 //        the numbers a reader sees derived once, here, from the kit's own fields. The decision is the kit's, untouched; this file
 //        adds the percentages, the odds, σ_q from the typed tolerance and the verdict's name.
 //

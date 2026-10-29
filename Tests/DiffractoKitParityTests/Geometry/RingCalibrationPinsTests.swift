@@ -1,9 +1,9 @@
 //
 //  RingCalibrationPinsTests.swift
-//  DiffractoKit slice 3a (docs/registration-slice-3.md section 3): `ElectronWavelength` and `RingCalibration` against the
+//  `ElectronWavelength` and `RingCalibration` against the
 //  pins tools/slice-3/ring-pins.py writes (Fixtures/slice-3-ring-pins.json): the closed forms evaluated in 60-digit decimal
-//  arithmetic, 320 cases, the refusal decision from the registered thresholds (68 plants), the Bragg limit (18 plants) and the
-//  radius (10 plants). Band 1e-7 relative (D17, 0.9.1; it was 1e-12); a difference is a failure of the port, never a band to widen.
+//  arithmetic, 320 cases, the refusal decision from the documented thresholds (68 plants), the Bragg limit (18 plants) and the
+//  radius (10 plants). Band 1e-7 relative (the reference's tolerance since 0.9.1; it was 1e-12); a difference is a failure of the port, never a band to widen.
 //  Ported from reference commit 9482831 tools/ring-calibration-parity/main.swift. The fixture is read by #filePath (the Fixtures folder
 //  is excluded from the target).
 //
@@ -85,10 +85,10 @@ private func reported(_ refusal: RingCalibration.Refusal) -> Double? {
 
 struct RingCalibrationPinsTests {
     private let pins = RingPins.shared
-    /// The registration's band; the fixture's own tolerance must not be looser.
-    private let band = 1e-7  // D17: assert_allclose default (rtol 1e-7); was 1e-12, measured worst is far below
+    /// The band; the fixture's own tolerance must not be looser.
+    private let band = 1e-7  // assert_allclose default (rtol 1e-7); was 1e-12, measured worst is far below
 
-    @Test func testThePinsAreTheRegisteredSetAndTheirBandIsNotLoosened() {
+    @Test func testThePinsAreTheDocumentedSetAndTheirBandIsNotLoosened() {
         #expect(pins.tolerance <= band)
         #expect(pins.cases.count == 320)
         #expect(pins.refusals.count == 68)
@@ -160,7 +160,7 @@ struct RingCalibrationPinsTests {
         }
     }
 
-    @Test func testEveryRefusalPlantGivesTheRegisteredNamesInOrderWithTheirNumbers() {
+    @Test func testEveryRefusalPlantGivesTheDocumentedNamesInOrderWithTheirNumbers() {
         for r in pins.refusals {
             let fit = RingCalibration.FitReport(
                 model: r.model == "asymmetricGaussian" ? .asymmetricGaussian : .conic, semiAxisA: r.a_px, semiAxisB: r.b_px,
@@ -168,7 +168,7 @@ struct RingCalibrationPinsTests {
                 innerSigma: r.inner_sigma, outerSigma: r.outer_sigma, annulusWidth: r.annulus_width_px)
             let got = RingCalibration.refusals(fit, highTensionVolts: r.volts)
             #expect(got.map(\.name) == r.expect_names,
-                    "\(r.name) \(r.check): refused as \(got.map(\.name)), the registered thresholds say \(r.expect_names)")
+                    "\(r.name) \(r.check): refused as \(got.map(\.name)), the documented thresholds say \(r.expect_names)")
             if got.map(\.name) == r.expect_names {
                 for (refusal, want) in zip(got, r.expect_values) {
                     let have = reported(refusal)
@@ -213,7 +213,7 @@ struct RingCalibrationPinsTests {
         }
     }
 
-    @Test func testTheRegisteredTruthLiteralsAreWhatThePinsRecomputeAndTheCodeGives() throws {
+    @Test func testTheDocumentedTruthLiteralsAreWhatThePinsRecomputeAndTheCodeGives() throws {
         let t = pins.truth
         for (kv, want) in t.lambda_A {
             let volts = (Double(kv) ?? 0) * 1000

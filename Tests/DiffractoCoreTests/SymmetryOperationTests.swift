@@ -1,6 +1,6 @@
 //
 //  SymmetryOperationTests.swift
-//  The x,y,z grammar (registration 3.3): what parses, what it means, what is refused, and the round trip.
+//  The x,y,z grammar: what parses, what it means, what is refused, and the round trip.
 //
 
 import DiffractoKitTestSupport

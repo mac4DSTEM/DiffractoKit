@@ -1,6 +1,6 @@
 //
 //  ScatteringPinsTests.swift
-//  The kit against the pins written BEFORE its code (registration docs/registration-slice-2.md §4.1–4.4 and amendments 1–5):
+//  The kit against the pins written BEFORE its code:
 //    slice-2-pins.json  tools/slice-2/pins.py: NumPy from the definitions, pymatgen's Laue group and X-ray pattern
 //    slice-2-apps.json  tools/slice-2/apps-parity: reference commit 7d6fdbd1's Crystal.reflections, compiled -O
 //  Public API only (DiffractoScattering and DiffractoCore). A failure is a failure of the port, never a tolerance to widen.
@@ -72,7 +72,7 @@ private struct Apps: Decodable { let cases: [AppsCase] }
 
 enum ScatteringFixtures {
     static let directory: URL = FixtureDirs.target("DiffractoScatteringTests").appendingPathComponent("Fixtures")
-    /// Slice 1's CIF fixtures (read by file name, as the pins name them).
+    /// DiffractoCore's CIF fixtures (read by file name, as the pins name them).
     static let coreDirectory: URL = FixtureDirs.fixtures(of: "DiffractoCoreTests")
 
     fileprivate static func decode<T: Decodable>(_ type: T.Type, _ name: String) throws -> T {
@@ -142,7 +142,7 @@ struct ScatteringPinsTests {
     // MARK: 4.2 the table
 
     /// All 103 rows × 10 parameters equal to the fetched file bit for bit; f_e at g² ∈ {0, 0.25, 1, 4} for every Z within
-    /// 1e-7 relative of NumPy's value (D17; was 1e-15, measured at rounding level). (Also holds the JSON decoder to exact doubles: a lossy decode fails here first.)
+    /// 1e-7 relative of NumPy's value (the reference's tolerance; was 1e-15, measured at rounding level). (Also holds the JSON decoder to exact doubles: a lossy decode fails here first.)
     @Test func testTableBitForBitAndSamples() throws {
         let pins = try ScatteringFixtures.pins()
         #expect(pins.tableSha256 == "be845d1d541cdb75ae16f8928cd9e56a9ea38af8a3cc43da9137e73cc72bb6f4")
@@ -181,7 +181,7 @@ struct ScatteringPinsTests {
 
     // MARK: 4.1 NumPy
 
-    /// Every structure at k_max 1.2: Re F, Im F, |F| within 1e-7 relative (D17; was 1e-9) of max(|F|, 1e-4) on every pinned reflection; the
+    /// Every structure at k_max 1.2: Re F, Im F, |F| within 1e-7 relative (the reference's tolerance; was 1e-9) of max(|F|, 1e-4) on every pinned reflection; the
     /// kept set equal (a reflection within 1e-12 relative of the cut may fall either side); the unlisted ones (|F| ≤ 1e-6
     /// in NumPy) stay below 1e-6; the families equal (count, g 1e-7, members, multiplicity, orbits, name, Σ|F|² 1e-7).
     @Test(arguments: ScatteringFixtures.structureNames)
@@ -249,7 +249,7 @@ struct ScatteringPinsTests {
         }
     }
 
-    // MARK: amendment 4 the cut's strictness
+    // MARK: The cut's strictness
 
     /// a = b = 100, c = 1 Å, a unit form factor: every reflection has |F| = 1/V = 1e-4, so `>` keeps none (`>=` would keep
     /// all of them).
@@ -276,7 +276,7 @@ struct ScatteringPinsTests {
         #expect(list.all.count >= ce.reflectionsWithinKMax)
     }
 
-    // MARK: amendment 2 the sign of Im F
+    // MARK: The sign of Im F
 
     /// Zinc-blende GaAs, non-centrosymmetric about the origin: F = 4 (f_Ga + i^(h+k+l) f_As) / V for unmixed h, k, l,
     /// absent otherwise (1e-13 relative); Im F(1 1 1) < 0 and Im F(−1 −1 −1) > 0. A flipped phase sign fails both.
@@ -312,7 +312,7 @@ struct ScatteringPinsTests {
     // MARK: 4.3 pymatgen X-ray
 
     /// For each pymatgen peak: Σ|F_X|² over its half-space members through the kit's phase sum with pymatgen's X-ray form
-    /// factor f(s) = Z − 41.78214 s² Σ a exp(−b s²), s = |g|/2, equals pymatgen's intensity / (2 LP) within 1e-3 relative (XRDCalculator.SCALED_INTENSITY_TOL; D17, was 1e-6).
+    /// factor f(s) = Z − 41.78214 s² Σ a exp(−b s²), s = |g|/2, equals pymatgen's intensity / (2 LP) within 1e-3 relative (XRDCalculator.SCALED_INTENSITY_TOL; was 1e-6).
     @Test(arguments: ScatteringFixtures.xrayNames)
     func testXRayPhaseSumsMatchPymatgen(_ name: String) throws {
         let pins = try ScatteringFixtures.pins()
@@ -342,13 +342,13 @@ struct ScatteringPinsTests {
         #expect(worst <= 1e-7, "\(name): worst relative difference \(worst) at \(worstAt)")
     }
 
-    // MARK: 4.4 the reference implementations, exact today (amendment 1; D12 allows a tolerance)
+    // MARK: The reference implementations, exact today (the reference's tolerance would allow more)
 
     /// The reference implementations' `Crystal.reflections(kMax:tolerance: 1e-4)` (reference commit 7d6fdbd1, -O): the kept sets equal, and per kept
     /// reflection the Double bit patterns of |g|, Re F and |F|² equal; Im F bit-equal where |Im F| ≥ 1e-15 and within 1e-15
-    /// below that (amendment 1). β″ is built from the CIF here, so its site order differs from the reference implementations' hand list and a
+    /// below that. β″ is built from the CIF here, so its site order differs from the reference implementations' hand list and a
     /// summation-order difference is expected: for it, Re F and Im F are held to 1e-12 relative of max(|F|, 1e-4) (Im F also
-    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| exact today (registration 4.4 as amended 2026-10-15: the measured worst is 2.7e-13; bit identity is the reference-site-list test).
+    /// passes below 1e-15 within 1e-15), |F|² to 2e-12 relative, |g| exact today (the measured worst is 2.7e-13, bit identity is the reference-site-list test).
     @Test(arguments: ScatteringFixtures.appsCaseIndices)
     func testAppsBitForBit(_ index: Int) throws {
         let c = try ScatteringFixtures.apps().cases[index]
@@ -359,7 +359,7 @@ struct ScatteringPinsTests {
     }
 
     /// The cause of the β″ differences above: built from the reference implementations' own site list (same order, same coordinates) the kit is
-    /// exact to the reference implementations like every other preset (D12 quick check).
+    /// exact to the reference implementations like every other preset.
     @Test(arguments: [8, 9])
     func testAppsBetaDoublePrimeFromTheAppsSiteListIsBitIdentical(_ index: Int) throws {
         let c = try ScatteringFixtures.apps().cases[index]
@@ -417,7 +417,7 @@ private func compareToApps(_ c: AppsCase, _ s: CrystalStructure, summationOrderT
     return (fails, stats)
 }
 
-// MARK: - retainingAll: false (registration 0.2.0, ask 1)
+// MARK: - retainingAll: false
 
 extension ScatteringPinsTests {
 

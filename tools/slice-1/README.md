@@ -1,7 +1,6 @@
 # tools/slice-1: the pin generator
 
-`pins.py` writes `Tests/DiffractoCoreTests/Fixtures/slice-1-pins.json` before any Swift exists (registration
-`docs/registration-slice-1.md`, sections 2, 3, 4, 5.1, 5.3 and amendment 8). The pins are what pymatgen says; the
+`pins.py` writes `Tests/DiffractoCoreTests/Fixtures/slice-1-pins.json` before any Swift exists. The pins are what pymatgen says; the
 Swift tests read them and the planted truth. A difference is a failure of the port, never a tolerance to widen.
 
 ```
@@ -16,41 +15,41 @@ rebuild it byte for byte. Every other CIF is a fixture in `Tests/DiffractoCoreTe
 
 ## What it writes
 
-`cells`: the seven parameter cells of 5.1 (monoclinic first): a, b, c, angles, the lattice matrix (`vesta=True`:
+`cells`: the seven parameter cells (monoclinic first): a, b, c, angles, the lattice matrix (`vesta=True`:
 a along x, b in xy), metric, volume, reciprocal rows, and |g|, d for every (h, k, l) in -3 ... 3 except 0.
 `structures`: beta'' from the CIF, beta'' as a P1 list of its 22 expanded sites (symmetry detected, not read), and the
-fixtures of 5.3 (plus a few extras, named below). Per structure: cell, matrix, metric, volume, reciprocal, the expanded
+fixtures with planted truth (plus a few extras, named below). Per structure: cell, matrix, metric, volume, reciprocal, the expanded
 sites (Z, fractional in [0, 1), occupancy), the declared IT number, spglib's number and point-group symbol, the Laue class,
 every operation (integer rotation, translation, `x,y,z` string), the Laue rotations {R} and {-R}, every reflection at
 k_max 1.2 Å⁻¹ (g, d, allowed, canonical form; the orbit only on the first 24 reflections of each structure, to keep the file small) and the families on the allowed reflections; `families_all` counts the
 families on every reflection and gives the first 12 names; beta'' also has counts at 1.6 and 2.0.
 
-## Definitions applied (written from the registration, not from any Swift)
+## Definitions applied (written before the code, not from any Swift)
 
-- Lattice (3.1): `Lattice.from_parameters(..., vesta=True)` rebuilt from the cell the CIF states; `g = h b1 + k b2 + l b3`
+- Lattice: `Lattice.from_parameters(..., vesta=True)` rebuilt from the cell the CIF states; `g = h b1 + k b2 + l b3`
   with rows b from `reciprocal_lattice_crystallographic` (asserted a_i . b_j = delta_ij and B = G^-1 A); d = 1/|g|
   (asserted equal to `Lattice.d_hkl` to 1e-12 relative for every reflection).
-- Operations (3.3): `SpacegroupAnalyzer(structure, symprec=1e-4).get_symmetry_operations(cartesian=False)`; rotations
+- Operations: `SpacegroupAnalyzer(structure, symprec=1e-4).get_symmetry_operations(cartesian=False)`; rotations
   asserted integer; translations mod 1 in [0, 1), snapped to the nearest k/24 (asserted within 1e-9; pymatgen has
   already rounded spglib's to `Fraction.limit_denominator(1000)`). The set is asserted distinct, closed under
   composition, and a permutation of the sites.
-- Laue class (3.5): from the rotation set {±R} by its order and its proper rotations of order 4 and 6, asserted equal to the
+- Laue class: from the rotation set {±R} by its order and its proper rotations of order 4 and 6, asserted equal to the
   32 -> 11 table applied to pymatgen's point-group symbol. "A 4-fold / a 6-fold" is read as a proper rotation (det +1): read
   over every element, -3 (order 6) makes -3m, m-3 and the -3m of CdI2 come out as 6/m or 6/mmm (the run prints
   the literal reading beside the right one).
-- Orbit (3.6): `{hkl @ R : R in the Laue rotations}` (row vector times the matrix that acts on fractional coordinates, no
+- Orbit: `{hkl @ R : R in the Laue rotations}` (row vector times the matrix that acts on fractional coordinates, no
   transpose); canonical form = the member that is greatest under (number of non-negative indices, (h, k, l)).
   Asserted: the orbit is closed, the canonical form is constant on an orbit and differs between orbits.
-- Allowed (3.8): absent iff some operation has `hkl @ R == hkl` and `hkl . t` is not an integer within 1e-9.
-- Reflections (3.8): `get_points_in_sphere` on the crystallographic reciprocal lattice, asserted equal to the brute-force box
+- Allowed: absent iff some operation has `hkl @ R == hkl` and `hkl . t` is not an integer within 1e-9.
+- Reflections: `get_points_in_sphere` on the crystallographic reciprocal lattice, asserted equal to the brute-force box
   |h| <= ceil(k_max |a_i|) and its distances equal to |g| to 1e-12. Order: increasing |g|; ties (within 1e-12 relative of the
   cluster's first) by descending (h, k, l).
-- Families (3.9): sweep of the allowed reflections; a reflection joins while g <= g0 (1 + 1e-9); g = smallest member;
+- Families: sweep of the allowed reflections; a reflection joins while g <= g0 (1 + 1e-9); g = smallest member;
   members descending; orbits = distinct canonical forms descending; name = braces joined by ` + `, four Miller-Bravais indices
   (i = -(h + k) third) for the Laue classes -3, -3m, 6/m, 6/mmm. So the Si ring is `{5 1 1} + {3 3 3}` (the descending order
-  macTEM's `Set.sorted(by: >)` gives), not the registration prose's `{3 3 3} + {5 1 1}`.
-- Truth checks run in the same script (they stop it if they fail): the closed forms of 5.1 for all seven cells against the metric
-  tensor, the macTEM anchors of the monoclinic cell, the reflection conditions and counts of 5.3 that are group theory.
+  macTEM's `Set.sorted(by: >)` gives), not the `{3 3 3} + {5 1 1}` of the first written prediction.
+- Truth checks run in the same script (they stop it if they fail): the closed forms for all seven cells against the metric
+  tensor, the macTEM anchors of the monoclinic cell, the reflection conditions and counts that are group theory.
 
 ## Notes the Swift side needs
 

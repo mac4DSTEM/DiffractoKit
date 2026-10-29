@@ -1,7 +1,7 @@
-"""DiffractoKit slice 1b: the pin generator (registration docs/registration-slice-1b.md, section 2).
+"""DiffractoKit slice 1b: the pin generator for the conventional setting.
 
-Run, from any directory, with the pinned oracle, UNDER THE SUITE MEMORY WATCHDOG (owner, 2026-10-15 12:30: setrlimit and
-`ulimit -v` fail on macOS 27, so the cap is the watchdog's, 8 GB, exit 137; one such worker at a time):
+Run, from any directory, with the pinned oracle, UNDER A MEMORY CAP (setrlimit and
+`ulimit -v` fail on macOS 27, so the cap is an external watchdog's, 8 GB; one such worker at a time):
 
     ../References/python/orix/bin/python -I -B tools/slice-1b/pins.py
 
@@ -45,7 +45,7 @@ SLICE1_PINS = os.path.join(FIXTURES, "slice-1-pins.json")
 OUT = os.path.join(FIXTURES, "slice-1b-pins.json")
 
 SEED = 20261015
-RANDOM_PER_LATTICE = 200      # registration 2: 200; the report states it if this is reduced
+RANDOM_PER_LATTICE = 200      # 200; the report states it if this is reduced
 SYMPREC = 1e-4
 NIGGLI_TOL = 1e-5             # spglib niggli_reduce(eps=) and pymatgen get_niggli_reduced_lattice(tol=)
 K_MAX = 1.2
@@ -196,7 +196,7 @@ def structure_entry(name, source, params, Z, occ, frac):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# The named non-conventional cells (registration 2)
+# The named non-conventional cells
 # ----------------------------------------------------------------------------------------------------------------
 def transformed(A, frac, P):
     """P: columns are the new basis vectors in terms of the old (x_old = P x_new). Returns params, frac_new."""
@@ -245,7 +245,7 @@ def named_cells(slice1):
     check("corundum rhombohedral cell holds 10 atoms", len(prim) == 10, f"{len(prim)}")
     out.append(("corundum_rhombohedral_axes", params_of(prim.lattice.matrix), [int(s.specie.Z) for s in prim],
                 [1.0] * len(prim), [list(map(float, s.frac_coords)) for s in prim]))
-    # the 7x supercell fixture of Gate B (a P1 list)
+    # the 7x supercell fixture of the review (a P1 list)
     path = os.path.join(FIXTURES, "refuter_F3_super7.cif")
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -359,7 +359,7 @@ def main():
     for name, params, Z, occ, frac in named_cells(slice1):
         structures.append(structure_entry(name, "named", params, Z, occ, frac))
 
-    # registration 3: the counts the registration states
+    # the counts stated before the run
     by = {s["name"]: s for s in structures}
     check("truth: Au primitive is cF with 192 conventional operations, m-3m",
           by["au_fcc_primitive"]["lattice"]["bravais"] == "cF" and by["au_fcc_primitive"]["conventional_operations_count"] == 192

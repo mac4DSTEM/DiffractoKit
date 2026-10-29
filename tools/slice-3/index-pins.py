@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Pins for RingIndexing (registration docs/registration-slice-3.md sections 1, 3, 4, 5; slice 3a).
+"""Pins for RingIndexing.
 
 Port of macTEM 9482831 tools/indexing-parity/reference.py (read by `git show`) onto the KIT's own ring lists: the families
 after the |F| cut that slice 2 pinned (Tests/DiffractoScatteringTests/Fixtures/slice-2-pins.json, written by
-tools/slice-2/pins.py), at k_max 1.2. The decision is written here from the registration text (NumPy, plus a plain-Python
+tools/slice-2/pins.py), at k_max 1.2. The decision is written here from its definition in DiffractoGeometry/RingIndexing.swift's header (NumPy, plus a plain-Python
 scalar re-implementation that must agree on every plant), NOT from any Swift:
 
   z = |q - g| / sigma, delta = g / q - 1, candidates ordered by (z, g); within = z <= k (not z^2 <= k);
@@ -17,7 +17,7 @@ Plants. T1: every family of every list, u in {1e-4, 1e-3, 3e-3, 1e-2, 3e-2}, s i
 q = g (1 + s u), sigma = u q, k = 3 (closed forms P1: z = |s| / (1 + s u), delta = -s u / (1 + s u)). T4: the refusal plants
 macTEM registered, on the kit's lists (invalid numbers, beyondKMax, forbidden positions, ambiguous pairs, the margin plant,
 the one-family and the empty list). Lists: Au, Al, Si, Mg, ideal hcp, Weak-cut (macTEM's six, so the T1 counts equal its
-registered prediction) and beta'' (macTEM's S2c, its accepted counts). Non-finite numbers are written as the strings
+registered prediction) and beta'' (macTEM's accepted counts). Non-finite numbers are written as the strings
 "NaN", "Infinity", "-Infinity".
 
 Writes Tests/DiffractoGeometryTests/Fixtures/slice-3-index-pins.json BEFORE the Swift test is run. Deterministic (no clock,
@@ -45,7 +45,7 @@ KMAX = 1.2
 U1 = (1e-4, 1e-3, 3e-3, 1e-2, 3e-2)
 S1 = (-2.9, -2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0, 2.9)
 # macTEM's registered T1 counts per u over its six crystals (accepted as own, accepted as another family, ambiguous,
-# beyondKMax, none): Au, Al, Si, Mg, Mg-ideal, Weak-cut; and beta'' (S2c, 'accepted in all' per u).
+# beyondKMax, none): Au, Al, Si, Mg, Mg-ideal, Weak-cut; and beta'' ('accepted in all' per u).
 T1_PREDICT = {1e-4: (711, 0, 0, 36, 0), 1e-3: (691, 0, 20, 36, 0), 3e-3: (647, 0, 64, 36, 0),
               1e-2: (408, 0, 309, 30, 0), 3e-2: (131, 19, 572, 11, 14)}
 T1_BETA_ACCEPTED = {1e-4: 2584, 1e-3: 508, 3e-3: 184, 1e-2: 58, 3e-2: 25}

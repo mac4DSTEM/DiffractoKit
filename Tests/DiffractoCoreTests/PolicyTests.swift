@@ -1,9 +1,9 @@
 //
 //  PolicyTests.swift
-//  DiffractoKit 0.2.0 (docs/registration-0.2.0.md §1, §2): the policies of DiffractoCore are parameters with the suite's values
-//  as defaults. Tier 2: the default path is held by the existing suite; here a non-default value moves the outcome in the
+//  DiffractoKit 0.2.0: the policies of DiffractoCore are parameters with the suite's values
+//  as defaults. The default path is held by the existing suite; here a non-default value moves the outcome in the
 //  stated direction and an invalid one is refused or taken as documented. Every test names under "RED UNDER" the production
-//  mutation that turns a default-path test red (tools/kit-0.2.0/mutants-policy.py).
+//  mutation that turns a default-path test red.
 //
 
 import DiffractoKitTestSupport
@@ -131,7 +131,7 @@ struct ValidationPolicyTests {
 
     /// The documented defaults.
     /// RED UNDER: either default of `ValidationPolicy` changed.
-    @Test func theDefaultsAreTheRegisteredValues() {
+    @Test func theDefaultsAreTheDocumentedValues() {
         let p: Policy = .default
         #expect(p.closeContactLimit == 0.5)
         #expect(p.splitSiteOccupancyTolerance == 0.02)
@@ -183,7 +183,7 @@ struct DetectionPolicyTests {
 
     /// The documented defaults.
     /// RED UNDER: any default of `SymmetryDetection.Policy` changed.
-    @Test func theDefaultsAreTheRegisteredValues() {
+    @Test func theDefaultsAreTheDocumentedValues() {
         let p: Policy = .default
         #expect(p.occupancyTolerance == 0.02)
         #expect(p.translationGrid == 1.0 / 24)
@@ -334,7 +334,7 @@ struct CIFImportPolicyTests {
 
     /// The documented defaults.
     /// RED UNDER: any default of `CIFImport.Policy` changed.
-    @Test func theDefaultsAreTheRegisteredValues() {
+    @Test func theDefaultsAreTheDocumentedValues() {
         let p: Policy = .default
         #expect(p.maximumMergeDistance == 0.10)
         #expect(p.minimumMergeTolerance == 1e-6)

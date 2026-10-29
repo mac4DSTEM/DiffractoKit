@@ -30,15 +30,14 @@ public struct CrystalStructure: Sendable, Equatable {
     public enum SymmetrySource: Sendable, Equatable {
         /// Given to the initialiser as they are, not checked against the sites (a structure built in code).
         case operationsGiven
-        /// Found from the sites by the holohedry test (registration 3.4b).
+        /// Found from the sites by the holohedry test.
         case detected
-        /// A file's loop expanded the asymmetric unit, then the operations were detected from the expanded cell
-        /// (3.4 as amended 2026-10-14); the loop is `fileOperations`.
+        /// A file's loop expanded the asymmetric unit, then the operations were detected from the expanded cell; the loop is `fileOperations`.
         case detectedAfterFileExpansion
     }
 
     /// Which cell the numbers of this value (`cell`, `sites`, `operations`, `laueGroup`, and the reflections and rings
-    /// built from them) are in. A file's own setting is never relabelled silently (slice 1b).
+    /// built from them) are in. A file's own setting is never relabelled silently.
     public enum Setting: Sendable, Equatable {
         /// The cell the structure was given in.
         case file
@@ -76,7 +75,7 @@ public struct CrystalStructure: Sendable, Equatable {
     /// A name for the structure (a CIF's data block, a formula); nil when none was given.
     public let name: String?
     /// Candidate rotations of the holohedry that failed the fixed position tolerance but would pass at the file's own
-    /// written precision (3.4b): reported, not taken. Empty when the operations were given.
+    /// written precision: reported, not taken. Empty when the operations were given.
     public let unresolvedRotations: [IntegerMatrix]
     /// The largest uncertainty of a detected translation that is neither exact (from the file, or on the k/24 grid):
     /// its least-squares residual plus twice the written half-step, at least 1e-9. Reported; the absence test does not
@@ -108,7 +107,7 @@ public struct CrystalStructure: Sendable, Equatable {
         self.symmetryRefusal = nil
     }
 
-    /// A structure whose operations are detected from its sites (registration 3.4b): a P1 file, a cell built in
+    /// A structure whose operations are detected from its sites: a P1 file, a cell built in
     /// code, or a file's expanded cell with its loop as `fileOperations` (whose rotations join the candidates).
     /// `coarsestHalfStep` is the written precision of the coordinates when known, used only to report an unresolved
     /// candidate.
@@ -317,10 +316,9 @@ public struct CrystalStructure: Sendable, Equatable {
     // MARK: Reflections
 
     /// Every reflection with 0 < |g| ≤ `kMax` (Å⁻¹), with its systematic-absence flag from this structure's
-    /// operations, and its families by this structure's Laue group (registration 3.8, 3.9). A reflection with |g|
+    /// operations, and its families by this structure's Laue group. A reflection with |g|
     /// exactly `kMax` is in or out by the last bit of |g|, which can differ by one ulp between two settings of the same
-    /// lattice, so the lists of the file's cell and of its conventional cell may differ by such a reflection (Gate B on
-    /// 4876b18).
+    /// lattice, so the lists of the file's cell and of its conventional cell may differ by such a reflection.
     public func reflections(kMax: Double) throws(ReflectionListError) -> ReflectionList {
         try reflections(kMax: kMax, policy: .default)
     }

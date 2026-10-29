@@ -2,8 +2,8 @@
 //  RingEvidence.swift
 //  Role: what the data say about a ring at a fitted ellipse, read sector by sector and without a model in the azimuth:
 //        whether each of the 36 sectors holds the ring, whether the ring is a peak, and whether the sectors put it where
-//        the fit says. DiffractoKit 0.1.0 (docs/registration-0.0.4.md §1.3), the kit's answer to slice 3b's Gate B gaps F1
-//        (noise in an angular gap counted as coverage) and F2 (a disk edge, a blob, a textured circle calibrated).
+//        the fit says. DiffractoKit 0.1.0, the kit's answer to two gaps of the fit:
+//        noise in an angular gap counted as coverage, and a disk edge, a blob, a textured circle calibrated.
 //
 //  THE MEASUREMENT. Every finite, non-impulse annulus pixel (the annulus about the caller's start centre, as the fit read
 //  it) gets its offset δ = ρR − R from the fitted ellipse (ρ the profile model's normalised elliptical radius, R = (a + b)/2)
@@ -19,7 +19,7 @@
 //  - The geometry: over the sectors with evidence, t = c0 + c1 cos φ + s1 sin φ + c2 cos 2φ + s2 sin 2φ weighted by
 //    1/(SE(t)² + 0.01²), its covariance scaled by max(1, χ²/(n − 5)); the centre shift √(c1² + s1²) and the ellipse shift
 //    √(c2² + s2²) each fail beyond 0.25 px AND 4 standard errors.
-//  - One ring (added after Gate B on the 0.1.0 candidate, F1: a neighbouring ring inside the annulus was fitted, or fitted between the
+//  - One ring (added before 0.1.0: a neighbouring ring inside the annulus was fitted, or fitted between the
 //    two): the profile pooled over the WHOLE annulus in 0.5 px bins of δ, smoothed over 3 bins, must not hold a second
 //    peak more than 1 px from the fitted radius: a bin that rises above the lowest bin between it and the ring AND above the lowest bin
 //    between it and the annulus's edge, by 0.25 A or more on both sides. A tail rising to the edge (a central beam) is
@@ -74,9 +74,9 @@ public struct RingEvidence: Sendable, Equatable {
         self.ellipseShiftError = ellipseShiftError
     }
 
-    // MARK: Registered bounds (registration-0.0.4 §1.3), now the fields of `Policy` (0.2.0)
+    // MARK: Bounds, now the fields of `Policy` (0.2.0)
 
-    /// The bounds the ring evidence is measured and judged by (registration-0.0.4 §1.3): the suite's choices, with
+    /// The bounds the ring evidence is measured and judged by: the suite's choices, with
     /// `Policy.default` the set every release before 0.2.0 used. An invalid policy (`isValid` false) gives empty evidence
     /// from `EllipseCalibration.ringEvidence` and `false` from every judgement below.
     public struct Policy: Sendable, Equatable {

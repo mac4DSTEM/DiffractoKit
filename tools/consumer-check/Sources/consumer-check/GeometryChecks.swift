@@ -1,6 +1,6 @@
 //
 //  GeometryChecks.swift
-//  Role: DiffractoGeometry's public API (slice 3, DiffractoKit 0.0.3) used from outside the package, against values a
+//  Role: DiffractoGeometry's public API (DiffractoKit 0.0.3) used from outside the package, against values a
 //        reader verifies by hand: lambda at 200 kV, one Au {111} ring at R 150 px, indexing a q at Au {111}'s g, the beta''
 //        [0 0 1] axis, a clean ring rendered here and recovered, and the 2:1 ellipse's closed-form correction.
 //        `runGeometryChecks` is called from main.swift.

@@ -2,7 +2,7 @@
 //  SymmetryOperation.swift
 //  Role: one affine operation on fractional coordinates, p' = R p + t, with R an integer matrix and t a translation;
 //        parsed from and printed as the CIF `x,y,z` grammar. The parser is reference commit 7448401b's
-//        `CIFImport.parseSymmetryOperation` (registration section 3.3), with one addition: a rotation coefficient that
+//        `CIFImport.parseSymmetryOperation`, with one addition: a rotation coefficient that
 //        is not an integer is refused, since no space-group operation has one in any setting.
 //
 

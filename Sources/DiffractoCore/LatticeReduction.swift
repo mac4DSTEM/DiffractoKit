@@ -1,7 +1,7 @@
 //
 //  LatticeReduction.swift
-//  Role: the Niggli-reduced cell of a lattice and the integer change of basis that reaches it (registration
-//        docs/registration-slice-1b.md section 1). The algorithm is Křivý & Gruber (1976), Acta Cryst. A32, 297,
+//  Role: the Niggli-reduced cell of a lattice and the integer change of basis that reaches it.
+//        The algorithm is Křivý & Gruber (1976), Acta Cryst. A32, 297,
 //        steps A1 to A8, with Grosse-Kunstleve, Sauter & Adams (2004), Acta Cryst. A60, 1-6: every comparison carries
 //        an epsilon (x < y becomes x < y - ε, x = y becomes |x - y| ≤ ε), so a cell within ε of a boundary between
 //        two reduced forms reduces to one of them and never cycles; and the metric is recomputed from the exact input
@@ -74,7 +74,7 @@ extension UnitCell {
             // A5, A6, A7: a shear that makes |ξ| ≤ B, |η| ≤ A, |ζ| ≤ A (with the boundary cases of the paper). The shear is
             // by an integer MULTIPLE when the excess is large (`shearMultiple`: 1 up to 50 lengths, the paper's unit
             // shear, so a cell that needs a few dozen shears reduces exactly as before), so a cell sheared by thousands of
-            // lattice units reduces in a few steps and not after thousands (Gate B on 4876b18, F1).
+            // lattice units reduces in a few steps and not after thousands.
             if abs(xi) > b + eps || (abs(xi - b) <= eps && 2 * eta < zeta - eps) || (abs(xi + b) <= eps && zeta < -eps) {
                 let n: Int = UnitCell.shearMultiple(abs(xi), b, eps)
                 if n < 0 { break }

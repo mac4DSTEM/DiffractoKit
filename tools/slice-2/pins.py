@@ -1,4 +1,4 @@
-"""DiffractoKit slice 2: the pin generator (registration docs/registration-slice-2.md, sections 2, 3, 4.1-4.3, 5, 6).
+"""DiffractoKit slice 2: the pin generator for scattering factors and structure factors.
 
 Run, from any directory, with the pinned oracle:
 
@@ -7,10 +7,10 @@ Run, from any directory, with the pinned oracle:
 It writes Tests/DiffractoScatteringTests/Fixtures/slice-2-pins.json BEFORE any Swift exists. Deterministic: no clock, no
 random numbers, sorted sets; two runs give the same bytes.
 
-Oracle 1 is NumPy, written from the definitions of registration section 3 (not from any Swift): the table is
+Oracle 1 is NumPy, written from the definitions in the comments below (not from any Swift): the table is
 np.loadtxt of the fetched py4DSTEM file, F(hkl) = (1/V) sum_sites f_e(Z, |g|^2) occ exp(2 pi i (h x + k y + l z)).
 The Laue group (for orbits and names) comes from pymatgen's SpacegroupAnalyzer (symprec 1e-4), the family rule and the
-canonical form are slice 1's (registration-slice-1 sections 3.6, 3.8, 3.9; copied from tools/slice-1/pins.py, imported
+canonical form are slice 1's (copied from tools/slice-1/pins.py, imported
 from nowhere). Oracle 2 is pymatgen's XRDCalculator (an independent implementation of the phase sum with X-ray form
 factors). Agreement is agreement, not truth: section 5's closed forms and counts are asserted below too.
 
@@ -64,7 +64,7 @@ EXTRA_K_MAX = (1.6, 2.0)     # beta'' only: kept and ring counts
 CUT = 1e-4                   # |F| cut, Angstrom (the apps')
 LISTED = 1e-6                # everything above this is listed so the edge band of the cut is visible
 LIST_RADIUS = K_MAX * (1 + 1e-6)
-FAMILY_TOL = 1e-9            # registration 3.3 / slice 1 3.9
+FAMILY_TOL = 1e-9            # slice 1's ring rule
 TIE_TOL = 1e-12              # slice 1 3.8: equal |g| within 1e-12 relative are ordered by descending (h, k, l)
 SYMPREC = 1e-4
 ABSENCE_TOL = 1e-9           # slice 1 3.8
@@ -104,7 +104,7 @@ def predict(name, predicted, measured):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# The table and f_e (registration 3.1)
+# The table and f_e
 # ----------------------------------------------------------------------------------------------------------------
 def load_table():
     data = open(TABLE_PATH, "rb").read()
@@ -125,7 +125,7 @@ def f_e(table, z, g2):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Lattice (registration slice 1, 3.1; the apps' Crystal.latReal), written from the definitions
+# Lattice (slice 1's; the apps' Crystal.latReal), written from the definitions
 # ----------------------------------------------------------------------------------------------------------------
 def lattice(a, b, c, al, be, ga):
     ca, cb, cg = (math.cos(math.radians(x)) for x in (al, be, ga))
@@ -156,7 +156,7 @@ def metric_is_hexagonal(cell, eps=1e-9):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Slice 1's reflection order, orbits, names, ring rule (copied from tools/slice-1/pins.py, registration 3.6, 3.8, 3.9)
+# Slice 1's reflection order, orbits, names, ring rule (copied from tools/slice-1/pins.py)
 # ----------------------------------------------------------------------------------------------------------------
 I3 = np.eye(3, dtype=np.int64)
 
@@ -208,7 +208,7 @@ def check_group_closed(name, Rs):
 
 
 def laue_class_from_group(Rs):
-    """Registration slice 1, 3.5, with 'a 4-fold / a 6-fold' read as a proper rotation (det +1) of that order."""
+    """Slice 1's Laue class rule, with 'a 4-fold / a 6-fold' read as a proper rotation (det +1) of that order."""
     n = len(Rs)
     dets = [int(round(np.linalg.det(R))) for R in Rs]
     orders = [matrix_order(R) for R in Rs]
@@ -288,7 +288,7 @@ def orbit_name(c, hex_axes):
 
 
 def build_families(seq, cache, hex_axes):
-    """seq: [(hkl tuple, g, |F|^2)] in sweep order (kept reflections). Registration 3.3 = slice 1 3.9, plus sumF2."""
+    """seq: [(hkl tuple, g, |F|^2)] in sweep order (kept reflections). Slice 1's ring rule, plus sumF2."""
     fams = []
     cur = []
     g0 = None
@@ -319,7 +319,7 @@ def build_families(seq, cache, hex_axes):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Reflections and structure factors (registration 3.2), from the definitions
+# Reflections and structure factors, from the definitions
 # ----------------------------------------------------------------------------------------------------------------
 def enumerate_box(A, B, kmax):
     """Every (h, k, l) != 0 with |g| <= kmax in the per-axis box |h| <= ceil(kmax |a_i|) + 1 (one more than the registered
@@ -629,7 +629,7 @@ def make_entry(name, how, cell, sites, snapped_sites, sym_structure, build_extra
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Truth (registration section 5): extinctions, closed forms, weak cut
+# Truth: extinctions, closed forms, weak cut
 # ----------------------------------------------------------------------------------------------------------------
 def truth_checks(table, SS):
     def S_of(n):
@@ -756,10 +756,10 @@ def truth_checks(table, SS):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Mutation-moves (registration 6.3): each planned mutant must move its target in NumPy by more than 1e-6
+# Mutation-moves: each planned mutation must move its target in NumPy by more than 1e-6
 # ----------------------------------------------------------------------------------------------------------------
 def mutation_moves(table, SS):
-    moves = {}      # mutant -> {structure: value}
+    moves = {}      # mutation -> {structure: value}
     designated = {
         "table_row_z_plus1": ["Au"],
         "fe_of_g_not_g2": ["Al"],
@@ -825,7 +825,7 @@ def mutation_moves(table, SS):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# pymatgen's X-ray pattern (registration 4.3)
+# pymatgen's X-ray pattern
 # ----------------------------------------------------------------------------------------------------------------
 def xray_f(z, s2):
     sym = Element.from_Z(z).symbol
@@ -987,7 +987,7 @@ def main():
     predict("beta'' operation-allowed rings at 1.2 (slice 1)", 419, rc("beta_double_prime", "operation_allowed"))
     members_b = sum(f["multiplicity"] for f in b["families"])
     predict("beta'' reflections in the rings at 1.2 (sum of multiplicities)", 1442, members_b)
-    # operation-allowed reflections the cut dropped in beta'' (the registration names {3 3 3} and {14 0 1})
+    # operation-allowed reflections the cut dropped in beta'' (the prediction names {3 3 3} and {14 0 1})
     m = SS["beta_double_prime"]["main"]
     drop_names = {}
     for i in range(len(m["H"])):
@@ -1038,7 +1038,7 @@ def main():
                        "note": "with this form factor every reflection has |F| == 1e-4 exactly, so '>=' for '>' keeps all of them and '>' keeps none"}
     print(f"\ncut_edge: {len(Hc)} reflections within 1.2, every |F| == 1e-4 exactly")
 
-    # ---- X-ray (registration 4.3) ----
+    # ---- X-ray ----
     print("\n--- pymatgen X-ray pins (lambda 0.5 A) ---")
     xr = []
     for n in ("Au", "Si", "Mg", "beta_double_prime", "Cu3Au-occ", "WS2"):

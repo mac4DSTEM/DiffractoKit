@@ -1,7 +1,6 @@
 //
 //  DiffractionPattern.swift
-//  Role: the three-field pattern the ring and ellipse fit reads: width, height and row-major Float32 pixels. Slice 3b of
-//        DiffractoKit (docs/registration-slice-3.md section 2).
+//  Role: the three-field pattern the ring and ellipse fit reads: width, height and row-major Float32 pixels.
 //
 //  SEED: reference commit 7d6fdbd1 `Core/Data/DiffractionPattern.swift`, only the 3-field struct (its display helpers
 //  `FloatImage`, `RGBAImage`, the log contrast and the -1 masked-pixel sentinel are presentation and stay in the reference implementations). The

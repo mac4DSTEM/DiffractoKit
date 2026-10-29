@@ -1,6 +1,6 @@
 //
 //  ScatteringRefuterTests.swift
-//  The Gate B refuter's findings on slice 2 (be6b832; registration slice 2 §8, amendment of 2026-10-15), each a test.
+//  An independent review's findings on the structure factors, each a test.
 //
 
 import DiffractoKitTestSupport
@@ -18,7 +18,7 @@ struct ScatteringRefuterTests {
                                  + fcc.map { AtomSite(z: 17, fractional: wrapFractional($0 + SIMD3(0.5, 0.5, 0.5))) })
     }
 
-    /// F2: a NaN or infinite form factor (for every element or one) is refused at the first reflection, never scored as
+    /// a NaN or infinite form factor (for every element or one) is refused at the first reflection, never scored as
     /// nothing kept. Mutant: the finiteness check removed.
     @Test func testNonFiniteFormFactorsAreRefused() {
         let s = Self.rockSalt
@@ -29,7 +29,7 @@ struct ScatteringRefuterTests {
         }
     }
 
-    /// F2: an invalid structure (NaN occupancy, infinite coordinate, occupancy 1.5, no sites) is refused before any F.
+    /// an invalid structure (NaN occupancy, infinite coordinate, occupancy 1.5, no sites) is refused before any F.
     /// Mutant: the validation not called.
     @Test func testInvalidStructuresAreRefused() {
         let cell = UnitCell.cubic(a: 5)
@@ -46,7 +46,7 @@ struct ScatteringRefuterTests {
         }
     }
 
-    /// F3: a form factor with no value at some g² names the element; one with no value for one element anywhere names it.
+    /// a form factor with no value at some g² names the element; one with no value for one element anywhere names it.
     @Test func testMissingFormFactorNamesTheElement() {
         let s = Self.rockSalt
         let noneAboveZero: FormFactor = { z, g in g > 0 ? nil : ElectronScatteringFactors.f(z: z, gSquared: g) }
@@ -55,7 +55,7 @@ struct ScatteringRefuterTests {
         #expect(throws: KinematicError.unsupportedElements([17])) { try s.kinematicReflections(kMax: 1.2, formFactor: noChlorine) }
     }
 
-    /// F4: magnesium with ⅓ written as 0.333 keeps 24 operation-absent reflections above the cut (|F| up to 3e-4), in
+    /// magnesium with ⅓ written as 0.333 keeps 24 operation-absent reflections above the cut (|F| up to 3e-4), in
     /// extra rings (28 against 24, 306 kept against 270, the refuter's numbers); the list names them. With exact thirds there are none. Mutant: the property filtering nothing.
     @Test func testOperationAbsentReflectionsAboveTheCutAreNamed() throws {
         let coarse = Presets.structure(.hexagonal(a: 3.2094, c: 5.2108),
@@ -71,13 +71,13 @@ struct ScatteringRefuterTests {
         #expect(list.families.count == 28 && exact.families.count == 24, "rings \(list.families.count), \(exact.families.count)")
     }
 
-    /// F5: a needle-shaped cell with a tiny volume but a long enumeration box is refused, not enumerated.
+    /// a needle-shaped cell with a tiny volume but a long enumeration box is refused, not enumerated.
     @Test func testNeedleCellIsRefused() {
         let needle = CrystalStructure(cell: .orthorhombic(a: 1e7, b: 1e-3, c: 1e-3) , sites: [], operations: [.identity])
         #expect(throws: ReflectionListError.self) { try needle.reflections(kMax: 1.2) }
     }
 
-    /// F6: a coplanar cell (α = β = γ = 120°) whose volume is rounding is invalid, so no structure factor of 1e6 comes out.
+    /// a coplanar cell (α = β = γ = 120°) whose volume is rounding is invalid, so no structure factor of 1e6 comes out.
     @Test func testCoplanarCellIsInvalid() {
         let flat = UnitCell(a: 5, b: 5, c: 5, alphaDeg: 120, betaDeg: 120, gammaDeg: 120)
         #expect(flat.issues.contains(.degenerateVolume))
@@ -85,7 +85,7 @@ struct ScatteringRefuterTests {
         #expect(throws: KinematicError.self) { try s.kinematicReflections(kMax: 1.2) }
     }
 
-    /// F8: f_e is nil for a negative or non-finite g².
+    /// f_e is nil for a negative or non-finite g².
     @Test func testScatteringFactorDomain() {
         #expect(ElectronScatteringFactors.f(z: 13, gSquared: -0.1) == nil)
         #expect(ElectronScatteringFactors.f(z: 13, gSquared: .nan) == nil)

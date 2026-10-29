@@ -1,6 +1,6 @@
 //
 //  RefuterRegressionTests.swift
-//  The Gate B refuter's findings on b4cfe17 (registration section 8, amendment of 2026-10-15), each as a regression
+//  An independent review's findings, each as a regression
 //  test on the refuter's own CIF (Fixtures/refuter_*.cif). Truth: pymatgen-core 2026.9.23 / spglib 2.8.0 on the
 //  UNSHIFTED structure (absences and families do not depend on the origin), computed independently of the refuter's
 //  harness: Mg (c = 5.2112) P6₃/mmc 24 operations, 282 of 324 allowed at 1.2 Å⁻¹; one Fe atom in a 5 Å cube Pm-3m

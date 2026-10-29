@@ -1,6 +1,6 @@
 //
 //  SymmetryDetectionTests.swift
-//  The operations of a structure given as a site list (registration 3.4b), on cells whose content is known by
+//  The operations of a structure given as a site list, on cells whose content is known by
 //  construction: β″ expanded by hand (C2/m: 8 operations), gold P1 (Fm-3m: 192), iron (Im-3m: 96), magnesium
 //  (P6₃/mmc: 24), the split-atom gold that must not be cubic, and a tetragonal cell with a = c.
 //

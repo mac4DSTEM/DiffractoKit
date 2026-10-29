@@ -1,11 +1,11 @@
 //
 //  ConventionalCell.swift
 //  Role: the conventional (possibly centred) cell of a lattice, its Bravais lattice and the integer transformation to
-//        it (registration docs/registration-slice-1b.md section 1). The lattice is first Niggli-reduced
+//        it. The lattice is first Niggli-reduced
 //        (`niggliReduced`). On the reduced basis every lattice symmetry is an integer matrix with entries in
 //        {-1, 0, 1}, so the lattice's point group is found exactly by testing those 3^9 matrices against the metric
 //        (RᵀGR = G within a stated relative tolerance); that group IS the lattice character the International Tables
-//        (A, section 9.2) tabulate as 44 reduced-form conditions: its order names the crystal family (2 aP, 4 m, 8 o,
+//        (A) tabulate as 44 reduced-form conditions: its order names the crystal family (2 aP, 4 m, 8 o,
 //        16 t, 12 hR, 24 hP, 48 c) and the 44 characters differ only in which centring the family's conventional
 //        cell then needs. The conventional axes are the symmetry axes of that group (the shortest lattice vector along
 //        each), and the centring is read off the lattice points inside the cell. No table is copied.
@@ -17,10 +17,10 @@
 //        (`transformation == .identity`), but a cell that is a conventional cell of its lattice in ANOTHER setting is
 //        re-labelled into this one: a monoclinic P cell (index 1) goes to unique axis b with a and c the shortest pair and
 //        β ≥ 90°, so a c-unique or a-unique monoclinic cell, or one whose a and c are not that pair, comes back with a
-//        permuted or sign-changed transformation (Gate B on 4876b18, F2). Read `transformation` and `setting`, not the
+//        permuted or sign-changed transformation. Read `transformation` and `setting`, not the
 //        family name, to know whether the cell moved.
 //
-//        Tolerances (Gate B on 4876b18, F3): the lattice symmetry here is decided by the relative `tolerance` alone
+//        Tolerances: the lattice symmetry here is decided by the relative `tolerance` alone
 //        (|RᵀGR − G|ᵢⱼ ≤ tolerance · √(Gᵢᵢ Gⱼⱼ), default 1e-9). `detectingSymmetry(metricLengthTolerance:)` is passed on as
 //        this tolerance; `metricAngleToleranceDeg` is not used by the conventional-cell route to find the cell or its
 //        Bravais lattice. A primitive body-centred cubic cell written with the angle 109.4712° (the exact one is

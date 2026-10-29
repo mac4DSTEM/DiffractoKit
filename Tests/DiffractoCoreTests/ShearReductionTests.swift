@@ -1,6 +1,6 @@
 //
 //  ShearReductionTests.swift
-//  Slice 1b, Gate B finding F1 (registration docs/registration-slice-1b.md section 6, "Gate B on 4876b18"): a cell sheared
+//  A cell sheared
 //  by hundreds or thousands of lattice units read aP / -1 with no warning, because the reduction shaved it back by unit
 //  shears under a 2000-step cap. The reduction shears by integer multiples now, so any shear reduces in a few steps; when
 //  the reduction still does not settle (rounding in the six parameters at a shear of 1e6) the result says so

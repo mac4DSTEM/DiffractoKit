@@ -3,7 +3,7 @@
 # Adapted: the same py4DSTEM lock commit and the same sha256, the destination is this kit's gitignored References/ (the
 # script sits one level deeper than macTEM's, tools/slice-2/, and the root is still two levels up).
 # END PROVENANCE
-# The py4DSTEM electron-scattering-factor table lock (registration docs/registration-slice-2.md, section 2) - fetched, not vendored.
+# The py4DSTEM electron-scattering-factor table lock - fetched, not vendored.
 #
 # tools/slice-2/pins.py builds its reference f_e from THIS table, not from any Swift table: the pins are independent of the
 # port only if the table comes from elsewhere. The file is py4DSTEM/process/utils/scattering_factors.txt at the lock commit

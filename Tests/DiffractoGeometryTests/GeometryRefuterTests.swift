@@ -1,6 +1,6 @@
 //
 //  GeometryRefuterTests.swift
-//  The Gate B refuter's findings on slice 3a (a16cf84; registration slice 3 §7, amendment of 2026-10-15), each a test.
+//  An independent review's findings on the ring calibration's closed forms, each a test.
 //
 
 import DiffractoKitTestSupport
@@ -13,7 +13,7 @@ import DiffractoGeometry
 
 struct GeometryRefuterTests {
 
-    /// F1: above about 1.3e154 V the product overflows; λ is NaN, never 0. Mutant: the overflow guard removed.
+    /// above about 1.3e154 V the product overflows; λ is NaN, never 0. Mutant: the overflow guard removed.
     @Test func testWavelengthOverflowIsNaN() {
         for v in [1.4e154, 1e155, 1e300, Double.greatestFiniteMagnitude] {
             #expect(ElectronWavelength.angstroms(volts: v).isNaN, "\(v)")
@@ -21,7 +21,7 @@ struct GeometryRefuterTests {
         #expect(ElectronWavelength.angstroms(volts: 2e5) == 0.025079340450548003)
     }
 
-    /// F2: an overflowing camera length or Δq is NaN, never infinity. Mutant: the result guards removed.
+    /// an overflowing camera length or Δq is NaN, never infinity. Mutant: the result guards removed.
     @Test func testOverflowingLengthsAreNaN() {
         #expect(RingCalibration.cameraLengthPixels(radius: 1e300, twoTheta: 1e-300).isNaN)
         #expect(RingCalibration.qPerPixel(d: 5e-324, radius: 1).isNaN)
@@ -29,7 +29,7 @@ struct GeometryRefuterTests {
         #expect(RingCalibration.cameraLengthPixels(radius: 150, twoTheta: 0.010651260937060768).isFinite)
     }
 
-    /// F4, F5: project keeps nothing for a non-unit, zero or non-finite n, or a negative or non-finite wavelength.
+    /// project keeps nothing for a non-unit, zero or non-finite n, or a negative or non-finite wavelength.
     @Test func testProjectRefusesBadDirectionsAndWavelengths() throws {
         let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
         let au = CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: fcc.map { AtomSite(z: 79, fractional: $0) })
@@ -45,7 +45,7 @@ struct GeometryRefuterTests {
         #expect(ZoneAxis.isUnitDirection([0, 0, 1]))
     }
 
-    /// F6: with n the beam's travel direction, s_g = 0 is the Ewald condition |n/λ + g| = 1/λ (to first order exactly).
+    /// with n the beam's travel direction, s_g = 0 is the Ewald condition |n/λ + g| = 1/λ (to first order exactly).
     @Test func testCurvedExcitationErrorIsTheEwaldConditionForTheTravelDirection() throws {
         let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
         let au = CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: fcc.map { AtomSite(z: 79, fractional: $0) })
@@ -58,7 +58,7 @@ struct GeometryRefuterTests {
         }
     }
 
-    /// F7: the list overload uses the list's own k_max (the free-k_max overload with a larger k_max accepts what the
+    /// the list overload uses the list's own k_max (the free-k_max overload with a larger k_max accepts what the
     /// list overload refuses as beyond k_max).
     @Test func testListOverloadUsesTheListsKMax() throws {
         let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
@@ -71,7 +71,7 @@ struct GeometryRefuterTests {
     }
 }
 
-/// The Gate B refuter's two traps on slice 3b (704e5b0): an unbounded outer radius and an overflowing pattern size are
+/// The review's two traps in the ring and ellipse fit: an unbounded outer radius and an overflowing pattern size are
 /// refused as invalid input, never trapped. Mutants: either guard removed.
 struct EllipseRefuterTests {
     static func pattern() -> DiffractionPattern {

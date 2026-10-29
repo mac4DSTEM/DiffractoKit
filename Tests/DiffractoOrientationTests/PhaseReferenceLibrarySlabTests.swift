@@ -1,7 +1,7 @@
 //
 //  PhaseReferenceLibrarySlabTests.swift
 //  Role: the excitation slab is a property of a phase's shape: the per-phase override widens only its own phase's entries and
-//        its absence changes nothing (registration slice 4, gate G5).
+//        its absence changes nothing.
 //
 
 import DiffractoKitTestSupport

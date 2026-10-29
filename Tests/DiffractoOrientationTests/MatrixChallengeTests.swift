@@ -1,6 +1,6 @@
 //
 //  MatrixChallengeTests.swift
-//  Role: the matrix's last word before a position may be called a precipitate (registration slice 4, gate G5).
+//  Role: the matrix's last word before a position may be called a precipitate.
 //
 
 import DiffractoKitTestSupport

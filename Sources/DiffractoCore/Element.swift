@@ -2,7 +2,7 @@
 //  Element.swift
 //  Role: chemical symbols 1 ... 118 and the CIF symbol rule (reference commit 7448401b `CIFImport.elementSymbol(from:)`):
 //        trailing oxidation-state and isotope markers stripped, case normalised. Which elements have a scattering factor
-//        is slice 2's table to say, not this file's.
+//        is DiffractoScattering's table to say, not this file's.
 //
 
 import Foundation

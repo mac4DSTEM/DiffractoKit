@@ -2,7 +2,7 @@
 //  OrientationResult.swift
 //  Role: the value types of an orientation result: `EulerAngles` (the py4DSTEM / SciPy Bunge convention, both directions),
 //        `ZoneAxisFrame` (the detector frame of a zone axis and the orientation matrix built from it) and `OrientationResult`
-//        (one position's result). Registration docs/registration-slice-4.md, sections 1 and 4. The map and its presentation
+//        (one position's result). The map and its presentation
 //        stay with the caller; symmetry primitives are in CrystalOrientationSymmetry.swift.
 //
 //  `ZoneAxisFrame` is the apps' application-specific frame type under a library name; the renaming is the only change.
@@ -93,8 +93,8 @@ public struct EulerAngles: Sendable, Equatable, Hashable {
 
 /// The detector frame of a zone axis and the py4DSTEM orientation matrix built from it.
 /// Columns are detector x, detector y, and beam z expressed in crystal axes,
-/// matching py4DSTEM's `Orientation.matrix` convention (the frame rotation of the
-/// registration, section 4: e1 = normalise(n × r), e2 = n × e1, r = x̂ when |n_x| < 0.9 else ŷ).
+/// matching py4DSTEM's `Orientation.matrix` convention (the frame rotation
+/// e1 = normalise(n × r), e2 = n × e1, r = x̂ when |n_x| < 0.9 else ŷ).
 public enum ZoneAxisFrame {
     public static func detectorBasis(zoneAxis n: SIMD3<Double>) -> simd_double3x3 {
         let reference: SIMD3<Double> = abs(n.x) < 0.9 ? [1, 0, 0] : [0, 1, 0]

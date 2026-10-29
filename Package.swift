@@ -1,4 +1,5 @@
 // swift-tools-version: 6.2
+// SPDX-License-Identifier: GPL-3.0-only
 // DiffractoKit — a crystallography and diffraction library: cells, symmetry, CIF import, d-spacings and
 // reflection orbits (DiffractoCore); scattering and structure factors (DiffractoScattering); pattern
 // geometry, calibration, camera length, zone axes and indexing (DiffractoGeometry); orientation results and Euler
@@ -7,7 +8,7 @@
 //
 // Swift 6 language mode, nonisolated by default (no `.defaultIsolation`), the three upcoming features consuming packages
 // typically enable, no unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised
-// itself, and tools/test.sh runs this package's tests with `-c release`. One product per module. What one module needs
+// itself, and CI runs this package's tests with `swift test -c release`. One product per module. What one module needs
 // from another is `package`, never `public`; what a consumer reads is `public` and is guarded by tools/consumer-check.
 import PackageDescription
 

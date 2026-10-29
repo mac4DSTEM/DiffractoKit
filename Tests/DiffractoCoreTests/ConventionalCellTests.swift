@@ -1,6 +1,6 @@
 //
 //  ConventionalCellTests.swift
-//  Slice 1b, the conventional cell (registration docs/registration-slice-1b.md sections 1 to 3): the Bravais lattice
+//  The conventional cell: the Bravais lattice
 //  name against spglib's lattice-only dataset and against the lattice each random cell was BUILT as, the cell's volume
 //  and lengths, the transformation, and closed-form cells of the cubic lattices.
 //
@@ -82,7 +82,7 @@ struct ConventionalCellTests {
             default: break
             }
         }
-        print("slice 1b conventional cell: \(cases.count) cells, worst volume \(worstVolume), length \(worstLength), metric \(worstMetric)")
+        print("conventional cell: \(cases.count) cells, worst volume \(worstVolume), length \(worstLength), metric \(worstMetric)")
     }
 
     /// Closed forms: the primitive cells of the cubic lattices have the conventional cell edge a, F and I with 4 and 2

@@ -1,9 +1,9 @@
 //
 //  PolicyTests.swift
-//  DiffractoKit 0.2.0 (docs/registration-0.2.0.md §1, §2): the policies of DiffractoGeometry are parameters with the suite's
-//  values as defaults. Tier 2 (the default path is held exact by the existing suite as a D12 quick check, EllipseAppsParityTests included):
+//  DiffractoKit 0.2.0: the policies of DiffractoGeometry are parameters with the suite's
+//  values as defaults. The default path is held exact by the existing suite, EllipseAppsParityTests included;
 //  here a non-default value moves the outcome in the stated direction, and an invalid one is refused as documented.
-//  Every test names under "RED UNDER" the production mutation that turns it red (tools/kit-0.2.0/mutants-policy.py).
+//  Every test names under "RED UNDER" the production mutation that turns it red.
 //
 
 import DiffractoKitTestSupport
@@ -40,7 +40,7 @@ struct EllipsePolicyTests {
     }
 
     /// The documented defaults are the constants the fit used before 0.2.0, and the derived bounds follow the bin count.
-    /// RED UNDER: any default of `Policy.init` changed (tools/kit-0.2.0/mutants-policy.py, ellipse-*).
+    /// RED UNDER: any default of `Policy.init` changed.
     @Test func theDefaultsAreTheDocumentedValues() {
         let p: Policy = .default
         #expect(p.angularBinCount == EllipseCalibration.angularBinCount)
@@ -438,9 +438,9 @@ struct RingCalibrationPolicyTests {
         RingCalibration.refusals(report, highTensionVolts: 200_000, policy: policy).map(\.name)
     }
 
-    /// The documented defaults equal the registered constants.
+    /// The documented defaults equal the constants.
     /// RED UNDER: any default of `RingCalibration.Policy` or `RingEvidence.Policy` changed.
-    @Test func theDefaultsAreTheRegisteredBounds() {
+    @Test func theDefaultsAreTheDocumentedBounds() {
         let p: P = .default
         #expect(p.angularBinCount == 36)
         #expect(p.minimumOccupiedAngularBins == 30)

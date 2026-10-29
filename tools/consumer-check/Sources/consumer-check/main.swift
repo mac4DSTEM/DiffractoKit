@@ -169,7 +169,7 @@ report.section("CrystalStructure, CIFImport, ReflectionList") { r in
     r.equal("fractional helpers", fractionalAxisDelta(0.99, 0.01) < 0.021 && wrapFractional(SIMD3(-0.25, 1.5, 0)) == SIMD3(0.75, 0.5, 0), true)
 }
 
-report.section("DiffractoScattering (slice 2)") { r in
+report.section("DiffractoScattering") { r in
     let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
     let gold = CrystalStructure.detectingSymmetry(cell: .cubic(a: 4.0782), sites: fcc.map { AtomSite(z: 79, fractional: $0) })
     let list = try gold.kinematicReflections(kMax: 1.2)

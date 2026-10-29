@@ -1,6 +1,6 @@
 # tools/slice-2: the pin generators
 
-Registration `docs/registration-slice-2.md` (sections 2, 4, 5, 6). Written before any Swift of slice 2 exists; the Swift tests
+Written before any Swift of slice 2 (DiffractoScattering) existed; the Swift tests
 read the files these write. A difference is a failure of the port, never a tolerance to widen.
 
 ```
@@ -14,7 +14,7 @@ tools/slice-2/apps-parity/run.sh                                     # about 4 s
   apps' presets Au, Al, Si, Mg, WS2; Cu3Au-occ and Weak-cut from macTEM a58c84c; ideal hcp; the extra non-centrosymmetric
   zincblende GaAs; beta'' and ten slice-1 CIF fixtures), each with every reflection above 1e-6 in |F|, the kept count, the
   rings after the cut, the ring counts on the operation-allowed and on all reflections, the operation-absent check; the
-  mutation-moves (registration 6.3); pymatgen's X-ray pattern per peak with the explicit half-space members (4.3); the
+  mutation-moves; pymatgen's X-ray pattern per peak with the explicit half-space members; the
   `cut_edge` cell whose every |F| is exactly 1e-4; the registered predictions with the measured values.
 - The oracle is NumPy written from the definitions (not from any Swift), the Laue group comes from pymatgen
   `SpacegroupAnalyzer` (symprec 1e-4), the ring rule and canonical forms are slice 1's (copied, not imported), and
@@ -24,4 +24,4 @@ tools/slice-2/apps-parity/run.sh                                     # about 4 s
   predicted count differs (printed twice; the number is never edited to fit).
 - `apps-parity/` compiles `Crystal.swift` and `ScatteringFactors.swift` of mac4DSTEM 7d6fdbd1 with `main.swift` (swiftc `-O`
   and `-Onone`, `-swift-version 6 -package-name appsparity`) in `.build/apps-parity/` and writes `slice-2-apps.json`; it
-  compares the two optimisation levels (the -O dump is the reference; amendment 1).
+  compares the two optimisation levels (the -O dump is the reference).

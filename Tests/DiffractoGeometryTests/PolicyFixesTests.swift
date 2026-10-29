@@ -1,8 +1,8 @@
 //
 //  PolicyFixesTests.swift
-//  DiffractoKit 0.2.0, the Gate B findings on the ring-fit policies (tier 2): F4 (no trap for any bin count), F1 (the three
-//  bin counts and what `isValid` requires of them), F2 (the calibration policy's evidence replaces the ellipse policy's;
-//  loosening coverage through `fitRing` needs the three bounds), F3 (`RingIndexing.reach` with an invalid argument).
+//  DiffractoKit 0.2.0, the review findings on the ring-fit policies: no trap for any bin count; the three bin counts and
+//  what `isValid` requires of them; the calibration policy's evidence replaces the ellipse policy's (loosening coverage
+//  through `fitRing` needs the three bounds); `RingIndexing.reach` with an invalid argument.
 //  Every test names under "RED UNDER" the production change that turns it red.
 //
 
@@ -15,7 +15,7 @@ struct PolicyFixesTests {
     typealias T = RingFitAmendmentTests
     typealias Policy = EllipseCalibration.Policy
 
-    // MARK: F4
+    // MARK: No trap for any bin count
 
     /// No Int traps `Policy(angularBinCount:)`: the derived bounds are computed without overflow, a count outside 6...3600 is
     /// not valid, and for every count that did not overflow before the derived values are the old expressions' (5/6 and 1/3,
@@ -41,7 +41,7 @@ struct PolicyFixesTests {
         #expect(Policy.default.degeneracyBoundBins == 30 && Policy.default.sparseFloorBins == 12)
     }
 
-    // MARK: F1
+    // MARK: The three bin counts
 
     /// The bounds are bin counts: setting `angularBinCount` alone on `.default` keeps 30 and 12 (the initialiser derives
     /// them, a mutation does not); `isValid` requires 1 <= sparse floor <= degeneracy bound <= bin count, so a violated
@@ -66,7 +66,7 @@ struct PolicyFixesTests {
         #expect(Policy(angularBinCount: 36, degeneracyBoundBins: 1, sparseFloorBins: 1).isValid)
     }
 
-    // MARK: F2
+    // MARK: The calibration policy's evidence
 
     static let scene = T.Scene()
     static func gapped() -> DiffractionPattern {
@@ -132,7 +132,7 @@ struct PolicyFixesTests {
         }
     }
 
-    // MARK: F3 (RingIndexing.reach)
+    // MARK: RingIndexing.reach
 
     /// `reach` answers NaN for the coverage or margin that `index` refuses (a coverage that is not a positive number, a
     /// margin that is negative or not finite), and the closed form otherwise.

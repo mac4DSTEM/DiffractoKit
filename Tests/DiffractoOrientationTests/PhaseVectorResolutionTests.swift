@@ -1,6 +1,6 @@
 //
 //  PhaseVectorResolutionTests.swift
-//  Role: what the tolerances in Å⁻¹ mean on a particular detector (registration slice 4, gate G5).
+//  Role: what the tolerances in Å⁻¹ mean on a particular detector.
 //
 
 import DiffractoKitTestSupport

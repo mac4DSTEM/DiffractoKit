@@ -1,8 +1,8 @@
 //
 //  RingIndexingPinsTests.swift
-//  The indexing decision against the pins written BEFORE its code (registration docs/registration-slice-3.md §3, §5):
-//    slice-3-index-pins.json  tools/slice-3/index-pins.py: NumPy from the registration text on the kit's own ring lists
-//                             (slice 2's families after the cut), T1 (every family x u x s) and T4 (refusal plants).
+//  The indexing decision against the pins written BEFORE its code:
+//    slice-3-index-pins.json  tools/slice-3/index-pins.py: NumPy from the written definition on the kit's own ring lists
+//                             (DiffractoScattering's families after the cut), T1 (every family x u x s) and T4 (refusal plants).
 //  Verdict equal, payload family names equal and in order, delta 1e-14, z 1e-10 max(1, z), margin 1e-9 max(1, margin),
 //  reach 1e-9 max(1, reach). A failure is a failure of the port, never a tolerance to widen.
 //
@@ -117,7 +117,7 @@ struct RingIndexingPinsTests {
 
     private typealias Index = RingIndexing
 
-    /// The pins carry what the registration says (k = 3, ln 19, k_max 1.2, the five u and nine s), and the plant counts.
+    /// The pins carry their definitions (k = 3, ln 19, k_max 1.2, the five u and nine s), and the plant counts.
     @Test func testPinsCarryTheirDefinitions() throws {
         let pins = try IndexPinFixtures.pins()
         #expect(pins.definitions.k == Index.defaultCoverage)
@@ -224,11 +224,11 @@ struct RingIndexingPinsTests {
         #expect(bad.isEmpty, "\(bad.count) of \(checked) differ, first: \(bad.prefix(5))")
     }
 
-    /// the reference implementation's registered T1 counts (accepted as own, accepted as another, ambiguous, beyondKMax, none) per u over its six
+    /// the reference implementation's predicted T1 counts (accepted as own, accepted as another, ambiguous, beyondKMax, none) per u over its six
     /// lists, and beta'' accepted per u (2584, 508, 184, 58, 25), reproduced from the Swift decision on the kit's rings.
-    @Test func testT1CountsReproduceReferenceRegisteredPrediction() throws {
+    @Test func testT1CountsReproduceReferencePrediction() throws {
         let pins = try IndexPinFixtures.pins()
-        let registered: [Double: [Int]] = [1e-4: [711, 0, 0, 36, 0], 1e-3: [691, 0, 20, 36, 0], 3e-3: [647, 0, 64, 36, 0],
+        let predicted: [Double: [Int]] = [1e-4: [711, 0, 0, 36, 0], 1e-3: [691, 0, 20, 36, 0], 3e-3: [647, 0, 64, 36, 0],
                                            1e-2: [408, 0, 309, 30, 0], 3e-2: [131, 19, 572, 11, 14]]
         let beta: [Double: Int] = [1e-4: 2584, 1e-3: 508, 3e-3: 184, 1e-2: 58, 3e-2: 25]
         var six: [Double: [Int]] = [:], betaAccepted: [Double: Int] = [:]
@@ -253,8 +253,8 @@ struct RingIndexingPinsTests {
                 if name != "beta''", verdictIndex < 5 { six[u, default: [0, 0, 0, 0, 0]][verdictIndex] += 1 }
             }
         }
-        for (u, want) in registered { #expect(six[u] == want, "u \(u): \(String(describing: six[u])), reference registered \(want)") }
-        for (u, want) in beta { #expect(betaAccepted[u] == want, "beta'' u \(u): \(String(describing: betaAccepted[u])), registered \(want)") }
+        for (u, want) in predicted { #expect(six[u] == want, "u \(u): \(String(describing: six[u])), reference predicted \(want)") }
+        for (u, want) in beta { #expect(betaAccepted[u] == want, "beta'' u \(u): \(String(describing: betaAccepted[u])), predicted \(want)") }
     }
 
     /// T4: the refusal plants on the kit's rings: invalid numbers (q, sigma, k each 0, -1, NaN, +-inf), beyondKMax (Mg

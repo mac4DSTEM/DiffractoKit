@@ -1,9 +1,8 @@
 //
 //  RingCalibration.swift
 //  Role: the calibration a diffraction ring of known d gives (Δq in 1/Å per pixel, and the camera length) as closed forms,
-//        and the decision of when a ring is NOT to be calibrated from. Slice 3a of DiffractoKit
-//        (docs/registration-slice-3.md); ported from reference commit 9482831 `RingCalibration.swift` with every formula, constant,
-//        NaN rule, refusal order and message kept. The fit that fills a `FitReport` is slice 3b, not here.
+//        and the decision of when a ring is NOT to be calibrated from. Ported from reference commit 9482831 `RingCalibration.swift` with every formula, constant,
+//        NaN rule, refusal order and message kept. The fit that fills a `FitReport` is in `RingCalibration+Fit.swift`.
 //
 //  THE FORMULAS (exact; nothing here is a small-angle form):
 //    λ     = hc / √(eV (2 m₀c² + eV))        the relativistic electron wavelength, Å, V in volts (`ElectronWavelength`)
@@ -19,7 +18,7 @@
 //  The closed forms are total: outside their domain they return NaN, never a plausible number. `calibrate` and
 //  `refusals` check the domain first and say why, by name.
 //
-//  TWO REFUSALS beyond the six of the original registration (model, coverage, sigma, residual, ellipticity, high tension):
+//  TWO REFUSALS beyond the six of the reference implementation (model, coverage, sigma, residual, ellipticity, high tension):
 //  `.braggLimit` refuses λ/2d ≥ 1/√2, i.e. 2θ ≥ 90° (2θ ≥ 90° makes tan 2θ negative, and a flat detector perpendicular
 //  to the beam shows no ring beyond 90° anyway), and `.invalidInput` refuses a number that is not finite and positive
 //  (a NaN passes every comparison).
@@ -52,7 +51,7 @@ public struct RingCalibration: Sendable, Equatable {
 
     // MARK: Refusals
 
-    /// Why a ring is not calibrated from: the six registered refusals, and the two additions `.braggLimit` and
+    /// Why a ring is not calibrated from: the six refusals of the reference implementation, and the two additions `.braggLimit` and
     /// `.invalidInput` (see the header). Every case but `.noHighTension` and `.braggLimit` withholds Δq as well; those
     /// two withhold only L (Δq needs no wavelength).
     public enum Refusal: Error, Equatable, Sendable, LocalizedError {
@@ -73,17 +72,17 @@ public struct RingCalibration: Sendable, Equatable {
         /// A number that is not finite and positive (or a count outside its range): the caller's mistake, not data.
         case invalidInput(String)
         /// The fitted radius (a + b)/2 lies outside the annulus the fit was given: the ring term fitted something other
-        /// than the ring the caller drew (DiffractoKit 0.1.0, registration-0.0.4 §1.4; slice 3b's F2, a central blob).
+        /// than the ring the caller drew (DiffractoKit 0.1.0; a central blob, say).
         case ringOutsideAnnulus(radius: Double, inner: Double, outer: Double)
         /// The data's profile about the fit does not fall by a quarter of the ring's amplitude on both sides: an edge or a
-        /// slope, not a ring (registration-0.0.4 §1.3; slice 3b's F2, a disk edge). nil where a side had no pixels.
+        /// slope, not a ring (a disk edge, say). nil where a side had no pixels.
         case notARingPeak(innerDrop: Double?, outerDrop: Double?)
         /// The sectors put the ring off the fitted centre or ellipse by more than 0.25 px and 4 standard errors: the fit
-        /// was pulled by where the intensity is, not by where the ring is (registration-0.0.4 §1.3; slice 3b's F1 gap
-        /// noise, F2 texture).
+        /// was pulled by where the intensity is, not by where the ring is (gap
+        /// noise, texture).
         case ringGeometryInconsistent(centreShift: Double, ellipseShift: Double)
         /// The annulus holds a second ring: the pooled profile rises again beyond the fitted ring by `height` of its
-        /// amplitude (registration-0.0.4 §8, after Gate B: a neighbouring ring pulled the fit onto itself or between the
+        /// amplitude (a neighbouring ring pulls the fit onto itself or between the
         /// two). Narrow the annulus to one ring.
         case secondRingInAnnulus(height: Double)
 
@@ -153,7 +152,7 @@ public struct RingCalibration: Sendable, Equatable {
         public var errorDescription: String? { reason }
     }
 
-    /// The numbers a ring fit reports, as plain values (slice 3b fills them from a ring fit and the annulus
+    /// The numbers a ring fit reports, as plain values (`RingCalibration+Fit.swift` fills them from a ring fit and the annulus
     /// it was given; this file has no fit in it).
     public struct FitReport: Sendable, Equatable {
         public var model: EllipseCalibrationModel
@@ -200,7 +199,7 @@ public struct RingCalibration: Sendable, Equatable {
         public var ellipticity: Double { max(semiAxisA, semiAxisB) / min(semiAxisA, semiAxisB) - 1 }
     }
 
-    // MARK: Registered bounds, now the fields of `Policy` (0.2.0)
+    // MARK: Bounds, now the fields of `Policy` (0.2.0)
 
     /// The calibration's refusal bounds: the suite's choices, with `Policy.default` the set every release before 0.2.0
     /// used. `refusals` and `fitRefusals` under an invalid policy return `[.invalidInput]` alone.
@@ -248,15 +247,15 @@ public struct RingCalibration: Sendable, Equatable {
     }
 
     /// The azimuthal bins the fit divides the annulus into, and the fewest that must hold signal (a gap above about
-    /// 60°). The same numbers as the ring fit's own (slice 3b holds them equal in a test).
+    /// 60°). The same numbers as the ring fit's own (a test holds them equal).
     public static let angularBinCount = 36
     public static let minimumOccupiedAngularBins = 30
     /// The profile fit's cap on the normalised residual.
     public static let maximumResidual = 0.22
     /// Past a/b − 1 = 0.093, (a + b)/2 and √(ab) differ by more than 0.1 %. Derived, not measured: the root of
-    /// (2 + ε) / (2√(1 + ε)) − 1 = 1e-3 is ε = 0.0936 (1.0009e-3 there; 9.886e-4 at 0.093), registered rounded down.
+    /// (2 + ε) / (2√(1 + ε)) − 1 = 1e-3 is ε = 0.0936 (1.0009e-3 there; 9.886e-4 at 0.093), rounded down.
     public static let maximumEllipticity = 0.093
-    /// sin 45° = 1/√2: λ/2d at or above it puts 2θ at or beyond 90° (an addition beyond the registration: see the header).
+    /// sin 45° = 1/√2: λ/2d at or above it puts 2θ at or beyond 90° (an addition beyond the reference implementation: see the header).
     public static let maximumLambdaOver2d = 0.5.squareRoot()
 
     // MARK: Constants (CODATA 2018, stated in the header)
@@ -297,14 +296,14 @@ public struct RingCalibration: Sendable, Equatable {
     public static func cameraLengthPixels(radius: Double, twoTheta: Double) -> Double {
         guard radius.isFinite, radius > 0, twoTheta.isFinite, twoTheta > 0, twoTheta < .pi / 2 else { return .nan }
         let length = radius / tan(twoTheta)
-        return length.isFinite ? length : .nan   // an overflow is NaN, never infinity (Gate B on slice 3a, F2)
+        return length.isFinite ? length : .nan   // an overflow is NaN, never infinity
     }
 
     /// Δq = (1/d)/R, Å⁻¹ per pixel, for d in Å and R in pixels. NaN unless both are finite and positive.
     public static func qPerPixel(d: Double, radius: Double) -> Double {
         guard d.isFinite, d > 0, radius.isFinite, radius > 0 else { return .nan }
         let q = (1 / d) / radius
-        return q.isFinite ? q : .nan   // a subnormal d or R overflows: NaN, never infinity (Gate B on slice 3a, F2)
+        return q.isFinite ? q : .nan   // a subnormal d or R overflows: NaN, never infinity
     }
 
     /// L = p · L_px, millimetres, for a pixel pitch p in MILLIMETRES (a 14 µm pixel is 0.014). NaN unless p is finite
@@ -349,7 +348,7 @@ public struct RingCalibration: Sendable, Equatable {
                                lengthRefusal: nil)
     }
 
-    /// Every registered refusal that applies to a fit's numbers and the stated V (volts, nil when none), in the order
+    /// Every refusal that applies to a fit's numbers and the stated V (volts, nil when none), in the order
     /// model, coverage, sigma, residual, ellipticity, outside the annulus, not a peak, geometry (the last three only
     /// when the report carries the annulus's radii and the ring evidence, DiffractoKit 0.1.0), high tension; empty when
     /// none applies. A number that is not finite (or a count out of range) returns `[.invalidInput]` alone: a NaN would

@@ -1,7 +1,6 @@
 //
 //  ToleranceFixesTests.swift
-//  DiffractoKit 0.2.0, the Gate B findings on tolerances (tier 1 for F5, F6 and F8, whose outcomes a scientist reads;
-//  tier 2 for F3): the position tolerance is refused where it cannot work and no structure is ever returned without the
+//  DiffractoKit 0.2.0, the review findings on tolerances: the position tolerance is refused where it cannot work and no structure is ever returned without the
 //  identity operation; the metric tolerances read NaN, negative and infinite as 0; an absurd cell and an invalid Niggli
 //  epsilon never trap and are never reported as reduced. Every test names under "RED UNDER" the production change that
 //  turns it red.
@@ -34,7 +33,7 @@ struct ToleranceFixesTests {
         .cartesian(1e-300), .cartesian(5e-324), .cartesian(1e-10), .cartesian(1e300), .cartesian(5), .cartesian(1000),
     ]
 
-    // MARK: F5 and F6
+    // MARK: The position tolerance
 
     /// `CIFImport.read` refuses every such position tolerance with `invalidStructure` and a message naming the tolerance;
     /// none traps and none imports a structure.
@@ -130,7 +129,7 @@ struct ToleranceFixesTests {
         }
     }
 
-    // MARK: F3
+    // MARK: The metric tolerances
 
     /// A metric tolerance that is NaN, negative or infinite is read as 0 (every length and angle exactly equal): the
     /// silicon cell is still read cubic at 0 because its lengths are written equal; a cell written with a 1e-12 difference
@@ -162,7 +161,7 @@ struct ToleranceFixesTests {
     }
 }
 
-// MARK: - F8: absurd cells and the Niggli epsilon
+// MARK: - Absurd cells and the Niggli epsilon
 
 struct AbsurdCellTests {
     /// The fluorapatite file with its first cell length replaced.
