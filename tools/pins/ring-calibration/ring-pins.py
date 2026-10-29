@@ -5,8 +5,8 @@ Run, from any directory, with the pinned oracle:
     ../References/python/pymatgen/bin/python -I -B tools/pins/ring-calibration/ring-pins.py [out.json]
 
 It writes Tests/DiffractoGeometryTests/Fixtures/numpy-ring-calibration-pins.json BEFORE the Swift tests read it. Deterministic: no
-clock, no random numbers; two runs give the same bytes. Ported from macTEM 9482831 tools/ring-calibration-parity/
-reference.py (read by `git show`), which was written from the definitions and not from any Swift.
+clock, no random numbers; two runs give the same bytes. Ported from macTEM before v1.0.0 (history squashed)
+tools/ring-calibration-parity/reference.py, which was written from the definitions and not from any Swift.
 
 Constants, CODATA 2018 (Tiesinga, Mohr, Newell, Taylor, Rev. Mod. Phys. 93, 025010 (2021)):
   h  = 6.626 070 15e-34 J s       exact (the SI 2019 definition)

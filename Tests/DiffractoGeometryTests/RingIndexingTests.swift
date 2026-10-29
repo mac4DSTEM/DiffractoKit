@@ -1,7 +1,7 @@
 //
 //  RingIndexingTests.swift
 //  The indexing decision ("RingIndexing", "Truth"), on the kit's own ring
-//  lists (DiffractoScattering's `kinematicReflections(kMax: 1.2).families`). It ports every test of reference commit 9482831
+//  lists (DiffractoScattering's `kinematicReflections(kMax: 1.2).families`). It ports every test of macTEM before v1.0.0 (history squashed)
 //  `DSpacingIndexingTests` (28) and `MonoclinicIndexingTests` (13) that concerns the decision or the family lists,
 //  re-expressed on the kit's rings; the ones that test what DiffractoCore and DiffractoScattering own are mapped to a comment at the end.
 //  The dyadic lists are the kit's rings of an exactly-scaled orthorhombic cell (a 2, b 1, c 1/2 Å: g = h/2, k, 2 l, so

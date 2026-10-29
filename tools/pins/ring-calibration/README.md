@@ -15,13 +15,13 @@ the Swift and the pins is a failure of the port, never a band to widen.
   (3 % ellipticity, either axis major); the literals of `RingCalibrationTests` recomputed in decimal (`truth`); the mutation list.
 - The oracle is 60-digit `decimal` (arcsin by its power series, tan 2 theta by the identity 2 s sqrt(1 - s^2) / (1 - 2 s^2), so no
   trigonometric library is trusted), with NumPy 2.5.4 routes beside it that must agree to 1e-14. It is written from the
-  definitions, ported from macTEM 9482831 `tools/ring-calibration-parity/reference.py` (read by `git show`).
+  definitions, ported from macTEM before v1.0.0 (history squashed) `tools/ring-calibration-parity/reference.py`.
 - Exit 0: every self-check holds. 1: a self-check failed. Includes: each mutation (small angle, q = 2/d, Angstrom read as nm,
   pitch in um, non-relativistic lambda, kV as V, V defaulted, radius = a) moves its target quantity by more than 1e-6, so a
   mutation that moves nothing cannot be mistaken for a proof.
 - `RingCalibrationPinsTests` (Swift Testing) reads the fixture by `#filePath` and holds every number to 1e-12 relative, every
   refusal by name and in order, `withholdsDeltaQ` as registered. `RingCalibrationTests` are the 30 hand-arithmetic tests of
-  macTEM 9482831, converted.
+  macTEM before v1.0.0 (history squashed), converted.
 - One literal to know: the typed L_px of Au {111}, R 150 px, 200 kV (14082.307097295722, macTEM's test and
   `RingCalibrationTests`) is one ulp (1.3e-16 relative) from the correctly rounded decimal result (14082.307097295723). It is far inside the
   1e-12 band; the generator holds the typed literals to 1e-15 relative and says so.

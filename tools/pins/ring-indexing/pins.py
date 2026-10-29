@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Pins for RingIndexing.
 
-Port of macTEM 9482831 tools/indexing-parity/reference.py (read by `git show`) onto the KIT's own ring lists: the families
-after the |F| cut that slice 2 pinned (Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json, written by
+Port of macTEM before v1.0.0 (history squashed) tools/indexing-parity/reference.py onto the KIT's own ring lists: the families
+after the |F| cut pinned in (Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json, written by
 tools/pins/structure-factors/pins.py), at k_max 1.2. The decision is written here from its definition in DiffractoGeometry/RingIndexing.swift's header (NumPy, plus a plain-Python
 scalar re-implementation that must agree on every plant), NOT from any Swift:
 

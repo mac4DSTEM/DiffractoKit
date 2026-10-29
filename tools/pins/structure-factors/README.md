@@ -10,7 +10,7 @@ tools/pins/structure-factors/fetch-table.sh                                     
 
 - `pins.py` writes `Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json` (about 1.7 MB): the versions, the table's
   sha256 and the 103 x 10 table as `np.loadtxt` reads it, `f_e` at g2 in {0, 0.25, 1, 4} for Z = 1..103, 20 structures (the
-  apps' presets Au, Al, Si, Mg, WS2; Cu3Au-occ and Weak-cut from macTEM a58c84c; ideal hcp; the extra non-centrosymmetric
+  apps' presets Au, Al, Si, Mg, WS2; Cu3Au-occ and Weak-cut from macTEM before v1.0.0 (history squashed); ideal hcp; the extra non-centrosymmetric
   zincblende GaAs; beta'' and ten slice-1 CIF fixtures), each with every reflection above 1e-6 in |F|, the kept count, the
   rings after the cut, the ring counts on the operation-allowed and on all reflections, the operation-absent check; the
   mutation-moves; pymatgen's X-ray pattern per peak with the explicit half-space members; the

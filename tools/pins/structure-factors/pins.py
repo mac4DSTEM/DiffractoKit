@@ -360,7 +360,7 @@ def sites_of(z, positions, occ=1.0):
 
 
 def preset_structures(table):
-    """The apps' presets (Crystal.swift 7d6fdbd1) in the apps' site order, plus macTEM a58c84c's two disordered cases and
+    """The apps' presets (Crystal.swift 7d6fdbd1) in the apps' site order, plus the two disordered cases of macTEM before v1.0.0 and
     the ideal hcp. Returns [(name, cell, sites, note)]."""
     a_hcp = 3.2094
     q = weak_cut_occupancy(table)
@@ -392,7 +392,7 @@ def preset_structures(table):
 
 
 def weak_cut_occupancy(table):
-    """macTEM a58c84c: q solved so that the lowest odd-sum reflection (1 0 0), |g| = 1/3, has |F| = 2.5e-4:
+    """macTEM before v1.0.0 (history squashed): q solved so that the lowest odd-sum reflection (1 0 0), |g| = 1/3, has |F| = 2.5e-4:
     F = (1 - q) f_e(29, g^2) / V, V = 27."""
     a = 3.0
     return float(1 - 2.5e-4 * a ** 3 / float(f_e(table, 29, (1 / a) ** 2)))

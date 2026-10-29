@@ -7,8 +7,8 @@ failure of the port, never a tolerance to widen.
 ../References/python/pymatgen/bin/python -I -B tools/pins/ring-indexing/pins.py     # about 2 s, deterministic: writes numpy-ring-indexing-pins.json
 ```
 
-- `index-pins.py` ports macTEM 9482831 `tools/indexing-parity/reference.py` (read by `git show`) onto the KIT's ring lists:
-  the families after the |F| cut that slice 2 pinned in `Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json` (so
+- `pins.py` ports macTEM before v1.0.0 (history squashed) `tools/indexing-parity/reference.py` onto the KIT's ring lists:
+  the families after the |F| cut pinned in `Tests/DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json` (so
   `tools/pins/structure-factors/pins.py` runs first), at k_max 1.2: Au, Al, Si, Mg, ideal hcp, Weak-cut (macTEM's six) and beta''.
 - The decision is NumPy written from the definition in `RingIndexing.swift`'s header, with a plain-Python scalar re-implementation that must agree on
   every plant (z = |q - g|/sigma, delta = g/q - 1, candidates by (z, g), within = z <= k, ambiguous on two within or a margin

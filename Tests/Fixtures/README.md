@@ -3,7 +3,7 @@
 One row per committed fixture file under `Tests/*/Fixtures/`: size, the script under `tools/` that names it (the generator or its
 pin script; a few scripts write a whole directory; a script found only by file-name prefix, tool-folder name or test module is marked so), and a note where the origin is not the kit's own pinned reference. 52 files.
 
-Licence: every fixture is generated from this kit's own code and the pinned Python reference (named in the README) and ships under the kit's GPL-3.0-or-later licence, except the rows marked *third party*. No fixture is a copy of a real dataset: the committed text fixtures carry no local path or personal name (checked by search), and real datasets are read from `$MACEM_DATA` and never copied into the repo.
+Licence: every fixture is generated from this kit's own code and the pinned Python reference (named in the README) and ships under the kit's GPL-3.0-only licence, except the rows marked *third party*. No fixture is a copy of a real dataset: the committed text fixtures carry no local path or personal name (checked by search), and real datasets are read from `$MACEM_DATA` and never copied into the repo.
 
 ## Third party
 
@@ -31,9 +31,9 @@ Licence: every fixture is generated from this kit's own code and the pinned Pyth
 | `DiffractoCoreTests/Fixtures/magnesium_P63mmc_24ops.cif` | 896 B | `tools/pins/cells/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/magnesium_P63mmc_origin_shifted_loop.cif` | 1.5 KB | review regression CIF, read by `RefuterRegressionTests` |  |
 | `DiffractoCoreTests/Fixtures/mixed_centring.cif` | 561 B | review regression CIF, read by `RefuterRegressionTests` |  |
-| `DiffractoCoreTests/Fixtures/mp-import/input-aluminium-v3.json` | 1.6 KB | `tools/pins/mp-import/pins.py` | third party: Materials Project export; licence terms to be confirmed by Paul |
-| `DiffractoCoreTests/Fixtures/mp-import/input-magnesiumJSON.json` | 1.1 KB | `tools/pins/mp-import/pins.py` | third party: Materials Project export; licence terms to be confirmed by Paul |
-| `DiffractoCoreTests/Fixtures/mp-import/input-siliconJSON.json` | 2.9 KB | `tools/pins/mp-import/pins.py` | third party: Materials Project export; licence terms to be confirmed by Paul |
+| `DiffractoCoreTests/Fixtures/mp-import/input-aluminium-v3.json` | 1.6 KB | `tools/pins/mp-import/pins.py` | third party: Materials Project data, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), source https://materialsproject.org; credited in `NOTICE` |
+| `DiffractoCoreTests/Fixtures/mp-import/input-magnesiumJSON.json` | 1.1 KB | `tools/pins/mp-import/pins.py` | third party: Materials Project data, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), source https://materialsproject.org; credited in `NOTICE` |
+| `DiffractoCoreTests/Fixtures/mp-import/input-siliconJSON.json` | 2.9 KB | `tools/pins/mp-import/pins.py` | third party: Materials Project data, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), source https://materialsproject.org; credited in `NOTICE` |
 | `DiffractoCoreTests/Fixtures/mp-import/pymatgen-pins.json` | 6.3 KB | `tools/pins/mp-import/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/polonium_P1_supercell_7x.cif` | 737 B | `tools/pins/conventional-cell/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/presets-pins.json` | 21.1 KB | `tools/pins/presets/pins.py` |  |

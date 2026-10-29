@@ -1,5 +1,5 @@
 #!/bin/zsh
-# PROVENANCE: macTEM a58c84c tools/lib/fetch-py4dstem-scattering.sh adapted
+# PROVENANCE: macTEM before v1.0.0 (history squashed) tools/lib/fetch-py4dstem-scattering.sh adapted
 # Adapted: the same py4DSTEM lock commit and the same sha256, the destination is this kit's gitignored References/ (the
 # script sits two levels deeper than macTEM's, in tools/pins/structure-factors/, and the root is three levels up).
 # END PROVENANCE

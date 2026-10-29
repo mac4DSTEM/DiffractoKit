@@ -2,7 +2,7 @@
 
 Seeds, from the apps' history before they were public: mac4DSTEM `7d6fdbd1`
 (`EllipseCalibration.swift`, `DiffractionPattern.swift`, `Calibration.swift`, the noisy, stop-rule and row-29 tests, the
-`tools/ellipse-calibration-test` sweep) and macTEM `9482831` (`RingCalibration+Fit.swift`, its 8 tests).
+`tools/ellipse-calibration-test` sweep) and macTEM before v1.0.0 (history squashed) (`RingCalibration+Fit.swift`, its 8 tests).
 
 - `sweep.py` (`../References/python/pymatgen/bin/python -I -B tools/pins/ellipse/sweep.py`): renders the 20 clean sweep rings (a Python
   port of the planted ring of `Tests/DiffractoKitTestSupport/EllipseFixtures.swift`, hash-equal to the Swift renderer) and writes

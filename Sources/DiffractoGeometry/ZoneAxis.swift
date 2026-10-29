@@ -2,7 +2,7 @@
 //  ZoneAxis.swift
 //  Role: zone-axis primitives ("ZoneAxis"): the 49 low-index beam
 //        directions, a direction [u v w] as a Cartesian unit vector of a cell, the detector basis of a beam direction,
-//        and the projection of a reflection list onto it with the excitation error. Seeds, read at reference commit 7d6fdbd1
+//        and the projection of a reflection list onto it with the excitation error. Seeds, read at mac4DSTEM 7d6fdbd1
 //        by `git show`: `PhaseReferenceLibrary.lowIndexZoneAxes` and `cartesianZoneAxis`, `ACOMOrientation.detectorBasis`
 //        (Core/Analysis/OrientationResult.swift), `OrientationPlan.project` (Core/Crystal/OrientationPlan.swift).
 //        Units: Å⁻¹ without 2π, as the rest of the kit.
