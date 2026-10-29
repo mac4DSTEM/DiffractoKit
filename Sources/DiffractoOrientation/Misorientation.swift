@@ -66,8 +66,6 @@ public struct Misorientation: Sendable {
         return Misorientation(unchecked: best, source: source, target: target)
     }
 
-    public func mapIntoSymmetryReducedZone() -> Misorientation { reduce() }
-
     private init(unchecked matrix: simd_double3x3, source: CrystalOrientationSymmetry, target: CrystalOrientationSymmetry) {
         self.matrix = matrix; self.source = source; self.target = target
     }

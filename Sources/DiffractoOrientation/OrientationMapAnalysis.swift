@@ -57,6 +57,7 @@ public enum OrientationMapAnalysis {
 
     /// The in-plane angle over 2π with a mirrored match's added half turn taken off, i.e. the angle of the pattern itself
     /// (the same plane as `inPlaneAnglePlane` for a forward match), wrapped to [0, 1).
+    @available(*, deprecated, message: "Unused by the suite; removed in a later minor. Compute it from inPlaneAnglePlane and mirroredPlane.")
     public static func patternInPlaneAnglePlane(_ results: [OrientationResult]) -> [Float] {
         let twoPi = Float(2 * Double.pi)
         return results.map { r in

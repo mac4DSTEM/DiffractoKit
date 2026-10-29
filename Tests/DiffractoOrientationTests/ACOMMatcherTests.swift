@@ -765,7 +765,15 @@ struct OrientationMapMirrorPlaneTests {
         }
         let rs = [result(0.80, mirrored: true), result(0.10, mirrored: false), result(0.20, mirrored: true)]
         #expect(OrientationMapAnalysis.mirroredPlane(rs) == [1, 0, 1])
-        let a = OrientationMapAnalysis.patternInPlaneAnglePlane(rs)
+        let a = (DeprecatedPatternAngle.self as PatternAnglePlane.Type).plane(rs)
         #expect(abs(a[0] - 0.30) < 1e-6 && abs(a[1] - 0.10) < 1e-6 && abs(a[2] - 0.70) < 1e-6)
     }
+}
+
+/// `patternInPlaneAnglePlane` is deprecated but still public, so its test stays; the call goes through a protocol so the test
+/// build does not warn. Delete with the function.
+private protocol PatternAnglePlane { static func plane(_ results: [OrientationResult]) -> [Float] }
+private enum DeprecatedPatternAngle: PatternAnglePlane {
+    @available(*, deprecated)
+    static func plane(_ results: [OrientationResult]) -> [Float] { OrientationMapAnalysis.patternInPlaneAnglePlane(results) }
 }
