@@ -86,8 +86,9 @@ from mac4DSTEM 7448401b).
 Thronsen et al. (phase mapping)
 ================================================================================
 
-The vector-matching method of DiffractoOrientation (PhaseReferenceLibrary.swift, PhaseVectorMatching.swift), including the
-decision rule of `.knownVariants` and its two constants (direct-matrix count 1, residual cutoff 0.07 inverse angstrom), follow:
+The vector-matching method of DiffractoOrientation (PhaseReferenceLibrary.swift, PhaseVectorMatching.swift and the
+PhaseVectorMatcher+*.swift and PhaseVectorTypes.swift files split from it), including the decision rule of `.knownVariants` (in
+PhaseVectorMatcher+Classify.swift) and its two constants (direct-matrix count 1, residual cutoff 0.07 inverse angstrom), follow:
 
     E. Thronsen, J. Hjelen, R. Holmestad et al., "Studying GPB zones and precipitates in Al-Cu-Li with scanning precession
     electron diffraction", Ultramicroscopy 255 (2024) 113861, licensed CC BY 4.0
