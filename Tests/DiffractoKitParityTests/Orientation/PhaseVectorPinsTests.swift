@@ -114,7 +114,7 @@ private struct PinClosed: Decodable, Sendable {
     struct FriedelBlock: Decodable, Sendable { let cases: [PinFriedel] }
     struct StepsBlock: Decodable, Sendable { let cases: [PinSteps] }
 }
-private struct Slice4Pins: Decodable, Sendable {
+private struct PhaseVectorPinFile: Decodable, Sendable {
     let phases: [PinPhase]
     let euler: PinEuler
     let frameMatrixCases: PinFrameCases
@@ -132,11 +132,11 @@ private struct AxisCase: Sendable, CustomTestStringConvertible {
 private enum S4 {
     static let url = FixtureDirs.target("DiffractoOrientationTests")
         .appendingPathComponent("Fixtures").appendingPathComponent("py4dstem-phase-vector-pins.json")
-    static let pins: Slice4Pins = {
+    static let pins: PhaseVectorPinFile = {
         let data = try! Data(contentsOf: url)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try! decoder.decode(Slice4Pins.self, from: data)
+        return try! decoder.decode(PhaseVectorPinFile.self, from: data)
     }()
 
     /// The structure of each pinned phase, the identity operation only (a vector-matching library reads the reflections).
