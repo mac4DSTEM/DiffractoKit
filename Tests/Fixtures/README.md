@@ -1,9 +1,9 @@
 # Test fixtures
 
 One row per committed fixture file under `Tests/*/Fixtures/`: size, the script under `tools/` that names it (the generator or its
-pin script; a few scripts write a whole directory; a script found only by file-name prefix, tool-folder name or test module is marked so), and a note where the origin is not the kit's own pinned reference. 55 files.
+pin script; a few scripts write a whole directory; a script found only by file-name prefix, tool-folder name or test module is marked so), and a note where the origin is not the kit's own pinned reference. 56 files.
 
-Licence: every fixture is generated from this kit's own code and the pinned Python reference (named in the README) and ships under the kit's GPL-3.0-or-later licence, except the rows marked *third party*. No fixture is a copy of a real dataset: the committed text fixtures carry no local path or personal name (checked by search), and real datasets are read from `$MACEM_DATA` and never copied into the repo.
+Licence: every fixture is generated from this kit's own code and the pinned Python reference (named in the README) and ships under the kit's GPL-3.0-only licence, except the rows marked *third party*. No fixture is a copy of a real dataset: the committed text fixtures carry no local path or personal name (checked by search), and real datasets are read from `$MACEM_DATA` and never copied into the repo.
 
 ## Third party
 
@@ -24,9 +24,9 @@ Licence: every fixture is generated from this kit's own code and the pinned Pyth
 | `DiffractoCoreTests/Fixtures/ideal_hcp_P1.cif` | 504 B | `tools/slice-1/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/magnesium_P63mmc.cif` | 401 B | `tools/slice-4/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/magnesium_P63mmc_24ops.cif` | 896 B | `tools/slice-1/pins.py` |  |
-| `DiffractoCoreTests/Fixtures/mp-import/input-aluminium-v3.json` | 1.6 KB | `tools/mp-import/pins.py` | third party: Materials Project export; licence terms to be confirmed by Paul |
-| `DiffractoCoreTests/Fixtures/mp-import/input-magnesiumJSON.json` | 1.1 KB | `tools/mp-import/pins.py` | third party: Materials Project export; licence terms to be confirmed by Paul |
-| `DiffractoCoreTests/Fixtures/mp-import/input-siliconJSON.json` | 2.9 KB | `tools/mp-import/pins.py` | third party: Materials Project export; licence terms to be confirmed by Paul |
+| `DiffractoCoreTests/Fixtures/mp-import/input-aluminium-v3.json` | 1.6 KB | `tools/mp-import/pins.py` | third party: Materials Project data, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), source https://materialsproject.org; credited in `NOTICE` |
+| `DiffractoCoreTests/Fixtures/mp-import/input-magnesiumJSON.json` | 1.1 KB | `tools/mp-import/pins.py` | third party: Materials Project data, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), source https://materialsproject.org; credited in `NOTICE` |
+| `DiffractoCoreTests/Fixtures/mp-import/input-siliconJSON.json` | 2.9 KB | `tools/mp-import/pins.py` | third party: Materials Project data, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), source https://materialsproject.org; credited in `NOTICE` |
 | `DiffractoCoreTests/Fixtures/mp-import/pymatgen-pins.json` | 6.3 KB | `tools/mp-import/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/presets-pins.json` | 21.1 KB | `tools/presets/pins.py` |  |
 | `DiffractoCoreTests/Fixtures/pyrite_Pa-3.cif` | 1.1 KB | `tools/slice-1/pins.py`, `tools/slice-2/pins.py` |  |
@@ -60,6 +60,7 @@ Licence: every fixture is generated from this kit's own code and the pinned Pyth
 | `DiffractoOrientationTests/Fixtures/orix-direction-pins.json` | 1.5 MB | `tools/orix/direction-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/orix-disorientation-pins.json` | 1.5 MB | `tools/orix/disorientation-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/orix-ipf-pins.json` | 484.0 KB | `tools/orix/ipf-pins.py` |  |
+| `DiffractoOrientationTests/Fixtures/orix-misorientation-pins.json` | 896.0 KB | `tools/orix/misorientation-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/py4dstem-family-pins.json` | 1005.7 KB | `tools/symmetry/family-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/py4dstem-family-real-pins.json` | 3.7 MB | `tools/symmetry/family-real-pins.py` |  |
 | `DiffractoOrientationTests/Fixtures/slice-4-apps.json` | 12.9 MB | `tools/slice-4/apps-parity/main.swift`, `tools/slice-4/apps-parity/run.sh` |  |

@@ -1,7 +1,7 @@
 //
 //  ElectronWavelength.swift
 //  Role: the one electron wavelength of the kit, the relativistic de Broglie wavelength at an accelerating voltage.
-//        Ported from reference commit 9482831 `RingCalibration.wavelengthAngstroms`
+//        Ported from macTEM before v1.0.0 (history squashed) `RingCalibration.wavelengthAngstroms`
 //        with the same arithmetic order, so the results are bit identical.
 //
 //  λ = hc / √(eV (2 m₀c² + eV)),  V in volts, λ in Å.

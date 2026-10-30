@@ -2,7 +2,7 @@
 
 Seeds, from the apps' history before they were public: mac4DSTEM `7d6fdbd1`
 (`EllipseCalibration.swift`, `DiffractionPattern.swift`, `Calibration.swift`, the noisy, stop-rule and row-29 tests, the
-`tools/ellipse-calibration-test` sweep) and macTEM `9482831` (`RingCalibration+Fit.swift`, its 8 tests).
+`tools/ellipse-calibration-test` sweep) and macTEM before v1.0.0 (history squashed) (`RingCalibration+Fit.swift`, its 8 tests).
 
 - `apps-parity/run.sh` (+ `main.swift`): compiles the apps' own `EllipseCalibration.swift` and `DiffractionPattern.swift` at 7d6fdbd1
   with `swiftc -O`, renders 35 planted rings (3 + 4 noisy, the 4 stop-rule rings, 20 clean sweep rings, 4 sparse rings) with the

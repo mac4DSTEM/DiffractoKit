@@ -3,7 +3,7 @@
 //  Role: every (h, k, l) with 0 < |g| ≤ k_max, its d, whether the space-group operations allow it, and the rings
 //        (families) the list falls into. The enumeration is reference commit 7448401b `Crystal.reflections` without the
 //        structure factor (the per-axis index bound, DEVIATION of 2026-09-14, complete for oblique cells); the absence
-//        rule is the general reflection condition; the family rule is reference commit a58c84c `DSpacingIndexing.families`.
+//        rule is the general reflection condition; the family rule is macTEM before v1.0.0 (history squashed) `DSpacingIndexing.families`.
 //
 
 import Foundation

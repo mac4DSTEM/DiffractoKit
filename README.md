@@ -2,6 +2,9 @@
 
 # DiffractoKit
 
+[![CI](https://github.com/mac4DSTEM/DiffractoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/mac4DSTEM/DiffractoKit/actions/workflows/ci.yml)
+[![Docs](https://github.com/mac4DSTEM/DiffractoKit/actions/workflows/docs.yml/badge.svg)](https://mac4dstem.github.io/DiffractoKit/)
+
 Crystallography and electron diffraction as a Swift package: the numbers a scientist reads, never UI. DiffractoKit
 is the Swift counterpart of the crystallography parts of **pymatgen**, **py4DSTEM** and **pyxem**: the unit cell and its
 reciprocal lattice, symmetry found from the atoms, CIF import, d-spacings and the list of reflections with systematic
@@ -9,8 +12,10 @@ absences, electron scattering factors and kinematic structure factors, rings and
 diffraction pattern (wavelength, camera length, reciprocal-space pixel size, the ring and ellipse fit). It is built to be
 imported by tagged version into applications.
 
-Swift 6 strict concurrency, `Foundation`, `simd` and `CryptoKit` (no Python). Headless, one SwiftPM product per module.
-Where a path is accelerated (none yet), it will keep a CPU reference path with a stated tolerance.
+Swift 6 strict concurrency on `Foundation`, `simd`, `CryptoKit`, Metal (the ACOM matcher's optional GPU path) and
+[ImagoKit](https://github.com/mac4DSTEM/ImagoKit) (its FFT, on Accelerate); no Python. Headless, one SwiftPM product per
+module. The one accelerated path, `ACOMMatcher.matchAll(..., backend: .metal)`, keeps the CPU path as its reference and is
+checked against it.
 **Status: 0.x** ([semantic versioning](https://semver.org): a minor release may change the API, and every release has a
 `CHANGELOG.md` entry with a migration note where needed). Pin an exact tag and bump on purpose.
 
@@ -23,17 +28,17 @@ One SwiftPM product per module; a module imports only the ones above it in this 
 
 | Module | Holds | Since |
 |---|---|---|
-| `DiffractoCore` | `UnitCell` (all seven crystal systems: real and reciprocal lattice, metric, volume, d and g of an hkl, the angle between planes), `SymmetryOperation` and `PointSymmetry` (the eleven Laue classes, `LaueClass`, `CrystalSystem`), symmetry found from the atom sites (`SymmetryDetection`, `CrystalStructure`), `CIFImport` (CIF text to `CrystalStructure`, with named refusals), `ReflectionList` (every hkl up to a k_max with its systematic-absence flag), orbits and families (rings) with their names | 0.1.0; Niggli reduction, the conventional cell and a Cartesian symmetry tolerance since 0.1.1 |
+| `DiffractoCore` | `UnitCell` (all seven crystal systems: real and reciprocal lattice, metric, volume, d and g of an hkl, the angle between planes), `SymmetryOperation` and `PointSymmetry` (the eleven Laue classes, `LaueClass`, `CrystalSystem`), symmetry found from the atom sites (`SymmetryDetection`, `CrystalStructure`), `CIFImport` (CIF text to `CrystalStructure`, with named refusals), `ReflectionList` (every hkl up to a k_max with its systematic-absence flag), orbits and families (rings) with their names, `CrystalPresets`, the Materials Project import | 0.1.0; Niggli reduction, the conventional cell and a Cartesian symmetry tolerance 0.1.1; presets and Materials Project import 0.6.0 |
 | `DiffractoScattering` | `ElectronScatteringFactors` (Lobato and Van Dyck, the table of py4DSTEM, Z = 1 to 103), `StructureFactors` (F(hkl) in A^-2), `CrystalStructure.kinematicReflections(kMax:)`: the reflections after an \|F\| cut, and their rings with the summed \|F\|^2 | 0.1.0 |
-| `DiffractoGeometry` | `ElectronWavelength` (relativistic, CODATA 2018), `RingCalibration` (camera length, reciprocal-space pixel size from one ring of known d, with the refusals that say when a ring must not be calibrated from; `fit` runs the whole chain on a pattern), `EllipseCalibration` and `EllipseTransform` (the ring and detector-ellipse fit, py4DSTEM's model), `RingIndexing` (which family a measured \|q\| belongs to, and when it must not be named), `ZoneAxis` (beam directions, the detector basis, excitation errors) | 0.1.0 |
-| `DiffractoOrientation` | Phase reference libraries and vector matching, Euler angles and orientation-result values; `CrystalOrientationSymmetry` (minimum-angle reduction for all 11 Laue classes), direction sampling and explicit `.py4DSTEM` / `.native` IPF colour keys | phase mapping and orientation results 0.3.0; orientation symmetry and the ACOM matcher 0.4.0; [conventions](docs/orientation-symmetry.md), parity P17–P19 |
+| `DiffractoGeometry` | `ElectronWavelength` (relativistic, CODATA 2018), `RingCalibration` (camera length, reciprocal-space pixel size from one ring of known d, with the refusals that say when a ring must not be calibrated from; `fit` runs the whole chain on a pattern), `EllipseCalibration` and `EllipseTransform` (the ring and detector-ellipse fit, py4DSTEM's model), `RingIndexing` (which family a measured \|q\| belongs to, and when it must not be named), `ZoneAxis` (beam directions, the detector basis, excitation errors), `LinearScale` (delta q from rings: estimate, assign, fit), single-pattern measurements (`PatternCentre`, `PatternRadialProfile`, `PatternSpot`) | 0.1.0; `LinearScale.estimate` 0.8.0; `LinearScale.assign` and `fit` and the pattern measurements 0.10.0 |
+| `DiffractoOrientation` | Phase reference libraries and vector matching, Euler angles and orientation-result values; `CrystalOrientationSymmetry` (minimum-angle reduction for all 11 Laue classes), direction sampling and explicit `.py4DSTEM` / `.native` / `.orix` IPF colour keys, the ACOM matcher and scan (CPU and Metal), `OrientationMapAnalysis`, `PhaseModel`, `Misorientation` and `Orientation`, orientation-relationship variants | phase mapping and orientation results 0.3.0; orientation symmetry and the ACOM matcher 0.4.0; ACOM scans 0.5.0; the orix key, disorientation, `PhaseModel` and the Metal backend 0.6.0; map analysis 0.8.1; misorientation and variants 0.10.0; [conventions](docs/orientation-symmetry.md) |
 
 ## Install
 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.4.1"),
+    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.10.0"), // x-release-please-version
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -44,8 +49,9 @@ targets: [
 ]
 ```
 
-The package needs macOS 15 or iOS 18 and a Swift 6.2 toolchain (`swift-tools-version: 6.2`). Its only dependency is
-[ImagoKit](https://github.com/mac4DSTEM/ImagoKit), used by `DiffractoOrientation` alone (its `FFT1D`). It carries no unsafe
+The package needs macOS 15 or iOS 18 and a Swift 6.2 toolchain (`swift-tools-version: 6.2`). Its only package dependency is
+[ImagoKit](https://github.com/mac4DSTEM/ImagoKit), used by `DiffractoOrientation` alone (its `FFT1D`, on Accelerate);
+the system frameworks are Foundation, simd, CryptoKit and, for the optional GPU matcher, Metal. It carries no unsafe
 flags: your build compiles it optimised itself; a Debug build of the reflection loops and of the ring fit is slow.
 `DiffractoGeometry` depends on the other two, but each file that names a type of a module should import that module itself
 (`MemberImportVisibility` is on in this package).
@@ -249,9 +255,10 @@ and ported from: pymatgen, spglib, py4DSTEM and, for the orientation work, pyxem
 
 - Nothing here is validated on a real diffraction pattern; the ring-fit evidence is measured on synthetic plants only.
 - No database CIF (COD, ICSD) is read yet.
-- theta'-Al2Cu in the slice 4 pins is a test structure (Al4Cu2 body-centred, a 4.04 A, c 5.80 A), not checked against a published CIF.
+- theta'-Al2Cu in the orientation pins is a test structure (Al4Cu2 body-centred, a 4.04 A, c 5.80 A), not checked against a published CIF.
 - With py4DSTEM's patterns the ACOM matcher finds 17 of 18 planted orientations within 4 degrees; one 2/m pattern matches another beam direction.
-- `testRinglessFitOnARealMeanPatternFallsBackToTheConic` is disabled by name until the owner's Ni65Cu35 mean pattern has a manifest line.
+- One real-data test (`testRinglessFitOnARealMeanPatternFallsBackToTheConic`, a Ni65Cu35 mean pattern) is disabled until that
+  dataset is published with the tests.
 - Policies not yet parameters (profile-fit plausibility bounds, cell volume 1e-6) remain.
 - The open list, worst first, with causes: `docs/open-items.md`; timings against Python: `docs/benchmarks.md`.
 
