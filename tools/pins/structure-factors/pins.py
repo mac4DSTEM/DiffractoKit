@@ -1,4 +1,4 @@
-"""DiffractoKit slice 2: the pin generator for scattering factors and structure factors.
+"""DiffractoKit: the DiffractoScattering pin generator for scattering factors and structure factors.
 
 Run, from any directory, with the pinned oracle:
 

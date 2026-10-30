@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""DiffractoKit slice 3b, optional check: the clean sweep against SciPy.
+"""DiffractoKit, optional check of the ellipse fit: the clean sweep against SciPy.
 
 Renders the 20 clean sweep rings itself (the planted ring of Tests/DiffractoKitTestSupport/EllipseFixtures.swift with no
 noise and no tail, ported line for line to Python floats and stored as Float32; the FNV-1a hash of every ring equals the Swift
