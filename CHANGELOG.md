@@ -4,6 +4,17 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.11.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.10.0...0.11.0) (2026-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* drop unused public API and split PhaseVectorMatching.swift ([#34](https://github.com/mac4DSTEM/DiffractoKit/issues/34))
+
+### Code Refactoring
+
+* drop unused public API and split PhaseVectorMatching.swift ([#34](https://github.com/mac4DSTEM/DiffractoKit/issues/34)) ([8acda80](https://github.com/mac4DSTEM/DiffractoKit/commit/8acda809ccbb474e7e54558360dc4c009b52473f))
+
 ## [0.10.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.9.1...0.10.0) (2026-10-22)
 
 Misorientation, orientation-relationship variants, ring-sequence assignment, and what the consuming applications asked of the kit. Additive except one case in an error enum (see Migration).
