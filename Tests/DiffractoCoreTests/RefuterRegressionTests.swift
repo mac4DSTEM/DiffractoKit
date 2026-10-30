@@ -1,7 +1,7 @@
 //
 //  RefuterRegressionTests.swift
 //  An independent review's findings, each as a regression
-//  test on the refuter's own CIF (Fixtures/refuter_*.cif). Truth: pymatgen-core 2026.9.23 / spglib 2.8.0 on the
+//  test on the reviewer's own CIF (each test names its fixture). Truth: pymatgen-core 2026.9.23 / spglib 2.8.0 on the
 //  UNSHIFTED structure (absences and families do not depend on the origin), computed independently of the refuter's
 //  harness: Mg (c = 5.2112) P6₃/mmc 24 operations, 282 of 324 allowed at 1.2 Å⁻¹; one Fe atom in a 5 Å cube Pm-3m
 //  48 operations, 924 of 924; the 7× Po supercell (c = 23.45) 112 operations, 122 of 782 allowed at 0.9.
@@ -16,7 +16,7 @@ import DiffractoCore
 struct RefuterRegressionTests {
 
     private func read(_ name: String) throws -> CrystalStructure {
-        try CIFImport.read(try Fixtures.text("refuter_\(name).cif"), fileBaseName: name).structure
+        try CIFImport.read(try Fixtures.text("\(name).cif"), fileBaseName: name).structure
     }
 
     /// Two structures that differ by an origin shift must agree on everything a pattern shows.
@@ -36,7 +36,7 @@ struct RefuterRegressionTests {
     /// for (2 −1 0): 262 allowed instead of 282, ring {1 1 −2 0} of 2 instead of 6. Mutant: the absence tolerance
     /// without the translation's uncertainty.
     @Test func testShiftedMagnesiumKeepsItsAbsences() throws {
-        let shifted = try read("F2a_Mg_shifted")
+        let shifted = try read("magnesium_P1_origin_shifted")
         #expect(shifted.operations.count == 24)
         #expect(shifted.laueClass == .sixOverMmm)
         let list = try shifted.reflections(kMax: 1.2)
@@ -53,7 +53,7 @@ struct RefuterRegressionTests {
     /// F1(b) with a file loop: the same Mg with 24 exact rational operations at another origin. The file's exact
     /// translations are used for the operations it names (the 8-decimal coordinates alone also give 282 now).
     @Test func testShiftedMagnesiumWithItsLoopUsesTheExactTranslations() throws {
-        let s = try read("F2f_Mg_loop_0.37")
+        let s = try read("magnesium_P63mmc_origin_shifted_loop")
         #expect(s.fileOperations?.count == 24)
         #expect(s.operations.count == 24)
         #expect(s.fileOperationsAreSymmetries == true)
@@ -64,7 +64,7 @@ struct RefuterRegressionTests {
     /// ring {1 1 0} of 12. The fixed k/24 snap had moved translations by up to 5e-3: 43 operations, 80 wrong flags at 1.2.
     /// Mutant: the snap within the position tolerance instead of the translation's own uncertainty.
     @Test func testOneAtomAtAGeneralPositionIsPmThreeBarM() throws {
-        let s = try read("P1_cubic_1fe")
+        let s = try read("iron_P1_general_position")
         #expect(s.operations.count == 48)
         #expect(s.laueClass == .mThreeBarM)
         // At 1.19 Å⁻¹ (h² + k² + l² ≤ 35; 36 sits on the float edge of 1.2): every lattice point, all allowed.
@@ -82,7 +82,7 @@ struct RefuterRegressionTests {
     /// F1(a): rock salt shifted by (0.9172, 0.6292, 0.5141), exact 4-decimal coordinates: Fm-3m's 192 operations and
     /// the unshifted structure's absences and rings (the snap had given 160 operations, no Laue class, 24 wrong flags).
     @Test func testShiftedRockSaltIsFmThreeBarM() throws {
-        let shifted = try read("F2d_NaCl_shifted")
+        let shifted = try read("rocksalt_P1_origin_shifted")
         #expect(shifted.operations.count == 192)
         #expect(shifted.laueClass == .mThreeBarM)
         let fcc: [SIMD3<Double>] = [[0, 0, 0], [0.5, 0.5, 0], [0.5, 0, 0.5], [0, 0.5, 0.5]]
@@ -95,7 +95,7 @@ struct RefuterRegressionTests {
 
     /// F1(a): gold shifted by (0.2484, 0.3, 0.07): the inversion's translation is 0.4968, not 0.5.
     @Test func testShiftedGoldKeepsItsOffGridTranslations() throws {
-        let s = try read("F2c_Au_shifted_exactdecimals")
+        let s = try read("gold_P1_origin_shifted_exact_decimals")
         #expect(s.operations.count == 192)
         #expect(s.laueClass == .mThreeBarM)
         let inversions = s.operations.filter { $0.rotation == .inversion }
@@ -105,7 +105,7 @@ struct RefuterRegressionTests {
 
     /// F1(a): quartz shifted: P3₂21's 6 operations, Laue -3m (the snap had given 5 and no class).
     @Test func testShiftedQuartzIsThreeBarM() throws {
-        let s = try read("F2e_quartz_shifted")
+        let s = try read("alpha_quartz_P1_origin_shifted")
         #expect(s.operations.count == 6)
         #expect(s.laueClass == .threeBarM)
     }
@@ -113,7 +113,7 @@ struct RefuterRegressionTests {
     /// F1(b): a 7× supercell has translations of k/7, off the 1/24 grid, written to 8 decimals: 112 operations and
     /// 122 allowed of 782 at 0.9 Å⁻¹ (the 1e-9 test had flagged every l = ±7 sublattice reflection absent: 28).
     @Test func testSevenfoldSupercellKeepsItsSublatticeReflections() throws {
-        let s = try read("F3_super7")
+        let s = try read("polonium_P1_supercell_7x")
         #expect(s.operations.count == 112)
         #expect(s.laueClass == .fourOverMmm, "a 1 × 1 × 7 cell is tetragonal by its metric; spglib's 221 is the primitive cubic cell")
         let list = try s.reflections(kMax: 0.9)
@@ -125,7 +125,7 @@ struct RefuterRegressionTests {
     /// F2: two species sharing one site (Fe2+ 0.5 and Fe3+ 0.5 at the origin) under F-centring keep both rows: 8 Fe
     /// sites of 0.5 (Fe 4.0), 4 O; the expansion had merged the rows (Fe 2.0). Mutant: images of any row merge.
     @Test func testCoSitedSpeciesAreNotMerged() throws {
-        let s = try read("mixed_centred")
+        let s = try read("mixed_centring")
         #expect(s.sites.count == 12)
         let ironSites: [AtomSite] = s.sites.filter { $0.z == 26 }
         let ironOccupancy: Double = ironSites.reduce(0) { $0 + $1.occupancy }
@@ -140,7 +140,7 @@ struct RefuterRegressionTests {
     /// F4: corundum in rhombohedral axes is -3c by its atoms (Laue -3m) and its rings are named in three indices; the
     /// Miller–Bravais form is for hexagonal axes only. Mutant: the four-index form by the Laue class alone.
     @Test func testRhombohedralAxesKeepThreeIndexNames() throws {
-        let s = try read("corundum_rh_p1")
+        let s = try read("corundum_P1_rhombohedral")
         #expect(s.sites.count == 10)
         #expect(s.laueClass == .threeBarM)
         #expect(s.operations.count == 12)

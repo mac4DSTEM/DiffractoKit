@@ -23,7 +23,7 @@ extension RingCalibration {
     /// NaN unless R, L and λ are finite and positive, and NaN where the result is not a finite positive number: an overflow (a
     /// subnormal λ) or an underflow to 0 (a positive R so small against L that atan(R/L) is 0) is never given as infinity or 0.
     /// R may be as large as you like against L: 2θ stays below 180° and q below 2/λ, so there is no other limit.
-    /// VALIDITY: against 60-digit arithmetic (tools/kit-0.0.4/q-pins.py, 100 cases, V 60 to 300 kV, L 500 px to 1e5 px, R 1 px
+    /// VALIDITY: against 60-digit arithmetic (tools/pins/ring-calibration/q-pins.py, 100 cases, V 60 to 300 kV, L 500 px to 1e5 px, R 1 px
     /// to 2000 px) the worst relative error is 8.2e-16: atan2 and sin each round once and neither amplifies (the form has no
     /// subtraction). The 1/d identity on the 320 ring-calibration pin cases holds to 5.5e-16. The trig-free form
     /// 2 sin(½ atan(R/L)) = (R/h) / √((1 + L/h)/2), h = hypot(R, L), was measured too and is no better (both 2.2e-16 in
@@ -42,7 +42,7 @@ extension RingCalibration {
     /// underflow to 0), never an infinity.
     /// VALIDITY: the form is exact, but qλ/2 is a double and tan 2θ diverges at 90°. The rounding of qλ/2 (1.1e-16 relative)
     /// reaches R multiplied by 1/((1 − s²)(1 − 2s²)), s = qλ/2 and 1 − 2s² = cos 2θ, so against 60-digit arithmetic
-    /// (tools/kit-0.0.4/q-pins.py, 120 cases) the worst relative error is 3.3e-15 on the 100 grid cases (V 60 to 300 kV, L
+    /// (tools/pins/ring-calibration/q-pins.py, 120 cases) the worst relative error is 3.3e-15 on the 100 grid cases (V 60 to 300 kV, L
     /// 500 px to 1e5 px, R 1 px to 2000 px, 2θ up to 76°) and 4.5e-14 at 0.99 of the limit (the 20 cases at s√2 = 0.99, the
     /// factor about 100, 2θ = 88.9°), about 1e-15/cos 2θ in general. That passes the 1e-12 band for 2θ below about 89.9°;
     /// closer to the limit the number is right only to that error, and the `maximumLambdaOver2d` guard is the only refusal (one

@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// Pins: tools/symmetry/family-real-pins.py. Real py4DSTEM `Crystal`s (0.14.19 at f050d207, pymatgen 2025.1.9 and spglib 2.8.0 in
+/// Pins: tools/pins/orientation-symmetry/family-real-pins.py. Real py4DSTEM `Crystal`s (0.14.19 at f050d207, pymatgen 2025.1.9 and spglib 2.8.0 in
 /// its venv) built from pymatgen-expanded structures of centrosymmetric space groups; `orientation_plan('auto')` takes the plan sector
 /// from the detected point group and `symmetry_operators` from `SpacegroupAnalyzer.get_point_group_operations()`, so the operator
 /// order is pymatgen's. Written tolerance: 1e-7 absolute (the reference's tolerance; was 1e-12) on family entries (float64 sums of three products of order 1). Columns

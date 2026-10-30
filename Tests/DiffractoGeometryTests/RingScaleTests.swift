@@ -3,7 +3,7 @@
 //  `RingScale` (macTEM's RingScale.swift, whose beam-energy form is the kit's closed form). The app source is the oracle; no
 //  Python reference. Checks: (1) the app's forms, written out here from its header (q = 2 sin(1/2 atan(R/L))/lambda,
 //  R = L tan(2 asin(lambda q/2)), q = dq R), agree with the kit on a grid, to 1e-12 relative (the kit measured 8.2e-16 for q and
-//  3.3e-15 for R, tools/kit-0.0.4/q-pins.py); (2) the linear helper and the file comparison, closed forms.
+//  3.3e-15 for R, tools/pins/ring-calibration/q-pins.py); (2) the linear helper and the file comparison, closed forms.
 //
 
 import DiffractoKitTestSupport

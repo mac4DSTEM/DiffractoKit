@@ -2,7 +2,7 @@
 //  TestSupport.swift
 //  Role: the fixtures directory (read by #filePath, not as resources), the β″ CIF text rebuilt from the pinned
 //        generator's values (tools/crystal-structures/make_beta_double_prime.py, verbatim from reference commit 7448401b; the
-//        pins carry its sha256), and the pins file written by tools/slice-1/pins.py.
+//        pins carry its sha256), and the pins file written by tools/pins/cells/pins.py.
 //
 
 import Foundation
@@ -91,7 +91,7 @@ package enum Fixtures {
     package static let betaDoublePrimeCell = UnitCell.monoclinic(a: 15.16, b: 4.05, c: 6.74, betaDeg: 105.3)
 }
 
-// MARK: - The pins (tools/slice-1/pins.py)
+// MARK: - The pins (tools/pins/cells/pins.py)
 
 package struct Pins: Decodable {
     package let versions: [String: String]
@@ -99,7 +99,7 @@ package struct Pins: Decodable {
     package let cells: [CellPin]
     package let structures: [StructurePin]
 
-    package static let fileName = "slice-1-pins.json"
+    package static let fileName = "pymatgen-cells-pins.json"
 
     package static func load() throws -> Pins {
         let data = try Data(contentsOf: Fixtures.directory.appendingPathComponent(fileName))

@@ -13,7 +13,7 @@ import DiffractoCore
 
 struct ConventionalCellTests {
 
-    static let pins = Pins1b.shared
+    static let pins = ConventionalCellPins.shared
 
     /// The name is the lattice each cell was built as (truth) and spglib's (oracle), on 2800 random cells under random
     /// unimodular transformations, 200 per lattice.

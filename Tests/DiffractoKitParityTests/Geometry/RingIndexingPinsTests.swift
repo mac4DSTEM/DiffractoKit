@@ -1,7 +1,7 @@
 //
 //  RingIndexingPinsTests.swift
 //  The indexing decision against the pins written BEFORE its code:
-//    slice-3-index-pins.json  tools/slice-3/index-pins.py: NumPy from the written definition on the kit's own ring lists
+//    numpy-ring-indexing-pins.json  tools/pins/ring-indexing/pins.py: NumPy from the written definition on the kit's own ring lists
 //                             (DiffractoScattering's families after the cut), T1 (every family x u x s) and T4 (refusal plants).
 //  Verdict equal, payload family names equal and in order, delta 1e-14, z 1e-10 max(1, z), margin 1e-9 max(1, margin),
 //  reach 1e-9 max(1, reach). A failure is a failure of the port, never a tolerance to widen.
@@ -75,7 +75,7 @@ private enum IndexPinFixtures {
     static let directory: URL = FixtureDirs.target("DiffractoGeometryTests").appendingPathComponent("Fixtures")
 
     static let result: Result<IndexPins, any Error> = Result {
-        let data = try Data(contentsOf: directory.appendingPathComponent("slice-3-index-pins.json"))
+        let data = try Data(contentsOf: directory.appendingPathComponent("numpy-ring-indexing-pins.json"))
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
         d.nonConformingFloatDecodingStrategy = .convertFromString(positiveInfinity: "Infinity", negativeInfinity: "-Infinity",

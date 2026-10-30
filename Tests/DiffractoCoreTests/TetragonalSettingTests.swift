@@ -2,7 +2,7 @@
 //  TetragonalSettingTests.swift
 //  A tetragonal structure is tetragonal whichever axis carries its 4-fold. The
 //  pins are pymatgen 2026.9.24's SpacegroupAnalyzer (spglib 2.8.0) on rutile, anatase, beta-Sn, an orthorhombic control
-//  with a = c by accident and a cubic one, each in three settings (tools/kit-0.0.4/tetragonal-pins.py, symprec 1e-4,
+//  with a = c by accident and a cubic one, each in three settings (tools/pins/cells/tetragonal-pins.py, symprec 1e-4,
 //  written before the fix). The truth beside them: the setting changes nothing, so the three settings give the same
 //  Laue class, the same count of operations and the same rings (multiplicity, |g|).
 //
@@ -54,7 +54,7 @@ struct TetragonalSettingTests {
     @Test func testPinsCarryTheirVersionsAndShape() {
         let v = Self.file.versions
         #expect(v["pymatgen"] == "2026.9.24")
-        #expect(v["pymatgen_core"] == "2026.9.23")
+        #expect(v["pymatgen_core"] == "2026.10.16")
         #expect(v["spglib"] == "2.8.0")
         #expect(v["numpy"] == "2.5.4")
         #expect(Self.file.entries.count == 15, "five structures in three settings")

@@ -11,7 +11,7 @@ Float64 unless the function is Float32 by design (ACOM, ellipse pattern pixels).
 | Toolchain | Apple Swift 6.4, `swift build -c release` (separate package `tools/benchmarks`) |
 | Python | 3.12.14, NumPy 2.5.4, SciPy 1.18.1, in two virtual environments: py4DSTEM 0.14.19 in one; pymatgen-core 2026.10.16 (the code; its `pymatgen` metapackage dist-info reads 2026.9.24), orix 0.15.0 and spglib 2.8.0 in the other |
 | Load | **10.5 on a 12-core machine while other builds ran** (uptime 17:39): every figure carries that noise, the single-core rows least. Re-run when the machine is quiet before quoting a ratio. |
-| Pin note | The orix environment runs pymatgen-core **2026.10.16** under a `pymatgen` 2026.9.24 metapackage; the fixtures record `pymatgen` 2026.9.24 and, except `cif-symmetry-pins.json` (generated 2026-10-21 on this install, byte-identical on regeneration), `pymatgen-core` 2026.9.23. Nothing here compares numbers, only time |
+| Pin note | The pymatgen environment runs pymatgen-core **2026.10.16** under a `pymatgen` 2026.9.24 metapackage, and every fixture that records pymatgen-core records 2026.10.16 (`tools/pins/requirements/pymatgen.txt`). Nothing here compares numbers, only time |
 | 0.9.1 | The `symmetry_detection` and `cif_import` rows above are the 2026-10-21 measurement of 0.9.0. 0.9.1 replaced the closure check that took 95 % of them (see `docs/open-items.md`); measured in-process on the same `al_super2.cif` (machine load 3.6): `cif_import` typical median 67 ms (min 67, max 77), against 297 ms (one run at load 9) before the change and the table's 351 ms. Not yet re-run through `run.sh` |
 
 Re-run from a fresh clone of the kit, on a quiet Mac: `gen_inputs.py` writes the shared inputs, `run.sh` builds the benchmark

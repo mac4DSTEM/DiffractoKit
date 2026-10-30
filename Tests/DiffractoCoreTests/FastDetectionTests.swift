@@ -13,7 +13,7 @@ import DiffractoCore
 
 struct FastDetectionTests {
 
-    /// slice-2-pins.json's preset structures (cell and sites), the slice-2 fixtures.
+    /// numpy-structure-factor-pins.json's preset structures (cell and sites), the slice-2 fixtures.
     private struct Slice2: Decodable {
         struct Build: Decodable { let how: String }
         struct S: Decodable { let name: String; let build: Build; let cell: CellParams; let sites: [SitePin] }
@@ -22,11 +22,11 @@ struct FastDetectionTests {
 
     private static let slice2Presets: [(String, UnitCell, [AtomSite])] = {
         let url = Fixtures.directory.deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("DiffractoScatteringTests/Fixtures/slice-2-pins.json")
-        guard let data = try? Data(contentsOf: url) else { fatalError("slice-2-pins.json not found at \(url.path)") }
+            .appendingPathComponent("DiffractoScatteringTests/Fixtures/numpy-structure-factor-pins.json")
+        guard let data = try? Data(contentsOf: url) else { fatalError("numpy-structure-factor-pins.json not found at \(url.path)") }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        guard let parsed = try? decoder.decode(Slice2.self, from: data) else { fatalError("slice-2-pins.json does not decode") }
+        guard let parsed = try? decoder.decode(Slice2.self, from: data) else { fatalError("numpy-structure-factor-pins.json does not decode") }
         return parsed.structures.filter { $0.build.how == "preset" }.map { s in
             (s.name, s.cell.unitCell, s.sites.map {
                 AtomSite(z: $0.z, fractional: SIMD3($0.frac[0], $0.frac[1], $0.frac[2]), occupancy: $0.occupancy)
@@ -37,7 +37,7 @@ struct FastDetectionTests {
     /// Every fixture the kit has as (name, cell, sites): the conventional-setting pins (the core fixtures and the named cells), the
     /// scattering presets, and the CIFs of the fixtures directory.
     private static var everyFixture: [(String, UnitCell, [AtomSite])] {
-        var out = Pins1b.shared.structures.map { ($0.name, $0.cell.unitCell, $0.atomSites) }
+        var out = ConventionalCellPins.shared.structures.map { ($0.name, $0.cell.unitCell, $0.atomSites) }
         out += slice2Presets
         // near-coincident rows (1.3e-3 apart, both inside the tolerance) and their inversion about a general point: the
         // target of an image is ambiguous, so the plain scan's choice (the lowest unclaimed index) decides the translation

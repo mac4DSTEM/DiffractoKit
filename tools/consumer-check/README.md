@@ -15,7 +15,7 @@ a q at Au {111}'s g with σ = 1e-3 q accepted as {1 1 1}, β″'s [0 0 1] = (cos
 rendered by `GeometryChecks.swift` and recovered inside the apps' bands (radius 1 %, b/a 0.01, centre 1 px), and a 2:1
 ellipse's offset (4, 3) corrected to (2, 3)).
 
-DiffractoKit 0.1.0 adds `Geometry004Checks.swift` and two sections of `main.swift`: `RingCalibration.q` / `radius`, `RingEvidence`
+DiffractoKit 0.1.0 adds `RingFitChecks.swift` and two sections of `main.swift`: `RingCalibration.q` / `radius`, `RingEvidence`
 (by hand and on a planted ring), `fitRing` / `calibrating` (equal to `fit`), `requireRingEvidence`, the three new refusals and
 `FitReport`'s new fields, `progress:` / `isCancelled:` on every fit, `LocalizedError` on the three error types, and the
 tetragonal settings. 397 checks at 0.0.4.

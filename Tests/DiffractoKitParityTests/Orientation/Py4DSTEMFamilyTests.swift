@@ -5,7 +5,7 @@ import simd
 import DiffractoCore
 import DiffractoOrientation
 
-/// Pins: tools/symmetry/family-pins.py (py4DSTEM f050d207 `symmetry_reduce_directions`, 0.14.19, NumPy 2.5.0). The
+/// Pins: tools/pins/orientation-symmetry/family-pins.py (py4DSTEM f050d207 `symmetry_reduce_directions`, 0.14.19, NumPy 2.5.0). The
 /// written tolerance is 1e-7 absolute (the reference's tolerance; was 1e-12) on family entries (the operator products are float64 sums of three terms, entries of
 /// order 1; NumPy's BLAS and the Swift loops differ at 1e-16). Where more than one operator satisfies the in-range test
 /// the pin records it (`hits`); those cases are compared too because both implementations take the first operator in the

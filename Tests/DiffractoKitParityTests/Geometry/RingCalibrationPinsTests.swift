@@ -1,7 +1,7 @@
 //
 //  RingCalibrationPinsTests.swift
 //  `ElectronWavelength` and `RingCalibration` against the
-//  pins tools/slice-3/ring-pins.py writes (Fixtures/slice-3-ring-pins.json): the closed forms evaluated in 60-digit decimal
+//  pins tools/pins/ring-calibration/ring-pins.py writes (Fixtures/numpy-ring-calibration-pins.json): the closed forms evaluated in 60-digit decimal
 //  arithmetic, 320 cases, the refusal decision from the documented thresholds (68 plants), the Bragg limit (18 plants) and the
 //  radius (10 plants). Band 1e-7 relative (the reference's tolerance since 0.9.1; it was 1e-12); a difference is a failure of the port, never a band to widen.
 //  Ported from macTEM before v1.0.0 (history squashed) tools/ring-calibration-parity/main.swift. The fixture is read by #filePath (the Fixtures folder
@@ -54,7 +54,7 @@ private struct RingPins: Decodable {
     let truth: Truth
 
     static let url = FixtureDirs.target("DiffractoGeometryTests")
-        .appendingPathComponent("Fixtures/slice-3-ring-pins.json")
+        .appendingPathComponent("Fixtures/numpy-ring-calibration-pins.json")
 
     static let shared: RingPins = {
         let decoder = JSONDecoder()

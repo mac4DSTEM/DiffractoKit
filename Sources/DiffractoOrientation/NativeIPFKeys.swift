@@ -1,5 +1,5 @@
 // Native IPF keys and direction samplers, ported from GPL-3.0 source c809679c.
-// Oracle: tools/symmetry/pins.py compiles the original git-show source.
+// Oracle: tools/pins/orientation-symmetry/pins.py compiles the original git-show source.
 import Foundation
 import simd
 /// Cubic crystal-symmetry operations and the m-3m inverse-pole-figure color

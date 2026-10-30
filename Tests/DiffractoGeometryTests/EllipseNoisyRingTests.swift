@@ -2,8 +2,7 @@
 //  EllipseNoisyRingTests.swift
 //  The profile ring fit on the three noisy plants of reference commit
 //  7d6fdbd1 `EllipseNoisyRingTests` (same names, same plants, same bands), with the plant renderer (SplitMix64 + Box-Muller,
-//  Float pixels) ported into this file. The renderer is also the one tools/slice-3b/apps-parity/main.swift carries a copy of;
-//  EllipseAppsParityTests proves the two render the same pixels (FNV-1a hash of every case) before it compares any fit.
+//  Float pixels) ported into this file.
 //
 //  The profile ring fit (`EllipseCalibration.fitAmorphousRing`, behind `fitBestAvailable`) is refined from py4DSTEM's start, both
 //  ring sigmas at max(1, ringWidth / 4), 10-17 px for a +-20 px annulus around a 3 px ring. On a noisy ring the 11-parameter LM
@@ -85,17 +84,14 @@ struct EllipseNoisyRingTests {
     /// the fit accepts a ring-less profile fit there (I1 0, a ring sigma at the 0.25 px floor, b/a 0.947, where the conic gives
     /// 0.989 and the wider annulus 0.970); with it, the fit falls back to the conic and says why.
     ///
-    /// DISABLED, not skipped silently: the pattern is derived from the maintainer's data, which this kit never copies, and
-    /// `../data/README.md` holds no manifest line for it yet. When the line exists (the file under `$MACEM_DATA`, default
-    /// `../data`, at the path below), remove the trait and set the path. The floor guard itself is held by
-    /// EllipseCalibrationTests (`testARingFittedWithinPointThreePxOfTheFloorIsRefusedAndFallsBackToTheConic`).
-    @Test(.disabled("maintainer's data, manifest line pending"))
+    /// Real data, so it runs only where the file is: `$MACEM_DATA` (default `../data` beside the checkout) at the path below, a
+    /// float32 32 x 32 pattern derived from the maintainer's data, which this kit never copies. Absent (CI, a fresh clone, and
+    /// today everywhere: the manifest line for the file is pending), the test is skipped and says so. The floor guard itself is
+    /// held on planted data by EllipseCalibrationTests (`testARingFittedWithinPointThreePxOfTheFloorIsRefusedAndFallsBackToTheConic`).
+    @Test(.enabled(if: FileManager.default.fileExists(atPath: realMeanPattern.path),
+                   "real data absent: $MACEM_DATA/4dstem/ni65cu35-roi6-mean-32x32.f32"))
     func testRinglessFitOnARealMeanPatternFallsBackToTheConic() throws {
-        let root = ProcessInfo.processInfo.environment["MACEM_DATA"]
-            ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-                .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("data").path
-        // The path under data/ is fixed by the manifest line, once there is one.
-        let url = URL(fileURLWithPath: root).appendingPathComponent("4dstem/ni65cu35-roi6-mean-32x32.f32")
+        let url = realMeanPattern
         let data = try Data(contentsOf: url)
         let pixels = data.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
         #expect(pixels.count == 32 * 32)
@@ -109,3 +105,11 @@ struct EllipseNoisyRingTests {
         #expect(abs(fit.b / fit.a - 0.989) <= 0.001)
     }
 }
+
+/// The real mean pattern of `testRinglessFitOnARealMeanPatternFallsBackToTheConic`, under `$MACEM_DATA` (default `../data`).
+private let realMeanPattern: URL = {
+    let root = ProcessInfo.processInfo.environment["MACEM_DATA"]
+        ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("data").path
+    return URL(fileURLWithPath: root).appendingPathComponent("4dstem/ni65cu35-roi6-mean-32x32.f32")
+}()

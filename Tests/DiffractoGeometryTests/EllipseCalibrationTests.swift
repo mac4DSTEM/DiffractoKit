@@ -4,12 +4,11 @@
 //  Swift, with their truth known: the constants, the input guards, the annulus boundaries, the coverage bound and the "fit
 //  anyway" path, the one-ring check, the 0.30 px ring-width floor guard (ADR 069), the profile residual cap, a clean circle's
 //  radius on both paths, and the row / column convention on a non-square pattern. The noisy plants of the reference implementations are
-//  EllipseNoisyRingTests, the stop-rule rings EllipseStopRuleTests, the bit identity with the reference implementations' compiled code
-//  EllipseAppsParityTests.
+//  EllipseNoisyRingTests, the stop-rule rings EllipseStopRuleTests.
 //
 //  Written for the kit (the seed has these checks only as tools/ellipse-calibration-test, a scientific harness); the numbers
-//  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equal the kit's, which
-//  EllipseAppsParityTests checks exactly).
+//  marked "measured" were measured on reference commit 7d6fdbd1's own EllipseCalibration compiled -O (and equalled the kit's in
+//  every bit when they were measured).
 //
 //  Every test names under "RED UNDER" the production mutation that turns it red.
 //
@@ -171,7 +170,7 @@ struct EllipseCalibrationTests {
 
     // MARK: Coverage
 
-    /// A ring with a 120 degree arc missing (a plant of the parity set: 128 px, R 40, eps 2 %, theta 30 degrees) holds 25 of
+    /// A ring with a 120 degree arc missing (a plant of the former apps-parity set: 128 px, R 40, eps 2 %, theta 30 degrees) holds 25 of
     /// 36 bins (measured): refused by default with that count, fitted on the "anyway" path and MARKED `sparseCoverage`, with its centre
     /// 0.89 px from the plant's (measured; a gapped conic carries a centre shift, which is why the one-ring check and the caller's
     /// assertion exist) and b/a within 0.0012 of the plant's.
@@ -358,15 +357,17 @@ struct EllipseCalibrationTests {
 
     private struct Sweep: Decodable {
         struct Ring: Decodable {
-            let name: String, index: Int, pixelHash: String, sampleCount: Int, occupiedBins: Int
+            let name: String, size: Int, radius: Double, eps: Double, thetaDegrees: Double, gap: Double, seed: Int
+            let startQX: Double, startQY: Double, innerRadius: Double, outerRadius: Double
+            let pixelHash: String, sampleCount: Int, occupiedBins: Int
             let optimumCenterQX: Double, optimumCenterQY: Double, optimumA: Double, optimumB: Double, optimumTheta: Double
         }
         let scipy: String
         let rings: [Ring]
         static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("Fixtures/slice-3b-sweep.json")
+            .appendingPathComponent("Fixtures/scipy-ellipse-sweep-pins.json")
         static let shared: Sweep = {
-            do { return try JSONDecoder().decode(Sweep.self, from: Data(contentsOf: url)) } catch { fatalError("slice-3b-sweep.json: \(error)") }
+            do { return try JSONDecoder().decode(Sweep.self, from: Data(contentsOf: url)) } catch { fatalError("scipy-ellipse-sweep-pins.json: \(error)") }
         }()
     }
 
@@ -375,9 +376,9 @@ struct EllipseCalibrationTests {
         return min(raw, .pi - raw)
     }
 
-    /// The 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing; the pixels are
-    /// the parity set's) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
-    /// weighted-conic objective, tools/slice-3b/sweep.py: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad (not on a circle,
+    /// The 20 clean sweep rings (square 112-144 px, R 32-52, eps 0 / 1 / 3 %, unbroken or a 60 degree arc missing; plant and start
+    /// read from the sweep fixture) fitted by `fit1D` from the click's error equal SciPy 1.18.1's `least_squares` optimum of the same
+    /// weighted-conic objective, tools/pins/ellipse/sweep.py: centre 1e-5 px, a and b 1e-7 relative, theta 1e-6 rad (not on a circle,
     /// where it is undefined), the same pixel and bin counts, and the centre within 0.05 px of the plant (0.1 px for the rings with an arc missing, see below). These are the bands of
     /// reference tools/ellipse-calibration-test (measured there: 1.1e-7 px, 6.4e-10, 1.7e-8 rad). This pins the OBJECTIVE: an
     /// unweighted or sqrt-weighted variant lands on a different minimum and fails here.
@@ -386,40 +387,26 @@ struct EllipseCalibrationTests {
         let sweep = Sweep.shared
         #expect(sweep.rings.count == 20)
         var worstPlant = 0.0, worstCentre = 0.0, worstAxes = 0.0, worstTheta = 0.0
-        let all = try JSONDecoder().decode([ParityPlant].self, from: Data(contentsOf: ParityPlant.url))
         for ring in sweep.rings {
-            let dumped = try #require(all.first { $0.plant.name == ring.name })
-            let p = dumped.plant
-            let plant = EllipsePlant(size: p.size, radius: p.radius, eps: p.eps, thetaDegrees: p.thetaDegrees, gap: p.gap,
-                                     noise: p.noise, seed: p.seed, tail: p.tail)
-            let fit = try EllipseCalibration.fit1D(pattern: plant.render(), centerQX: dumped.startQX, centerQY: dumped.startQY,
-                                                   innerRadius: dumped.innerRadius, outerRadius: dumped.outerRadius)
+            let plant = EllipsePlant(size: ring.size, radius: ring.radius, eps: ring.eps, thetaDegrees: ring.thetaDegrees, gap: ring.gap,
+                                     noise: 0, seed: ring.seed)
+            let fit = try EllipseCalibration.fit1D(pattern: plant.render(), centerQX: ring.startQX, centerQY: ring.startQY,
+                                                   innerRadius: ring.innerRadius, outerRadius: ring.outerRadius)
             #expect(fit.sampleCount == ring.sampleCount && fit.occupiedAngularBins == ring.occupiedBins, "\(ring.name)")
             let toPlant = max(abs(fit.centerQX - plant.centerQX), abs(fit.centerQY - plant.centerQY))
             let centre = max(abs(fit.centerQX - ring.optimumCenterQX), abs(fit.centerQY - ring.optimumCenterQY))
             let axes = max(abs(fit.a - ring.optimumA) / ring.optimumA, abs(fit.b - ring.optimumB) / ring.optimumB)
-            let theta = p.eps == 0 ? 0 : Self.angleError(fit.theta, ring.optimumTheta)
+            let theta = ring.eps == 0 ? 0 : Self.angleError(fit.theta, ring.optimumTheta)
             worstPlant = max(worstPlant, toPlant); worstCentre = max(worstCentre, centre)
             worstAxes = max(worstAxes, axes); worstTheta = max(worstTheta, theta)
             // The reference implementations' clause is 0.05 px on rings of R 80-200. A conic fitted to a ring with a 60 degree arc missing sits off the
             // plant by an amount that grows as R shrinks (the objective, not the port: SciPy's optimum agrees to 7e-8 px); on these
             // R 32-52 rings it is 0.055-0.094 px (measured), so a gapped ring is held to 0.1 px and an unbroken one to 0.05 px.
-            #expect(toPlant < (p.gap == 0 ? 0.05 : 0.1), "\(ring.name): centre \(toPlant) px from the plant")
+            #expect(toPlant < (ring.gap == 0 ? 0.05 : 0.1), "\(ring.name): centre \(toPlant) px from the plant")
             #expect(centre < 1e-5, "\(ring.name): centre \(centre) px from scipy's")
             #expect(axes < 1e-7, "\(ring.name): axes \(axes) relative")
             #expect(theta < 1e-6, "\(ring.name): theta \(theta) rad")
         }
         print("clean sweep vs scipy \(sweep.scipy): plant \(worstPlant) px, centre \(worstCentre) px, axes \(worstAxes), theta \(worstTheta) rad")
     }
-}
-
-/// The plant parameters and start of a case of Fixtures/slice-3b-apps.json (the parity dump), for the sweep test.
-private struct ParityPlant: Decodable {
-    struct Plant: Decodable {
-        let kind: String, name: String
-        let size: Int, radius: Double, eps: Double, thetaDegrees: Double, gap: Double, noise: Double, seed: Int, tail: Double
-    }
-    let plant: Plant
-    let startQX: Double, startQY: Double, innerRadius: Double, outerRadius: Double
-    static let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/slice-3b-apps.json")
 }

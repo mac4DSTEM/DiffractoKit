@@ -208,12 +208,12 @@ F(hkl) is in A^-2 (f in A over V in A^3); a pattern's rows are `qx` and its colu
 
 Every number has a reference, and the references are pinned (`CONTRIBUTING.md`):
 
-- **pymatgen 2026.9.24** with pymatgen-core 2026.9.23, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7 (cells, expanded CIF sites,
+- **pymatgen 2026.9.24** with pymatgen-core 2026.10.16, spglib 2.8.0, NumPy 2.5.4, Python 3.14.7 (cells, expanded CIF sites,
   symmetry operations, d-spacings, reflections within a sphere, the X-ray peak sums), SciPy 1.18.1 (the ring fit's
   least-squares optimum), **py4DSTEM** f050d207's `scattering_factors.txt` (sha256 `be845d1d...`, bit for bit), and the
   code of the earlier GPL-3.0 applications this library was ported from (pinned by commit in `NOTICE`) where a port must be
   bit identical.
-- The pins are generated before the Swift code (`tools/*/pins.py`, committed as JSON under `Tests/*/Fixtures/`); the
+- The pins are generated before the Swift code (`tools/pins/<subject>/`, committed as JSON under `Tests/*/Fixtures/`); the
   Swift tests read the pins and a planted truth (a closed form, a group-theory count, a cell content). Numerics are held
   to the tolerance the Python package's own tests use; readers, I/O, indices and metadata are exact. Agreement with a
   package is agreement, not truth.
@@ -232,8 +232,8 @@ swift run -c release diffracto-example
 ```
 
 `swift build --build-tests -c release` fails on current toolchains; use `swift test -c release`. The tests read committed
-pins and need no Python. The Python environment that generates the pins is not in the repository: the versions are listed
-under "Oracles and pins" above, and `tools/*/pins.py` are the generators.
+pins and need no Python. The Python environment that generates the pins is described in `CONTRIBUTING.md`, with a requirements
+file per oracle under `tools/pins/requirements/`; the generators are under `tools/pins/<subject>/`.
 
 ## Licence
 

@@ -10,8 +10,8 @@
 //  0.30 px ring-width floor guard. NOT ported, because they never landed there: the annulus guard (`ringOutsideAnnulus`)
 //  and the seed check. The only changes are the access (`public`), `DiffractionPattern`'s field names (`pattern.height` is
 //  the seed's `pattern.qy`, the ROW count; `pattern.width` its `pattern.qx`, the COLUMN count) and the removal of
-//  `EllipseCalibrationModel`, which `RingCalibration.swift` holds. The tests prove the arithmetic by bit-identity against
-//  the seed compiled as it was (Tests/.../EllipseAppsParityTests.swift, tools/slice-3b/apps-parity).
+//  `EllipseCalibrationModel`, which `RingCalibration.swift` holds. The tests hold the fit to SciPy's optimum of the same
+//  objective (EllipseCalibrationTests) and to planted truth (the noisy and stop-rule rings).
 //
 //  COORDINATES (py4DSTEM's order, as the seed): `qx` is the ROW index and `qy` the COLUMN index everywhere, so the loops
 //  below read `for qx in 0..<pattern.height` and `pixels[qx * pattern.width + qy]`. `theta` lies in [0, pi) and is measured

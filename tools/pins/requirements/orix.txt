@@ -1,0 +1,4 @@
+# The orix oracle (Python 3.12): tools/pins/orix. Venv: ../References/python/orix (see CONTRIBUTING.md).
+orix==0.15.0
+numpy==2.5.4
+scipy==1.18.1
