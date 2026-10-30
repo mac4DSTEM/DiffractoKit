@@ -243,8 +243,9 @@ the xy plane, reciprocal vectors without 2 pi, the per-axis index bound. The ele
 `DiffractoScattering` is py4DSTEM's (Lobato and Van Dyck 2014), also GPL-3.0. **pymatgen** (MIT) is an oracle: cells,
 symmetry and d-spacings are checked against it, and no pymatgen code is copied or ported; a part ported from pymatgen in the
 future would be MIT on its own, but one package with any GPL part is GPL, so the whole is GPL-3.0 and an app built on it must
-be GPL-compatible. The CIF fixtures under `Tests/` come from those applications' tests (GPL-3.0) with their provenance in a comment
-line; the beta'' cell content (Andersen et al. 1998) is written by a generator into the gitignored `References/`. Per-source notices are in `NOTICE`.
+be GPL-compatible. The CIF fixtures under `Tests/` come from those applications' tests (GPL-3.0) or were written for this kit, with
+their provenance in a comment line; none is a copy of a COD, AMCSD or ICSD entry. The Materials Project records are CC BY 4.0, and
+`Tests/Fixtures/README.md` lists every fixture source with its licence. The beta'' cell content (Andersen et al. 1998) is written by a generator into the gitignored `References/`. Per-source notices are in `NOTICE`.
 
 ## Please cite
 
