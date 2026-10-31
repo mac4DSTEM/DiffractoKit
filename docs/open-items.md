@@ -20,8 +20,11 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
 - **Phase matching.** Defaults unchanged. (a) `minimumMatrixEvidence` (new, off) keeps vacuum and stray-peak positions out of the
   matrix class; (b) `completenessAwareCrossPhaseRanking` stays off: it loses at small noise and wins near the pair radius
   (`PhaseDiagnosisTests`). Both need one labelled scan to be switched on: a study scan with the phases marked.
-- **ACOM.** 7 of 200 off-grid self-recoveries land 36 or 60 degrees away (zone axes whose centrosymmetric pattern has a symmetry
-  of its own; not separable on spots alone). "Zone axis misses up to 12.8 degrees beyond the bank sampling" (mac4DSTEM's note)
+- **ACOM.** 7 of 200 off-grid self-recoveries land 36 or 60 degrees away. Cause, measured: each is a coincidence twin of the
+  truth (60 degrees about a <111> near <112> beams, 36.87 degrees about a <100> near <013> beams; the axis lies in the zone
+  plane), whose kinematic pattern overlaps the truth's 0.95 to 1.0000; only the Ewald curvature term separates them, and
+  py4DSTEM picks the twin in 7 of the 14 truth and twin patterns (`theLargeFailuresAreCoincidenceTwinsOfTheTruth`). Inherent
+  to spot patterns at 200 kV, not a matcher defect; a consumer can flag it by scoring the twin of the winner. "Zone axis misses up to 12.8 degrees beyond the bank sampling" (mac4DSTEM's note)
   is not reproduced here: within 2.9 degrees of a template the nearest-bank gap is at most 1.6 degrees at 600 axes; a pattern
   between templates in a sparse corner of the zone is untested. Metal is not faster than all CPU cores up to 1 024 patterns
   at 600 axes; 16 384 patterns and 2 400 axes are not timed yet.
@@ -31,9 +34,10 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   find it.
 - **Ring fit.** `fitRing` at R 600 px on 2048² takes tens of seconds (a coarse-then-fine annulus, or Metal). A one-ring profile
   model that tolerates a neighbouring ring is missing (the {111} bias of `RingFitNeighbourTailTests` is the model's, not a bug).
-- **orix API gaps.** `Orientation.from_euler(symmetry:)`, `dot`, `dot_outer`, `get_distance_matrix` and the orientation
-  (Rodrigues) fundamental zone. orix's `Misorientation.reduce()` misses the smallest angle when the two groups' product set is
-  not symmetric (432 with 622, 23 with 3): it builds its zone from start . end while its equivalents need end . start (cause and
-  pins in `Misorientation.swift`); the kit returns the smallest angle. Not reported upstream yet.
+- **orix API gaps.** The orientation (Rodrigues) fundamental zone, and `dot` / `dot_outer` / `get_distance_matrix` across two
+  different groups (`from_euler`, `dot`, `dot_outer` and `get_distance_matrix` for one group are held). orix's
+  `Misorientation.reduce()` misses the smallest angle when the two groups' product set is not a group (432 with 622, 23 with
+  3): it builds its zone from start . end while its equivalents need end . start (cause and pins in `Misorientation.swift`);
+  the kit returns the smallest angle. Not reported upstream yet.
 - **Not yet used by a known consumer** (0.10.0): `PatternCentre.find`, `PatternRadialProfile.about`, `LinearScale.fit` and
   `Misorientation`. Revisit at 0.12.

@@ -147,6 +147,75 @@ public struct Orientation: Sendable {
         self.matrix = matrix; self.symmetry = symmetry
     }
 
+    // MARK: orix from_euler, dot, dot_outer, get_distance_matrix
+
+    /// Which way Bunge Euler angles turn (orix `from_euler(direction=)`): `labToCrystal` is the Bunge convention and orix's default,
+    /// `crystalToLab` the inverse (MTEX's).
+    public enum EulerDirection: Sendable, Equatable { case labToCrystal, crystalToLab }
+
+    /// orix `Orientation.from_euler(euler, symmetry, direction)`: Bunge (phi1, Phi, phi2) in radians, through orix's `eu2qu`
+    /// (Rowenhorst 2015, Eqs. A.5 and A.6), the inverse of `inEulerFundamentalRegion()`'s conversion. Throws `invalidRotation` for a
+    /// non-finite angle.
+    public init(euler: SIMD3<Double>, symmetry: CrystalOrientationSymmetry, direction: EulerDirection = .labToCrystal) throws {
+        guard euler.x.isFinite, euler.y.isFinite, euler.z.isFinite else { throw OrientationSymmetryError.invalidRotation }
+        let sigma = 0.5 * (euler.x + euler.z), delta = 0.5 * (euler.x - euler.z)
+        let c = cos(euler.y / 2), s = sin(euler.y / 2)
+        var q = simd_quatd(real: c * cos(sigma), imag: SIMD3(-s * cos(delta), -s * sin(delta), -c * sin(sigma)))
+        if direction == .crystalToLab { q = q.conjugate }
+        self.init(unchecked: simd_double3x3(q), symmetry: symmetry)
+    }
+
+    /// orix `Orientation.dot(other)`: the symmetry-reduced dot product, the largest `|<other * self^-1, s>|` over the proper
+    /// operators s, in [0, 1] (the cosine of half the disorientation angle). Throws `differentSymmetry` unless both share a group
+    /// (as `angle(with:)`; orix takes the product of the two groups, which this kit does not hold).
+    public func dot(_ other: Orientation) throws -> Double {
+        guard symmetry.sameGroup(as: other.symmetry) else { throw OrientationSymmetryError.differentSymmetry }
+        return Orientation.reducedDot(simd_quatd(matrix), simd_quatd(other.matrix), Orientation.operatorQuaternions(symmetry))
+    }
+
+    /// orix `Orientation.dot_outer(other)`: `result[i][j] = a[i].dot(b[j])`. Throws `differentSymmetry` unless every orientation of
+    /// both lists shares one group.
+    public static func dotOuter(_ a: [Orientation], _ b: [Orientation]) throws -> [[Double]] {
+        guard let ops = try sharedOperators(a + b) else { return a.map { _ in [] } }
+        let qa = a.map { simd_quatd($0.matrix) }, qb = b.map { simd_quatd($0.matrix) }
+        return qa.map { x in qb.map { y in reducedDot(x, y, ops) } }
+    }
+
+    /// orix `Orientation.get_distance_matrix()`: the disorientation angle (radians) between every pair, computed as orix does,
+    /// `arccos(2 d^2 - 1)` with the dot product d rounded to 12 decimals and clamped to 1 (so the diagonal is exactly 0). Throws
+    /// `differentSymmetry` unless every orientation shares one group.
+    public static func distanceMatrix(_ orientations: [Orientation]) throws -> [[Double]] {
+        guard let ops = try sharedOperators(orientations) else { return [] }
+        let q = orientations.map { simd_quatd($0.matrix) }
+        return q.map { x in
+            q.map { y in
+                let d = min((reducedDot(x, y, ops) * 1e12).rounded() / 1e12, 1)
+                return acos(2 * d * d - 1)
+            }
+        }
+    }
+
+    /// The proper operators as quaternions when every orientation shares a group; nil for an empty list.
+    private static func sharedOperators(_ orientations: [Orientation]) throws -> [simd_quatd]? {
+        guard let first = orientations.first else { return nil }
+        guard orientations.allSatisfy({ $0.symmetry.sameGroup(as: first.symmetry) }) else {
+            throw OrientationSymmetryError.differentSymmetry
+        }
+        return operatorQuaternions(first.symmetry)
+    }
+
+    private static func operatorQuaternions(_ symmetry: CrystalOrientationSymmetry) -> [simd_quatd] {
+        symmetry.operators.map { simd_quatd($0) }
+    }
+
+    /// orix's kernel: M = b * conj(a), the largest |M . s| over the operators.
+    private static func reducedDot(_ a: simd_quatd, _ b: simd_quatd, _ ops: [simd_quatd]) -> Double {
+        let m = (b * a.conjugate).vector
+        var best = 0.0
+        for s in ops { best = max(best, abs(simd_dot(m, s.vector))) }
+        return best
+    }
+
     // MARK: Euler fundamental region
 
     /// The proper subgroup's name in orix's convention for the kit's standard setting ("121" for 2/m with b unique, "312" for -31m, "32" for -3m1).
