@@ -5,10 +5,14 @@
 //        template, the correlation spectrum Σ_ring conj(E)·T and its inverse transform over the azimuth, and returns the best
 //        bin and its score (the forward and the mirrored pass); the CPU then applies the reference's selection of the winner and
 //        the distinct runner-up and its symmetry reduction. Ported in structure from the mac4DSTEM Metal matcher
-//        (`MetalACOMMatcher`, `ACOMMatching.metal`), with two changes: the inverse transform reads a precomputed Float cos/sin
-//        table indexed by `(f * a) mod n` instead of calling sin/cos on an argument up to 2π·n (which loses 3 to 4 digits in
-//        Float), and the shader is compiled at run time from the source below with safe (non-fast) math, so the package needs no
-//        Metal build step and compiles unchanged where Metal is not used.
+//        (`MetalACOMMatcher`, `ACOMMatching.metal`), with these changes: the inverse transform reads a precomputed Float cos/sin
+//        table instead of calling sin/cos on an argument up to 2π·n (which loses 3 to 4 digits in Float); the shader is
+//        compiled at run time from the source below with safe (non-fast) math, so the package needs no Metal build step and
+//        compiles unchanged where Metal is not used; and (issue 8, measured) one spectrum thread computes both passes for 8
+//        positions, so each template value is read once per 8 positions instead of twice per position, and the inverse
+//        transform is a radix-2 FFT in threadgroup memory instead of a direct n² sum. At 16 384 patterns that took the Metal
+//        path from 0.259 to 0.136 ms per pattern at 600 beam directions and from 1.131 to 0.353 at 2 400 (one CPU preparation
+//        worker; `ACOMMetalBenchmarkTests`), with the scores still within 1e-6 of the CPU reference.
 //
 
 import Foundation
@@ -104,7 +108,7 @@ private final class ACOMMetalContext {
     let templates: Int, radial: Int, azimuthal: Int
     let batchSize: Int
 
-    struct Params { var positions: UInt32, templates: UInt32, radial: UInt32, azimuthal: UInt32, sign: Float }
+    struct Params { var positions: UInt32, templates: UInt32, radial: UInt32, azimuthal: UInt32 }
 
     init?(library: ACOMTemplateLibrary) {
         guard let device = MTLCreateSystemDefaultDevice(), let queue = device.makeCommandQueue() else { return nil }
@@ -130,8 +134,8 @@ private final class ACOMMetalContext {
         self.device = device; self.queue = queue; self.spectrum = p1; self.argmax = p2
         templateRe = tr; templateIm = ti; cosTable = ct; sinTable = st
         templates = library.count; radial = library.geometry.nRadial; azimuthal = n
-        // Per position: both spectra, the scores and bins of two passes, and the experimental grid (the reference app's budget).
-        let perPosition = templates * n * 2 * 4 + 2 * templates * 8 + radial * n * 2 * 4
+        // Per position: the spectra of both passes, their scores and bins, and the experimental grid (the reference app's budget).
+        let perPosition = 2 * templates * n * 2 * 4 + 2 * templates * 8 + radial * n * 2 * 4
         let budget = min(Int(device.recommendedMaxWorkingSetSize / 8), 128 << 20)
         batchSize = max(1, min(64, budget / max(1, perPosition)))
     }
@@ -144,73 +148,94 @@ private final class ACOMMetalContext {
 
     private func runUnpooled(re: [Float], im: [Float], positions: Int)
         -> (forwardScores: [Float], forwardBins: [UInt32], mirrorScores: [Float], mirrorBins: [UInt32])? {
-        let spectrumCount = positions * templates * azimuthal, resultCount = positions * templates
+        // One spectrum buffer per pass (pass 0 first, then pass 1), and one score and bin per pass, position and template.
+        let spectrumCount = 2 * positions * templates * azimuthal, resultCount = positions * templates
         guard let inRe = device.makeBuffer(bytes: re, length: re.count * 4, options: .storageModeShared),
               let inIm = device.makeBuffer(bytes: im, length: im.count * 4, options: .storageModeShared),
               let specRe = device.makeBuffer(length: spectrumCount * 4, options: .storageModePrivate),
               let specIm = device.makeBuffer(length: spectrumCount * 4, options: .storageModePrivate),
-              let scores0 = device.makeBuffer(length: resultCount * 4, options: .storageModeShared),
-              let bins0 = device.makeBuffer(length: resultCount * 4, options: .storageModeShared),
-              let scores1 = device.makeBuffer(length: resultCount * 4, options: .storageModeShared),
-              let bins1 = device.makeBuffer(length: resultCount * 4, options: .storageModeShared),
+              let scores = device.makeBuffer(length: 2 * resultCount * 4, options: .storageModeShared),
+              let bins = device.makeBuffer(length: 2 * resultCount * 4, options: .storageModeShared),
               let command = queue.makeCommandBuffer() else { return nil }
-        for (pass, scores, bins) in [(0, scores0, bins0), (1, scores1, bins1)] {
-            var params = Params(positions: UInt32(positions), templates: UInt32(templates), radial: UInt32(radial),
-                                azimuthal: UInt32(azimuthal), sign: pass == 0 ? 1 : -1)
-            guard let e1 = command.makeComputeCommandEncoder() else { return nil }
-            e1.setComputePipelineState(spectrum)
-            e1.setBuffer(inRe, offset: 0, index: 0); e1.setBuffer(inIm, offset: 0, index: 1)
-            e1.setBuffer(templateRe, offset: 0, index: 2); e1.setBuffer(templateIm, offset: 0, index: 3)
-            e1.setBuffer(specRe, offset: 0, index: 4); e1.setBuffer(specIm, offset: 0, index: 5)
-            e1.setBytes(&params, length: MemoryLayout<Params>.stride, index: 6)
-            e1.dispatchThreads(MTLSize(width: spectrumCount, height: 1, depth: 1),
-                               threadsPerThreadgroup: MTLSize(width: min(spectrum.maxTotalThreadsPerThreadgroup, 256), height: 1, depth: 1))
-            e1.endEncoding()
-            guard let e2 = command.makeComputeCommandEncoder() else { return nil }
-            e2.setComputePipelineState(argmax)
-            e2.setBuffer(specRe, offset: 0, index: 0); e2.setBuffer(specIm, offset: 0, index: 1)
-            e2.setBuffer(scores, offset: 0, index: 2); e2.setBuffer(bins, offset: 0, index: 3)
-            e2.setBuffer(cosTable, offset: 0, index: 4); e2.setBuffer(sinTable, offset: 0, index: 5)
-            e2.setBytes(&params, length: MemoryLayout<Params>.stride, index: 6)
-            e2.setThreadgroupMemoryLength(azimuthal * 4, index: 0)
-            e2.setThreadgroupMemoryLength(azimuthal * 4, index: 1)
-            e2.dispatchThreadgroups(MTLSize(width: 1, height: templates, depth: positions),
-                                    threadsPerThreadgroup: MTLSize(width: azimuthal, height: 1, depth: 1))
-            e2.endEncoding()
-        }
+        var params = Params(positions: UInt32(positions), templates: UInt32(templates), radial: UInt32(radial),
+                            azimuthal: UInt32(azimuthal))
+        // Both passes in one sweep: a thread owns one template and frequency and reads that template's ring values once for
+        // a block of `positionsPerThread` positions (the template bank, not the scan, is the large operand).
+        guard let e1 = command.makeComputeCommandEncoder() else { return nil }
+        e1.setComputePipelineState(spectrum)
+        e1.setBuffer(inRe, offset: 0, index: 0); e1.setBuffer(inIm, offset: 0, index: 1)
+        e1.setBuffer(templateRe, offset: 0, index: 2); e1.setBuffer(templateIm, offset: 0, index: 3)
+        e1.setBuffer(specRe, offset: 0, index: 4); e1.setBuffer(specIm, offset: 0, index: 5)
+        e1.setBytes(&params, length: MemoryLayout<Params>.stride, index: 6)
+        let blocks = (positions + Self.positionsPerThread - 1) / Self.positionsPerThread
+        e1.dispatchThreads(MTLSize(width: azimuthal, height: templates, depth: blocks),
+                           threadsPerThreadgroup: MTLSize(width: min(azimuthal, spectrum.maxTotalThreadsPerThreadgroup), height: 1, depth: 1))
+        e1.endEncoding()
+        guard let e2 = command.makeComputeCommandEncoder() else { return nil }
+        e2.setComputePipelineState(argmax)
+        e2.setBuffer(specRe, offset: 0, index: 0); e2.setBuffer(specIm, offset: 0, index: 1)
+        e2.setBuffer(scores, offset: 0, index: 2); e2.setBuffer(bins, offset: 0, index: 3)
+        e2.setBuffer(cosTable, offset: 0, index: 4); e2.setBuffer(sinTable, offset: 0, index: 5)
+        e2.setBytes(&params, length: MemoryLayout<Params>.stride, index: 6)
+        for index in 0..<6 { e2.setThreadgroupMemoryLength(azimuthal * 4, index: index) }
+        e2.dispatchThreadgroups(MTLSize(width: 1, height: templates, depth: 2 * positions),
+                                threadsPerThreadgroup: MTLSize(width: azimuthal, height: 1, depth: 1))
+        e2.endEncoding()
         command.commit()
         command.waitUntilCompleted()
         guard command.status == .completed else { return nil }
-        func floats(_ b: MTLBuffer) -> [Float] { Array(UnsafeBufferPointer(start: b.contents().bindMemory(to: Float.self, capacity: resultCount), count: resultCount)) }
-        func uints(_ b: MTLBuffer) -> [UInt32] { Array(UnsafeBufferPointer(start: b.contents().bindMemory(to: UInt32.self, capacity: resultCount), count: resultCount)) }
-        return (floats(scores0), uints(bins0), floats(scores1), uints(bins1))
+        func floats(_ b: MTLBuffer, _ pass: Int) -> [Float] {
+            Array(UnsafeBufferPointer(start: b.contents().bindMemory(to: Float.self, capacity: 2 * resultCount) + pass * resultCount, count: resultCount))
+        }
+        func uints(_ b: MTLBuffer, _ pass: Int) -> [UInt32] {
+            Array(UnsafeBufferPointer(start: b.contents().bindMemory(to: UInt32.self, capacity: 2 * resultCount) + pass * resultCount, count: resultCount))
+        }
+        return (floats(scores, 0), uints(bins, 0), floats(scores, 1), uints(bins, 1))
     }
 
-    /// The two kernels. Pass 0 (`sign` +1) is conj(E)·T, pass 1 (`sign` -1) is E·T, as ACOMMatcher.correlate. The inverse DFT
-    /// is exact over the azimuth (`n` power of two); ties between bins go to the lowest bin, as the reference's first-maximum scan.
+    /// Positions one spectrum thread serves; must equal `PPT` in the shader.
+    static let positionsPerThread = 8
+
+    /// The two kernels. Pass 0 is conj(E)·T, pass 1 is E·T, as ACOMMatcher.correlate; both are summed over the rings in the
+    /// same order and with the same products as one pass at a time. The inverse transform over the azimuth is a radix-2 FFT
+    /// (`n` power of two); ties between bins go to the lowest bin, as the reference's first-maximum scan.
     static let source = """
     #include <metal_stdlib>
     using namespace metal;
-    struct ACOMParams { uint positions; uint templates; uint radial; uint azimuthal; float sign; };
+    struct ACOMParams { uint positions; uint templates; uint radial; uint azimuthal; };
+    constant uint PPT = 8;
     kernel void acomCorrelationSpectrum(
         const device float *er [[buffer(0)]], const device float *ei [[buffer(1)]],
         const device float *tr [[buffer(2)]], const device float *ti [[buffer(3)]],
         device float *cr [[buffer(4)]], device float *ci [[buffer(5)]],
-        constant ACOMParams &p [[buffer(6)]], uint index [[thread_position_in_grid]])
+        constant ACOMParams &p [[buffer(6)]], uint3 index [[thread_position_in_grid]])
     {
-        if (index >= p.positions * p.templates * p.azimuthal) return;
-        const uint f = index % p.azimuthal;
-        const uint t = (index / p.azimuthal) % p.templates;
-        const uint pos = index / (p.azimuthal * p.templates);
-        const uint eBase = pos * p.radial * p.azimuthal, tBase = t * p.radial * p.azimuthal;
-        float re = 0.0f, im = 0.0f;
+        const uint f = index.x, t = index.y, first = index.z * PPT;
+        if (f >= p.azimuthal || t >= p.templates || first >= p.positions) return;
+        const uint count = min(PPT, p.positions - first);
+        const uint grid = p.radial * p.azimuthal, tBase = t * grid;
+        float fr[PPT], fi[PPT], mr[PPT], mi[PPT];
+        for (uint k = 0; k < PPT; ++k) { fr[k] = 0.0f; fi[k] = 0.0f; mr[k] = 0.0f; mi[k] = 0.0f; }
         for (uint r = 0; r < p.radial; ++r) {
             const uint o = r * p.azimuthal + f;
-            const float a = er[eBase + o], b = ei[eBase + o], c = tr[tBase + o], d = ti[tBase + o];
-            re += a * c + p.sign * b * d;
-            im += a * d - p.sign * b * c;
+            const float c = tr[tBase + o], d = ti[tBase + o];
+            for (uint k = 0; k < PPT; ++k) {
+                if (k < count) {
+                    const uint e = (first + k) * grid + o;
+                    const float a = er[e], b = ei[e];
+                    fr[k] += a * c + b * d;
+                    fi[k] += a * d - b * c;
+                    mr[k] += a * c + (-1.0f) * b * d;
+                    mi[k] += a * d - (-1.0f) * b * c;
+                }
+            }
         }
-        cr[index] = re; ci[index] = im;
+        const uint passStride = p.positions * p.templates * p.azimuthal;
+        for (uint k = 0; k < count; ++k) {
+            const uint out = ((first + k) * p.templates + t) * p.azimuthal + f;
+            cr[out] = fr[k]; ci[out] = fi[k];
+            cr[passStride + out] = mr[k]; ci[passStride + out] = mi[k];
+        }
     }
     kernel void acomInverseArgmax(
         const device float *cr [[buffer(0)]], const device float *ci [[buffer(1)]],
@@ -218,25 +243,39 @@ private final class ACOMMetalContext {
         const device float *cosT [[buffer(4)]], const device float *sinT [[buffer(5)]],
         constant ACOMParams &p [[buffer(6)]],
         threadgroup float *scores [[threadgroup(0)]], threadgroup uint *bins [[threadgroup(1)]],
+        threadgroup float *sr [[threadgroup(2)]], threadgroup float *si [[threadgroup(3)]],
+        threadgroup float *sc [[threadgroup(4)]], threadgroup float *ss [[threadgroup(5)]],
         uint a [[thread_index_in_threadgroup]], uint3 group [[threadgroup_position_in_grid]])
     {
-        const uint pos = group.z, t = group.y;
-        if (pos >= p.positions || t >= p.templates || a >= p.azimuthal) return;
-        const uint base = (pos * p.templates + t) * p.azimuthal;
-        const uint mask = p.azimuthal - 1;
-        float value = 0.0f;
-        for (uint f = 0; f < p.azimuthal; ++f) {
-            const uint k = (f * a) & mask;
-            value += cr[base + f] * cosT[k] - ci[base + f] * sinT[k];
+        // group.z runs over pass 0's positions, then pass 1's
+        const uint slot = group.z, t = group.y;
+        if (slot >= 2 * p.positions || t >= p.templates || a >= p.azimuthal) return;
+        const uint n = p.azimuthal, base = (slot * p.templates + t) * n;
+        // radix-2 inverse FFT in threadgroup memory: load in bit-reversed order, then log2(n) butterfly stages
+        const uint bits = ctz(n);
+        const uint rev = bits == 0 ? 0 : (reverse_bits(a) >> (32 - bits));
+        sr[rev] = cr[base + a]; si[rev] = ci[base + a]; sc[a] = cosT[a]; ss[a] = sinT[a];
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        for (uint span = 1; span < n; span <<= 1) {
+            if (a < n / 2) {
+                const uint k = a % span, i0 = (a / span) * 2 * span + k, i1 = i0 + span;
+                const uint w = k * (n / (2 * span));
+                const float wr = sc[w], wi = ss[w];
+                const float xr = sr[i1] * wr - si[i1] * wi, xi = sr[i1] * wi + si[i1] * wr;
+                const float ur = sr[i0], ui = si[i0];
+                sr[i0] = ur + xr; si[i0] = ui + xi;
+                sr[i1] = ur - xr; si[i1] = ui - xi;
+            }
+            threadgroup_barrier(mem_flags::mem_threadgroup);
         }
-        scores[a] = value / float(p.azimuthal);
+        scores[a] = sr[a] / float(n);
         bins[a] = a;
         threadgroup_barrier(mem_flags::mem_threadgroup);
         for (uint stride = p.azimuthal / 2; stride > 0; stride >>= 1) {
             if (a < stride && scores[a + stride] > scores[a]) { scores[a] = scores[a + stride]; bins[a] = bins[a + stride]; }
             threadgroup_barrier(mem_flags::mem_threadgroup);
         }
-        if (a == 0) { bestScores[pos * p.templates + t] = scores[0]; bestBins[pos * p.templates + t] = bins[0]; }
+        if (a == 0) { bestScores[slot * p.templates + t] = scores[0]; bestBins[slot * p.templates + t] = bins[0]; }
     }
     """
 }
