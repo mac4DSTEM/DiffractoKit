@@ -1,4 +1,4 @@
-"""DiffractoKit slice 1b: the pin generator for the conventional setting.
+"""DiffractoKit: the pin generator for the conventional setting and Niggli reduction (DiffractoCore).
 
 Run, from any directory, with the pinned oracle, UNDER A MEMORY CAP (setrlimit and
 `ulimit -v` fail on macOS 27, so the cap is an external watchdog's, 8 GB; one such worker at a time):

@@ -1,4 +1,4 @@
-"""DiffractoKit slice 4: the pin generator for the orientation and phase-matching module.
+"""DiffractoKit: the pin generator for vector matching and phase mapping (DiffractoOrientation).
 
 Run, from any directory, under the memory cap, with the pymatgen venv (Python 3.14, NumPy 2.5.4, SciPy 1.18.1):
 
