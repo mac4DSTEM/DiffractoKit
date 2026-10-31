@@ -744,6 +744,8 @@ public enum EllipseCalibration {
 
         // The ring sigmas' floor: 0.25 px, the reference implementations' bound; lowered to 0.01 px only for the one-sided refit below.
         var ringSigmaFloor = policy.ringWidthFloor
+        // The ring-sigma bound at which `refine` calls a sigma "at the floor".
+        let doubleFloorBound = policy.ringWidthFloor + policy.ringWidthFloorTolerance
         func bounded(_ input: [Double]) -> [Double] {
             var p = input
             p[0] = min(intensityLimit, max(0, p[0]))
@@ -803,6 +805,7 @@ public enum EllipseCalibration {
             var acceptedSteps = 0
             let epsilon = 1e-4
             let count = parameters.count
+            var stepsOnDoubleFloor = 0
             for iteration in 0..<80 {
                 try checkCancellation(isCancelled)
                 progress(Double(iteration) / 80)
@@ -855,7 +858,26 @@ public enum EllipseCalibration {
                     damping = max(1e-10, damping / 3)
                     let stepNorm = sqrt(step.reduce(0) { $0 + $1 * $1 })
                     if stepNorm < 1e-7 || relativeImprovement < 1e-10 { break }
+                    // STOP ON THE DOUBLE FLOOR (#12). Both ring sigmas within the floor tolerance is a ring drained into
+                    // the background and the central Gaussian, which `refine` refuses (`ringWidthAtFloor`). Such a run
+                    // crept along the bound by 1e-9 to 1e-5 of the cost per step, above the stop above, to the 80-pass
+                    // cap: 151 to 166 of 174 passes at R 600 px (24 s). Five accepted steps in a row there end it; the
+                    // robust refit still runs from the point returned (and may lift a sigma, as before), and only the
+                    // normal floor is watched (not the lowered one of the one-sided refit). DEVIATION from the 80-pass
+                    // run: a crawl that would have left the double floor after more than five steps is cut; none did
+                    // on the measured rings (radii bit for bit unchanged).
+                    if ringSigmaFloor == policy.ringWidthFloor, p[3] <= doubleFloorBound, p[4] <= doubleFloorBound {
+                        stepsOnDoubleFloor += 1
+                        if stepsOnDoubleFloor >= 5 { break }
+                    } else {
+                        stepsOnDoubleFloor = 0
+                    }
                 } else {
+                    // STOP RULE ON A REFUSED STEP TOO (#12), as `fit1D`'s (2026-10-12): at the optimum every step
+                    // is refused, damping grows tenfold a pass and the step shrinks, so a converged fit ran to the
+                    // 80-pass cap (66 refused passes on a clean R 200 px ring). A refused step this small leaves the
+                    // point where it is; only after at least one accepted step, so a start that never moves still throws.
+                    if acceptedSteps > 0, sqrt(step.reduce(0) { $0 + $1 * $1 }) < 1e-7 { break }
                     damping *= 10
                 }
             }

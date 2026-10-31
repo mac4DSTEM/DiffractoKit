@@ -26,8 +26,10 @@ public struct PatternCentreFit: Sendable, Equatable {
 public enum PatternCentre {
     /// The unscattered beam's centre: the intensity-weighted centroid of the connected region around the brightest (box-smoothed) pixel that lies above the
     /// midpoint between the pattern's median and that maximum. Nil when there is no beam to find: no finite pixel, a maximum less than
-    /// `minimumContrastMADs` median absolute deviations (at least 1 grey level) above the median, or a region that reaches the pattern's edge (a
-    /// pattern without its beam, or a beam stop, is not centred on its brightest feature: use a ring fit about a start centre, `RingCalibration.fitRing`).
+    /// `minimumContrastMADs` median absolute deviations (at least 1 grey level) above the median, or a region that reaches the pattern's edge.
+    /// A pattern whose beam is blocked (a beam stop) is not centred on its brightest feature, and the finder does not detect it: it refuses, or
+    /// returns the centroid of the brightest Bragg spot or of the stop's rim, pixels from the centre. Use `FriedelCentre.find` there (with the stop's mask
+    /// when there is one), or a ring fit about a start centre, `RingCalibration.fitRing`.
     public static func find(pattern: DiffractionPattern, minimumContrastMADs: Double = 20) -> PatternCentreFit? {
         let w = pattern.width, h = pattern.height
         guard w >= 8, h >= 8, pattern.pixels.count == w * h, minimumContrastMADs.isFinite, minimumContrastMADs >= 0 else { return nil }

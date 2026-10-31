@@ -195,7 +195,7 @@ def main():
             ("beta''", "beta_double_prime")]
     for name, src in base:
         s = by_name[src]
-        check(s["reflections"]["k_max"] == KMAX, f"{name}: slice-2 pins k_max {s['reflections']['k_max']}")
+        check(s["reflections"]["k_max"] == KMAX, f"{name}: structure-factor pins k_max {s['reflections']['k_max']}")
         add_list(name, src, KMAX, s["families"])
         gs = [f["g"] for f in s["families"]]
         check(all(a < b for a, b in zip(gs, gs[1:])), f"{name}: family g not strictly increasing")

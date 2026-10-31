@@ -4,7 +4,7 @@ Run, from any directory, under the memory cap, with the pymatgen venv (Python 3.
 
     References/python/pymatgen/bin/python -I -B DiffractoKit/tools/pins/phase-vectors/pins.py
 
-It writes Tests/DiffractoOrientationTests/Fixtures/py4dstem-phase-vector-pins.json BEFORE any Swift of slice 4 is trusted. Deterministic: no
+It writes Tests/DiffractoOrientationTests/Fixtures/py4dstem-phase-vector-pins.json BEFORE any Swift of DiffractoOrientation vector matching is trusted. Deterministic: no
 clock, seeded random numbers (np.random.default_rng), sorted keys, so two runs give the same bytes.
 
 Two interpreters, one memory cap: this script runs the py4DSTEM half (tools/pins/phase-vectors/pins-py4dstem.py) as a subprocess with
@@ -14,8 +14,8 @@ from stdout. SciPy 1.18.1 and the NumPy oracle are here.
 What is an oracle for what
 --------------------------
 V2  "reference": NumPy float64 written from the DEFINITIONS in this file, the structure factors from the
-    py4DSTEM electron-scattering table (slice 2's sha-locked file) with the cell/g conventions py4DSTEM uses, every hkl with
-    |F| > 1e-4 (strict, slice 2) and |g| <= kMax enumerated by a bound that cannot miss a lattice point, the FLAT excitation
+    py4DSTEM electron-scattering table (the sha-locked file of the structure-factor pins) with the cell/g conventions py4DSTEM uses, every hkl with
+    |F| > 1e-4 (strict, as the structure-factor pins) and |g| <= kMax enumerated by a bound that cannot miss a lattice point, the FLAT excitation
     s = g.n, I = |F|^2 exp(-(s/w)^2), the in-plane frame (e1, e2) of `ZoneAxisFrame`. This is what the Swift library must equal
     (G4, and the pre-cap entries of G2).
 V0  py4DSTEM f050d207 as it is called (Crystal.generate_diffraction_pattern at a huge accelerating voltage, sigma = w/sqrt(2),
@@ -53,7 +53,7 @@ TABLE_PATH = os.path.join(KIT, "References", "py4dstem-scattering", "scattering_
 PY4D_PYTHON = os.path.join(SUITE, "References", "python", "py4dstem", "bin", "python")
 PY4D_HELPER = os.path.join(HERE, "pins-py4dstem.py")
 BETA_CIF = os.path.join(KIT, "References", "crystal-structures", "beta_double_prime_Mg5Si6.cif")
-SLICE2_PINS = os.path.join(KIT, "Tests", "DiffractoScatteringTests", "Fixtures", "numpy-structure-factor-pins.json")
+STRUCTURE_FACTOR_PINS = os.path.join(KIT, "Tests", "DiffractoScatteringTests", "Fixtures", "numpy-structure-factor-pins.json")
 OUT_DIR = os.path.join(KIT, "Tests", "DiffractoOrientationTests", "Fixtures")
 OUT = os.path.join(OUT_DIR, "py4dstem-phase-vector-pins.json")
 
@@ -67,8 +67,8 @@ WIDTH = 0.03
 FLOOR = 0.05
 CAP = 48
 IN_PLANE_STEP = 2.0
-CUT = 1e-4                  # |F| cut, strict (slice 2)
-TIE_TOL = 1e-12             # slice 2 / slice 1 3.8: the kit's reflection order
+CUT = 1e-4                  # |F| cut, strict (as the structure-factor pins)
+TIE_TOL = 1e-12             # the reflection order of the structure-factor and cells pins
 Q_FLOOR = 1e-9              # the length floor of a projected vector
 BASIS_SWITCH = 0.9          # |n_x| < 0.9: reference axis x, else y
 SEED = 20261015
@@ -89,7 +89,7 @@ def predict(name, predicted, measured):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# f_e, lattice, reflections (slice 2's definitions, copied, not imported)
+# f_e, lattice, reflections (the definitions of tools/pins/structure-factors/pins.py, copied, not imported)
 # ----------------------------------------------------------------------------------------------------------------
 def load_table():
     data = open(TABLE_PATH, "rb").read()
@@ -188,7 +188,7 @@ def beta_double_prime_sites():
 
 
 def beta_cif_check(sites):
-    """The apps' 22 sites equal, modulo 1 and as a set, what pymatgen expands from the beta'' CIF the kit's slice 2 pinned."""
+    """The apps' 22 sites equal, modulo 1 and as a set, what pymatgen expands from the beta'' CIF of the structure-factor pins."""
     if not os.path.isfile(BETA_CIF):
         return {"checked": False, "reason": "References/crystal-structures/beta_double_prime_Mg5Si6.cif absent"}
     with warnings.catch_warnings():
@@ -597,7 +597,7 @@ def rel(a, b):
     return float(abs(a - b) / max(abs(b), 1e-300))
 
 
-def phase_block(ph, table, py, slice2):
+def phase_block(ph, table, py, sf_pins):
     name, cell, sites, axes = ph["name"], ph["cell"], ph["sites"], ph["axes"]
     A, B, vol = lattice(cell)
     H, g = enumerate_box(A, B, K_MAX)
@@ -636,8 +636,8 @@ def phase_block(ph, table, py, slice2):
              "py4dstem_F_dtype": p["F_dtype"], "py4dstem_F2_dtype": p["F2_dtype"],
              "note": "py4DSTEM accumulates the structure factor in complex64, so its |F|^2 carries a float32 floor"}
     check(f"{name}: py4DSTEM's |F|^2 equals the float64 one to 1e-4 relative (the float32 floor)", sfcmp["max_relative_F2_difference"] <= 1e-4)
-    # slice 2
-    s2 = slice2.get(name)
+    # against the structure-factor pins
+    s2 = sf_pins.get(name)
     if s2 is not None:
         items = {(it[0], it[1], it[2]): it for it in s2["reflections"]["items"] if it[6] > CUT and it[3] <= 1.2}
         mine = {tuple(int(x) for x in h): i for i, h in enumerate(Hk) if gk[i] <= 1.2}
@@ -647,8 +647,8 @@ def phase_block(ph, table, py, slice2):
             "slice2_kept": len(items), "this_kept": len(mine), "hkl_only_in_slice2": sorted(map(list, set(items) - set(mine)))[:10],
             "hkl_only_here": sorted(map(list, set(mine) - set(items)))[:10],
             "max_relative_F2_difference_float64": max(cmp_f64, default=None), "max_relative_F2_difference_py4dstem_float32": max(cmp_p, default=None)}
-        check(f"{name}: float64 |F|^2 equals slice 2's to 1e-11 relative (its sites are wrapped and CIF-rounded)", max(cmp_f64) <= 1e-11, str(max(cmp_f64)))
-        check(f"{name}: the kept hkl sets at 1.2 equal slice 2's", set(items) == set(mine))
+        check(f"{name}: float64 |F|^2 equals the structure-factor pins to 1e-11 relative (its sites are wrapped and CIF-rounded)", max(cmp_f64) <= 1e-11, str(max(cmp_f64)))
+        check(f"{name}: the kept hkl sets at 1.2 equal the structure-factor pins", set(items) == set(mine))
 
     zones = []
     obs_matrices = []
@@ -789,12 +789,12 @@ def main():
     request = {"k_max": K_MAX, "slab": SLAB, "width": WIDTH,
                "phases": [{"name": ph["name"], "cell": list(ph["cell"]), "sites": ph["_sites_json"], "axes": ph["axes"]} for ph in PH]}
     py = run_py4dstem(request)
-    s2 = {s["name"]: s for s in json.load(open(SLICE2_PINS, encoding="utf-8"))["structures"]}
-    slice2 = {"Al": s2["Al"], "Au": s2["Au"], "Mg": s2["Mg"], "beta_double_prime_Mg5Si6": s2["beta_double_prime"]}
+    s2 = {s["name"]: s for s in json.load(open(STRUCTURE_FACTOR_PINS, encoding="utf-8"))["structures"]}
+    sf_pins = {"Al": s2["Al"], "Au": s2["Au"], "Mg": s2["Mg"], "beta_double_prime_Mg5Si6": s2["beta_double_prime"]}
 
     blocks, frames, mats = [], [], []
     for ph in PH:
-        b, fr, mt = phase_block(ph, table, py, slice2)
+        b, fr, mt = phase_block(ph, table, py, sf_pins)
         blocks.append(b)
         frames += fr
         mats += mt

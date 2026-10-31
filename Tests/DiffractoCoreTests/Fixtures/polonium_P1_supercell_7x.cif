@@ -1,4 +1,5 @@
-# provenance: DiffractoKit slice-1 Gate B refuter, 2026-10-14 night (F3_super7.cif); a regression fixture
+# provenance: simple cubic polonium (a 3.35) as a 1 x 1 x 7 supercell in P1, z written to 8 decimals. Regression fixture
+# (RefuterRegressionTests, conventional-cell pins): translations of k/7 lie off the 1/24 grid; 112 operations, 122 of 782 allowed at 0.9 1/A.
 data_F3
 _symmetry_space_group_name_H-M 'P 1'
 _symmetry_Int_Tables_number 1

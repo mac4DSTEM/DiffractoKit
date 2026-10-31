@@ -1,6 +1,6 @@
 # tools/pins/phase-vectors: the pin generators
 
-Written before the Swift of slice 4 (DiffractoOrientation) was trusted; the Swift
+Written before the Swift of DiffractoOrientation vector matching was trusted; the Swift
 tests read the file these write. A difference is a failure of the port, never a tolerance to widen (except the changes
 named under "Measured floors and open points").
 
@@ -37,13 +37,13 @@ matches by hkl).
 
 - `phases`: Al 4.0495 (fcc, Z 13), Au 4.0782, Cu 3.6149 (the apps' presets of mac4DSTEM 7d6fdbd1, the sites as `Crystal.fcc`
   writes them), theta'-Al2Cu, beta''-Mg5Si6 (the apps' `Crystal.betaDoublePrime`, 22 sites in the apps' order and unwrapped
-  expressions; `cif_check` shows each site, modulo 1, is a site of the CIF slice 2 pinned, worst difference recorded), Mg hcp
+  expressions; `cif_check` shows each site, modulo 1, is a site of the CIF the structure-factor pins hold, worst difference recorded), Mg hcp
   (3.2094 / 5.2108, sites (0,0,0), (2/3,1/3,1/2)), one triclinic cell. Each carries the cell, the sites with occupancy, `lat_real`,
   `lat_inv`, and per zone axis: `n`, `e1`, `e2`, py4DSTEM's x', y', z', `frame_map` (the 2x2 `M` with `(g.x', g.y') = M (g.e1, g.e2)`,
   `phi_py_rad`, `phi_py_deg`, `det`, `handedness`), `counts`, `flags`, `entries`, `library`, `kv200`.
 - Zone axes: cubic Al, Au, Cu [001] [011] [111] [112] [123]; theta' the same plus [100] (edge-on); beta'' the five plus [010]
   (the needle); Mg [001] [100] [110] [210] [111]; triclinic [001] [010] [100] [011] [111]. 37 in all.
-- `structure_factor_check` (per phase): py4DSTEM's hkl set and float32 `|F|^2` against V2's, and against slice 2's pins at kMax
+- `structure_factor_check` (per phase): py4DSTEM's hkl set and float32 `|F|^2` against V2's, and against the structure-factor pins at kMax
   1.2 for Al, Au, Mg, beta''.
 - `euler`: 1000 seeded random rotations (SciPy `Rotation.random`, `default_rng(20261015)`), the gimbal and near-gimbal cases
   (Phi = 0, pi, 1e-9, 1e-10, 5e-9, 2e-8, 5e-8, 9e-8, 1e-7, 1e-6, 1e-5, 1e-3, pi - 1e-5, pi - 1e-9, pi - 1e-10, pi - 5e-9, each with three
@@ -68,8 +68,8 @@ matches by hkl).
    py4DSTEM**; adopted instead: hkl sets equal and `|q|` within 1e-12 against py4DSTEM (measured 8.9e-16), relative intensity within
    5e-5 against py4DSTEM (the float32 floor, measured 1.2e-5), within 1e-12 against the float64 reference V2 (the `entries` /
    `library` columns); the kit's q rotated by phi_py equals py4DSTEM's x', y' within 1e-12 (measured 8.9e-16).
-3. **|F|^2 against slice 2** (kit float64, Al, Au, Mg, beta'' at kMax 1.2, kept sets equal): max relative difference 1.6e-15 (Al),
-   4.3e-16 (Au), 7.3e-16 (Mg), 5.5e-13 (beta'', slice 2 pinned the CIF's wrapped sites). py4DSTEM's float32: 1.7e-7, 1.5e-7, 2.7e-7, 1.1e-5.
+3. **|F|^2 against the structure-factor pins** (kit float64, Al, Au, Mg, beta'' at kMax 1.2, kept sets equal): max relative difference 1.6e-15 (Al),
+   4.3e-16 (Au), 7.3e-16 (Mg), 5.5e-13 (beta'', the structure-factor pins hold the wrapped sites of the CIF). py4DSTEM's float32: 1.7e-7, 1.5e-7, 2.7e-7, 1.1e-5.
    Same convention (Lobato table, Debye-Waller off, occupancy, 1/V, no 2 pi).
 4. **The hkl sets**: py4DSTEM's tiling misses no kept hkl on any of the seven phases at kMax 1.6 (beta'' included), and keeps none the
    float64 cut drops; the sets at the zone axes equal V2's in all 37 cases.
@@ -94,4 +94,4 @@ matches by hkl).
    definitions do not cover them and the oracle may not read the Swift.
 10. theta'-Al2Cu has no definition in the apps or the kit. Pinned: body-centred tetragonal 4.04 / 5.80 A, Cu 2a (0,0,0), (1/2,1/2,1/2),
    Al 4d (0,1/2,1/4), (1/2,0,1/4), (0,1/2,3/4), (1/2,0,3/4) (the fluorite-derived arrangement), sites written out. The triclinic cell is
-   slice 1's (4, 5, 6, 80, 85, 95) with two invented sites: the kit has no triclinic CIF fixture.
+   the triclinic parameter cell of pymatgen-cells-pins.json (4, 5, 6, 80, 85, 95) with two invented sites: the kit has no triclinic CIF fixture.
