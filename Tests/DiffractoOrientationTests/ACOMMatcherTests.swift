@@ -686,9 +686,16 @@ private final class LockedBox<T: Sendable>: @unchecked Sendable {
 /// the in-plane bin, not the beam-direction grid. 128 bins are 2.81 degrees apart, so the angle alone is off by up to
 /// 1.41; going to 512 bins takes the failures from 35 to 9, quadrupling the zone axes (600 to 2400) does not move the
 /// in-plane term, and fitting a parabola through the correlation peak (`refinesInPlaneAngle`) takes 35 to 14 at 128 bins.
-/// The rest (7 of 200 above 10 degrees, 36 or 60 degrees, mirrored or not) are zone axes at which the centrosymmetric
-/// kinematic pattern has a symmetry of its own (a 3-fold axis shows six spots): two orientations give one pattern, which
-/// no matcher on this pattern can separate; recorded in docs/open-items.md.
+/// The rest (7 of 200 above 10 degrees, 36 or 60 degrees, mirrored or not) are coincidence twins of the truth, not a defect
+/// of the matcher (diagnosis for issue 8, `theLargeFailuresAreCoincidenceTwinsOfTheTruth`): the winner lies within 1.6
+/// degrees of the truth turned by exactly 60 degrees about a <111> (sigma 3, 5 cases, beams near <112>) or 36.87 degrees about
+/// a <100> (sigma 5, 2 cases, beams near <013>). That axis lies in the zone plane, so both orientations excite the same
+/// zero-order spots; the flat-sphere part of the excitation error is even in g, and only the curvature term (lambda |g|^2 / 2,
+/// about 0.003 per inverse angstrom at 200 kV, then taken to the power 0.25) tells them apart. The two exact patterns overlap
+/// 0.95 to 1.0000 in the matcher's own polar image, more than the grid and bin quantisation loses (the best orientation within
+/// 3 degrees of the truth scores 0.0007 to 0.021 lower). More zone axes (2400) or more bins (512) still leave 3 to 9 cases
+/// above 10 degrees (the three left at 512 bins and 2400 axes are twins too); ten times the wavelength leaves none. py4DSTEM f050d207 (its own patterns, model and match_single_pattern)
+/// picks the twin in 7 of the 14 truth and twin patterns.
 struct ACOMOffGridRecoveryTests {
     private func failures(bins: Int, zoneAxes: Int, refine: Bool) throws -> (over1p4: Int, over10: Int, median: Double) {
         let c = try #require(try fixture().crystals["al"])
@@ -731,6 +738,69 @@ struct ACOMOffGridRecoveryTests {
         #expect(fine.over1p4 <= 12)
         #expect(denseAxes.over1p4 >= 20)           // more beam directions do not remove the in-plane floor
         #expect(coarse.over10 <= 10)
+    }
+
+    /// Every failure above 10 degrees of the 200 off-grid plants is a coincidence twin of the truth (60 degrees about <111>
+    /// or 36.87 degrees about <100>) whose exact pattern the truth pattern overlaps by at least 0.95 in the matcher's polar
+    /// image; with ten times the wavelength (the curvature term that alone separates the twins, ten times larger) none is left.
+    @Test func theLargeFailuresAreCoincidenceTwinsOfTheTruth() throws {
+        let c = try #require(try fixture().crystals["al"])
+        let refl = reflections(c)
+        func twinRotation(_ axis: SIMD3<Double>, _ degrees: Double) -> simd_double3x3 {
+            simd_double3x3(simd_quatd(angle: degrees * .pi / 180, axis: simd_normalize(axis)))
+        }
+        let twins: [simd_double3x3] = [SIMD3<Double>(1, 1, 1), [-1, 1, 1], [1, -1, 1], [1, 1, -1]].flatMap {
+            [twinRotation($0, 60), twinRotation($0, -60)]
+        } + [SIMD3<Double>(1, 0, 0), [0, 1, 0], [0, 0, 1]].flatMap { [twinRotation($0, 36.87), twinRotation($0, -36.87)] }
+        func run(wavelength: Double) throws -> (failures: Int, twinned: Int, worstGap: Double, leastOverlap: Double) {
+            let settings = ACOMTemplateSettings(nAzimuthal: 128, zoneAxisCount: 600,
+                                                excitation: .appCurvature(wavelengthAngstrom: wavelength))
+            let lib = try ACOMTemplateLibrary.generate(reflections: refl, kMax: c.kmax, laueClass: .mThreeBarM, settings: settings)
+            let matcher = try #require(ACOMMatcher(library: lib))
+            let ipp = 0.004
+            // the pattern of an orientation (columns lab x, lab y, beam in crystal coordinates), as `failures` builds it
+            func pattern(_ o: simd_double3x3) -> [ACOMPeak] {
+                let n = o.columns.2
+                return refl.compactMap { r in
+                    let sg = simd_dot(r.g, n) + wavelength / 2 * simd_length_squared(r.g)
+                    guard abs(sg) <= settings.sgMax else { return nil }
+                    let w = r.intensity * exp(-(sg / settings.sgWidth) * (sg / settings.sgWidth))
+                    return ACOMPeak(x: Float(simd_dot(r.g, o.columns.0) / ipp), y: Float(simd_dot(r.g, o.columns.1) / ipp),
+                                    intensity: Float(w))
+                }
+            }
+            func polar(_ o: simd_double3x3) throws -> [Float] {
+                try #require(matcher.experimentalPolarImage(peaks: pattern(o), originX: 0, originY: 0, invAngstromPerPixel: ipp))
+            }
+            var seed: UInt64 = 12345
+            func rnd() -> Double { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return Double(seed >> 11) / Double(1 << 53) }
+            var failures = 0, twinned = 0, worstGap = 0.0, leastOverlap = 1.0
+            for _ in 0..<200 {
+                let n = simd_normalize(lib.zoneAxes[Int(rnd() * Double(lib.count))]
+                                       + SIMD3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5) * 0.05)
+                let phi = rnd() * 2 * .pi
+                let truth = ZoneAxisFrame.matrix(detectorBasis: ZoneAxisFrame.detectorBasis(zoneAxis: n), inPlaneAngle: Float(phi))
+                let r = matcher.match(peaks: pattern(truth), originX: 0, originY: 0, invAngstromPerPixel: ipp)
+                let got = lib.orientationMatrix(templateIndex: r.templateIndex, inPlaneAngle: r.inPlaneAngle, mirrored: r.mirrored)
+                guard misorientationDegrees(got, truth, laue: .mThreeBarM) > 10 else { continue }
+                failures += 1
+                let twin = twins.map { $0 * truth }.min {
+                    misorientationDegrees(got, $0, laue: .mThreeBarM) < misorientationDegrees(got, $1, laue: .mThreeBarM)
+                }!
+                let gap = misorientationDegrees(got, twin, laue: .mThreeBarM)
+                let overlap = zip(try polar(truth), try polar(twin)).reduce(0.0) { $0 + Double($1.0) * Double($1.1) }
+                worstGap = max(worstGap, gap)
+                leastOverlap = min(leastOverlap, overlap)
+                if gap < 2.5 && overlap > 0.95 { twinned += 1 }
+            }
+            return (failures, twinned, worstGap, leastOverlap)
+        }
+        let at200kV = try run(wavelength: c.wavelength)
+        print("ACOM off-grid failures above 10 deg: \(at200kV.failures), coincidence twins \(at200kV.twinned), winner to exact twin at most \(at200kV.worstGap) deg, truth-twin overlap at least \(at200kV.leastOverlap)")
+        #expect(at200kV.failures >= 1 && at200kV.failures <= 10)
+        #expect(at200kV.twinned == at200kV.failures)
+        let curved = try run(wavelength: c.wavelength * 10)
+        #expect(curved.failures == 0)
     }
 
     @Test func refinementMovesOnlyTheInPlaneAngleByAtMostHalfABin() throws {
