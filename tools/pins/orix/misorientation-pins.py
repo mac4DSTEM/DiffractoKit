@@ -7,6 +7,13 @@ Writes Tests/DiffractoOrientationTests/Fixtures/orix-misorientation-pins.json. T
     The kit's `Misorientation(matrix, source: Gl, target: Gr)` is the same object: the matrix maps source-crystal vectors to
     target-crystal vectors, the equivalents are g_target R g_source. Asserted here: the matrix of each orix equivalent equals the
     product of the matrices of its factors.
+  * orix's `reduce()` loop with its zone built as `OrientationRegion.from_symmetry(end, start)` (`orderedZone*` fields). orix's
+    `reduce()` takes `end * M * start` for every symmetry pair and stops at the first one inside `from_symmetry(start, end)`, whose
+    distinguished points are `start.outer(end)` = start . end. The smallest angle of `end * M * start` lies in the Voronoi cell of
+    the identity among end . start, the inverse set. The two sets are the same when end . start = start . end (the product set is
+    a group, for example when one group normalises the other); otherwise orix's zone is the inverse of the right one, holds no equivalent on some draws,
+    and the loop falls through to the last pair (or stops at a larger angle inside the wrong zone). The same loop with
+    `OrientationRegion.from_symmetry(end, start)` returns the smallest angle on every draw (asserted here); the kit is compared with it.
   * `Orientation.in_euler_fundamental_region()` for the eleven Laue classes (and -3m in both settings).
 The symmetry groups are built from the kit's own generators (CrystalOrientationSymmetry.init, copied below), so orix and the kit
 share the settings: unique axis b for 2/m, hexagonal a = x, b at 120 degrees, -31m (twofold perpendicular to a) by default.
@@ -21,6 +28,7 @@ import json
 from pathlib import Path
 import numpy as np
 from orix.quaternion import Misorientation, Orientation, Rotation, Symmetry, symmetry as S
+from orix.quaternion.orientation_region import OrientationRegion
 from scipy.spatial.transform import Rotation as SR
 
 KIT = Path(__file__).resolve().parents[3]
@@ -76,6 +84,16 @@ def ang(R): return float(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1)))
 
 def mats(r): return r.to_matrix().reshape(-1, 3, 3)
 
+def reduce_ordered_zone(m, fz):
+    """orix 0.15.0 `Misorientation.reduce()` line for line (same loop order, same `<` test), with `fz` built from (end, start)."""
+    start, end = m._symmetry
+    for sym_start in start:
+        for sym_end in end:
+            reduced = sym_end * m * sym_start
+            if reduced < fz:
+                return reduced
+    raise AssertionError('no equivalent inside the ordered zone')
+
 def main():
     rng = np.random.default_rng(SEED)
     out = {'orix': md.version('orix'), 'seed': SEED, 'pairs': [], 'euler': [], 'beta': None}
@@ -88,6 +106,7 @@ def main():
         gl = sa.proper_subgroup
         gr = sb.proper_subgroup
         la = mats(gl); lb = mats(gr)
+        ordered = OrientationRegion.from_symmetry(gr, gl)
         rec = {'source': a, 'target': b, 'sourceOrder': len(la), 'targetOrder': len(lb), 'items': []}
         Ms = list(SR.random(40, random_state=rng).as_matrix()) + [np.eye(3)]
         keepSets = 2          # only the first few items carry the full list of equivalents (file size)
@@ -107,8 +126,11 @@ def main():
             gap = [x for x in np.diff(angles) if x > 1e-9]
             unique = bool(len(angles) < 2 or (angles[1] - angles[0]) > 1e-6)
             orix_min = abs(float(red.angle[0]) - angles[0]) < 1e-8
+            oz = reduce_ordered_zone(m, ordered)
+            assert abs(float(oz.angle[0]) - angles[0]) < 1e-8, (a, b, index)
             item = {'matrix': M.tolist(), 'equivalentCount': len(uniq), 'angle': float(red.angle[0]), 'minAngle': angles[0], 'orixIsMinimal': bool(orix_min),
-                    'unique': unique, 'reduced': mats(red)[0].tolist()}
+                    'unique': unique, 'reduced': mats(red)[0].tolist(),
+                    'orderedZoneAngle': float(oz.angle[0]), 'orderedZoneReduced': mats(oz)[0].tolist()}
             if index < keepSets or index == len(Ms) - 1:
                 item['equivalents'] = [u.tolist() for u in uniq]
             if a == b:
@@ -148,6 +170,7 @@ def main():
     out['beta'] = {'R0': R0.tolist(), 'equivalentCount': len(uniq), 'reducedAngle': float(red.angle[0]),
                    'reducedAngleClosedForm': float(np.arctan2(2, 3))}
     (FIX / 'orix-misorientation-pins.json').write_text(json.dumps(out, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n')
+    print('orix reduce() with its zone in the order of its equivalents is the minimum angle on every draw')
     print('orix reduce() is not the minimum angle in', {f"{p['source']}>{p['target']}": sum(not i['orixIsMinimal'] for i in p['items']) for p in out['pairs']})
     print('ok', [(p['source'], p['target'], p['items'][0]['equivalentCount']) for p in out['pairs']],
           [(e['symbol'], e['orixProperName'], e['region']) for e in out['euler']], out['beta']['equivalentCount'], out['beta']['reducedAngle'])

@@ -6,13 +6,15 @@ import DiffractoCore
 import DiffractoOrientation
 
 /// Pins: tools/pins/orix/misorientation-pins.py (orix 0.15.0). Tolerances: angles atol 1e-4 (orix's test_misorientation tolerance; measured 1e-15),
-/// equivalent sets and reduced matrices atol 1e-9 where the smallest angle is unique, the Euler angles atol 1e-9. Where orix's `reduce` is not
-/// the smallest angle (documented in Misorientation.swift) the kit is compared with the minimum, not with orix.
+/// equivalent sets and reduced matrices atol 1e-9 where the smallest angle is unique, the Euler angles atol 1e-9. Every draw is compared with
+/// orix's `reduce` loop run with its zone built as `from_symmetry(end, start)` (`orderedZone*`, the cause in Misorientation.swift); where orix's
+/// shipped `reduce` is not the smallest angle, the test asserts that it is larger than the minimum.
 private struct Pins: Decodable {
     struct Item: Decodable {
         let matrix, reduced: [[Double]]
         let equivalentCount: Int
-        let angle, minAngle: Double
+        let angle, minAngle, orderedZoneAngle: Double
+        let orderedZoneReduced: [[Double]]
         let orixIsMinimal, unique: Bool
         let equivalents: [[[Double]]]?
         let grainExchangeCount: Int?
@@ -64,6 +66,12 @@ struct OrixMisorientationTests {
                 let r = m.reduce()
                 worstAngle = max(worstAngle, abs(r.angleRad - item.minAngle))
                 #expect(abs(r.angleRad - item.minAngle) < 1e-9, Comment(rawValue: "\(p.source)>\(p.target) minimum angle"))
+                #expect(abs(r.angleRad - item.orderedZoneAngle) < 1e-4, Comment(rawValue: "\(p.source)>\(p.target) orix ordered-zone angle"))
+                if item.unique {
+                    let g = gap(r.matrix, mat(item.orderedZoneReduced))
+                    worstMatrix = max(worstMatrix, g)
+                    #expect(g < 1e-9, Comment(rawValue: "\(p.source)>\(p.target) orix ordered-zone reduced matrix"))
+                }
                 if item.orixIsMinimal {
                     #expect(abs(r.angleRad - item.angle) < 1e-4, Comment(rawValue: "\(p.source)>\(p.target) orix angle"))
                     if item.unique {
