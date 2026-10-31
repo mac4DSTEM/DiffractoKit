@@ -1,6 +1,6 @@
 //
 //  ConventionalChecks.swift
-//  Role: the public API DiffractoKit slice 1b adds to DiffractoCore, used from outside the package with a real call and a
+//  Role: the conventional-setting and Niggli-reduction API of DiffractoCore, used from outside the package with a real call and a
 //        result a reader verifies by hand: the Niggli reduction and its change of basis (`niggliReduced`, `ReducedCell`),
 //        the conventional cell and its Bravais lattice (`conventionalCell`, `ConventionalCell`, `BravaisLattice`), the
 //        symmetry of a structure in any setting (`detectingSymmetry(conventional:tolerance:search:)`,
@@ -286,7 +286,7 @@ func runConventionalChecks(_ report: inout Report) {
         r.equal("and is not at the Cartesian 1e-3 A", tight.operations.count < 96, true)
         r.equal("the proposed Cartesian tolerance is 1e-3 A", SymmetryDetection.Tolerance.proposedCartesian, .cartesian(1e-3))
         r.equal("it differs from the fractional default", SymmetryDetection.Tolerance.proposedCartesian != .default, true)
-        r.equal("the default is slice 1's fractional 5e-3", SymmetryDetection.Tolerance.default, .fractional(SymmetryDetection.positionTolerance))
+        r.equal("the default is the fractional 5e-3 position tolerance", SymmetryDetection.Tolerance.default, .fractional(SymmetryDetection.positionTolerance))
         r.equal("(its value)", SymmetryDetection.Tolerance.default, .fractional(5e-3))
         let proposed = CrystalStructure.detectingSymmetry(cell: big, sites: displaced, tolerance: .proposedCartesian, conventional: false)
         r.equal("detecting with the proposed tolerance equals the .cartesian(1e-3) call", proposed.operations, tight.operations)

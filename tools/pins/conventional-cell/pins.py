@@ -9,11 +9,11 @@ It writes Tests/DiffractoCoreTests/Fixtures/spglib-conventional-cell-pins.json B
 
 Oracles (all from the pinned venv): spglib 2.8.0 `niggli_reduce` and `get_symmetry_dataset` / `standardize_cell`;
 pymatgen-core 2026.10.16 `Lattice.get_niggli_reduced_lattice` as the second, independent Niggli implementation. The ring
-list in the conventional setting uses slice 1's own definitions (tools/pins/cells/pins.py, imported, not copied) on spglib's
+list in the conventional setting uses the definitions of tools/pins/cells/pins.py (imported, not copied) on spglib's
 standardised cell. Agreement is agreement, not truth: truth (the Niggli conditions, P unimodular, the group-theory
 counts) is checked in the Swift tests directly.
 
-Inputs: pymatgen-cells-pins.json (cell and expanded sites of every slice-1 structure), the named non-conventional cells built
+Inputs: pymatgen-cells-pins.json (cell and expanded sites of every CIF fixture structure there), the named non-conventional cells built
 below, and RANDOM_PER_LATTICE random cells of each of the 14 Bravais lattices under a random unimodular transformation
 (|entries| <= 2), seed SEED.
 
@@ -41,7 +41,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 HERE = os.path.dirname(os.path.abspath(__file__))
 KIT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 FIXTURES = os.path.join(KIT, "Tests", "DiffractoCoreTests", "Fixtures")
-SLICE1_PINS = os.path.join(FIXTURES, "pymatgen-cells-pins.json")
+CELLS_PINS = os.path.join(FIXTURES, "pymatgen-cells-pins.json")
 OUT = os.path.join(FIXTURES, "spglib-conventional-cell-pins.json")
 
 SEED = 20261015
@@ -51,8 +51,8 @@ NIGGLI_TOL = 1e-5             # spglib niggli_reduce(eps=) and pymatgen get_nigg
 K_MAX = 1.2
 NIGGLI_AGREE = 1e-8           # the two oracles must agree on the reduced parameters (relative lengths, degrees)
 
-# slice 1's generator, imported as a module (its main() is guarded)
-_spec = importlib.util.spec_from_file_location("slice1_pins", os.path.join(HERE, "..", "cells", "pins.py"))
+# the cells pin generator, imported as a module (its main() is guarded)
+_spec = importlib.util.spec_from_file_location("cells_pins", os.path.join(HERE, "..", "cells", "pins.py"))
 s1 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(s1)
 
@@ -162,7 +162,7 @@ def structure_entry(name, source, params, Z, occ, frac):
     ratio = lat["conv_volume"] / V
     check(f"{name}: conventional-cell volume ratio {ratio} is an integer", abs(ratio - round(ratio)) < 1e-6)
     conv_ops = n_rot * int(round(ratio))
-    # the standardised (conventional, not primitive) cell and its rings: slice 1's own definitions on it
+    # the standardised (conventional, not primitive) cell and its rings: the definitions of tools/pins/cells/pins.py on it
     std = spglib.standardize_cell((A, frac, Zs), to_primitive=False, no_idealize=False, symprec=SYMPREC)
     check(f"{name}: spglib standardises the cell", std is not None)
     sL, sP, sZ = std
@@ -208,7 +208,7 @@ def transformed(A, frac, P):
     return params_of(A2), f2
 
 
-def named_cells(slice1):
+def named_cells(cells_pins):
     out = []
     a = 4.0782
     A = a / 2 * np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=float)
@@ -217,7 +217,7 @@ def named_cells(slice1):
     A = a / 2 * np.array([[-1, 1, 1], [1, -1, 1], [1, 1, -1]], dtype=float)
     out.append(("fe_bcc_primitive", params_of(A), [26], [1.0], [[0, 0, 0]]))
     # beta'' C-centred primitive cell: spglib's primitive of the 22-atom cell
-    b = next(s for s in slice1["structures"] if s["name"] == "beta_double_prime")
+    b = next(s for s in cells_pins["structures"] if s["name"] == "beta_double_prime")
     cellb = [b["cell"][k] for k in ("a", "b", "c", "alpha", "beta", "gamma")]
     stb = Structure(Lattice.from_parameters(*cellb, vesta=True), [s["z"] for s in b["sites"]],
                     [s["frac"] for s in b["sites"]])
@@ -340,23 +340,23 @@ def main():
         "spglib": spglib.__version__, "numpy": np.__version__,
     }
     print("oracle:", json.dumps(versions))
-    with open(SLICE1_PINS, encoding="utf-8") as f:
-        slice1 = json.load(f)
+    with open(CELLS_PINS, encoding="utf-8") as f:
+        cells_pins = json.load(f)
     structures = []
-    print("\n--- slice 1's fixtures (P1 sites, as the Swift tests build them) ---")
-    for s in slice1["structures"]:
+    print("\n--- the CIF fixture structures of pymatgen-cells-pins.json (P1 sites, as the Swift tests build them) ---")
+    for s in cells_pins["structures"]:
         sites = s.get("sites_as_written") or s["sites"]
         params = [s["cell"][k] for k in ("a", "b", "c", "alpha", "beta", "gamma")]
         e = structure_entry(s["name"], "slice-1", params, [x["z"] for x in sites], [x["occupancy"] for x in sites],
                             [x["frac"] for x in sites])
-        # slice 1's own pin for the same crystal agrees where the setting is unchanged
+        # the cells pin for the same crystal agrees where the setting is unchanged
         if abs(e["lattice"]["conv_volume"] / abs(np.linalg.det(lattice_matrix(params))) - 1) < 1e-9:
-            check(f"{s['name']}: conventional operation count equals slice 1's pin",
+            check(f"{s['name']}: conventional operation count equals the cells pin",
                   e["conventional_operations_count"] == len(s["operations"]),
                   f"{e['conventional_operations_count']} vs {len(s['operations'])}")
         structures.append(e)
     print("\n--- named non-conventional cells ---")
-    for name, params, Z, occ, frac in named_cells(slice1):
+    for name, params, Z, occ, frac in named_cells(cells_pins):
         structures.append(structure_entry(name, "named", params, Z, occ, frac))
 
     # the counts stated before the run

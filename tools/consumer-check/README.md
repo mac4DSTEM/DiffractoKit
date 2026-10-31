@@ -20,7 +20,7 @@ DiffractoKit 0.1.0 adds `RingFitChecks.swift` and two sections of `main.swift`: 
 `FitReport`'s new fields, `progress:` / `isCancelled:` on every fit, `LocalizedError` on the three error types, and the
 tetragonal settings. 397 checks at 0.0.4.
 
-Slice 1b adds `ConventionalChecks.swift`: `UnitCell.niggliReduced` / `ReducedCell` (fcc gold's primitive cell, a skewed basis of
+The conventional setting and Niggli reduction add `ConventionalChecks.swift`: `UnitCell.niggliReduced` / `ReducedCell` (fcc gold's primitive cell, a skewed basis of
 it, an invalid cell), `UnitCell.conventionalCell` / `ConventionalCell` / `BravaisLattice` (gold primitive -> cF with 4 centring
 translations, bcc -> cI, a C-centred monoclinic primitive cell -> mC with b the unique axis), `CrystalStructure.setting` /
 `conventionalSetting` / `ConventionalSetting` and its four conversions (gold: 192 operations in the conventional cell and 48 in

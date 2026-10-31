@@ -5,14 +5,14 @@ Run, from any directory, with the pinned oracle:
     ../References/python/pymatgen/bin/python -I -B tools/pins/ring-calibration/q-pins.py [out.json]
 
 It writes Tests/DiffractoGeometryTests/Fixtures/q-pins.json BEFORE the Swift tests read it. Deterministic: no clock, no random
-numbers; two runs give the same bytes. Reads slice 3a's Fixtures/numpy-ring-calibration-pins.json (320 cases) for the 1/d identity.
+numbers; two runs give the same bytes. Reads the ring-calibration pins Fixtures/numpy-ring-calibration-pins.json (320 cases) for the 1/d identity.
 
 The two closed forms (q in 1/Angstrom, no 2 pi; R and L in pixels; lambda in Angstrom):
   q(R; L, lambda) = 2 sin(atan(R/L) / 2) / lambda                 the Bragg angle theta = atan(R/L)/2, q = 2 sin(theta)/lambda = 1/d
   R(q; L, lambda) = L tan(2 asin(q lambda / 2))                   its inverse, needs q lambda / 2 < 1/sqrt(2) (2 theta < 90 degrees)
 
 TRUTH. Python `decimal` at 60 digits from the exact float64 inputs (lambda is the float64 nearest to the CODATA-2018 relativistic
-formula in decimal, exactly as slice 3a's tools/pins/ring-calibration/ring-pins.py computes it: `dec_wavelength_a`, imported from that file's
+formula in decimal, exactly as tools/pins/ring-calibration/ring-pins.py computes it: `dec_wavelength_a`, imported from that file's
 formulas, copied here verbatim), then rounded ONCE to float64. Two independent decimal evaluations, which must agree to 1e-50
 relative before anything is written:
   (a) ALGEBRAIC, no trigonometric library and no series: with x = R/L and c = cos(atan x) = 1/sqrt(1 + x^2),
@@ -24,7 +24,7 @@ the truth (`numpy_*`), and the script fails if it leaves 1e-12 of the truth.
 
 THE GRID: V in {60, 80, 120, 200, 300} kV, L_px in {500, 2000, 14082.307097295722, 1e5}, R in {1, 40, 150,
 600, 2000} px (100 forward cases); the inverse on the q those give (100) plus q at 0.99 of the Bragg limit, q lambda / 2 =
-0.99 / sqrt(2) (20: every V and L); THE IDENTITY: slice 3a's 320 cases, q(R, L_px(R, 2 theta), lambda) = 1/d (stored with the
+0.99 / sqrt(2) (20: every V and L); THE IDENTITY: the 320 cases of the ring-calibration pins, q(R, L_px(R, 2 theta), lambda) = 1/d (stored with the
 decimal 1/d and the decimal q of the same float64 inputs, which must agree to 1e-12: L_px is rounded to float64 there);
 THE NaN PLANTS: zero, negative, NaN, infinite R / L / lambda / q; q lambda / 2 at the limit (the float64 nearest 1/sqrt(2), as
 `maximumLambdaOver2d`), one ulp above it, 0.8, 1, 10 (beyond); an overflow (q = 2 sin(...)/lambda past Double.greatestFiniteMagnitude with
@@ -259,7 +259,7 @@ def main():
     if len(forward) != 100 or len(inverse) != 120:
         fail("%d forward, %d inverse cases" % (len(forward), len(inverse)))
 
-    # ---- the identity on slice 3a's 320 cases ----
+    # ---- the identity on the 320 ring-calibration cases ----
     with open(RING_PINS) as f:
         ring = json.load(f)
     if len(ring["cases"]) != 320:

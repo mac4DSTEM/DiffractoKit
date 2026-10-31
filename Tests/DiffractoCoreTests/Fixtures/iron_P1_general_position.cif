@@ -1,4 +1,5 @@
-# provenance: DiffractoKit slice-1 Gate B refuter, 2026-10-14 night (P1_cubic_1fe.cif); a regression fixture
+# provenance: one Fe atom at the general position (0.11, 0.23, 0.31) of a 5 A cube, an origin shift of Pm-3m. Regression fixture
+# (RefuterRegressionTests): 48 operations, every reflection allowed, ring {1 1 0} of 12; a fixed k/24 snap had given 43 operations.
 data_p1test
 _symmetry_space_group_name_H-M 'P 1'
 _symmetry_Int_Tables_number 1
