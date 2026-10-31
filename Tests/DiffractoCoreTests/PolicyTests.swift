@@ -288,8 +288,8 @@ struct DetectionPolicyTests {
 struct CIFImportPolicyTests {
     typealias Policy = CIFImport.Policy
 
-    /// A 10 Å cubic cell with one site written to one decimal and a second operation that moves it by 0.008 (0.08 Å): the two
-    /// images are the same site within the rounding error and 0.10 Å.
+    /// A 10 Å cubic cell with one site written to one decimal and a mirror at x = 0.304 that moves it by 0.008 (0.08 Å; a
+    /// closed list, as the import requires): the two images are the same site within the rounding error and 0.10 Å.
     static let nearlyCoincident = """
         data_near
         _cell_length_a 10.0
@@ -301,7 +301,7 @@ struct CIFImportPolicyTests {
         loop_
         _symmetry_equiv_pos_as_xyz
           'x,y,z'
-          'x+0.008,y,z'
+          '-x+0.608,y,z'
         loop_
         _atom_site_label
         _atom_site_type_symbol
@@ -341,6 +341,7 @@ struct CIFImportPolicyTests {
         #expect(p.maximumCoordinateHalfStep == 1e-2)
         #expect(p.rightAngleToleranceDeg == 0.05)
         #expect(p.maximumOperationMagnitude == 1000)
+        #expect(p.operationMetricTolerance == 0.01)
         #expect(p.positionTolerance == .default)
         #expect(p.metricLengthTolerance == 1e-9)
         #expect(p.metricAngleToleranceDeg == 1e-9)
