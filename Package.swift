@@ -28,7 +28,8 @@ let package = Package(
         .library(name: "DiffractoOrientation", targets: ["DiffractoOrientation"]),
     ],
     dependencies: [
-        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation only); a range below 1.0.0 (tested against 0.2.0 and 0.4.0); consumers who pin exact tags resolve one ImagoKit.
+        // FFT1D for the ACOM matcher's azimuthal ring transforms (DiffractoOrientation) and FFT2DDouble for the Friedel centre (DiffractoGeometry); a range
+        // below 1.0.0 (tested against 0.2.0 and 0.4.0); consumers who pin exact tags resolve one ImagoKit.
         .package(url: "https://github.com/mac4DSTEM/ImagoKit", "0.2.0"..<"1.0.0"),
     ],
     targets: [
@@ -39,8 +40,10 @@ let package = Package(
         // structure factors and the kinematic ring list after the |F| cut.
         .target(name: "DiffractoScattering", dependencies: ["DiffractoCore"], swiftSettings: settings),
         // Wavelength, ring calibration and camera length, the indexing decision,
-        // zone axes; the ring and ellipse fit.
-        .target(name: "DiffractoGeometry", dependencies: ["DiffractoCore", "DiffractoScattering"], swiftSettings: settings),
+        // zone axes; the ring and ellipse fit; the Friedel centre of a pattern with a blocked beam (ImagoCore's FFT2DDouble).
+        .target(name: "DiffractoGeometry",
+                dependencies: ["DiffractoCore", "DiffractoScattering", .product(name: "ImagoCore", package: "ImagoKit")],
+                swiftSettings: settings),
         // The reference library and the vector matcher of phase mapping, the value types of an orientation result (Euler
         // angles, the zone-axis frame) and the ACOM template matcher. Later: py4DSTEM's SO(3) correlogram and pyxem / orix
         // template matching.

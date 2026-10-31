@@ -46,6 +46,9 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
     case incompleteSymmetryOperationsForSymbol(symbol: String, listed: Int, required: Int)
     /// A `data_` block that defines no structure carries a symmetry-operation loop while another block defines one.
     case symmetryOperationsOutsideStructure(blockNames: [String])
+    /// The operations are enough in number but cannot be the file's space group: one does not map the cell onto itself,
+    /// the list is not closed, or its crystal class is not the IT number's (``SymmetryListProblem``).
+    case inconsistentSymmetryOperations(SymmetryListProblem)
 
     public var description: String {
         switch self {
@@ -91,6 +94,10 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
             return "The CIF has a symmetry-operation loop in a data_ block that holds no structure "
                 + "(\(names.joined(separator: ", "))). Reading the file as one crystal would apply those operations to "
                 + "another block's atoms. Move the loop into the structure's own data_ block, or split the file."
+        case .inconsistentSymmetryOperations(let problem):
+            return "The CIF's symmetry operations cannot be its space group: \(problem). Expanding the atom sites with "
+                + "them would build a wrong structure, so the file is refused. Re-export the CIF with the operation "
+                + "loop of its own cell and setting, or supply a P1 file that lists every atom in the cell."
         }
     }
 }
@@ -141,6 +148,11 @@ public enum CIFImport {
         public var rightAngleToleranceDeg: Double
         /// The largest number a symmetry operation's text may hold. Default 1000.
         public var maximumOperationMagnitude: Double
+        /// How far a listed rotation may change the cell metric and still count as a symmetry of the cell: each entry of
+        /// |RᵀGR − G| over sqrt(G_ii G_jj). Default 0.01 (about 0.6 degrees in an angle, 0.5 % in a length; an operation
+        /// of another cell or setting changes it by tens of percent). Only this check of the operation list has a knob:
+        /// closure and the crystal class are not tolerances and cannot be turned off.
+        public var operationMetricTolerance: Double
         /// How two positions are called the same site in the symmetry detection. Default fractional 5e-3.
         public var positionTolerance: SymmetryDetection.Tolerance
         /// The metric family tolerances (relative on lengths, degrees on angles). Default 1e-9 both.
@@ -154,6 +166,7 @@ public enum CIFImport {
         public init(maximumMergeDistance: Double = 0.10, minimumMergeTolerance: Double = 1e-6,
                     maximumCoordinateHalfStep: Double = 1e-2, rightAngleToleranceDeg: Double = 0.05,
                     maximumOperationMagnitude: Double = SymmetryOperation.defaultMaximumMagnitude,
+                    operationMetricTolerance: Double = 0.01,
                     positionTolerance: SymmetryDetection.Tolerance = .default,
                     metricLengthTolerance: Double = SymmetryDetection.defaultMetricLengthTolerance,
                     metricAngleToleranceDeg: Double = SymmetryDetection.defaultMetricAngleToleranceDeg,
@@ -164,6 +177,7 @@ public enum CIFImport {
             self.maximumCoordinateHalfStep = maximumCoordinateHalfStep
             self.rightAngleToleranceDeg = rightAngleToleranceDeg
             self.maximumOperationMagnitude = maximumOperationMagnitude
+            self.operationMetricTolerance = operationMetricTolerance
             self.positionTolerance = positionTolerance
             self.metricLengthTolerance = metricLengthTolerance
             self.metricAngleToleranceDeg = metricAngleToleranceDeg
@@ -442,7 +456,14 @@ public enum CIFImport {
                 throw .incompleteSymmetryOperationsForSymbol(symbol: hallSymbol, listed: listed,
                                                              required: hallOperations.count)
             }
-            let lattice = UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma).realLattice
+            // A count cannot see wrong operations: each must map the cell onto itself, the list must be closed, and
+            // its crystal class must be the IT number's (a Hall group is closed, but its setting may not fit the cell).
+            let unitCell = UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma)
+            if let problem = operationListProblem(ops, cell: unitCell, spaceGroupNumber: spaceGroupNumber,
+                                                  metricTolerance: policy.operationMetricTolerance) {
+                throw .inconsistentSymmetryOperations(problem)
+            }
+            let lattice = unitCell.realLattice
             sites = expand(baseSites, using: ops, latReal: lattice, policy: policy)
             var distinct: [SymmetryOperation] = []
             for op in ops where !distinct.contains(where: { $0.isEquivalent(to: op) }) {
