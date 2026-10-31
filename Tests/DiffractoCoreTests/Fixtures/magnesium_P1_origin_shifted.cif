@@ -1,4 +1,5 @@
-# provenance: DiffractoKit slice-1 Gate B refuter, 2026-10-14 night (F2a_Mg_shifted.cif); a regression fixture
+# provenance: hcp magnesium (P6_3/mmc) as a P1 list shifted by (0.1, 0.2, 0.3), written to 8 decimals. Regression fixture
+# (RefuterRegressionTests): a detected translation of 0.20000001 must still pass the absence test, 282 of 324 allowed at 1.2 1/A.
 data_F2a
 _symmetry_space_group_name_H-M 'P 1'
 _symmetry_Int_Tables_number 1

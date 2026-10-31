@@ -59,4 +59,34 @@ struct RingFitNeighbourTailTests {
         // the other ring: the {200} annulus 36 to 43 has no {111} tail inside, so it is exact
         #expect(abs(try Self.radius(p, 36, 43) - Self.r200) < 0.02)
     }
+
+    /// THE SMALL-RING BIAS IS THE NEIGHBOUR'S TAIL (#12). Measured against the ring radius at the Au ratio ({200} at 2/sqrt(3) of {111},
+    /// amplitude 2200 against 3000, sigma 1.2 px, annulus from half the gap inside to 0.6 of the gap outside, as the demo annulus):
+    /// a single ring is exact at every radius (about 1e-7 px at R 17 to 272; 4e-6 px at R 17 with a central beam 10 times the ring, sigma 3 px); with the
+    /// neighbour the bias is +0.076 px at R 17 (gap 2.6 px), -0.032 px at R 34 (gap 5.3 px) and below 1e-4 px from R 68 (gap 10.5 px).
+    /// The neighbour sits 0.155 R away, so the bias is a property of gap / sigma, not of the radius: at R 34 it is 0.027, -0.029, -0.003,
+    /// 0 and 0 px for a neighbour 3, 4, 5.3, 7 and 10 px out (annulus to R + 2) and grows with the annulus edge. A constant-background
+    /// model under a 1/r background reads -0.002 px at R 17 and nothing from R 34.
+    /// py4DSTEM f050d207 `fit_ellipse_amorphous_ring` on the same patterns (its own start, SciPy `leastsq`) has the same model and the
+    /// same bias in size, its sign set by where its start lands: single ring 1e-7 px at every radius; with the neighbour -0.107 px at
+    /// R 17, +0.016 px at R 34, 1e-4 px at R 68; at R 34 -0.015 to +0.27 px for a neighbour 3 px out, 0 for one 10 px out; under 1/r
+    /// -0.022, +0.011, +0.008 and +0.002 px at R 17, 34, 68 and 136. Shared by the reference, so the numbers stay; a profile model with
+    /// a term for the neighbouring ring would be a new method, not a port. `validation: "none"`.
+    @Test func theBiasFollowsTheGapToTheNeighbourNotTheRadius() throws {
+        for (R, sigmasOfGap) in [(17.0, 2.2), (34.0, 4.4), (68.0, 8.8), (136.0, 17.5)] {
+            let n = max(256, Int(R * 3))
+            let r200 = R * 2 / 3.0.squareRoot()
+            let gap = r200 - R
+            #expect(abs(gap / 1.2 - sigmasOfGap) < 0.1)
+            let inner = R - 0.5 * gap, outer = R + 0.6 * gap
+            let single = Self.pattern(rings: [(R, 3000)], n: n)
+            #expect(abs(try Self.radius(single, inner, outer) - R) < 1e-6, Comment(rawValue: "single ring R \(R)"))
+            let bias = try Self.radius(Self.pattern(rings: [(R, 3000), (r200, 2200)], n: n), inner, outer) - R
+            if sigmasOfGap < 5 {
+                #expect(abs(bias) > 0.01, Comment(rawValue: "R \(R): \(bias)"))
+            } else {
+                #expect(abs(bias) < 1e-3, Comment(rawValue: "R \(R): \(bias)"))
+            }
+        }
+    }
 }
