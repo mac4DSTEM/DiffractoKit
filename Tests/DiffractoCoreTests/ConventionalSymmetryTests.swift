@@ -186,8 +186,9 @@ struct ConventionalSymmetryTests {
     }
 
     /// A file in its conventional setting keeps its numbers and its identity transformation; `conventional: false` is
-    /// the plain detection in the file's cell.
-    @Test func testConventionalFalseIsSliceOnesDetectionAndConventionalFilesAreUnchanged() throws {
+    /// the plain detection in the file's cell. Runs on the CIF fixture structures, which the conventional-cell pins label
+    /// `source == "slice-1"` (a label written into the fixture; it stays until the pins are regenerated).
+    @Test func testConventionalFalseIsThePlainDetectionAndConventionalFilesAreUnchanged() throws {
         for (pin, s) in Self.detected where pin.source == "slice-1" {
             let plain = CrystalStructure.detectingSymmetry(cell: pin.cell.unitCell, sites: pin.atomSites, conventional: false)
             #expect(plain.conventionalSetting == nil && plain.setting == .file, "\(pin.name)")

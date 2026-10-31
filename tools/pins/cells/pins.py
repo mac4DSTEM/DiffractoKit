@@ -1,4 +1,4 @@
-"""DiffractoKit slice 1: the pin generator for cells, symmetry and reflections.
+"""DiffractoKit: the DiffractoCore pin generator for cells, symmetry and reflections.
 
 Run, from any directory, with the pinned oracle:
 
