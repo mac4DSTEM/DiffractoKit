@@ -41,6 +41,8 @@ public enum CIFImportError: Error, Equatable, Sendable, CustomStringConvertible 
     case incompleteSymmetryOperations(spaceGroupNumber: Int, declaredName: String?, listed: Int, required: Int)
     /// As ``incompleteSymmetryOperations(spaceGroupNumber:declaredName:listed:required:)`` for a file that names its group
     /// by Hermann–Mauguin symbol alone (no IT number): the order is read from the symbol (``requiredOperationCount(hermannMauguin:alphaDeg:betaDeg:gammaDeg:rightAngleToleranceDeg:rotationsDiagonal:)``).
+    /// A file that names its group by Hall symbol alone (no IT number, no readable Hermann–Mauguin symbol) is held to the
+    /// order of the group the Hall symbol states (``HallSymbol/operations(_:)``), and `symbol` is the Hall symbol.
     case incompleteSymmetryOperationsForSymbol(symbol: String, listed: Int, required: Int)
     /// A `data_` block that defines no structure carries a symmetry-operation loop while another block defines one.
     case symmetryOperationsOutsideStructure(blockNames: [String])
@@ -109,10 +111,12 @@ public struct CIFDocument: Sendable, Equatable {
     public let declaredSpaceGroupSymbol: String?
     /// The IT number the file states; nil when none.
     public let declaredSpaceGroupNumber: Int?
+    /// The Hall symbol the file states, as written; nil when none.
+    public let declaredHallSymbol: String?
     /// The coarsest rounding half-step over every written fractional coordinate (0 when all are exact).
     public let coarsestHalfStep: Double
-    /// Whether the file carried an expanding symmetry-operation loop (`structure.fileOperations`); the structure's
-    /// operations are detected from the expanded cell either way.
+    /// Whether the file carried expanding operations (`structure.fileOperations`): a symmetry-operation loop, or, with no
+    /// loop, a Hall symbol read to its group. The structure's operations are detected from the expanded cell either way.
     public let hadSymmetryOperations: Bool
 }
 
@@ -194,6 +198,7 @@ public enum CIFImport {
         return CIFDocument(structure: structure, dataBlockName: parsed.dataBlockName, displayName: name,
                            declaredSpaceGroupSymbol: parsed.spaceGroupSymbol,
                            declaredSpaceGroupNumber: parsed.spaceGroupNumber,
+                           declaredHallSymbol: parsed.hallSymbol,
                            coarsestHalfStep: parsed.coarsestHalfStep,
                            hadSymmetryOperations: parsed.operations != nil)
     }
@@ -220,6 +225,7 @@ public enum CIFImport {
         var coarsestHalfStep: Double
         var spaceGroupNumber: Int?
         var spaceGroupSymbol: String?
+        var hallSymbol: String?
     }
 
     /// One asymmetric-unit site plus how precisely each of its coordinates was written: `halfStep` is the half-width
@@ -390,9 +396,20 @@ public enum CIFImport {
             do { ops.append(try SymmetryOperation(xyz: raw, maximumMagnitude: policy.maximumOperationMagnitude)) } catch { throw .unsupportedSymmetryOperation(raw) }
         }
 
+        // A Hall symbol states the whole group in the file's own setting, so a file that names its group by Hall symbol
+        // and carries no loop is expanded with the symbol's operations (`HallSymbol`, exact against spglib's 530
+        // settings). pymatgen means its symbol fallback to do this, but looks a Hall symbol up among Hermann–Mauguin
+        // names, finds none and expands as P1 with a warning (pymatgen-core 2026.10.16, `CifParser.get_symops`).
+        let fileListsOperations = haveSymmetryLoop && ops.contains(where: { !$0.isIdentity })
+        let hallSymbol = declaredHall(cellValues)
+        let hallOperations = hallSymbol.flatMap { symbol -> [SymmetryOperation]? in try? HallSymbol.operations(symbol) }
+        // A loop, even one holding only the identity, is what the file lists and wins over the symbol (as in pymatgen).
+        let expandsWithHall = !haveSymmetryLoop && (hallOperations?.count ?? 0) > 1
+        if expandsWithHall, let hallOperations { ops = hallOperations }
+
         let sites: [AtomSite]
         let operations: [SymmetryOperation]?
-        if haveSymmetryLoop, ops.contains(where: { !$0.isIdentity }) {
+        if fileListsOperations || expandsWithHall {
             // A file that names its space group must list every operation of it (in the setting its cell is written
             // in). Fewer builds a smaller structure (rock salt without its F-centring is CsCl, still cubic m-3m).
             // The judgement of a monoclinic centred cell (conventional or primitive) also reads the listed rotations:
@@ -401,6 +418,8 @@ public enum CIFImport {
                 (0..<3).allSatisfy { r in (0..<3).allSatisfy { c in r == c || op.rotation[r, c] == 0 } }
             }
             let listed = SymmetryOperation.distinctCount(ops)
+            // A Hall group stands in for the loop here: a Hall symbol smaller than the IT number or Hermann–Mauguin
+            // symbol the file also states (a mistyped "-P 1" beside No. 225) is refused like a short loop.
             if let number = spaceGroupNumber,
                let required = requiredOperationCount(
                    spaceGroup: number, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma,
@@ -416,6 +435,12 @@ public enum CIFImport {
                           rightAngleToleranceDeg: policy.rightAngleToleranceDeg, rotationsDiagonal: diagonal),
                       listed < required {
                 throw .incompleteSymmetryOperationsForSymbol(symbol: symbol, listed: listed, required: required)
+            } else if fileListsOperations, spaceGroupNumber == nil,
+                      declaredHermannMauguin(cellValues).flatMap(hermannMauguinFacts) == nil,
+                      let hallSymbol, let hallOperations, listed < hallOperations.count {
+                // Named by Hall symbol alone: the symbol's group, centring included, is the order the loop must reach.
+                throw .incompleteSymmetryOperationsForSymbol(symbol: hallSymbol, listed: listed,
+                                                             required: hallOperations.count)
             }
             let lattice = UnitCell(a: a, b: b, c: c, alphaDeg: alpha, betaDeg: beta, gammaDeg: gamma).realLattice
             sites = expand(baseSites, using: ops, latReal: lattice, policy: policy)
@@ -429,7 +454,7 @@ public enum CIFImport {
             // itself says they are — P1, or no space-group declaration at all. A file that declares a non-P1 group
             // and omits its operations is an asymmetric unit with no way to expand it. (py4DSTEM hands CIF parsing to
             // pymatgen, which can derive the operations from the symbol; this importer carries no space-group tables,
-            // so the honest alternative is refusing.)
+            // so the honest alternative is refusing. A readable Hall symbol needs no table and was used above.)
             if let declared = declaredNonP1SpaceGroup(cellValues) {
                 throw .missingSymmetryOperations(spaceGroup: declared)
             }
@@ -446,7 +471,8 @@ public enum CIFImport {
             dataBlockName: dataBlockName,
             a: a, b: b, c: c, alpha: alpha, beta: beta, gamma: gamma,
             sites: sites, operations: operations, coarsestHalfStep: coarsestHalfStep,
-            spaceGroupNumber: spaceGroupNumber, spaceGroupSymbol: declaredHermannMauguin(cellValues))
+            spaceGroupNumber: spaceGroupNumber, spaceGroupSymbol: declaredHermannMauguin(cellValues),
+            hallSymbol: hallSymbol)
     }
 
     // MARK: - Tokenizer
@@ -706,6 +732,16 @@ public enum CIFImport {
     private static func declaredHermannMauguin(_ cellValues: [String: String]) -> String? {
         for tag in ["_symmetry_space_group_name_h-m", "_space_group_name_h-m_alt",
                     "_space_group_name_h-m_full", "_space_group_name_h-m_ref"] {
+            if let raw = cellValues[tag]?.trimmingCharacters(in: .whitespaces),
+               !raw.isEmpty, raw != "?", raw != "." { return raw }
+        }
+        return nil
+    }
+
+    /// The Hall symbol the file states (`_space_group_name_Hall`, or the older `_symmetry_space_group_name_Hall`); nil when
+    /// none.
+    private static func declaredHall(_ cellValues: [String: String]) -> String? {
+        for tag in ["_space_group_name_hall", "_symmetry_space_group_name_hall"] {
             if let raw = cellValues[tag]?.trimmingCharacters(in: .whitespaces),
                !raw.isEmpty, raw != "?", raw != "." { return raw }
         }
