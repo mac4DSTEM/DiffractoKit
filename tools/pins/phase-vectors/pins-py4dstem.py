@@ -1,4 +1,4 @@
-"""DiffractoKit slice 4: the py4DSTEM half of the pin generator.
+"""DiffractoKit: the py4DSTEM half of the pin generator.
 
 Not run by hand: tools/pins/phase-vectors/pins.py starts it with the py4DSTEM venv's interpreter, sends the phases as JSON on stdin and
 reads the JSON on stdout. Run through pins.py the whole chain sits under ONE memory cap.

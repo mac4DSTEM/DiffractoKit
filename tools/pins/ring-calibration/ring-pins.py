@@ -1,4 +1,4 @@
-"""DiffractoKit slice 3a: the ring-calibration pin generator.
+"""DiffractoKit: the DiffractoGeometry ring-calibration pin generator.
 
 Run, from any directory, with the pinned oracle:
 
