@@ -20,8 +20,11 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
 - **Phase matching.** Defaults unchanged. (a) `minimumMatrixEvidence` (new, off) keeps vacuum and stray-peak positions out of the
   matrix class; (b) `completenessAwareCrossPhaseRanking` stays off: it loses at small noise and wins near the pair radius
   (`PhaseDiagnosisTests`). Both need one labelled scan to be switched on: a study scan with the phases marked.
-- **ACOM.** 7 of 200 off-grid self-recoveries land 36 or 60 degrees away (zone axes whose centrosymmetric pattern has a symmetry
-  of its own; not separable on spots alone). "Zone axis misses up to 12.8 degrees beyond the bank sampling" (mac4DSTEM's note)
+- **ACOM.** 7 of 200 off-grid self-recoveries land 36 or 60 degrees away. Cause, measured: each is a coincidence twin of the
+  truth (60 degrees about a <111> near <112> beams, 36.87 degrees about a <100> near <013> beams; the axis lies in the zone
+  plane), whose kinematic pattern overlaps the truth's 0.95 to 1.0000; only the Ewald curvature term separates them, and
+  py4DSTEM picks the twin in 7 of the 14 truth and twin patterns (`theLargeFailuresAreCoincidenceTwinsOfTheTruth`). Inherent
+  to spot patterns at 200 kV, not a matcher defect; a consumer can flag it by scoring the twin of the winner. "Zone axis misses up to 12.8 degrees beyond the bank sampling" (mac4DSTEM's note)
   is not reproduced here: within 2.9 degrees of a template the nearest-bank gap is at most 1.6 degrees at 600 axes; a pattern
   between templates in a sparse corner of the zone is untested. Metal is not faster than all CPU cores up to 1 024 patterns
   at 600 axes; 16 384 patterns and 2 400 axes are not timed yet.
