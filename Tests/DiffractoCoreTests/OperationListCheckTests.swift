@@ -150,4 +150,21 @@ struct OperationListCheckTests {
         #expect(CIFImportError.inconsistentSymmetryOperations(.notACellSymmetry(operation: "-x,y,z")).description
             .contains("refused"))
     }
+
+    /// Every refusal names its cause in words, not only the operations, and the error an app shows (its
+    /// `localizedDescription`) carries that sentence whole.
+    @Test func everyRefusalNamesItsCauseInWords() {
+        let causes: [(SymmetryListProblem, String)] = [
+            (.notACellSymmetry(operation: "-x,y,z"), "does not map the cell onto itself"),
+            (.notClosed(first: "-y,x,z", second: "x,-y,z", product: "y,x,z"), "is not a space group"),
+            (.wrongCrystalClass(spaceGroupNumber: 83, listed: "mmm", required: "4/m"), "crystal class mmm"),
+            (.wrongCrystalClass(spaceGroupNumber: 83, listed: nil, required: "4/m"), "none of the 32 point groups"),
+        ]
+        for (problem, cause) in causes {
+            #expect(problem.description.contains(cause), "\(problem)")
+            let error: any Error = CIFImportError.inconsistentSymmetryOperations(problem)
+            #expect(error.localizedDescription.contains(problem.description), "\(problem)")
+            #expect(error.localizedDescription.contains("cannot be its space group"), "\(problem)")
+        }
+    }
 }
