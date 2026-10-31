@@ -78,6 +78,24 @@ extension ACOMMatcher {
     }
 }
 
+/// The GPU kernels on planted ring spectra, for tests that need an exact correlation (a tie between bins) that no real pattern
+/// gives bit for bit. Per position and template, ring major: the forward pass (conj(E)·T) and the mirrored pass (E·T), each its
+/// best score and bin. nil where Metal is unavailable.
+package enum ACOMMetalKernels {
+    package static func bestBins(experimentalRe: [Float], experimentalIm: [Float], templateRe: [Float], templateIm: [Float],
+                                 templates: Int, radial: Int, azimuthal: Int, positions: Int)
+        -> (forwardScores: [Float], forwardBins: [UInt32], mirrorScores: [Float], mirrorBins: [UInt32])? {
+        #if canImport(Metal)
+        guard positions > 0, experimentalRe.count == positions * radial * azimuthal, experimentalIm.count == experimentalRe.count,
+              let gpu = ACOMMetalContext(spectraRe: templateRe, spectraIm: templateIm, templates: templates, radial: radial,
+                                         azimuthal: azimuthal) else { return nil }
+        return gpu.run(re: experimentalRe, im: experimentalIm, positions: positions)
+        #else
+        return nil
+        #endif
+    }
+}
+
 #if canImport(Metal)
 /// A batch's experimental ring spectra, written from several threads into disjoint slices of memory it owns.
 private final class Slices: @unchecked Sendable {
@@ -110,7 +128,13 @@ private final class ACOMMetalContext {
 
     struct Params { var positions: UInt32, templates: UInt32, radial: UInt32, azimuthal: UInt32 }
 
-    init?(library: ACOMTemplateLibrary) {
+    convenience init?(library: ACOMTemplateLibrary) {
+        self.init(spectraRe: library.templateFFTRe, spectraIm: library.templateFFTIm, templates: library.count,
+                  radial: library.geometry.nRadial, azimuthal: library.geometry.nAzimuthal)
+    }
+
+    /// `templates` ring spectra of `radial` x `azimuthal` values each (ring major), as `ACOMTemplateLibrary.templateFFTRe/Im`.
+    init?(spectraRe: [Float], spectraIm: [Float], templates: Int, radial: Int, azimuthal: Int) {
         guard let device = MTLCreateSystemDefaultDevice(), let queue = device.makeCommandQueue() else { return nil }
         let options = MTLCompileOptions()
         options.mathMode = .safe
@@ -118,13 +142,14 @@ private final class ACOMMetalContext {
               let f1 = lib.makeFunction(name: "acomCorrelationSpectrum"), let f2 = lib.makeFunction(name: "acomInverseArgmax"),
               let p1 = try? device.makeComputePipelineState(function: f1), let p2 = try? device.makeComputePipelineState(function: f2)
         else { return nil }
-        let n = library.geometry.nAzimuthal
-        guard n <= p2.maxTotalThreadsPerThreadgroup, n & (n - 1) == 0 else { return nil }
-        let bytes = library.templateFFTRe.count * MemoryLayout<Float>.stride
+        let n = azimuthal
+        guard n > 0, n <= p2.maxTotalThreadsPerThreadgroup, n & (n - 1) == 0, templates > 0, radial > 0,
+              spectraRe.count == templates * radial * n, spectraIm.count == spectraRe.count else { return nil }
+        let bytes = spectraRe.count * MemoryLayout<Float>.stride
         // The shader indexes with 32-bit unsigned integers.
-        guard bytes > 0, bytes <= device.maxBufferLength, library.templateFFTRe.count < 1 << 32,
-              let tr = device.makeBuffer(bytes: library.templateFFTRe, length: bytes, options: .storageModeShared),
-              let ti = device.makeBuffer(bytes: library.templateFFTIm, length: bytes, options: .storageModeShared)
+        guard bytes <= device.maxBufferLength, spectraRe.count < 1 << 32,
+              let tr = device.makeBuffer(bytes: spectraRe, length: bytes, options: .storageModeShared),
+              let ti = device.makeBuffer(bytes: spectraIm, length: bytes, options: .storageModeShared)
         else { return nil }
         // Float tables of the Double cos/sin of 2π k / n, k = 0..<n (the inverse DFT's twiddles, rounded once).
         let cosines = (0..<n).map { Float(cos(2 * Double.pi * Double($0) / Double(n))) }
@@ -133,7 +158,7 @@ private final class ACOMMetalContext {
               let st = device.makeBuffer(bytes: sines, length: n * 4, options: .storageModeShared) else { return nil }
         self.device = device; self.queue = queue; self.spectrum = p1; self.argmax = p2
         templateRe = tr; templateIm = ti; cosTable = ct; sinTable = st
-        templates = library.count; radial = library.geometry.nRadial; azimuthal = n
+        self.templates = templates; self.radial = radial; self.azimuthal = n
         // Per position: the spectra of both passes, their scores and bins, and the experimental grid (the reference app's budget).
         let perPosition = 2 * templates * n * 2 * 4 + 2 * templates * 8 + radial * n * 2 * 4
         let budget = min(Int(device.recommendedMaxWorkingSetSize / 8), 128 << 20)
@@ -177,7 +202,8 @@ private final class ACOMMetalContext {
         e2.setBuffer(scores, offset: 0, index: 2); e2.setBuffer(bins, offset: 0, index: 3)
         e2.setBuffer(cosTable, offset: 0, index: 4); e2.setBuffer(sinTable, offset: 0, index: 5)
         e2.setBytes(&params, length: MemoryLayout<Params>.stride, index: 6)
-        for index in 0..<6 { e2.setThreadgroupMemoryLength(azimuthal * 4, index: index) }
+        // Threadgroup memory lengths must be multiples of 16 bytes (below 4 bins, n * 4 is not).
+        for index in 0..<6 { e2.setThreadgroupMemoryLength(max(16, azimuthal * 4), index: index) }
         e2.dispatchThreadgroups(MTLSize(width: 1, height: templates, depth: 2 * positions),
                                 threadsPerThreadgroup: MTLSize(width: azimuthal, height: 1, depth: 1))
         e2.endEncoding()
@@ -268,14 +294,24 @@ private final class ACOMMetalContext {
             }
             threadgroup_barrier(mem_flags::mem_threadgroup);
         }
-        scores[a] = sr[a] / float(n);
+        // The CPU scan starts at -FLT_MAX and takes a strictly larger value, so NaN and -inf never win: both enter as -FLT_MAX
+        // (an all-NaN row then gives bin 0 and -FLT_MAX / n, as on the CPU). Like the CPU, scan the unscaled values and
+        // scale the winner only, so a division near underflow cannot turn two distinct values into a tie.
+        const float v = sr[a];
+        scores[a] = isnan(v) ? -FLT_MAX : max(v, -FLT_MAX);
         bins[a] = a;
         threadgroup_barrier(mem_flags::mem_threadgroup);
+        // Tree reduction over (score, bin) pairs: the larger score wins, an equal score keeps the smaller bin (the first
+        // maximum, NumPy argmax), whatever pair the tree happens to put in which slot.
         for (uint stride = p.azimuthal / 2; stride > 0; stride >>= 1) {
-            if (a < stride && scores[a + stride] > scores[a]) { scores[a] = scores[a + stride]; bins[a] = bins[a + stride]; }
+            if (a < stride) {
+                const float so = scores[a + stride], sm = scores[a];
+                const uint bo = bins[a + stride];
+                if (so > sm || (so == sm && bo < bins[a])) { scores[a] = so; bins[a] = bo; }
+            }
             threadgroup_barrier(mem_flags::mem_threadgroup);
         }
-        if (a == 0) { bestScores[slot * p.templates + t] = scores[0]; bestBins[slot * p.templates + t] = bins[0]; }
+        if (a == 0) { bestScores[slot * p.templates + t] = scores[0] / float(n); bestBins[slot * p.templates + t] = bins[0]; }
     }
     """
 }
