@@ -69,7 +69,8 @@ is the committed fixture pymatgen-cells-pins.json. The Laue orbit and the absenc
 computed from pymatgen's operations in NumPy.
 
     pymatgen - https://github.com/materialsproject/pymatgen (MIT License)
-    Copyright (c) 2011-2026 The Materials Project
+    Copyright (c) 2011-2012 MIT & The Regents of the University of
+    California, through Lawrence Berkeley National Laboratory
     spglib   - https://github.com/spglib/spglib (BSD-3-Clause)
 
 ================================================================================
@@ -124,8 +125,8 @@ P36); their output is committed as Tests/DiffractoOrientationTests/Fixtures/
 orix-*-pins.json. No orix code is copied into the library.
 
     orix - https://github.com/pyxem/orix
-    Copyright (C) The pyxem developers
-    Licensed under the GNU General Public License v3.0
+    Copyright 2018-2026 the orix developers
+    Licensed under the GNU General Public License v3.0 or later
 
 ================================================================================
 Materials Project (test fixtures)
@@ -143,3 +144,44 @@ response; the other two were written by hand in its format.
     A. Jain et al., "Commentary: The Materials Project: A materials genome
     approach to accelerating materials innovation", APL Materials 1, 011002
     (2013), doi:10.1063/1.4812323
+
+================================================================================
+Test fixtures: every source and its licence
+================================================================================
+
+Tests/Fixtures/README.md lists each committed fixture file. By source:
+
+CIF files (Tests/DiffractoCoreTests/Fixtures/*.cif). None is a copy of an
+entry in a crystallographic database: no file comes from the Crystallography
+Open Database (COD), the American Mineralogist Crystal Structure Database
+(AMCSD) or ICSD. Each file says where it comes from in its first comment line:
+  - written in the tests of mac4DSTEM 7448401b (GPL-3.0) and copied with that
+    line, some completed or reduced as the comment says;
+  - written for this kit as regression cases (GPL-3.0-only, this licence);
+  - corundum_P1_rhombohedral.cif and magnesium_P63mmc_origin_shifted_loop.cif
+    were written with pymatgen CifWriter (MIT); the output of a tool carries no
+    licence of the tool.
+Lattice parameters and atomic coordinates in them are published measurements,
+cited as facts. 2H-WS2 (ws2_2H.cif) takes its cell and z(S) from W. J.
+Schutte, J. L. de Boer and F. Jellinek, J. Solid State Chem. 70, 207-209
+(1987). COD entry 5910003 holds the same structure; COD dedicates its data to
+the public domain under CC0 (https://www.crystallography.net/cod/), but the
+fixture is written by hand and is not that file.
+
+Oracle outputs (the *-pins.json files). These are numbers computed by the
+scripts under tools/pins/, which call the reference packages below; no source
+code or test data of those packages is copied into them:
+  - pymatgen 2026.9.24 / pymatgen-core 2026.10.16 (MIT) and spglib 2.8.0
+    (BSD-3-Clause): cells, symmetry operations, conventional cells, presets,
+    the Materials Project decoder and the X-ray cross-check;
+  - orix 0.15.0 (GPL-3.0-or-later): orix-*-pins.json and the orix part of
+    trigonal-pins.json and symmetry-pins.json;
+  - py4DSTEM f050d207 (GPL-3.0): py4dstem-*-pins.json, acom-matcher-pins.json
+    and the py4DSTEM part of the orientation-symmetry pins;
+  - NumPy and SciPy (BSD-3-Clause), or plain Python: the ring calibration,
+    ring indexing, ellipse, ring-overlay and indexing-display pins, and the
+    structure-factor phase sum.
+No fixture is taken from the test data of pymatgen, orix or py4DSTEM.
+
+Materials Project records (mp-import/input-*.json): CC BY 4.0, credited in
+the section above.

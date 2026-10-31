@@ -13,9 +13,14 @@
 //
 //  DEVIATION (orix `Misorientation.reduce`): orix returns the equivalent inside its misorientation fundamental zone, which is documented as
 //  "the smallest rotation angle", and is not for every pair of groups: in the pins, 1 of 41 draws of (m-3m, 6/mmm) and 3 of 41 of (m-3, -3)
-//  come back with a larger angle than another equivalent (orix 2.18 against 0.92 rad on one draw). The kit returns the smallest angle
-//  (brute force over the equivalents, ties by the canonical quaternion of `CrystalOrientationSymmetry.reduce`); the pins compare the kit with
-//  orix where orix is minimal and with the minimum where it is not.
+//  come back with a larger angle than another equivalent (orix 2.18 against 0.92 rad on one draw). The cause: orix's loop takes
+//  `end * M * start` and stops at the first one inside `OrientationRegion.from_symmetry(start, end)`, whose distinguished points are
+//  start . end, while the smallest angle of `end * M * start` lies in the Voronoi cell of the identity among end . start, the inverse set.
+//  The two agree when end . start = start . end (the product set is a group, for example when one group normalises the other) and differ
+//  otherwise (432 with 622, 23 with 3): the zone then holds no equivalent on some draws and the loop falls through to its last pair, or it stops at a larger angle.
+//  The same orix loop with the zone built as `from_symmetry(end, start)` returns the smallest angle on every draw (asserted by the pin script).
+//  The kit returns the smallest angle (brute force over the equivalents, ties by the canonical quaternion of `CrystalOrientationSymmetry.reduce`);
+//  the pins compare the kit with orix's loop on the ordered zone on every draw.
 //
 
 import Foundation
