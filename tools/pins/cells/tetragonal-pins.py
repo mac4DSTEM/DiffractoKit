@@ -7,7 +7,7 @@ Run, from any directory, with the pinned oracle:
 It writes Tests/DiffractoCoreTests/Fixtures/tetragonal-pins.json BEFORE the Swift fix exists. Oracle: pymatgen 2026.9.24
 (pymatgen-core 2026.10.16) SpacegroupAnalyzer on spglib 2.8.0, NumPy 2.5.4.
 
-Tolerance: symprec = 1e-4 (Angstrom, spglib's), as slice 1's pins (tools/pins/cells/pins.py SYMPREC). The inputs are
+Tolerance: symprec = 1e-4 (Angstrom, spglib's), as the cells pins (tools/pins/cells/pins.py SYMPREC). The inputs are
 exact (coordinates written to 4 decimals and expanded by the space group's own operations, so every equivalent site is
 exact to 1e-15): the answer does not depend on symprec between 1e-6 and 1e-2, which the script checks (symprec 1e-2 gives the
 same space group number). The kit's own position tolerance is a fixed 5e-3 fractional (SymmetryDetection.positionTolerance);
@@ -33,7 +33,7 @@ in "b" (so each setting puts its accidental equal pair on a different pair of ax
 any), and the cubic one is invariant.
 
 Per entry the fixture carries: the cell, the sites, pymatgen's space-group number, point-group symbol, the Laue class
-(the 32 -> 11 table of slice 1), the number of point operations of the point group (get_point_group_operations), the number of
+(the 32 -> 11 table of tools/pins/cells/pins.py), the number of point operations of the point group (get_point_group_operations), the number of
 space-group operations on the cell as given (get_symmetry_operations; centring translations counted, lattice
 translations not), and the order of the Laue group (2 x the point-group's proper part: the count of {+-R}).
 """

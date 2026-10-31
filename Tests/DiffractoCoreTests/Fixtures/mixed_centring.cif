@@ -1,4 +1,5 @@
-# provenance: DiffractoKit slice-1 Gate B refuter, 2026-10-14 night (mixed_centred.cif); a regression fixture
+# provenance: an F-centred cubic oxide with Fe2+ 0.5 and Fe3+ 0.5 sharing the origin, centring written as a P1 operation loop.
+# Regression fixture (RefuterRegressionTests): co-sited species keep their own rows, 8 Fe sites of 0.5 and 4 O after expansion.
 data_mixed_centred
 _cell_length_a 8.39
 _cell_length_b 8.39
