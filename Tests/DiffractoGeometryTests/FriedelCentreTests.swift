@@ -39,15 +39,22 @@ struct FriedelCentreTests {
         }
     }
 
-    /// The diagnosis of the issue: the beam finder takes the brightest feature, and with the beam blocked that is a Bragg spot
-    /// or the beam stop edge, so it refuses or lands pixels away. A saturated centre is still the brightest region and is found.
-    @Test func theBeamFinderFailsOnABlockedBeam() {
-        for c in Self.pins.cases where c.name.hasPrefix("stop-") {
-            if let fit = PatternCentre.find(pattern: c.pattern) {
-                let miss = hypot(fit.row - c.truthRow, fit.column - c.truthColumn)
-                #expect(miss > 2, Comment(rawValue: "\(c.name): \(fit) is \(miss) px from the truth"))
+    /// With the beam blocked the brightest feature is a Bragg spot (stop and arm, 7.5 px off) or the beam stop rim (stop disc,
+    /// about 6 px off), not the centre: the beam finder refuses there rather than answer. An
+    /// open beam is the brightest region, centred on the pattern, and is found. The saturated centre was refused before the Friedel
+    /// check too, and may be: what is never allowed is a wrong number.
+    @Test func theBeamFinderRefusesABlockedBeam() throws {
+        for c in Self.pins.cases {
+            let fit = PatternCentre.find(pattern: c.pattern)
+            if c.name.hasPrefix("stop-") {
+                #expect(fit == nil, Comment(rawValue: "\(c.name): \(String(describing: fit)) instead of a refusal"))
+            } else if let found = fit {
+                let miss = hypot(found.row - c.truthRow, found.column - c.truthColumn)
+                #expect(miss < 0.5, Comment(rawValue: "\(c.name): \(found) is \(miss) px from the truth"))
             }
         }
+        let open = try #require(Self.pins.cases.first { $0.name == "open-beam" })
+        #expect(PatternCentre.find(pattern: open.pattern) != nil)
     }
 
     @Test func theFriedelCentreMatchesThePinnedReference() throws {

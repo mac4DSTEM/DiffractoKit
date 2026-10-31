@@ -27,9 +27,16 @@ public enum PatternCentre {
     /// The unscattered beam's centre: the intensity-weighted centroid of the connected region around the brightest (box-smoothed) pixel that lies above the
     /// midpoint between the pattern's median and that maximum. Nil when there is no beam to find: no finite pixel, a maximum less than
     /// `minimumContrastMADs` median absolute deviations (at least 1 grey level) above the median, or a region that reaches the pattern's edge.
-    /// A pattern whose beam is blocked (a beam stop) is not centred on its brightest feature, and the finder does not detect it: it refuses, or
-    /// returns the centroid of the brightest Bragg spot or of the stop's rim, pixels from the centre. Use `FriedelCentre.find` there (with the stop's mask
-    /// when there is one), or a ring fit about a start centre, `RingCalibration.fitRing`.
+    ///
+    /// A blocked or masked beam (a beam stop, with or without its arm) is refused, not answered: there the brightest region is a Bragg
+    /// spot or an arc of the stop's rim, pixels from the centre. The region is accepted only when its centroid lies within half its
+    /// radius (at least 2 px) of the pattern's Friedel centre, `FriedelCentre.find` on the pattern above its median (non-finite pixels
+    /// as 0); a visible beam is the symmetry centre and dominates that correlation, so the two agree. Two cases follow from the rule:
+    /// a pattern with one reflection whose integrated intensity is more than about half the beam's, and a weak opposite (two-beam
+    /// conditions), may be refused although the beam is visible; and a stop whose bright rim is a whole ring returns the ring's centre,
+    /// which is the right centre, with `beamRadiusPixels` and `areaPixels` describing the ring. Where this refuses, use
+    /// `FriedelCentre.find` (with the stop's mask when there is one), or a ring fit about a start centre, `RingCalibration.fitRing`.
+    /// The check builds an FFT plan and runs a forward and an inverse complex transform on the pattern zero-padded to twice its size.
     public static func find(pattern: DiffractionPattern, minimumContrastMADs: Double = 20) -> PatternCentreFit? {
         let w = pattern.width, h = pattern.height
         guard w >= 8, h >= 8, pattern.pixels.count == w * h, minimumContrastMADs.isFinite, minimumContrastMADs >= 0 else { return nil }
@@ -75,8 +82,24 @@ public enum PatternCentre {
             sum += weight; sr += weight * Double(p / w); sc += weight * Double(p % w)
         }
         guard sum > 0 else { return nil }
-        return PatternCentreFit(row: sr / sum, column: sc / sum, beamRadiusPixels: (Double(members.count) / Double.pi).squareRoot(), areaPixels: members.count)
+        let row = sr / sum, column = sc / sum
+        let radius = (Double(members.count) / Double.pi).squareRoot()
+        // The unscattered beam is the pattern's Friedel (point-reflection) centre, and while it is visible and stronger than
+        // twice any one beam-spot product it dominates the Friedel correlation, so the two agree to a fraction of a pixel. A
+        // brightest region that is not the symmetry centre is a Bragg spot or a beam stop's rim: refuse it. The check sees the
+        // pattern above its median (non-finite pixels as 0): a flat floor would otherwise pull the correlation peak to the
+        // frame's centre and refuse a good beam far from it.
+        let floor = Float(median)
+        let above = pattern.pixels.map { $0.isFinite ? max($0 - floor, 0) : 0 }
+        guard let friedel = FriedelCentre.find(pattern: DiffractionPattern(width: w, height: h, pixels: above)),
+              hypot(friedel.row - row, friedel.column - column) <= max(0.5 * radius, friedelAgreementPixels) else { return nil }
+        return PatternCentreFit(row: row, column: column, beamRadiusPixels: radius, areaPixels: members.count)
     }
+
+    /// The least distance, pixels, by which the beam's centroid and the Friedel centre may differ before the beam is refused
+    /// (half the beam radius when that is larger). `FriedelCentre` is half-pixel resolved with a parabola, so it agrees with a
+    /// visible beam well inside this; a blocked beam's brightest feature lies one spot spacing or one stop radius away.
+    static let friedelAgreementPixels = 2.0
 }
 
 /// A radial profile: the mean intensity at each radius about a centre.
