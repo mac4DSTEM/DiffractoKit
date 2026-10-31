@@ -28,6 +28,11 @@ func runOrientationAndScaleChecks(_ r: inout Report) throws {
     let o = try Orientation(matrix_identity_double3x3, symmetry: cubic)
     r.check("the Euler region of the identity is the origin", o.inEulerFundamentalRegion() == SIMD3(0, 0, 0))
     r.check("two groups cannot be compared", (try? o.angle(with: Orientation(matrix_identity_double3x3, symmetry: monoclinic))) == nil)
+    // a quarter turn about z is a cubic symmetry operator: the reduced dot is 1, the distance 0
+    let quarter = try Orientation(euler: SIMD3(Double.pi / 2, 0, 0), symmetry: cubic, direction: .labToCrystal)
+    r.near("a cubic quarter turn has dot 1 with the identity", try o.dot(quarter), 1, 1e-12)
+    r.equal("the distance matrix is n x n", try Orientation.distanceMatrix([o, quarter]).count, 2)
+    r.equal("dot_outer is |a| x |b|", try Orientation.dotOuter([o], [o, quarter])[0].count, 2)
 
     // ring-sequence assignment on Al [001]
     let al = [3.0, 4.0, 8.0, 11.0].map { $0.squareRoot() / 4.0495 }

@@ -31,9 +31,10 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   find it.
 - **Ring fit.** `fitRing` at R 600 px on 2048² takes tens of seconds (a coarse-then-fine annulus, or Metal). A one-ring profile
   model that tolerates a neighbouring ring is missing (the {111} bias of `RingFitNeighbourTailTests` is the model's, not a bug).
-- **orix API gaps.** `Orientation.from_euler(symmetry:)`, `dot`, `dot_outer`, `get_distance_matrix` and the orientation
-  (Rodrigues) fundamental zone. orix's `Misorientation.reduce()` misses the smallest angle when the two groups' product set is
-  not symmetric (432 with 622, 23 with 3): it builds its zone from start . end while its equivalents need end . start (cause and
-  pins in `Misorientation.swift`); the kit returns the smallest angle. Not reported upstream yet.
+- **orix API gaps.** The orientation (Rodrigues) fundamental zone, and `dot` / `dot_outer` / `get_distance_matrix` across two
+  different groups (`from_euler`, `dot`, `dot_outer` and `get_distance_matrix` for one group are held). orix's
+  `Misorientation.reduce()` misses the smallest angle when the two groups' product set is not a group (432 with 622, 23 with
+  3): it builds its zone from start . end while its equivalents need end . start (cause and pins in `Misorientation.swift`);
+  the kit returns the smallest angle. Not reported upstream yet.
 - **Not yet used by a known consumer** (0.10.0): `PatternCentre.find`, `PatternRadialProfile.about`, `LinearScale.fit` and
   `Misorientation`. Revisit at 0.12.
