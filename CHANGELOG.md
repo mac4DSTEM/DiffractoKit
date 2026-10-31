@@ -4,6 +4,37 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.12.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.11.0...0.12.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* CIFImportError gains the case inconsistentSymmetryOperations (an exhaustive switch needs it). CIFImport.Policy gains operationMetricTolerance (defaulted, source compatible). Files whose operation list does not fit the cell, is not closed or has another crystal class than the IT number are refused where they were read before; the metric check can be relaxed through the policy.
+
+### Features
+
+* FriedelCentre, the centre of a pattern with a blocked beam ([#53](https://github.com/mac4DSTEM/DiffractoKit/issues/53)) ([cec5d4b](https://github.com/mac4DSTEM/DiffractoKit/commit/cec5d4b94ab9d4d798fc3e1e01c74f060b923790))
+* FriedelCentre, the centre of a pattern with a blocked beam (py4DSTEM get_origin_friedel) ([cec5d4b](https://github.com/mac4DSTEM/DiffractoKit/commit/cec5d4b94ab9d4d798fc3e1e01c74f060b923790))
+* Orientation from Euler angles, dot, dotOuter and distanceMatrix ([#44](https://github.com/mac4DSTEM/DiffractoKit/issues/44)) ([c6c65a9](https://github.com/mac4DSTEM/DiffractoKit/commit/c6c65a90f89f1e9baa1002504934028dfd1f3479))
+* read Hall symbols, expand a Hall-only CIF with its group ([#48](https://github.com/mac4DSTEM/DiffractoKit/issues/48)) ([2c72ae8](https://github.com/mac4DSTEM/DiffractoKit/commit/2c72ae8781c969e0097c8b8592ac0f0fdc757efe))
+
+
+### Bug Fixes
+
+* refuse a CIF operation list that is not its space group ([#49](https://github.com/mac4DSTEM/DiffractoKit/issues/49)) ([1319b34](https://github.com/mac4DSTEM/DiffractoKit/commit/1319b347c7eaf8107765bf5829d31d3ecb3c9715))
+* ring profile fit stops runs that cannot improve (R 600 px from 24 s to 5 s) ([#51](https://github.com/mac4DSTEM/DiffractoKit/issues/51)) ([2171e36](https://github.com/mac4DSTEM/DiffractoKit/commit/2171e366009b5247977435abd0950035512261df))
+
+
+### Fixtures and tests
+
+* name why orix Misorientation.reduce misses the smallest angle ([#43](https://github.com/mac4DSTEM/DiffractoKit/issues/43)) ([7354509](https://github.com/mac4DSTEM/DiffractoKit/commit/7354509f61d85748b6c7e1a49cf3f1c153b50da8))
+* retire the apps-parity dumps, name tools, fixtures and tests by subject ([#35](https://github.com/mac4DSTEM/DiffractoKit/issues/35)) ([f0dd2ec](https://github.com/mac4DSTEM/DiffractoKit/commit/f0dd2ec1c19eefe5ac3f97cfdc9e719d2f04464a))
+* ring-fit bias follows the gap to the neighbouring ring, shared by py4DSTEM ([#52](https://github.com/mac4DSTEM/DiffractoKit/issues/52)) ([8ddbb98](https://github.com/mac4DSTEM/DiffractoKit/commit/8ddbb988c7c0717502915d88547b0a39f659fd9e))
+* ring-list shape tests moved in from an app ([938731a](https://github.com/mac4DSTEM/DiffractoKit/commit/938731ac37e51b8eb0c8eca07c3462933f5718c5))
+* ring-list shape tests moved in from macTEM ([#38](https://github.com/mac4DSTEM/DiffractoKit/issues/38)) ([938731a](https://github.com/mac4DSTEM/DiffractoKit/commit/938731ac37e51b8eb0c8eca07c3462933f5718c5))
+* the large ACOM off-grid failures are coincidence twins of the truth ([#46](https://github.com/mac4DSTEM/DiffractoKit/issues/46)) ([b87b5d5](https://github.com/mac4DSTEM/DiffractoKit/commit/b87b5d5480b6a7afde3894d21986a52b1344bc78))
+* the nine review regression CIF headers say which structure each holds and what it tests (comment lines only; no pin or value changes) ([8bd454a](https://github.com/mac4DSTEM/DiffractoKit/commit/8bd454a46d03807c2e55b7780e41a0c6a2972050))
+
 ## [0.11.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.10.0...0.11.0) (2026-10-30)
 
 
