@@ -284,8 +284,9 @@ struct CIFImportTests {
         #expect(refusal(garbled) == .unsupportedSymmetryOperation("1000000000000000000000x,y,z"))
     }
 
-    /// Fm-3m listing only its 48 point operations is refused naming the gap; in a primitive (rhombohedral) cell it is
-    /// not; duplicated rows do not pad the list.
+    /// Fm-3m listing only its 48 point operations is refused naming the gap; duplicated rows do not pad the list. In a
+    /// primitive (rhombohedral) cell 48 is enough, but these conventional-basis operations do not map that cell onto
+    /// itself and are refused by name (`OperationListCheckTests` has the right primitive list).
     @Test func testIncompleteOperationListsAreRefused() throws {
         let pointOps = PointSymmetry.holohedry(of: .cubic).rotations.map { SymmetryOperation(rotation: $0).xyzString }
         func loop(_ ops: [String]) -> String { "loop_\n_symmetry_equiv_pos_as_xyz\n" + ops.map { "'\($0)'" }.joined(separator: "\n") + "\n" }
@@ -295,8 +296,8 @@ struct CIFImportTests {
         #expect(refusal(header + cell + loop(pointOps) + atoms) == .incompleteSymmetryOperations(spaceGroupNumber: 225, declaredName: "F m -3 m", listed: 48, required: 192))
         #expect(refusal(header + cell + loop(pointOps + pointOps) + atoms) == .incompleteSymmetryOperations(spaceGroupNumber: 225, declaredName: "F m -3 m", listed: 48, required: 192))
         let primitiveCell = "_cell_length_a 2.977\n_cell_length_b 2.977\n_cell_length_c 2.977\n_cell_angle_alpha 60\n_cell_angle_beta 60\n_cell_angle_gamma 60\n"
-        let primitive = try CIFImport.read(header + primitiveCell + loop(pointOps) + atoms)
-        #expect(primitive.structure.sites.count == 2)
+        guard case .inconsistentSymmetryOperations(.notACellSymmetry)? = refusal(header + primitiveCell + loop(pointOps) + atoms)
+        else { Issue.record("conventional-basis operations admitted in a primitive cell"); return }
         #expect(CIFImport.spaceGroupOrder(225) == 192)
         #expect(CIFImport.spaceGroupOrder(12) == 8)
         #expect(CIFImport.spaceGroupOrder(194) == 24)
@@ -445,9 +446,15 @@ struct CIFSymmetryCompletenessTests {
         } catch {
             #expect(error == .incompleteSymmetryOperationsForSymbol(symbol: "F m -3 m", listed: 48, required: 192))
         }
-        // A symbol the parser cannot read stays unchecked (as before), and the primitive rhombohedral listing is admitted.
+        // A symbol the parser cannot read stays unchecked for its count (as before). In the primitive rhombohedral cell 48
+        // passes the count (192 / 4); these conventional-basis operations are then refused as no symmetry of that cell.
         let primitiveCell = "_cell_length_a 2.977\n_cell_length_b 2.977\n_cell_length_c 2.977\n_cell_angle_alpha 60\n_cell_angle_beta 60\n_cell_angle_gamma 60\n"
-        #expect(try CIFImport.read(header + primitiveCell + loop + atoms).structure.sites.count == 2)
+        do {
+            _ = try CIFImport.read(header + primitiveCell + loop + atoms)
+            Issue.record("conventional-basis operations admitted in a primitive cell")
+        } catch {
+            guard case .inconsistentSymmetryOperations(.notACellSymmetry) = error else { Issue.record("\(error)"); return }
+        }
         let unreadable = header.replacingOccurrences(of: "F m -3 m", with: "F banana")
         #expect(try CIFImport.read(unreadable + cell + loop + atoms).structure.sites.count > 0)
     }
