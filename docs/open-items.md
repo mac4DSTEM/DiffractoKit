@@ -35,8 +35,14 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   is used, as pymatgen does).
 - **Beam centre for a blocked beam.** `PatternCentre.find` refuses a pattern whose beam is blocked; Friedel-pair symmetry would
   find it.
-- **Ring fit.** `fitRing` at R 600 px on 2048² takes tens of seconds (a coarse-then-fine annulus, or Metal). A one-ring profile
-  model that tolerates a neighbouring ring is missing (the {111} bias of `RingFitNeighbourTailTests` is the model's, not a bug).
+- **Ring fit.** Speed: `fitRing` at R 600 px with a band of ±90 px on 2048² took 24 s (py4DSTEM 13 s on one thread) because the
+  profile optimiser ran to its 80-pass cap on a start stuck at the ring-width floor and after converging; with the two stops of the
+  ring-fit speed fix it takes about 5 s, the same radius. Left: about 145 ms a pass at 680 000 pixels (the finite-difference Jacobian
+  and the normal matrix: Accelerate, or a coarse-then-fine annulus). Neighbouring ring and small rings: one cause, the tail of the
+  neighbouring ring inside the annulus; the bias follows the gap to the neighbour in ring sigmas (Au {111} with sigma 1.2 px: 0.03 to
+  0.08 px at R 17 to 34 px, nothing from R 68), a single ring is exact at every radius, and py4DSTEM's `fit_ellipse_amorphous_ring`
+  has the same bias in size (`RingFitNeighbourTailTests`). Shared by the reference, so not changed. Close with a profile model that
+  has a term for the neighbouring ring (a new method, not a port), or keep the annulus inside the gap.
 - **orix API gaps.** The orientation (Rodrigues) fundamental zone, and `dot` / `dot_outer` / `get_distance_matrix` across two
   different groups (`from_euler`, `dot`, `dot_outer` and `get_distance_matrix` for one group are held). orix's
   `Misorientation.reduce()` misses the smallest angle when the two groups' product set is not a group (432 with 622, 23 with

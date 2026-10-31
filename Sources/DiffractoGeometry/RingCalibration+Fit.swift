@@ -61,7 +61,7 @@ extension RingCalibration {
     /// Exactly `calibrating(fitRing(...), d:highTensionVolts:pixelPitchMM:)`, with d, V and the pitch checked first.
     /// Two policies act: `policy` (the calibration's refusal bounds, with the evidence bounds) and `ellipsePolicy` (the
     /// ellipse fit's own rules); see `fitRing` for how they combine.
-    /// Synchronous and CPU-bound (0.1 s at R ≈ 100 px; tens of seconds for a band of ±90 px at R 600 px on a 2048² pattern):
+    /// Synchronous and CPU-bound (0.1 s at R ≈ 100 px; about 5 s for a band of ±90 px at R 600 px on a 2048² pattern):
     /// a caller on the main actor runs it from a `@concurrent` function, and may pass `progress` (0 to 1) and cancel the
     /// task or pass `isCancelled` (it then throws `CancellationError`).
     public static func fit(pattern: DiffractionPattern, centerQX: Double, centerQY: Double,
