@@ -28,8 +28,11 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   is not reproduced here: within 2.9 degrees of a template the nearest-bank gap is at most 1.6 degrees at 600 axes; a pattern
   between templates in a sparse corner of the zone is untested. Metal is not faster than all CPU cores up to 1 024 patterns
   at 600 axes; 16 384 patterns and 2 400 axes are not timed yet.
-- **CIF symmetry.** Still unchecked: a group named by Hall symbol only, and a partial list whose count equals the primitive
-  group's order but whose operations are the wrong ones (a count cannot see that).
+- **CIF symmetry.** A Hall symbol is read and a listed operation list is checked for its count, the cell metric, closure and
+  the IT number's crystal class. Still unchecked: a closed list of the right class and count with the wrong translations
+  (P4/m listed for P4_2/m, or another origin) when the file states no Hall symbol, since the kit has no table from a
+  number or Hermann-Mauguin symbol to operations; and a full loop that disagrees with the Hall symbol beside it (the loop
+  is used, as pymatgen does).
 - **Beam centre for a blocked beam.** `PatternCentre.find` refuses a pattern whose beam is blocked; Friedel-pair symmetry would
   find it.
 - **Ring fit.** `fitRing` at R 600 px on 2048² takes tens of seconds (a coarse-then-fine annulus, or Metal). A one-ring profile

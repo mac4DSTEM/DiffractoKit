@@ -164,6 +164,10 @@ struct ToleranceValidationTests {
 // MARK: - Absurd cells and the Niggli epsilon
 
 struct AbsurdCellTests {
+    /// With a no longer equal to b the hexagonal operations are not symmetries of the cell, and the import refuses them
+    /// (`inconsistentSymmetryOperations`). These cases are about the conventional route, so that check is opened.
+    static let anyMetric = CIFImport.Policy(operationMetricTolerance: 1e300)
+
     /// The fluorapatite file with its first cell length replaced.
     static func fluorapatite(a: String) throws -> String {
         let text = try Fixtures.text("fluorapatite_P63m.cif")
@@ -180,14 +184,14 @@ struct AbsurdCellTests {
     @Test func anAbsurdCifNeverTraps() throws {
         for a in ["1e-9", "1e-7", "1e-5", "1e-3", "1e-12", "1e-15", "1e-300"] {
             do {
-                let document = try CIFImport.read(try Self.fluorapatite(a: a))
+                let document = try CIFImport.read(try Self.fluorapatite(a: a), policy: Self.anyMetric)
                 #expect(document.structure.conventionalSetting?.reductionConverged != true, "\(a)")
             } catch let error as CIFImportError {
                 guard case .invalidStructure(let messages) = error else { Issue.record("\(error)"); continue }
                 #expect(!messages.isEmpty)
             }
         }
-        let long = try CIFImport.read(try Self.fluorapatite(a: "1e12"))
+        let long = try CIFImport.read(try Self.fluorapatite(a: "1e12"), policy: Self.anyMetric)
         #expect(long.structure.conventionalSetting?.reductionConverged == false)
         #expect(long.structure.conventionalSetting?.bravais == .aP)
     }

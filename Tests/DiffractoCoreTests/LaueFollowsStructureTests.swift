@@ -77,8 +77,10 @@ import DiffractoCore
     }
 
     /// A file that lists the 48 signed permutations of x, y, z literally (written in the primitive basis) for the
-    /// 60-degree cell: not all of them are symmetries of that lattice, but the atoms and the lattice (an fcc lattice)
-    /// have the full cubic group, so the class is m-3m.
+    /// 60-degree cell: not all of them are symmetries of that lattice. On these two special positions the expansion
+    /// happened to be right, on a general position it is not, so the list is refused by name; with the metric check
+    /// opened (a policy) the atoms and the fcc lattice still give the class m-3m.
+    /// RED UNDER: no metric check (the list was admitted whatever the sites).
     @Test func literalSignedPermutationsInAPrimitiveCellStillGiveTheStructuresClass() throws {
         var ops: [String] = []
         for p in [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]] {
@@ -90,7 +92,10 @@ import DiffractoCore
         for a in [4.212, 4.212 / 2.0.squareRoot()] {
         let text = cif(name: "MgOliteral", a: a, b: a, c: a, alpha: 60, beta: 60, gamma: 60, ops: ops,
                        atoms: [("Mg", 0, 0, 0), ("O", 0.5, 0.5, 0.5)])
-        let doc = try CIFImport.read(text, fileBaseName: "t")
+        #expect(throws: CIFImportError.inconsistentSymmetryOperations(.notACellSymmetry(operation: "-x,y,z"))) {
+            try CIFImport.read(text, fileBaseName: "t")
+        }
+        let doc = try CIFImport.read(text, fileBaseName: "t", policy: CIFImport.Policy(operationMetricTolerance: 10))
         #expect(doc.structure.laueClass == .mThreeBarM, "a = \(a)")
         }
     }
