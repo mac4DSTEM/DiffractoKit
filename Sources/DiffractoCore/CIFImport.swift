@@ -110,8 +110,8 @@ extension CIFImportError: LocalizedError {
 /// Something the import noticed and read past: the file is read, and the structure is the one described, but an app
 /// should show the warning beside it (`CIFDocument.warnings`).
 public enum CIFImportWarning: Sendable, Equatable, CustomStringConvertible {
-    /// The file lists a full operation loop and states a Hall symbol whose group is another one (compared modulo lattice
-    /// translations). The loop was used, as pymatgen-core 2026.10.16 `CifParser` uses it; the Hall symbol was not.
+    /// The file lists an operation loop (one that passes the completeness checks) and states a Hall symbol whose group
+    /// is another one (compared modulo lattice translations). The loop was used, as pymatgen-core 2026.10.16 `CifParser` uses it; the Hall symbol was not.
     case operationLoopIsNotTheHallGroup(hallSymbol: String, loopOrder: Int, hallOrder: Int)
 
     public var description: String {

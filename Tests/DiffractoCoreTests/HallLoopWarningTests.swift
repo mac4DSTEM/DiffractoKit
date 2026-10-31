@@ -36,6 +36,24 @@ struct HallLoopWarningTests {
         #expect(text.contains("-P 2 2") && text.contains("16") && text.contains("8") && text.contains("loop was used"))
     }
 
+    /// Equal orders are not enough: a P4/mmm loop (16 operations) beside the Hall symbol of P4/mcc (-P 4 2c, also 16
+    /// operations, the same crystal class) warns, because the c-glide operations are not in the loop.
+    @Test func aLoopOfTheSameOrderButAnotherGroupWarns() throws {
+        let loop = try OperationListCheckTests.group("-P 4 2").map(\.xyzString)
+        #expect(try OperationListCheckTests.group("-P 4 2c").count == 16)
+        let document = try CIFImport.read(Self.cif(hall: "-P 4 2c", ops: loop))
+        #expect(document.structure.sites.count == 16)
+        #expect(document.warnings == [.operationLoopIsNotTheHallGroup(hallSymbol: "-P 4 2c", loopOrder: 16, hallOrder: 16)])
+    }
+
+    /// A Hall symbol that cannot be read beside a valid loop: the loop is used, nothing is thrown and nothing is warned.
+    @Test func anUnreadableHallSymbolBesideALoopHasNoWarning() throws {
+        let loop = try OperationListCheckTests.group("-P 4 2").map(\.xyzString)
+        let document = try CIFImport.read(Self.cif(hall: "Q 9 9", ops: loop))
+        #expect(document.structure.sites.count == 16)
+        #expect(document.warnings.isEmpty)
+    }
+
     /// The same loop beside its own Hall symbol (-P 4 2), and beside none: no warning, the same 16 sites.
     @Test func aLoopOfTheHallGroupOrWithoutAHallSymbolHasNoWarning() throws {
         let loop = try OperationListCheckTests.group("-P 4 2").map(\.xyzString)
