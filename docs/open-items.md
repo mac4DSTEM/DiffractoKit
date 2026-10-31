@@ -35,9 +35,11 @@ A plain list, worst first. Each line: the item, the cause where it is known, wha
   is used, as pymatgen does).
 - **Beam centre for a blocked beam.** `FriedelCentre.find(pattern:mask:)` finds it (py4DSTEM `get_origin_friedel`, upsample
   factor 1, bitwise equal to the reference on six synthetic stop patterns; within 0.09 px of the planted centre without a mask,
-  0.013 px with it; `validation: "none"`). Left: `PatternCentre.find` does not detect a blocked beam: it refuses, or returns the
-  centroid of the brightest Bragg spot or of the stop rim, 6 to 7 px from the centre on synthetic stop patterns. Close by making
-  it refuse a region that is not the beam; and port upsample factors above 1 if a consumer needs sub-pixel peaks.
+  0.013 px with it; `validation: "none"`). `PatternCentre.find` refuses a blocked beam: its brightest region is accepted only
+  when it lies within half its radius (at least 2 px) of the Friedel centre, so a Bragg spot or the stop rim is no longer
+  returned (`theBeamFinderRefusesABlockedBeam`). Left: a two-beam pattern with one reflection stronger than about half the beam
+  and a weak opposite may be refused although the beam is visible; and upsample factors above 1 in `FriedelCentre`, if a
+  consumer needs sub-pixel peaks.
 - **Ring fit.** Speed: `fitRing` at R 600 px with a band of ±90 px on 2048² took 24 s (py4DSTEM 13 s on one thread) because the
   profile optimiser ran to its 80-pass cap on a start stuck at the ring-width floor and after converging; with the two stops of the
   ring-fit speed fix it takes about 5 s, the same radius. Left: about 145 ms a pass at 680 000 pixels (the finite-difference Jacobian
