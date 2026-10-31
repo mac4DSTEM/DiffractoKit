@@ -37,7 +37,7 @@ is geometric: a flat detector perpendicular to the beam shows no ring at 2 theta
 decided in decimal arithmetic. Radius (10 plants): FitReport.radius = (a + b)/2 on axes planted with 3 % ellipticity, the
 major axis either way; the expected radius is numpy's mean, checked against the decimal sum of the two float64 axes.
 
-Slice 3a additions to the seed: `truth` (the literals of RingCalibrationTests recomputed in decimal and asserted equal to
+Ring-calibration additions to the seed: `truth` (the literals of RingCalibrationTests recomputed in decimal and asserted equal to
 the typed ones: lambda at 80/120/200/300 kV, Au {111} at R 150 px, 200 kV, p 0.014 mm; the small-angle excess; the
 ellipticity-bound gap), and the mutation list, written into the fixture beside the quantity each moves.
 

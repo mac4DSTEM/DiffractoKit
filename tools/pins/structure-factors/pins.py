@@ -10,14 +10,14 @@ random numbers, sorted sets; two runs give the same bytes.
 Oracle 1 is NumPy, written from the definitions in the comments below (not from any Swift): the table is
 np.loadtxt of the fetched py4DSTEM file, F(hkl) = (1/V) sum_sites f_e(Z, |g|^2) occ exp(2 pi i (h x + k y + l z)).
 The Laue group (for orbits and names) comes from pymatgen's SpacegroupAnalyzer (symprec 1e-4), the family rule and the
-canonical form are slice 1's (copied from tools/pins/cells/pins.py, imported
+canonical form are those of the cells pins (copied from tools/pins/cells/pins.py, imported
 from nowhere). Oracle 2 is pymatgen's XRDCalculator (an independent implementation of the phase sum with X-ray form
 factors). Agreement is agreement, not truth: section 5's closed forms and counts are asserted below too.
 
 The sites the Swift reads
 -------------------------
 A structure built from a CIF is pinned on the sites AS WRITTEN (pymatgen's CifParser with frac_tolerance = 0, the
-expansion slice 1 pinned as `sites_as_written`): the kit's CIFImport keeps the written value (0.333333), pymatgen's
+expansion the cells pins hold as `sites_as_written`): the kit's CIFImport keeps the written value (0.333333), pymatgen's
 default snaps a coordinate within 1e-4 of 1/3 or 2/3 to the exact fraction. The snapped sites are pinned beside them and
 the effect of the snap on F is recorded (`snap_effect`). A presets' sites are exact doubles (1.0/3.0 ...), as the apps'.
 
@@ -64,10 +64,10 @@ EXTRA_K_MAX = (1.6, 2.0)     # beta'' only: kept and ring counts
 CUT = 1e-4                   # |F| cut, Angstrom (the apps')
 LISTED = 1e-6                # everything above this is listed so the edge band of the cut is visible
 LIST_RADIUS = K_MAX * (1 + 1e-6)
-FAMILY_TOL = 1e-9            # slice 1's ring rule
-TIE_TOL = 1e-12              # slice 1 3.8: equal |g| within 1e-12 relative are ordered by descending (h, k, l)
+FAMILY_TOL = 1e-9            # the ring rule of tools/pins/cells/pins.py
+TIE_TOL = 1e-12              # the reflection order of tools/pins/cells/pins.py: equal |g| within 1e-12 relative are ordered by descending (h, k, l)
 SYMPREC = 1e-4
-ABSENCE_TOL = 1e-9           # slice 1 3.8
+ABSENCE_TOL = 1e-9           # the absence rule of tools/pins/cells/pins.py
 WAVELENGTH = 0.5             # Angstrom, the X-ray pin
 FE_G2 = (0.0, 0.25, 1.0, 4.0)
 HEX_AXES_CLASSES = ("-3", "-3m", "6/m", "6/mmm")
@@ -125,7 +125,7 @@ def f_e(table, z, g2):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Lattice (slice 1's; the apps' Crystal.latReal), written from the definitions
+# Lattice (as in tools/pins/cells/pins.py; the apps' Crystal.latReal), written from the definitions
 # ----------------------------------------------------------------------------------------------------------------
 def lattice(a, b, c, al, be, ga):
     ca, cb, cg = (math.cos(math.radians(x)) for x in (al, be, ga))
@@ -156,7 +156,7 @@ def metric_is_hexagonal(cell, eps=1e-9):
 
 
 # ----------------------------------------------------------------------------------------------------------------
-# Slice 1's reflection order, orbits, names, ring rule (copied from tools/pins/cells/pins.py)
+# Reflection order, orbits, names and ring rule, copied from tools/pins/cells/pins.py
 # ----------------------------------------------------------------------------------------------------------------
 I3 = np.eye(3, dtype=np.int64)
 
@@ -208,7 +208,7 @@ def check_group_closed(name, Rs):
 
 
 def laue_class_from_group(Rs):
-    """Slice 1's Laue class rule, with 'a 4-fold / a 6-fold' read as a proper rotation (det +1) of that order."""
+    """The Laue class rule of tools/pins/cells/pins.py, with 'a 4-fold / a 6-fold' read as a proper rotation (det +1) of that order."""
     n = len(Rs)
     dets = [int(round(np.linalg.det(R))) for R in Rs]
     orders = [matrix_order(R) for R in Rs]
@@ -272,7 +272,7 @@ class OrbitCache:
 
 
 def allowed_flags(H, Rs, ts):
-    """Slice 1, 3.8: absent iff some operation has (hkl) R == (hkl) and (hkl) . t not an integer within 1e-9."""
+    """The absence rule of tools/pins/cells/pins.py: absent iff some operation has (hkl) R == (hkl) and (hkl) . t not an integer within 1e-9."""
     HR = np.einsum("mi,nij->mnj", H, Rs)
     fixed = np.all(HR == H[:, None, :], axis=2)
     dot = H.astype(float) @ np.asarray(ts, dtype=float).T
@@ -288,7 +288,7 @@ def orbit_name(c, hex_axes):
 
 
 def build_families(seq, cache, hex_axes):
-    """seq: [(hkl tuple, g, |F|^2)] in sweep order (kept reflections). Slice 1's ring rule, plus sumF2."""
+    """seq: [(hkl tuple, g, |F|^2)] in sweep order (kept reflections). The ring rule of tools/pins/cells/pins.py, plus sumF2."""
     fams = []
     cur = []
     g0 = None
@@ -485,7 +485,7 @@ def pmg_structure_cu3au(cell, sites):
 # ----------------------------------------------------------------------------------------------------------------
 def analyze(S, kmax, detail):
     """S: dict with A, B, vol, sites, table, rot/trans (operations), cache, hex_axes. Returns the listing and families.
-    Reflections: every |g| <= kmax (+1e-6 relative when detail) in slice 1's order."""
+    Reflections: every |g| <= kmax (+1e-6 relative when detail) in the order of tools/pins/cells/pins.py."""
     radius = LIST_RADIUS if (detail and kmax == K_MAX) else kmax
     H, g = enumerate_box(S["A"], S["B"], radius)
     order = order_reflections(H, g)
@@ -502,7 +502,7 @@ def analyze(S, kmax, detail):
     seq_all = [(tuple(int(x) for x in H[i]), float(g[i]), 0.0) for i in range(len(H)) if g[i] <= kmax]
     seq_allowed = [(tuple(int(x) for x in H[i]), float(g[i]), 0.0) for i in range(len(H)) if g[i] <= kmax and allowed[i]]
     res["families_all_n"] = len(build_families(seq_all, S["cache"], S["hex_axes"]))          # every reflection: the lattice rings
-    res["families_allowed_n"] = len(build_families(seq_allowed, S["cache"], S["hex_axes"]))  # slice 1: rings of the operation-allowed
+    res["families_allowed_n"] = len(build_families(seq_allowed, S["cache"], S["hex_axes"]))  # as the cells pins: rings of the operation-allowed
     res["allowed_count"] = int((allowed & (g <= kmax)).sum())
     return res
 
