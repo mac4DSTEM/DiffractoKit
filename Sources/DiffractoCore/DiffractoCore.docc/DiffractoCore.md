@@ -26,6 +26,7 @@ It uses `Foundation` and `simd` only. Start with <doc:FromACIFToRings>.
 - ``CIFImport``
 - ``CIFDocument``
 - ``CIFImportError``
+- ``CIFImportWarning``
 
 ### Cells, sites and elements
 

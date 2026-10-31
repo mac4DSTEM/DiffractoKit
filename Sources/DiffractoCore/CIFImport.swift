@@ -107,6 +107,22 @@ extension CIFImportError: LocalizedError {
     public var errorDescription: String? { description }
 }
 
+/// Something the import noticed and read past: the file is read, and the structure is the one described, but an app
+/// should show the warning beside it (`CIFDocument.warnings`).
+public enum CIFImportWarning: Sendable, Equatable, CustomStringConvertible {
+    /// The file lists an operation loop (one that passes the completeness checks) and states a Hall symbol whose group
+    /// is another one (compared modulo lattice translations). The loop was used, as pymatgen-core 2026.10.16 `CifParser` uses it; the Hall symbol was not.
+    case operationLoopIsNotTheHallGroup(hallSymbol: String, loopOrder: Int, hallOrder: Int)
+
+    public var description: String {
+        switch self {
+        case let .operationLoopIsNotTheHallGroup(hallSymbol, loopOrder, hallOrder):
+            return "The operation loop (\(loopOrder) operations) is not the group of the Hall symbol \(hallSymbol) "
+                + "(\(hallOrder) operations); the loop was used."
+        }
+    }
+}
+
 /// What a CIF read yields: the structure and what the file said about itself.
 public struct CIFDocument: Sendable, Equatable {
     public let structure: CrystalStructure
@@ -125,6 +141,8 @@ public struct CIFDocument: Sendable, Equatable {
     /// Whether the file carried expanding operations (`structure.fileOperations`): a symmetry-operation loop, or, with no
     /// loop, a Hall symbol read to its group. The structure's operations are detected from the expanded cell either way.
     public let hadSymmetryOperations: Bool
+    /// What the import read past (``CIFImportWarning``), in the order found; empty for a file with nothing to report.
+    public let warnings: [CIFImportWarning]
 }
 
 public enum CIFImport {
@@ -214,7 +232,8 @@ public enum CIFImport {
                            declaredSpaceGroupNumber: parsed.spaceGroupNumber,
                            declaredHallSymbol: parsed.hallSymbol,
                            coarsestHalfStep: parsed.coarsestHalfStep,
-                           hadSymmetryOperations: parsed.operations != nil)
+                           hadSymmetryOperations: parsed.operations != nil,
+                           warnings: parsed.warnings)
     }
 
     /// The name a structure imports under: the CIF's `data_` block name, unless it says nothing — empty, or the
@@ -240,6 +259,7 @@ public enum CIFImport {
         var spaceGroupNumber: Int?
         var spaceGroupSymbol: String?
         var hallSymbol: String?
+        var warnings: [CIFImportWarning]
     }
 
     /// One asymmetric-unit site plus how precisely each of its coordinates was written: `halfStep` is the half-width
@@ -420,6 +440,21 @@ public enum CIFImport {
         // A loop, even one holding only the identity, is what the file lists and wins over the symbol (as in pymatgen).
         let expandsWithHall = !haveSymmetryLoop && (hallOperations?.count ?? 0) > 1
         if expandsWithHall, let hallOperations { ops = hallOperations }
+        // A loop beside a readable Hall symbol of another group is used all the same (pymatgen reads no Hall symbol and
+        // uses the loop), but the reader is told. Equal groups: the same order and every listed operation in the Hall
+        // group, translations mod 1 to 1e-3 (the finest genuine translation is 1/12; a written 0.3333 is 1/3).
+        var warnings: [CIFImportWarning] = []
+        if fileListsOperations, let hallSymbol, let hallOperations {
+            let loopOrder = SymmetryOperation.distinctCount(ops)
+            let hallOrder = SymmetryOperation.distinctCount(hallOperations)
+            let sameGroup = loopOrder == hallOrder && ops.allSatisfy { op in
+                hallOperations.contains { $0.isEquivalent(to: op, translationTolerance: 1e-3) }
+            }
+            if !sameGroup {
+                warnings.append(.operationLoopIsNotTheHallGroup(hallSymbol: hallSymbol, loopOrder: loopOrder,
+                                                                hallOrder: hallOrder))
+            }
+        }
 
         let sites: [AtomSite]
         let operations: [SymmetryOperation]?
@@ -493,7 +528,7 @@ public enum CIFImport {
             a: a, b: b, c: c, alpha: alpha, beta: beta, gamma: gamma,
             sites: sites, operations: operations, coarsestHalfStep: coarsestHalfStep,
             spaceGroupNumber: spaceGroupNumber, spaceGroupSymbol: declaredHermannMauguin(cellValues),
-            hallSymbol: hallSymbol)
+            hallSymbol: hallSymbol, warnings: warnings)
     }
 
     // MARK: - Tokenizer

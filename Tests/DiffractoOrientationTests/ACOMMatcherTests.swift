@@ -825,6 +825,107 @@ struct ACOMOffGridRecoveryTests {
     }
 }
 
+/// Issue 8, the sparse corner: is there a corner of the m-3m zone ([001]-[101]-[111]) where the farthest-point sampling leaves
+/// a hole larger than elsewhere, so that a pattern between templates lands far away? DIAGNOSIS: no. The cause that was
+/// suspected (a sparse corner) would be refuted by holes near the three vertices and along the edges no larger than inside,
+/// and by patterns at the largest holes recovering to within the hole plus the in-plane bin. Both hold: at 600 axes the
+/// largest hole anywhere is 1.06 degrees (an interior point); within 5 degrees of [001], [101] and [111] it is 0.92, 0.97 and
+/// 1.03; at 2 400 axes 0.53. Planted at the 30 largest holes (8 in-plane angles each), 230 of 240 patterns land within the
+/// hole plus one in-plane bin and the other 10 are coincidence twins of the truth whose axis lies in the zone plane (8 sigma 3,
+/// 60 degrees about <111>; 2 sigma 7, 38.21 degrees about <111>, beam 1 degree from <213>), the ambiguity of
+/// `theLargeFailuresAreCoincidenceTwinsOfTheTruth`. py4DSTEM f050d207 with its own orientation_plan at 2 degree steps has the
+/// same largest hole (1.07 degrees, 1.03 to 1.05 near the vertices); its match_single_pattern on its own patterns at its 12
+/// largest holes (4 in-plane angles each) is off by the hole, at most 2.2 degrees, and on the sigma 7 beam above it picks the
+/// twin on all 6 truth patterns (20 of 48 truth and twin patterns at four beams near <213>). Both libraries behave alike: a
+/// pattern between templates is recovered to the covering distance, unless a coincidence twin wins. "Zone axis misses up to
+/// 12.8 degrees beyond the bank sampling" is not reproduced. Results stay `validation: "none"`.
+struct ACOMSparseCornerTests {
+    @Test func noCornerOfTheZoneIsSparserAndAPatternInTheLargestHoleIsRecoveredToTheHole() throws {
+        let c = try #require(try fixture().crystals["al"])
+        let refl = reflections(c)
+        let bins = 128
+        let lib = try ACOMTemplateLibrary.generate(
+            reflections: refl, kMax: c.kmax, laueClass: .mThreeBarM,
+            settings: ACOMTemplateSettings(nAzimuthal: bins, zoneAxisCount: 600,
+                                           excitation: .appCurvature(wavelengthAngstrom: c.wavelength)))
+        let matcher = try #require(ACOMMatcher(library: lib))
+        func degrees(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double { acos(min(1, simd_dot(a, b))) * 180 / .pi }
+        // dense points of the zone (z >= x >= y >= 0): a folded Fibonacci sphere plus the three edges
+        let n = 100_000
+        let golden = Double.pi * (3 - 5.0.squareRoot())
+        var points: [SIMD3<Double>] = (0..<n).map { i in
+            let z = 1 - 2 * (Double(i) + 0.5) / Double(n)
+            let r = max(0, 1 - z * z).squareRoot(), a = golden * Double(i)
+            let v = [abs(r * cos(a)), abs(r * sin(a)), abs(z)].sorted()
+            return simd_normalize(SIMD3(v[1], v[0], v[2]))
+        }
+        for k in 0...400 {
+            let t = Double(k) / 400
+            points += [simd_normalize(SIMD3(t, 0, 1)), simd_normalize(SIMD3(t, t, 1)), simd_normalize(SIMD3(1, t, 1))]
+        }
+        // both a point and the templates lie in the zone, so the nearest symmetry image of a template is the template itself
+        let hole = points.map { p in acos(min(1, lib.zoneAxes.map { simd_dot($0, p) }.max()!)) * 180 / .pi }
+        let largest = hole.max()!
+        let vertices: [SIMD3<Double>] = [[0, 0, 1], simd_normalize([1, 0, 1]), simd_normalize([1, 1, 1])]
+        let atVertices = vertices.map { v in points.indices.filter { degrees(points[$0], v) < 5 }.map { hole[$0] }.max()! }
+        #expect(largest < 1.2)
+        #expect(atVertices.allSatisfy { $0 <= largest })
+        // the 30 largest holes, at least 1.5 degrees apart
+        var centres: [Int] = []
+        for i in hole.indices.sorted(by: { hole[$0] > hole[$1] }) where centres.count < 30 {
+            if centres.allSatisfy({ degrees(points[$0], points[i]) > 1.5 }) { centres.append(i) }
+        }
+        func rotation(_ axis: SIMD3<Double>, _ deg: Double) -> simd_double3x3 {
+            simd_double3x3(simd_quatd(angle: deg * .pi / 180, axis: simd_normalize(axis)))
+        }
+        // coincidence rotations (sigma 3, 5, 7, 9, 11) about every variant of their axis: when the axis lies in the zone plane
+        // the rotation keeps the zero-order spots, and only the curvature term tells it from the truth
+        var twins: [(name: String, axis: SIMD3<Double>, rotation: simd_double3x3)] = []
+        let families: [(String, [SIMD3<Double>], Double)] = [
+            ("sigma 3", [[1, 1, 1], [-1, 1, 1], [1, -1, 1], [1, 1, -1]], 60),
+            ("sigma 5", [[1, 0, 0], [0, 1, 0], [0, 0, 1]], 36.87),
+            ("sigma 7", [[1, 1, 1], [-1, 1, 1], [1, -1, 1], [1, 1, -1]], 38.21),
+            ("sigma 9", [[1, 1, 0], [1, -1, 0], [1, 0, 1], [1, 0, -1], [0, 1, 1], [0, 1, -1]], 38.94),
+            ("sigma 11", [[1, 1, 0], [1, -1, 0], [1, 0, 1], [1, 0, -1], [0, 1, 1], [0, 1, -1]], 50.48),
+        ]
+        for (name, family, angle) in families {
+            for u in family { twins += [(name, u, rotation(u, angle)), (name, u, rotation(u, -angle))] }
+        }
+        var seed: UInt64 = 777
+        func rnd() -> Double { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return Double(seed >> 11) / Double(1 << 53) }
+        let ipp = 0.004, bin = 360 / Double(bins)
+        var within = 0, twinned: [String] = [], other: [String] = []
+        for i in centres {
+            let p = points[i]
+            let spots = ACOMTemplateLibrary.project(reflections: refl, zoneAxis: p, settings: lib.settings)
+            for _ in 0..<8 {
+                let phi = rnd() * 2 * .pi
+                let peaks = spots.map { s in
+                    ACOMPeak(x: Float(s.r * cos(s.azimuth + phi) / ipp), y: Float(s.r * sin(s.azimuth + phi) / ipp),
+                             intensity: Float(pow(s.weight, 1 / lib.settings.intensityPower)))
+                }
+                let r = matcher.match(peaks: peaks, originX: 0, originY: 0, invAngstromPerPixel: ipp)
+                let truth = ZoneAxisFrame.matrix(detectorBasis: ZoneAxisFrame.detectorBasis(zoneAxis: p), inPlaneAngle: Float(phi))
+                let got = lib.orientationMatrix(templateIndex: r.templateIndex, inPlaneAngle: r.inPlaneAngle, mirrored: r.mirrored)
+                let error = misorientationDegrees(got, truth, laue: .mThreeBarM)
+                if error <= hole[i] + bin {
+                    within += 1
+                } else if let t = twins.first(where: { t in
+                    abs(degrees(simd_normalize(t.axis), p) - 90) < 3
+                        && misorientationDegrees(got, t.rotation * truth, laue: .mThreeBarM) < hole[i] + bin
+                }) {
+                    twinned.append(String(format: "%.1f deg %@", error, t.name))
+                } else {
+                    other.append(String(format: "%.2f deg at hole %.2f", error, hole[i]))
+                }
+            }
+        }
+        print("ACOM sparse corner, 600 axes: largest hole \(largest) deg, near [001] [101] [111] \(atVertices); at the 30 largest holes x 8 angles: within hole + one bin \(within), coincidence twins with the axis in the zone plane \(twinned.count) \(twinned), other \(other)")
+        #expect(other.isEmpty)
+        #expect(within >= 200)
+    }
+}
+
 struct OrientationMapMirrorPlaneTests {
     /// The flag plane and the pattern's own in-plane angle: a mirrored result at 0.30 turns (0.80 raw) reads 0.30, a forward
     /// one at 0.10 reads 0.10, a mirrored one raw 0.20 wraps to 0.70. RED UNDER: the planes absent (compile error).

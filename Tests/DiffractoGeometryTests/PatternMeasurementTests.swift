@@ -43,6 +43,15 @@ struct PatternMeasurementTests {
         }
     }
 
+    /// A small beam far from the frame centre on a flat floor (detector bias, inelastic background): the floor alone would put
+    /// the Friedel peak at the frame centre, so the Friedel check must see the pattern above its median, or it refuses a good beam.
+    @Test func aSmallOffCentreBeamOnABackgroundFloorIsFound() throws {
+        let cy = 100.3, cx = 100.6
+        let p = Self.pattern { y, x in 100 + 2000 * exp(-((y - cy) * (y - cy) + (x - cx) * (x - cx)) / 8) }
+        let fit = try #require(PatternCentre.find(pattern: p))
+        #expect(abs(fit.row - cy) < 0.05 && abs(fit.column - cx) < 0.05, Comment(rawValue: "\(fit)"))
+    }
+
     @Test func noBeamNoCentre() {
         // pure noise, a beam at the edge, and a pattern whose brightest region is a ring (the beam stop case)
         #expect(PatternCentre.find(pattern: Self.pattern(noise: 0.05) { _, _ in 100 }) == nil)
