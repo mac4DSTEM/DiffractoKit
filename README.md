@@ -17,7 +17,7 @@ Swift 6 strict concurrency on `Foundation`, `simd`, `CryptoKit`, Metal (the ACOM
 module. The one accelerated path, `ACOMMatcher.matchAll(..., backend: .metal)`, keeps the CPU path as its reference and is
 checked against it.
 **Status: 0.x** ([semantic versioning](https://semver.org): a minor release may change the API, and every release has a
-`CHANGELOG.md` entry with a migration note where needed). Pin an exact tag and bump on purpose.
+`CHANGELOG.md` entry with a migration note where needed). Commit your `Package.resolved` and read the CHANGELOG before an update.
 
 **Platform.** Apple platforms today (macOS 15 or later, iOS 18 or later). Linux is not supported yet: `DiffractoCore` imports
 `CryptoKit` and `DiffractoOrientation` depends on ImagoKit, which uses Accelerate.
@@ -38,7 +38,7 @@ One SwiftPM product per module; a module imports only the ones above it in this 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", exact: "0.11.0"), // x-release-please-version
+    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", from: "0.11.0"), // x-release-please-version
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -261,18 +261,17 @@ and ported from: pymatgen, spglib, py4DSTEM and, for the orientation work, pyxem
 - One real-data test (`testRinglessFitOnARealMeanPatternFallsBackToTheConic`, a Ni65Cu35 mean pattern) is disabled until that
   dataset is published with the tests.
 - Policies not yet parameters (profile-fit plausibility bounds, cell volume 1e-6) remain.
-- The open list, worst first, with causes: `docs/open-items.md`; timings against Python: `docs/benchmarks.md`.
+- Open work: the GitHub issues; known limits with their causes: `docs/parity.md`; timings against Python: `docs/benchmarks.md`.
 
 ## Status and documents
 
-0.x: the API may change between minor versions; pin an exact tag. Numbers are held to the Python reference within its own tolerance; `docs/parity.md` lists each function, its state and its tolerance.
+0.x: the API may change between minor versions; commit `Package.resolved` and read the CHANGELOG before an update. Numbers are held to the Python reference within its own tolerance; `docs/parity.md` lists each function, its state and its tolerance.
 
 | Document | What |
 |---|---|
 | `CHANGELOG.md` | what changed in each release, with migration notes |
 | `docs/parity.md` | the checklist against pymatgen, py4DSTEM, pyxem / diffsims / orix |
 | `docs/benchmarks.md` | the per-function timings against the Python counterparts and the backend decision |
-| `docs/open-items.md` | what is open, with causes |
 | `docs/orientation-symmetry.md` | orientation conventions |
 | `tools/consumer-check/README.md` | the separate package that uses the public API only |
 | `tools/readme-consumer/README.md` | the separate package that compiles and runs exactly this README's program |
