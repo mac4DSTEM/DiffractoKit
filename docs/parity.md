@@ -251,7 +251,7 @@ matching and phase mapping of DiffractoOrientation, as a pinned f050d207 environ
 | Python function or option group | DiffractoKit symbol | State | Plan | Upstream tolerance (test file) | How checked |
 |---|---|---|---|---|---|
 | `process.diffraction.crystal_phase.CrystalPhase` (`quantify_single_pattern`, `quantify_phase`: phase weights by non-negative least squares on orientation-matched Bragg peaks) | `PhaseVectorMatcher.map`, `classify`, `classifyKnownVariants` (vector matching after Thronsen et al. 2024), `PhaseReferenceLibrary`, `PhaseVectorSettings` | not held | study | tests not shipped; assert_allclose defaults | a different method; the kit's verdicts are checked against the apps' code (P16) and planted truth, not against py4DSTEM. Roadmap item 1 (diagnosed in 0.9.0): `minimumVectors` = 2 makes "matrix" by exclusion and the cross-phase winner ignores completeness; the opt-in `minimumMatrixEvidence` and `completenessAwareCrossPhaseRanking` are in the rows below |
-| (no py4DSTEM counterpart) "the matrix, by exclusion" needing evidence: `CrystalPhase` has no matrix class | `PhaseVectorSettings.minimumMatrixEvidence` (default 0, off; with n > 0 the verdict "matrix" by exclusion needs at least n vectors removed as the matrix's, else "not indexed"; both classification rules) | **partly** | study | none upstream; verdicts are exact | no Python output exists. `PhaseVectorMatchingTests.matrixByExclusionCanRequireTheMatrixToHaveBeenSeen` (constructed plants: one stray peak is the shipped matrix verdict, `.notIndexed` with the setting at 1, a pattern the matrix explains stays matrix; both rules) and `ScanInputTests` (default 0). Whether it helps on real scans needs a labelled study scan (`docs/open-items.md`). Added 0.9.0 |
+| (no py4DSTEM counterpart) "the matrix, by exclusion" needing evidence: `CrystalPhase` has no matrix class | `PhaseVectorSettings.minimumMatrixEvidence` (default 0, off; with n > 0 the verdict "matrix" by exclusion needs at least n vectors removed as the matrix's, else "not indexed"; both classification rules) | **partly** | study | none upstream; verdicts are exact | no Python output exists. `PhaseVectorMatchingTests.matrixByExclusionCanRequireTheMatrixToHaveBeenSeen` (constructed plants: one stray peak is the shipped matrix verdict, `.notIndexed` with the setting at 1, a pattern the matrix explains stays matrix; both rules) and `ScanInputTests` (default 0). Whether it helps on real scans needs a labelled study scan (`docs/parity.md`, known limits). Added 0.9.0 |
 | `Crystal.calibrate_pixel_size`, `calibrate_unit_cell`, `calculate_bragg_peak_histogram` (multi-peak fit of the pixel size or the unit cell to a Bragg-peak histogram) | `RingCalibration.calibrate(radius:d:highTensionVolts:pixelPitchMM:)` (one ring of known d); `LinearScale.estimate` (innermost reflection over many positions) | not held | study | tests not shipped; function arguments `k_step=0.002`, `k_broadening=0.002` (pixel size) and `0.005`, `0.02` (unit cell) | the kit has the single-ring closed form and the linear-scale estimate, not py4DSTEM's multi-peak fit |
 
 ### 2.5 Calibration (`process.calibration`, `data.Calibration`)
@@ -396,3 +396,39 @@ Study rows that are only **partly** held and carry a ROADMAP ask (not counted ab
 
 ROADMAP item 4 also names `RingIndexing` accepted as a likelihood ratio against family membership ("document or fix"); it has no
 upstream counterpart and therefore no row above.
+
+## Known limits and decisions
+
+Open work is in the [issues](https://github.com/mac4DSTEM/DiffractoKit/issues), including the ones closed as *not planned*
+and parked for later (`cif_import` speed #5, `reflections(kMax:)` speed #6, phase-matching options #7, orix gaps #13). Speed
+against Python is in `docs/benchmarks.md`.
+
+- **`cif_import` and `symmetry_detection` speed.** Not like for like: `CIFImport.read` also detects the symmetry, pymatgen's
+  parser only parses. Measured on `tools/benchmarks/inputs/al_super2.cif` (1 536 operations): 95 % of `read` was the closure
+  check (`closedSubset`); 0.9.1 replaced it with rotation ids, a product table and translation buckets (`closedSubset` 58 ms,
+  `read` 67 ms, `ClosureEquivalenceTests` against the old code). The rest is 2.4 million lookups; a generator-based closure
+  would need an argument that it drops the same operations on the pseudo-symmetric sets the split-atom tests plant.
+- **`reflections(kMax:)`** is 2.3 to 6.6 times slower than `get_points_in_sphere`; not like for like (the kit also gives d,
+  the absence flag, the rings and their orbits).
+- **Phase matching defaults** are unchanged: `minimumMatrixEvidence` (off) keeps vacuum and stray-peak positions out of the
+  matrix class; `completenessAwareCrossPhaseRanking` (off) loses at small noise and wins near the pair radius
+  (`PhaseDiagnosisTests`). Both need one labelled scan to be switched on.
+- **ACOM coincidence twins.** 7 of 200 off-grid self-recoveries land 36 or 60 degrees away: each is a coincidence twin of the
+  truth whose kinematic pattern overlaps the truth's 0.95 to 1.0000; only the Ewald curvature term separates them, and
+  py4DSTEM picks the twin in 7 of the 14 truth and twin patterns (`theLargeFailuresAreCoincidenceTwinsOfTheTruth`). Inherent
+  to spot patterns at 200 kV; a consumer can flag it by scoring the twin of the winner. Within 2.9 degrees of a template the
+  nearest-bank gap is at most 1.6 degrees at 600 axes; a pattern between templates in a sparse corner of the zone is untested.
+  Metal is not faster than all CPU cores up to 1 024 patterns at 600 axes.
+- **CIF symmetry.** A Hall symbol is read, and a listed operation list is checked for its count, the cell metric, closure and
+  the IT number's crystal class. Unchecked: a closed list of the right class and count with the wrong translations (P4/m
+  listed for P4_2/m, or another origin) when the file states no Hall symbol, since the kit has no table from a number or
+  Hermann-Mauguin symbol to operations.
+- **Beam centre for a blocked beam.** `FriedelCentre.find(pattern:mask:)` is py4DSTEM's `get_origin_friedel` at upsample
+  factor 1; `PatternCentre.find` refuses a blocked beam. A two-beam pattern with one reflection stronger than about half the
+  beam and a weak opposite may be refused although the beam is visible.
+- **Ring fit.** About 5 s at R 600 px with a ±90 px band on 2048² (py4DSTEM 13 s on one thread), about 145 ms a pass at
+  680 000 pixels. A neighbouring ring's tail inside the annulus biases the radius by the gap in ring sigmas (Au {111},
+  sigma 1.2 px: 0.03 to 0.08 px at R 17 to 34 px, nothing from R 68); py4DSTEM's `fit_ellipse_amorphous_ring` has the same
+  bias (`RingFitNeighbourTailTests`), so it is not changed. Keep the annulus inside the gap.
+- **orix `Misorientation.reduce()`** misses the smallest angle when the two groups' product set is not a group (432 with 622,
+  23 with 3); the kit returns the smallest angle (cause and pins in `Misorientation.swift`). Not reported upstream yet.

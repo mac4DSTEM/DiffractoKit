@@ -12,7 +12,7 @@ Float64 unless the function is Float32 by design (ACOM, ellipse pattern pixels).
 | Python | 3.12.14, NumPy 2.5.4, SciPy 1.18.1, in two virtual environments: py4DSTEM 0.14.19 in one; pymatgen-core 2026.10.16 (the code; its `pymatgen` metapackage dist-info reads 2026.9.24), orix 0.15.0 and spglib 2.8.0 in the other |
 | Load | **10.5 on a 12-core machine while other builds ran** (uptime 17:39): every figure carries that noise, the single-core rows least. Re-run when the machine is quiet before quoting a ratio. |
 | Pin note | The pymatgen environment runs pymatgen-core **2026.10.16** under a `pymatgen` 2026.9.24 metapackage, and every fixture that records pymatgen-core records 2026.10.16 (`tools/pins/requirements/pymatgen.txt`). Nothing here compares numbers, only time |
-| 0.9.1 | The `symmetry_detection` and `cif_import` rows above are the 2026-10-21 measurement of 0.9.0. 0.9.1 replaced the closure check that took 95 % of them (see `docs/open-items.md`); measured in-process on the same `al_super2.cif` (machine load 3.6): `cif_import` typical median 67 ms (min 67, max 77), against 297 ms (one run at load 9) before the change and the table's 351 ms. Not yet re-run through `run.sh` |
+| 0.9.1 | The `symmetry_detection` and `cif_import` rows above are the 2026-10-21 measurement of 0.9.0. 0.9.1 replaced the closure check that took 95 % of them (see `docs/parity.md`, known limits); measured in-process on the same `al_super2.cif` (machine load 3.6): `cif_import` typical median 67 ms (min 67, max 77), against 297 ms (one run at load 9) before the change and the table's 351 ms. Not yet re-run through `run.sh` |
 
 Re-run from a fresh clone of the kit, on a quiet Mac: `gen_inputs.py` writes the shared inputs, `run.sh` builds the benchmark
 package (`tools/benchmarks`, release) and prints the kit's JSON lines, `bench_python.py` prints the Python lines, and `merge.py`
@@ -74,7 +74,7 @@ The raw lines of the run below are `tools/benchmarks/results/2026-10-21.jsonl`.
 - `symmetry_detection` and `cif_import`: the kit's `CIFImport.read` always detects the symmetry of the cell it reads;
   pymatgen's `CifParser` only parses and `SpacegroupAnalyzer` is spglib in C. On a 32-atom P1 cell (an fcc supercell with
   1 536 operations) the kit took 361 ms against 13 ms, **28 times slower**; on a four-atom cell they are level. The cause was the
-  closure check, not the symmetry search (`docs/open-items.md`); 0.9.1 made the check about five times faster, the rest stays listed there.
+  closure check, not the symmetry search (`docs/parity.md`, known limits); 0.9.1 made the check about five times faster, the rest stays listed there.
 - `orientation_reduce`: the kit reduces one matrix at a time (24 proper operators); orix reduces a vectorised batch
   (`Orientation.from_matrix` + `map_into_symmetry_reduced_zone`). The kit is 2.5 to 12 times faster at these sizes.
 - `ellipse_fit_1d`: level with py4DSTEM's `fit_ellipse_1D` (0.94 and 1.1).
@@ -88,7 +88,7 @@ The raw lines of the run below are `tools/benchmarks/results/2026-10-21.jsonl`.
 
 | Function | Backend | Why / break-even |
 |---|---|---|
-| `niggli_reduce`, `reflections`, `kinematic_reflections`, `symmetry_detection`, `cif_import` | CPU only | small arrays, branchy integer logic, readers; the kit is already faster than Python except where `docs/open-items.md` lists it |
+| `niggli_reduce`, `reflections`, `kinematic_reflections`, `symmetry_detection`, `cif_import` | CPU only | small arrays, branchy integer logic, readers; the kit is already faster than Python except where `docs/parity.md` (known limits) lists it |
 | `orientation_reduce` | CPU only | 24 small matrix products per rotation; the batch (100 000 in 0.2 s) is bound by memory traffic, a GPU would pay the transfer for no gain at these sizes |
 | `ellipse_fit_1d` | CPU only | one 1D least-squares fit per pattern; level with Python |
 | `acom_library` | CPU only | built once per phase (60 ms for 600 axes), not per pattern |

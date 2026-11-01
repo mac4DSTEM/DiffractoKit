@@ -17,5 +17,5 @@ Live:
 Tests: `DiffractoKitParityTests` holds the pinned comparisons against the Python references; the other test targets hold the
 fast unit tests; `DiffractoKitTestSupport` holds the helpers both use.
 
-What is checked against what: `docs/parity.md`. Timings against Python: `docs/benchmarks.md`. What is open:
-`docs/open-items.md`. Where it is going: `ROADMAP.md`.
+What is checked against what: `docs/parity.md`. Timings against Python: `docs/benchmarks.md`. What is open: the GitHub
+issues; known limits: `docs/parity.md`. Where it is going: `ROADMAP.md`.
