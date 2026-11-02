@@ -1,7 +1,7 @@
 # Roadmap
 
-Where DiffractoKit is going next, in order. `docs/parity.md` says what is held today, `docs/open-items.md` what is known to be
-open, and the GitHub issues track each piece of work. The numbers below are the ones `docs/parity.md` cites as "ROADMAP item n".
+Where DiffractoKit is going next, in order. `docs/parity.md` says what is held today and its known limits, and the GitHub
+issues track each piece of work. The numbers below are the ones `docs/parity.md` cites as "ROADMAP item n".
 
 1. **Diagnose before fixing.** Phase matching (`minimumVectors` = 2 makes "matrix" by exclusion; the cross-phase winner
    ignores completeness), the ACOM mirror (a mirrored win carries `inPlaneAngle` + π with no flag; some off-grid
