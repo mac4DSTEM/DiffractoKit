@@ -5,7 +5,6 @@
 //        needs no expansion of its own. Exact (a fixed matrix on a fixed cell).
 //
 
-import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

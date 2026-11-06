@@ -6,8 +6,6 @@
 
 import Foundation
 import simd
-import DiffractoCore
-import DiffractoScattering
 
 // MARK: - Settings
 

@@ -1,4 +1,3 @@
-import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd

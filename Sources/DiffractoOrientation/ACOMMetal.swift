@@ -16,7 +16,6 @@
 //
 
 import Foundation
-import DiffractoCore
 #if canImport(Metal)
 import Metal
 #endif

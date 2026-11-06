@@ -217,7 +217,6 @@ public enum EllipseCalibration {
     struct ProgressSpan {
         let report: (@Sendable (Double) -> Void)?
         let start: Double, end: Double
-        static let none = ProgressSpan(report: nil, start: 0, end: 1)
         func callAsFunction(_ fraction: Double) {
             report?(start + (end - start) * min(1, max(0, fraction)))
         }

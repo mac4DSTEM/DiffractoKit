@@ -7,7 +7,6 @@ import Foundation
 import Testing
 import DiffractoCore
 import DiffractoScattering
-import DiffractoGeometry
 
 /// Structure builders shared by this target's indexing tests (a small copy of DiffractoScatteringTests' Presets: a test
 /// target cannot import another).

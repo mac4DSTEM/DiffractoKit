@@ -262,7 +262,7 @@ struct CIFImportTests {
 
     """
 
-    private func refusal(_ cif: String, _ file: StaticString = #filePath, line: UInt = #line) -> CIFImportError? {
+    private func refusal(_ cif: String) -> CIFImportError? {
         do { _ = try CIFImport.read(cif, fileBaseName: "t"); Issue.record("admitted"); return nil }
         catch { return error }
     }

@@ -137,5 +137,3 @@ func niggliViolations(_ v: [SIMD3<Double>], eps: Double) -> [String] {
 func metric(of vectors: [SIMD3<Double>]) -> [[Double]] {
     (0..<3).map { i in (0..<3).map { j in dot(vectors[i], vectors[j]) } }
 }
-
-func isUnimodularWithPositiveDeterminant(_ p: IntegerMatrix) -> Bool { p.determinant == 1 }

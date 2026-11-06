@@ -3,12 +3,9 @@
 //  Role: what the tolerances in Å⁻¹ mean on a particular detector.
 //
 
-import DiffractoKitTestSupport
 import Testing
 import Foundation
 import simd
-import DiffractoCore
-import DiffractoScattering
 import DiffractoOrientation
 
 @Suite struct PhaseVectorResolutionTests {
