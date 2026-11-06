@@ -3,10 +3,10 @@
 Where DiffractoKit is going next, in order. `docs/parity.md` says what is held today and its known limits, and the GitHub
 issues track each piece of work. The numbers below are the ones `docs/parity.md` cites as "ROADMAP item n".
 
-1. **Diagnose before fixing.** Phase matching (`minimumVectors` = 2 makes "matrix" by exclusion; the cross-phase winner
-   ignores completeness), the ACOM mirror (a mirrored win carries `inPlaneAngle` + π with no flag; some off-grid
-   self-recoveries land 36 or 60 degrees away) and CIF symmetry (a group named by Hermann–Mauguin symbol alone, a partial
-   operation list). Each gets its cause stated first; what the diagnosis supports is fixed, the rest stays an open item.
+1. **Diagnose before fixing.** A number that reads wrong gets its cause stated first; what the diagnosis supports is
+   fixed, the rest stays an issue. Open today: the ACOM beam direction lands 3 to 6 degrees off the [001] and [011] zone
+   axes on the AlMgSi demo where excitation widths nearly tie (#65). The phase-matching, ACOM-mirror and CIF-symmetry
+   items of October are closed (#7, #8, #9). Listing on the Swift Package Index (#58) is open beside it.
 2. **Space-group facts, public.** Space group symbol, number and Hall symbol through spglib's definitions (no Wyckoff
    positions first); a public `ReflectionFamily` initialiser; `RingIndexing`'s "accepted" documented as a likelihood ratio,
    not family membership, or changed.

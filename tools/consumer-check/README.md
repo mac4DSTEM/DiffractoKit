@@ -1,7 +1,7 @@
 # consumer-check
 
 A separate SwiftPM package that depends on DiffractoKit **by path** (`.package(path: "../..")`) and uses, from outside the
-package, the public API of slices 1 to 3: `UnitCell`, `MillerIndex`, `IntegerMatrix`, `SymmetryOperation`, `PointSymmetry`,
+package, the public API: `UnitCell`, `MillerIndex`, `IntegerMatrix`, `SymmetryOperation`, `PointSymmetry`,
 `LaueClass`, `CrystalSystem`, `Element`, `AtomSite`, `CrystalStructure`, `SymmetryDetection`, `CIFImport`, `CIFDocument`,
 `ReflectionList`, `Reflection`, `ReflectionFamily`, `ElectronScatteringFactors`, `StructureFactors`,
 `KinematicReflectionList`, and DiffractoGeometry's `ElectronWavelength`, `RingCalibration` (closed forms, `calibrate`,
@@ -15,26 +15,11 @@ a q at Au {111}'s g with σ = 1e-3 q accepted as {1 1 1}, β″'s [0 0 1] = (cos
 rendered by `GeometryChecks.swift` and recovered inside the apps' bands (radius 1 %, b/a 0.01, centre 1 px), and a 2:1
 ellipse's offset (4, 3) corrected to (2, 3)).
 
-DiffractoKit 0.1.0 adds `RingFitChecks.swift` and two sections of `main.swift`: `RingCalibration.q` / `radius`, `RingEvidence`
-(by hand and on a planted ring), `fitRing` / `calibrating` (equal to `fit`), `requireRingEvidence`, the three new refusals and
-`FitReport`'s new fields, `progress:` / `isCancelled:` on every fit, `LocalizedError` on the three error types, and the
-tetragonal settings. 397 checks at 0.0.4.
-
-The conventional setting and Niggli reduction add `ConventionalChecks.swift`: `UnitCell.niggliReduced` / `ReducedCell` (fcc gold's primitive cell, a skewed basis of
-it, an invalid cell), `UnitCell.conventionalCell` / `ConventionalCell` / `BravaisLattice` (gold primitive -> cF with 4 centring
-translations, bcc -> cI, a C-centred monoclinic primitive cell -> mC with b the unique axis), `CrystalStructure.setting` /
-`conventionalSetting` / `ConventionalSetting` and its four conversions (gold: 192 operations in the conventional cell and 48 in
-the primitive file cell; rutile with its 4-fold axis along a: 4/mmm, 16 operations, the file's (1 0 0) the conventional
-(0 0 1)), and `detectingSymmetry(conventional:tolerance:search:)` with `SymmetryDetection.Tolerance` / `Search` (a 0.012 Å
-displacement in a 30 Å cell: symmetric at the fractional 5e-3, not at the Cartesian 1e-3 Å; the cell list equals the brute-force
-scan). 530 checks in all.
-
-DiffractoKit 0.2.0 adds `PolicyChecks.swift`: every `Policy` type (`ReflectionList`, `CrystalStructure.ValidationPolicy`,
-`SymmetryDetection`, `CIFImport`, `EllipseCalibration`, `RingEvidence`, `RingCalibration`) with its `.default` read field by
-field, one non-default use whose outcome a reader verifies by hand (a 0.3 Å contact usable under a 0.2 Å limit, a 120 degree
-gap fitted under a coverage bound of 20 bins, occupancies 0.50 and 0.51 two species at tolerance 0), the refusals of an invalid
-value (a position tolerance outside its domain, an `Int.max` bin count, a NaN residual cap), `SymmetryOperation(xyz:maximumMagnitude:)`,
-`RingIndexing`'s `minimumMargin:` and `reach`, and `retainingAll:` (`kept` and `families` equal, `all` empty).
+`RingFitChecks.swift` covers the ring fit (`RingCalibration.q` / `radius`, `RingEvidence`, `fitRing` / `calibrating`, the
+refusals, `FitReport`, `progress:` / `isCancelled:`, `LocalizedError` on the error types, the tetragonal settings);
+`ConventionalChecks.swift` the Niggli reduction, the conventional cell and `SymmetryDetection` with its tolerance and search;
+`PolicyChecks.swift` every `Policy` type read field by field, one non-default use each and the refusals of invalid values.
+About 530 checks in all.
 
 ```
 tools/consumer-check/run.sh
