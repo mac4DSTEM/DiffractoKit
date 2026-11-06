@@ -1,4 +1,3 @@
-import DiffractoKitTestSupport
 import Testing
 @testable import DiffractoGeometry
 

@@ -11,7 +11,6 @@ import Testing
 import Foundation
 import DiffractoGeometry
 import DiffractoCore
-import DiffractoScattering
 
 // MARK: - EllipseCalibration.Policy
 

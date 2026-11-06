@@ -9,7 +9,6 @@
 //  columns fastest, plus Gaussian noise from SplitMix64 + Box-Muller (the parity renderer's generator, seeded here).
 //
 
-import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry

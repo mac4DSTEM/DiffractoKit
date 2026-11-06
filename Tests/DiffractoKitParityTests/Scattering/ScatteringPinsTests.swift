@@ -110,8 +110,6 @@ enum ScatteringFixtures {
     static let xrayNames = ["Au", "Si", "Mg", "beta_double_prime", "Cu3Au-occ", "WS2"]
 }
 
-private func relErr(_ x: Double, _ y: Double, floor: Double) -> Double { abs(x - y) / max(abs(y), floor) }
-
 private func descendingMembers(_ ms: [MillerIndex]) -> [[Int]] {
     ms.sorted { ($0.h, $0.k, $0.l) > ($1.h, $1.k, $1.l) }.map { [$0.h, $0.k, $0.l] }
 }

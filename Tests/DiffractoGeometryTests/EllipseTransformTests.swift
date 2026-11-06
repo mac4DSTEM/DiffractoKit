@@ -15,7 +15,6 @@
 //  RED UNDER: e = a/b for e = b/a; the axis swap of the returned pair dropped; the inverse's signs; `accepted` letting b <= 0 pass.
 //
 
-import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry

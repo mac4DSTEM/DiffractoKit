@@ -2,7 +2,6 @@ import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
-import DiffractoCore
 import DiffractoOrientation
 
 /// Pins: tools/pins/orientation-symmetry/family-real-pins.py. Real py4DSTEM `Crystal`s (0.14.19 at f050d207, pymatgen 2025.1.9 and spglib 2.8.0 in
@@ -11,7 +10,6 @@ import DiffractoOrientation
 /// order is pymatgen's. Written tolerance: 1e-7 absolute (the reference's tolerance; was 1e-12) on family entries (float64 sums of three products of order 1). Columns
 /// within 1e-12 of a sector wall (`boundary`) are decided by BLAS rounding in NumPy and are not compared.
 private struct RealPins: Decodable {
-    struct Lattice: Decodable { let a, b, c, alpha, beta, gamma: Double }
     struct Case: Decodable { let matrix, family: [[Double]]; let hits: [Int]; let boundary: [Bool] }
     struct Crystal: Decodable {
         let `class`: String; let spaceGroup: Int; let symbol: String; let primary: Bool

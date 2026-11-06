@@ -8,7 +8,6 @@
 //            `ACOMTemplateLibrary.project`, and planted orientations against py4DSTEM's own match_single_pattern.
 //
 
-import DiffractoKitTestSupport
 import Foundation
 import Testing
 import simd
@@ -144,7 +143,7 @@ private func peaks(_ c: Pins.Case) -> [ACOMPeak] {
 
 private let appKeys = ["al", "mg", "mono"]
 
-private func appLibrary(_ key: String, _ crystal: Pins.Crystal) throws -> ACOMTemplateLibrary {
+private func appLibrary(_ crystal: Pins.Crystal) throws -> ACOMTemplateLibrary {
     let app = try #require(crystal.appRoute)
     let settings = ACOMTemplateSettings(zoneAxisCount: app.zoneAxisCount,
                                         excitation: .appCurvature(wavelengthAngstrom: crystal.wavelength))
@@ -168,7 +167,7 @@ struct ACOMAppRouteTests {
     /// The beam directions are the apps' fundamental-zone samples; the templates are their polar images and spots.
     @Test(arguments: appKeys) func zoneAxesTemplatesAndSpotsEqualTheTranscription(key: String) throws {
         let c = try #require(try fixture().crystals[key])
-        let lib = try appLibrary(key, c)
+        let lib = try appLibrary(c)
         let app = try #require(c.appRoute)
         let axes = vectors(f8(app.axes))
         #expect(lib.zoneAxes.count == axes.count)
@@ -201,7 +200,7 @@ struct ACOMAppRouteTests {
     /// runner-up, the in-plane angle, the orientation matrix and (m-3m) the reduced Euler angles.
     @Test(arguments: appKeys) func matchesEqualTheTranscription(key: String) throws {
         let c = try #require(try fixture().crystals[key])
-        let lib = try appLibrary(key, c)
+        let lib = try appLibrary(c)
         let matcher = try #require(ACOMMatcher(library: lib))
         var worstScores = 0.0, worstScore = 0.0, worstMatrix = 0.0, worstPolar = 0.0
         for (k, cs) in try #require(c.appRoute).cases.enumerated() {
@@ -600,7 +599,7 @@ struct ACOMMetalTests {
         var worst: Float = 0, cases = 0
         for key in appKeys {
             let c = try #require(try fixture().crystals[key])
-            let lib = try appLibrary(key, c)
+            let lib = try appLibrary(c)
             let matcher = try #require(ACOMMatcher(library: lib))
             guard matcher.isMetalAvailable else { return }
             let pinned = try #require(c.appRoute).cases

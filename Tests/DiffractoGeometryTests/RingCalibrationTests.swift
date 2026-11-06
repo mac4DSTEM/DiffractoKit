@@ -13,7 +13,6 @@
 //  equality.
 //
 
-import DiffractoKitTestSupport
 import Testing
 import Foundation
 import DiffractoGeometry
