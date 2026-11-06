@@ -2,8 +2,8 @@
 
 # DiffractoKit
 
-[![CI](https://github.com/mac4DSTEM/DiffractoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/mac4DSTEM/DiffractoKit/actions/workflows/ci.yml)
-[![Docs](https://github.com/mac4DSTEM/DiffractoKit/actions/workflows/docs.yml/badge.svg)](https://mac4dstem.github.io/DiffractoKit/)
+[![CI](https://github.com/macEMSuite/DiffractoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/macEMSuite/DiffractoKit/actions/workflows/ci.yml)
+[![Docs](https://github.com/macEMSuite/DiffractoKit/actions/workflows/docs.yml/badge.svg)](https://macemsuite.github.io/DiffractoKit/)
 
 Crystallography and electron diffraction as a Swift package: the numbers a scientist reads, never UI. DiffractoKit
 is the Swift counterpart of the crystallography parts of **pymatgen**, **py4DSTEM** and **pyxem**: the unit cell and its
@@ -13,7 +13,7 @@ diffraction pattern (wavelength, camera length, reciprocal-space pixel size, the
 imported by tagged version into applications.
 
 Swift 6 strict concurrency on `Foundation`, `simd`, `CryptoKit`, Metal (the ACOM matcher's optional GPU path) and
-[ImagoKit](https://github.com/mac4DSTEM/ImagoKit) (its FFT, on Accelerate); no Python. Headless, one SwiftPM product per
+[ImagoKit](https://github.com/macEMSuite/ImagoKit) (its FFT, on Accelerate); no Python. Headless, one SwiftPM product per
 module. The one accelerated path, `ACOMMatcher.matchAll(..., backend: .metal)`, keeps the CPU path as its reference and is
 checked against it.
 **Status: 0.x** ([semantic versioning](https://semver.org): a minor release may change the API, and every release has a
@@ -38,7 +38,7 @@ One SwiftPM product per module; a module imports only the ones above it in this 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/DiffractoKit", from: "0.12.0"), // x-release-please-version
+    .package(url: "https://github.com/macEMSuite/DiffractoKit", from: "0.12.0"), // x-release-please-version
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -50,7 +50,7 @@ targets: [
 ```
 
 The package needs macOS 15 or iOS 18 and a Swift 6.2 toolchain (`swift-tools-version: 6.2`). Its only package dependency is
-[ImagoKit](https://github.com/mac4DSTEM/ImagoKit), used by `DiffractoOrientation` alone (its `FFT1D`, on Accelerate);
+[ImagoKit](https://github.com/macEMSuite/ImagoKit), used by `DiffractoOrientation` alone (its `FFT1D`, on Accelerate);
 the system frameworks are Foundation, simd, CryptoKit and, for the optional GPU matcher, Metal. It carries no unsafe
 flags: your build compiles it optimised itself; a Debug build of the reflection loops and of the ring fit is slow.
 `DiffractoGeometry` depends on the other two, but each file that names a type of a module should import that module itself
