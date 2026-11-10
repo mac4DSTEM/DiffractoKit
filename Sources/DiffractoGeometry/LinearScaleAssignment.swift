@@ -6,6 +6,8 @@
 //        One case is assigned although the sequence cannot tell: two hypotheses that predict the SAME ratios (Al [001] with two rings is
 //        {200}, {220} and equally {220}, {400}). No measurement of those rings separates them, so the lower shell is taken and the other is
 //        named in `equallyFitting` (the single-ring rule's reasoning: the innermost ring is the lowest shell that fits).
+//        The rings are read twice (position by position, and as the modes of all radii together) and nothing is assigned unless both readings
+//        give the same scale: read one way only, a polycrystal's broad {111} ring was two rings that fit {311}, {222} (mac4DSTEM#110).
 //        Ported from mac4DSTEM's `ShellAssignment` (calibration design 2026-10-22, section 6), which this replaces.
 //
 //  NO Python reference exists (py4DSTEM does not do this): checked against planted truth only, `validation: "none"`.
@@ -44,12 +46,15 @@ public enum LinearScaleAssignmentError: Error, LocalizedError, Equatable, Sendab
     case noMatch(crystal: String, observedRatios: [Double], predicted: [(label: String, ratios: [Double])])
     /// Two assignments fit equally well.
     case ambiguous(first: String, second: String)
+    /// The two readings of the rings (position by position, and pooled over the scan) give different scales: the first ring each one found, with its radius.
+    case readingsDisagree(perPosition: String, pooled: String)
 
     public static func == (a: Self, b: Self) -> Bool {
         switch (a, b) {
         case let (.noMatch(c1, o1, p1), .noMatch(c2, o2, p2)):
             return c1 == c2 && o1 == o2 && p1.count == p2.count && zip(p1, p2).allSatisfy { $0.label == $1.label && $0.ratios == $1.ratios }
         case let (.ambiguous(a1, b1), .ambiguous(a2, b2)): return a1 == a2 && b1 == b2
+        case let (.readingsDisagree(a1, b1), .readingsDisagree(a2, b2)): return a1 == a2 && b1 == b2
         default: return false
         }
     }
@@ -62,15 +67,22 @@ public enum LinearScaleAssignmentError: Error, LocalizedError, Equatable, Sendab
             return "The rings do not match any starting shell of \(crystal): the first ring gives ratios \(seen) but the crystal predicts \(sentences.joined(separator: " or "))."
         case .ambiguous(let first, let second):
             return "Two assignments fit equally well (\(first) and \(second) first). Pick the first ring in the crystal's list, or measure the pixel size from a distance."
+        case .readingsDisagree(let perPosition, let pooled):
+            return "The rings do not decide the first shell: read position by position the first ring is \(perPosition), read over the whole scan it is \(pooled), and the two scales differ. Broad or split rings do that. Correct the elliptical distortion first, pick the first ring in the crystal's list, or measure the pixel size from a distance."
         }
     }
 }
 
 extension LinearScale {
-    /// The equivalents of one ring at one position: a peak joins the ring while it is within this (relative) of the PREVIOUS peak. Measured
-    /// from the ring's first peak instead, the outer half of a ring that spreads more than 3 % (ellipticity, a binned detector) became a
-    /// ring of its own, at a ratio near 1.04 that matches Al {311}/{222} (mac4DSTEM#110).
+    /// Cluster width (relative) of the equivalents of one ring at one position, measured from the ring's first peak; also the half width of
+    /// the window the pooled radii are smoothed with.
     static let assignmentClusterBand = 0.03
+    /// The pooled radii are counted in bins this wide (relative) and smoothed with a triangular window of the cluster band on each side.
+    static let assignmentBinWidth = 0.01
+    /// Two neighbouring modes of the pooled radii are separate rings when the valley between them is at most this share of the lower mode.
+    static let assignmentValley = 0.5
+    /// The two readings agree when their scales are within this (relative): the tolerance a ring is matched to a shell with.
+    static let assignmentReadingAgreement = 0.03
     /// Two hypotheses predict the same ratios when every matched shell ratio agrees to this (relative): floating point, not noise.
     static let assignmentSameRatios = 1e-9
     /// The first K observed rings are read; a ring needs `assignmentMinimumPositionShare` of the positions that hold any peak.
@@ -85,7 +97,12 @@ extension LinearScale {
 
     /// Which of the crystal's first shells is the first observed ring.
     ///
-    /// Per position the peaks are clustered (the equivalents of one ring: each within 3 % of the peak before it), the first three rings are
+    /// The rings are read twice, position by position (`ringsPerPosition`) and over the whole scan (`ringsPooled`), and each reading is scored
+    /// on its own. An assignment is returned only when both readings give one and their scales agree within 3 %: the per-position one, whose
+    /// first ring is the radius `estimate` measures. A broad ring, a split ring or a missing ring misleads one reading and not the other in the
+    /// same way, so a disagreement is refused (`readingsDisagree`) instead of answered. What follows describes one reading.
+    ///
+    /// Per position the peaks are clustered (the equivalents of one ring: within 3 % of its first peak), the first three rings are
     /// read, and each ring's radius is the median over the positions that have it (at least 20 % of those with any peak). The hypotheses H_j "the first ring is shell j" (j below 4) predict
     /// the later rings; each observed ring is matched to the nearest later shell within max(3 % of its radius, 1 px). The best hypothesis wins
     /// if it matches strictly more rings than the runner-up, or the same number with a misfit under half and 0.5 % lower. Hypotheses that
@@ -100,8 +117,8 @@ extension LinearScale {
     ///   - crystalName: for the "no match" sentence.
     ///   - priorScale: a Δq (Å⁻¹ per pixel) from the file or typed.
     /// - Returns: nil when no position holds a radius above `minimumRadiusPixels` (or the shell list is empty or has a non-positive length).
-    /// - Throws: `LinearScaleAssignmentError` when the sequence matches no starting shell, or two assignments with different predictions fit
-    ///   equally well.
+    /// - Throws: `LinearScaleAssignmentError` when the sequence matches no starting shell, two assignments with different predictions fit
+    ///   equally well, or the two readings of the rings give different scales.
     public static func assign(
         radiiPerPosition: [[Double]], shellLengths: [Double], labels: [String]? = nil, crystalName: String = "the crystal",
         priorScale: Double? = nil, minimumRadiusPixels: Double = 2
@@ -109,6 +126,24 @@ extension LinearScale {
         guard shellLengths.count > 0, shellLengths.allSatisfy({ $0.isFinite && $0 > 0 }) else { return nil }
         func name(_ k: Int) -> String { labels.flatMap { k < $0.count ? $0[k] : nil } ?? "shell \(k + 1)" }
 
+        // Two readings of the same peaks, with different weaknesses, must give the same scale; a reading that refuses refuses for both.
+        let perPosition = ringsPerPosition(radiiPerPosition, minimumRadiusPixels: minimumRadiusPixels)
+        let pooled = ringsPooled(radiiPerPosition, minimumRadiusPixels: minimumRadiusPixels)
+        guard let a = try assign(rings: perPosition, shellLengths: shellLengths, name: name, crystalName: crystalName, priorScale: priorScale),
+              let b = try assign(rings: pooled, shellLengths: shellLengths, name: name, crystalName: crystalName, priorScale: priorScale) else { return nil }
+        let scaleA = a.referenceRadiusInvAngstrom / a.observedRadiiPixels[0], scaleB = b.referenceRadiusInvAngstrom / b.observedRadiiPixels[0]
+        guard abs(scaleA / scaleB - 1) <= assignmentReadingAgreement else {
+            func at(_ x: LinearScaleAssignment) -> String { "\(x.label) at \(String(format: "%.1f", x.observedRadiiPixels[0])) px" }
+            throw LinearScaleAssignmentError.readingsDisagree(perPosition: at(a), pooled: at(b))
+        }
+        return a
+    }
+
+    /// The rings read position by position: at each position the peaks are clustered (the equivalents of one ring: within 3 % of its first
+    /// peak) and the first three clusters are its rings; a ring's radius is the median over the positions that have it (at least 20 % of
+    /// those with any peak). Its weakness: a ring that spreads more than the band is split, and a position that lacks a ring shifts the
+    /// count of the later ones.
+    static func ringsPerPosition(_ radiiPerPosition: [[Double]], minimumRadiusPixels: Double) -> [Double] {
         var perRing = [[Double]](repeating: [], count: assignmentMaximumRings)
         var positionsWithPeaks = 0
         for peaks in radiiPerPosition {
@@ -117,19 +152,67 @@ extension LinearScale {
             positionsWithPeaks += 1
             var i = 0, ring = 0
             while i < radii.count, ring < assignmentMaximumRings {
-                var j = i + 1, sum = radii[i]
-                while j < radii.count, radii[j] <= radii[j - 1] * (1 + assignmentClusterBand) { sum += radii[j]; j += 1 }
+                let limit = radii[i] * (1 + assignmentClusterBand)
+                var j = i, sum = 0.0
+                while j < radii.count, radii[j] <= limit { sum += radii[j]; j += 1 }
                 perRing[ring].append(sum / Double(j - i))
                 i = j; ring += 1
             }
         }
-        guard positionsWithPeaks > 0 else { return nil }
+        guard positionsWithPeaks > 0 else { return [] }
         let needed = max(1, Int((assignmentMinimumPositionShare * Double(positionsWithPeaks)).rounded(.up)))
         var observed: [Double] = []
         for ring in 0 ..< assignmentMaximumRings {
             guard perRing[ring].count >= needed else { break }
             observed.append(median(perRing[ring]))
         }
+        return observed
+    }
+
+    /// The rings read over the whole scan: the modes of the radii of all positions together (1 % bins on a logarithmic axis, smoothed over the
+    /// 3 % band; two modes are separate when the valley between them is at most half the lower one). A ring needs at least 20 % of the
+    /// positions that have any peak; its radius is the median of its radii. Its weakness: grains of several orientations add their rings
+    /// into one sequence no single position shows, and an elliptical distortion splits a ring into two modes.
+    static func ringsPooled(_ radiiPerPosition: [[Double]], minimumRadiusPixels: Double) -> [Double] {
+        let positions = radiiPerPosition.map { $0.filter { $0.isFinite && $0 > minimumRadiusPixels && $0 > 0 } }.filter { !$0.isEmpty }
+        guard let smallest = positions.joined().min(), let largest = positions.joined().max() else { return [] }
+        let step = log(1 + assignmentBinWidth)
+        let first = (log(smallest) / step).rounded(.down)
+        func bin(_ r: Double) -> Int { Int((log(r) / step).rounded(.down) - first) }
+        let half = Int((assignmentClusterBand / assignmentBinWidth).rounded())
+        var counts = [Double](repeating: 0, count: bin(largest) + 1)
+        for radii in positions { for r in radii { counts[bin(r)] += 1 } }
+        // A triangular window of the cluster band on each side: one ring's equivalents within 3 % are one mode.
+        var smooth = [Double](repeating: 0, count: counts.count)
+        for i in counts.indices where counts[i] > 0 {
+            for d in -half ... half where smooth.indices.contains(i + d) { smooth[i + d] += counts[i] * Double(half + 1 - abs(d)) }
+        }
+        // Local maxima; two neighbours are two modes only when the valley between them is at most half the lower one.
+        var peaks: [Int] = [], cuts: [Int] = []
+        for i in smooth.indices where smooth[i] > 0 && (i == 0 || smooth[i] > smooth[i - 1]) && (i == smooth.count - 1 || smooth[i] >= smooth[i + 1]) {
+            guard let last = peaks.last else { peaks.append(i); continue }
+            let valley = (last ... i).min { smooth[$0] < smooth[$1] }!
+            if smooth[valley] <= assignmentValley * min(smooth[last], smooth[i]) {
+                peaks.append(i); cuts.append(valley)
+            } else if smooth[i] > smooth[last] {
+                peaks[peaks.count - 1] = i
+            }
+        }
+        // Each mode's radii and the positions that have it; a ring needs its share of the positions.
+        func mode(of r: Double) -> Int { let b = bin(r); return cuts.firstIndex { b < $0 } ?? cuts.count }
+        var members = [[Double]](repeating: [], count: peaks.count), holders = [Int](repeating: 0, count: peaks.count)
+        for radii in positions {
+            var seen = Set<Int>()
+            for r in radii { let m = mode(of: r); members[m].append(r); seen.insert(m) }
+            for m in seen { holders[m] += 1 }
+        }
+        let needed = max(1, Int((assignmentMinimumPositionShare * Double(positions.count)).rounded(.up)))
+        return members.indices.filter { holders[$0] >= needed }.prefix(assignmentMaximumRings).map { median(members[$0]) }
+    }
+
+    /// The hypotheses scored against one reading of the rings (`assign`'s documentation). Nil without a first ring.
+    private static func assign(rings observed: [Double], shellLengths: [Double], name: (Int) -> String, crystalName: String,
+                               priorScale: Double?) throws -> LinearScaleAssignment? {
         guard let r1 = observed.first, r1 > 0 else { return nil }
 
         let shells = Array(shellLengths.prefix(assignmentShellWindow))
