@@ -62,14 +62,38 @@ struct LinearScaleAssignmentTests {
         #expect(r.shellIndex == 0 && r.matchedRings == 3)
     }
 
-    @Test func twoEquallyGoodAssignmentsAreRefusedAndNamed() {
+    /// Two rings at 1 : √2 fit {A}, {B} and equally {B}, {C}: the same prediction at two scales, which no radius of these rings separates.
+    /// The lowest shell is assigned and the others are named (it was a refusal before mac4DSTEM#110).
+    @Test func theSamePredictionAtTwoScalesTakesTheLowerShellAndNamesTheOthers() throws {
         let shells = [1.0, 2.0.squareRoot(), 2.0, 8.0.squareRoot()]
         let radii = Self.positions([40, 40 * 2.0.squareRoot()])
-        #expect(throws: LinearScaleAssignmentError.ambiguous(first: "{A}", second: "{B}")) {
-            try Self.assign(radii, shells: shells, labels: ["{A}", "{B}", "{C}", "{D}"])
+        let r = try #require(try Self.assign(radii, shells: shells, labels: ["{A}", "{B}", "{C}", "{D}"]))
+        #expect(r.shellIndex == 0 && r.label == "{A}" && r.matchedRings == 2 && r.equallyFitting == ["{B}", "{C}"])
+        let al = try #require(try Self.assign(Self.positions([Self.plantedRadii[0], Self.plantedRadii[1]])))
+        #expect(al.label == "{200}" && al.equallyFitting == ["{220}"])
+        #expect(try #require(try Self.assign(Self.positions(Self.plantedRadii))).equallyFitting.isEmpty)
+    }
+
+    /// Two assignments with DIFFERENT predictions that both fit are still refused and named: Al rings at 1 : 1.645 are {111}, {220}
+    /// (1.633) or {200}, {311} (1.658), and a better measurement could tell them apart.
+    @Test func twoEquallyGoodAssignmentsWithDifferentPredictionsAreRefusedAndNamed() {
+        #expect(throws: LinearScaleAssignmentError.ambiguous(first: "{111}", second: "{200}")) {
+            try Self.assign(Self.positions([40, 40 * 1.645]))
         }
         let sentence = LinearScaleAssignmentError.ambiguous(first: "{A}", second: "{B}").localizedDescription
         #expect(sentence.hasPrefix("Two assignments fit equally well ({A} and {B} first)"))
+    }
+
+    /// mac4DSTEM#110: on a binned, elliptical Al [001] pattern the four {200} spots spread 6 % in radius and the four {220} spots 7 %.
+    /// A ring is the run of peaks each within 3 % of the one before, so each family stays one ring. Clustered from the ring's first
+    /// peak, the outer {200} spots became a ring at ratio 1.04 and the pattern read {311}, {222}.
+    @Test func aRingThatSpreadsMoreThanTheBandStaysOneRing() throws {
+        let radii = [[Double]](repeating: [17.0, 17.3, 17.8, 18.0, 24.6, 25.0, 25.7, 26.3], count: 25)
+        let r = try #require(try Self.assign(radii))
+        #expect(r.label == "{200}" && r.observedRings == 2 && r.matchedRings == 2 && r.equallyFitting == ["{220}"])
+        #expect(abs(r.observedRadiiPixels[0] - 17.525) < 1e-9 && abs(r.observedRadiiPixels[1] - 25.4) < 1e-9)
+        let both = try #require(try LinearScale.estimateAssigned(radiiPerPosition: radii, shellLengths: Self.al, labels: Self.alLabels))
+        #expect(abs(both.estimate.invAngstromPerPixel - Self.al[1] / 17.525) < 1e-12)
     }
 
     @Test func ringsThatMatchNoStartingShellAreRefusedWithTheRatios() throws {
@@ -100,7 +124,8 @@ struct LinearScaleAssignmentTests {
     }
 
     /// The sweep that pins K = 3 rings and the 20 % share. {400} seen at 15 % of the positions is not read: the two rings left ({200}, {220}) fit
-    /// two starting shells and the call refuses as ambiguous; at 25 % the third ring is read and decides. A fourth ring is never read.
+    /// two starting shells at the same ratio, so {200} is taken and {220} named; at 25 % the third ring is read and decides. A fourth ring is
+    /// never read.
     @Test func theRingCountAndPositionShareArePinned() throws {
         let rings = [Self.plantedRadii[0], Self.plantedRadii[1]]
         func sparse(share: Double) -> [[Double]] {
@@ -109,7 +134,8 @@ struct LinearScaleAssignmentTests {
                 return Double(i) < share * 100 ? peaks + [Self.plantedRadii[2], Self.plantedRadii[2], Self.plantedRadii[2], Self.plantedRadii[2]] : peaks
             }
         }
-        #expect(throws: LinearScaleAssignmentError.self) { try Self.assign(sparse(share: 0.15)) }
+        let unread = try #require(try Self.assign(sparse(share: 0.15)))
+        #expect(unread.observedRings == 2 && unread.shellIndex == 1 && unread.equallyFitting == ["{220}"])
         let kept = try #require(try Self.assign(sparse(share: 0.25)))
         #expect(kept.observedRings == 3 && kept.shellIndex == 1)
         // a fourth ring (here the Al {422}-like radius) at every position: still three rings read

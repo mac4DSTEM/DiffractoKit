@@ -3,6 +3,9 @@
 //  Role: which of a crystal's shells is the first observed ring? `LinearScale.estimate` takes its reference shell from the caller; on Al [001]
 //        the {111} reflections are not in the zone, the first visible ring is {200}, and assuming the first shell read Δq 13.4 % low.
 //        `LinearScale.assign` tests the first few shells against the SEQUENCE of observed ring radii and refuses when the sequence cannot tell.
+//        One case is assigned although the sequence cannot tell: two hypotheses that predict the SAME ratios (Al [001] with two rings is
+//        {200}, {220} and equally {220}, {400}). No measurement of those rings separates them, so the lower shell is taken and the other is
+//        named in `equallyFitting` (the single-ring rule's reasoning: the innermost ring is the lowest shell that fits).
 //        Ported from mac4DSTEM's `ShellAssignment` (calibration design 2026-10-22, section 6), which this replaces.
 //
 //  NO Python reference exists (py4DSTEM does not do this): checked against planted truth only, `validation: "none"`.
@@ -26,6 +29,9 @@ public struct LinearScaleAssignment: Sendable, Equatable {
     public let observedRings: Int
     /// RMS relative misfit over the matched rings after the first (0 when there are none).
     public let rmsMisfit: Double
+    /// Labels of the higher starting shells that predict the same ratios as the assigned one and so fit these rings exactly as well
+    /// (empty for a decided assignment). The lower shell was taken; a reader shows these beside the label.
+    public let equallyFitting: [String]
     /// False with one observed ring: nothing could be tested and the first ring is assumed to be the first shell.
     public var isChecked: Bool { observedRings >= 2 }
     /// Always "none": no standard has validated the assignment.
@@ -61,8 +67,12 @@ public enum LinearScaleAssignmentError: Error, LocalizedError, Equatable, Sendab
 }
 
 extension LinearScale {
-    /// Cluster width (relative) of the equivalents of one ring at one position.
+    /// The equivalents of one ring at one position: a peak joins the ring while it is within this (relative) of the PREVIOUS peak. Measured
+    /// from the ring's first peak instead, the outer half of a ring that spreads more than 3 % (ellipticity, a binned detector) became a
+    /// ring of its own, at a ratio near 1.04 that matches Al {311}/{222} (mac4DSTEM#110).
     static let assignmentClusterBand = 0.03
+    /// Two hypotheses predict the same ratios when every matched shell ratio agrees to this (relative): floating point, not noise.
+    static let assignmentSameRatios = 1e-9
     /// The first K observed rings are read; a ring needs `assignmentMinimumPositionShare` of the positions that hold any peak.
     static let assignmentMaximumRings = 3
     static let assignmentMinimumPositionShare = 0.2
@@ -75,10 +85,12 @@ extension LinearScale {
 
     /// Which of the crystal's first shells is the first observed ring.
     ///
-    /// Per position the peaks are clustered (the equivalents of one ring), the first three rings are read, and each ring's radius is the median
-    /// over the positions that have it (at least 20 % of those with any peak). The hypotheses H_j "the first ring is shell j" (j below 4) predict
+    /// Per position the peaks are clustered (the equivalents of one ring: each within 3 % of the peak before it), the first three rings are
+    /// read, and each ring's radius is the median over the positions that have it (at least 20 % of those with any peak). The hypotheses H_j "the first ring is shell j" (j below 4) predict
     /// the later rings; each observed ring is matched to the nearest later shell within max(3 % of its radius, 1 px). The best hypothesis wins
-    /// if it matches strictly more rings than the runner-up, or the same number with a misfit under half and 0.5 % lower. One observed ring
+    /// if it matches strictly more rings than the runner-up, or the same number with a misfit under half and 0.5 % lower. Hypotheses that
+    /// predict the same ratios as the best one cannot be told apart by these rings: the lowest of them is assigned and the others are named
+    /// in `equallyFitting`. One observed ring
     /// cannot be tested: shell 0 is assumed, unless `priorScale` agrees with exactly one hypothesis within 10 % (it never overrides a sequence).
     ///
     /// - Parameters:
@@ -88,7 +100,8 @@ extension LinearScale {
     ///   - crystalName: for the "no match" sentence.
     ///   - priorScale: a Δq (Å⁻¹ per pixel) from the file or typed.
     /// - Returns: nil when no position holds a radius above `minimumRadiusPixels` (or the shell list is empty or has a non-positive length).
-    /// - Throws: `LinearScaleAssignmentError` when the sequence matches no starting shell or two assignments fit equally well.
+    /// - Throws: `LinearScaleAssignmentError` when the sequence matches no starting shell, or two assignments with different predictions fit
+    ///   equally well.
     public static func assign(
         radiiPerPosition: [[Double]], shellLengths: [Double], labels: [String]? = nil, crystalName: String = "the crystal",
         priorScale: Double? = nil, minimumRadiusPixels: Double = 2
@@ -104,9 +117,8 @@ extension LinearScale {
             positionsWithPeaks += 1
             var i = 0, ring = 0
             while i < radii.count, ring < assignmentMaximumRings {
-                let limit = radii[i] * (1 + assignmentClusterBand)
-                var j = i, sum = 0.0
-                while j < radii.count, radii[j] <= limit { sum += radii[j]; j += 1 }
+                var j = i + 1, sum = radii[i]
+                while j < radii.count, radii[j] <= radii[j - 1] * (1 + assignmentClusterBand) { sum += radii[j]; j += 1 }
                 perRing[ring].append(sum / Double(j - i))
                 i = j; ring += 1
             }
@@ -122,11 +134,12 @@ extension LinearScale {
 
         let shells = Array(shellLengths.prefix(assignmentShellWindow))
         let tried = min(assignmentHypotheses, shells.count)
-        func assigned(_ j: Int, matched: Int, rms: Double, secondShell: Int?) -> LinearScaleAssignment {
+        func assigned(_ j: Int, matched: Int, rms: Double, secondShell: Int?, equallyFitting: [String] = []) -> LinearScaleAssignment {
             LinearScaleAssignment(
                 shellIndex: j, label: name(j), referenceRadiusInvAngstrom: shells[j],
                 nextShellInvAngstrom: secondShell.map { shells[$0] } ?? (j + 1 < shells.count ? shells[j + 1] : nil),
-                observedRadiiPixels: observed, matchedRings: matched, observedRings: observed.count, rmsMisfit: rms)
+                observedRadiiPixels: observed, matchedRings: matched, observedRings: observed.count, rmsMisfit: rms,
+                equallyFitting: equallyFitting)
         }
 
         if observed.count == 1 || shells.count == 1 {
@@ -138,11 +151,13 @@ extension LinearScale {
             return assigned(j, matched: 1, rms: 0, secondShell: nil)
         }
 
-        struct Score { let j: Int; let matched: Int; let rms: Double; let secondShell: Int? }
+        /// `shellPerRing[i]` is the shell matched to observed ring i + 1, nil when none was.
+        struct Score { let j: Int; let matched: Int; let rms: Double; let secondShell: Int?; let shellPerRing: [Int?] }
         var scores: [Score] = []
         for j in 0 ..< tried {
             let scale = shells[j] / r1
             var last = j, matched = 1, squares = 0.0, second: Int?
+            var shellPerRing = [Int?](repeating: nil, count: observed.count - 1)
             for ring in 1 ..< observed.count {
                 let r = observed[ring]
                 var best: (k: Int, error: Double)?
@@ -152,14 +167,16 @@ extension LinearScale {
                 }
                 guard let hit = best, abs(shells[hit.k] / scale - r) <= max(0.03 * r, 1) else { continue }
                 matched += 1; squares += hit.error * hit.error; last = hit.k
+                shellPerRing[ring - 1] = hit.k
                 if ring == 1 { second = hit.k }
             }
-            scores.append(Score(j: j, matched: matched, rms: matched > 1 ? (squares / Double(matched - 1)).squareRoot() : 0, secondShell: second))
+            scores.append(Score(j: j, matched: matched, rms: matched > 1 ? (squares / Double(matched - 1)).squareRoot() : 0, secondShell: second,
+                                shellPerRing: shellPerRing))
         }
         // A misfit below 0.2 % is rounding, not a difference between assignments.
         func effective(_ s: Score) -> Double { max(s.rms, 0.002) }
         let ranked = scores.sorted { $0.matched != $1.matched ? $0.matched > $1.matched : effective($0) < effective($1) }
-        let best = ranked[0], runnerUp = ranked[1]
+        let best = ranked[0]
         if best.matched == 1 {
             let seen = (1 ..< observed.count).prefix(2).map { observed[$0] / r1 }
             let predicted = scores.sorted { $0.j < $1.j }.prefix(2).map { s in
@@ -169,14 +186,33 @@ extension LinearScale {
         }
         // Equal match counts are told apart only by a misfit that is both half and 0.5 % lower: ellipticity or an origin offset moves every
         // ring by about that much, so a smaller difference is noise.
-        let decisive = best.matched > runnerUp.matched
-            || (best.matched == runnerUp.matched && effective(best) < 0.5 * effective(runnerUp)
-                && effective(runnerUp) - effective(best) > 0.005)
-        guard decisive else {
-            let (a, b) = best.j < runnerUp.j ? (best.j, runnerUp.j) : (runnerUp.j, best.j)
-            throw LinearScaleAssignmentError.ambiguous(first: name(a), second: name(b))
+        func beaten(_ s: Score) -> Bool {
+            best.matched > s.matched
+                || (best.matched == s.matched && effective(best) < 0.5 * effective(s) && effective(s) - effective(best) > 0.005)
         }
-        return assigned(best.j, matched: best.matched, rms: best.rms, secondShell: best.secondShell)
+        // The same rings matched to shells at the same ratios: the two hypotheses are one prediction at two scales, and no radius of these
+        // rings separates them.
+        func sameRatios(_ s: Score) -> Bool {
+            zip(best.shellPerRing, s.shellPerRing).allSatisfy { mine, theirs in
+                switch (mine, theirs) {
+                case (nil, nil): return true
+                case let (k?, m?):
+                    let p = shells[k] / shells[best.j], q = shells[m] / shells[s.j]
+                    return abs(p - q) <= assignmentSameRatios * p
+                default: return false
+                }
+            }
+        }
+        let rivals = ranked.dropFirst().filter { !beaten($0) }
+        guard let other = rivals.first(where: { !sameRatios($0) }) else {
+            // No rival, or only the same prediction at a higher scale: the lowest shell that fits is the first ring.
+            let tied = ([best] + rivals).sorted { $0.j < $1.j }
+            let lowest = tied[0]
+            return assigned(lowest.j, matched: lowest.matched, rms: lowest.rms, secondShell: lowest.secondShell,
+                            equallyFitting: tied.dropFirst().map { name($0.j) })
+        }
+        let (a, b) = best.j < other.j ? (best.j, other.j) : (other.j, best.j)
+        throw LinearScaleAssignmentError.ambiguous(first: name(a), second: name(b))
     }
 
     /// `assign`, then `estimate` against the assigned shell, the shell the second ring matched as the check.
