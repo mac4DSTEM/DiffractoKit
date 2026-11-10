@@ -84,16 +84,27 @@ struct LinearScaleAssignmentTests {
         #expect(sentence.hasPrefix("Two assignments fit equally well ({A} and {B} first)"))
     }
 
-    /// mac4DSTEM#110: on a binned, elliptical Al [001] pattern the four {200} spots spread 6 % in radius and the four {220} spots 7 %.
-    /// A ring is the run of peaks each within 3 % of the one before, so each family stays one ring. Clustered from the ring's first
-    /// peak, the outer {200} spots became a ring at ratio 1.04 and the pattern read {311}, {222}.
-    @Test func aRingThatSpreadsMoreThanTheBandStaysOneRing() throws {
-        let radii = [[Double]](repeating: [17.0, 17.3, 17.8, 18.0, 24.6, 25.0, 25.7, 26.3], count: 25)
-        let r = try #require(try Self.assign(radii))
-        #expect(r.label == "{200}" && r.observedRings == 2 && r.matchedRings == 2 && r.equallyFitting == ["{220}"])
-        #expect(abs(r.observedRadiiPixels[0] - 17.525) < 1e-9 && abs(r.observedRadiiPixels[1] - 25.4) < 1e-9)
-        let both = try #require(try LinearScale.estimateAssigned(radiiPerPosition: radii, shellLengths: Self.al, labels: Self.alLabels))
-        #expect(abs(both.estimate.invAngstromPerPixel - Self.al[1] / 17.525) < 1e-12)
+    /// A ring split by an elliptical distortion, from first principles (no measured radius): Al [001] at Δq = 0.0280 Å⁻¹ per pixel under a 4 %
+    /// ellipse whose major axis lies along one <100>. The {200} spots then sit at r(1 ± 0.02), 4 % apart, and the {220} spots, 45 degrees from the
+    /// axes, stay at their radius. Read position by position the two {200} radii are two rings at the ratio 1.04 of {311}, {222} (what 0.12.0
+    /// assigned: Δq 1.7 times too large). Read over the whole scan they are one ring and the sequence is {200}, {220}. The readings disagree, so
+    /// nothing is assigned. Mutation: return the per-position reading alone and {311} comes back.
+    @Test func aRingSplitByAnEllipseIsRefusedNotAssignedToThreeEleven() throws {
+        let deltaQ = 0.0280, ellipticity = 0.04
+        let r200 = Self.al[1] / deltaQ, r220 = Self.al[2] / deltaQ
+        let pattern = [r200 * (1 - ellipticity / 2), r200 * (1 - ellipticity / 2), r200 * (1 + ellipticity / 2), r200 * (1 + ellipticity / 2),
+                       r220, r220, r220, r220]
+        let radii = [[Double]](repeating: pattern, count: 25)
+        let perPosition = LinearScale.ringsPerPosition(radii, minimumRadiusPixels: 2), pooled = LinearScale.ringsPooled(radii, minimumRadiusPixels: 2)
+        #expect(perPosition.count == 3 && abs(perPosition[1] / perPosition[0] - (1 + ellipticity / 2) / (1 - ellipticity / 2)) < 1e-12)
+        #expect(pooled.count == 2 && abs(pooled[0] - r200) < 1e-9 && abs(pooled[1] - r220) < 1e-9, "\(pooled)")
+        do {
+            let r = try Self.assign(radii)
+            Issue.record("assigned \(r?.label ?? "nil")")
+        } catch let error as LinearScaleAssignmentError {
+            guard case .readingsDisagree(let a, let b) = error else { Issue.record("\(error)"); return }
+            #expect(a.hasPrefix("{311} at ") && b.hasPrefix("{200} at "), "\(a), \(b)")
+        }
     }
 
     @Test func ringsThatMatchNoStartingShellAreRefusedWithTheRatios() throws {

@@ -74,9 +74,8 @@ public enum LinearScaleAssignmentError: Error, LocalizedError, Equatable, Sendab
 }
 
 extension LinearScale {
-    /// The equivalents of one ring at one position: a peak joins the ring while it is within this (relative) of the PREVIOUS peak. Measured
-    /// from the ring's first peak instead, the outer half of a ring that spreads more than 3 % (ellipticity, a binned detector) became a
-    /// ring of its own, at a ratio near 1.04 that matches Al {311}/{222} (mac4DSTEM#110).
+    /// Cluster width (relative) of the equivalents of one ring at one position, measured from the ring's first peak; also the half width of
+    /// the window the pooled radii are smoothed with.
     static let assignmentClusterBand = 0.03
     /// The pooled radii are counted in bins this wide (relative) and smoothed with a triangular window of the cluster band on each side.
     static let assignmentBinWidth = 0.01
@@ -103,7 +102,7 @@ extension LinearScale {
     /// first ring is the radius `estimate` measures. A broad ring, a split ring or a missing ring misleads one reading and not the other in the
     /// same way, so a disagreement is refused (`readingsDisagree`) instead of answered. What follows describes one reading.
     ///
-    /// Per position the peaks are clustered (the equivalents of one ring: each within 3 % of the peak before it), the first three rings are
+    /// Per position the peaks are clustered (the equivalents of one ring: within 3 % of its first peak), the first three rings are
     /// read, and each ring's radius is the median over the positions that have it (at least 20 % of those with any peak). The hypotheses H_j "the first ring is shell j" (j below 4) predict
     /// the later rings; each observed ring is matched to the nearest later shell within max(3 % of its radius, 1 px). The best hypothesis wins
     /// if it matches strictly more rings than the runner-up, or the same number with a misfit under half and 0.5 % lower. Hypotheses that
@@ -140,10 +139,10 @@ extension LinearScale {
         return a
     }
 
-    /// The rings read position by position: at each position the peaks are clustered (the equivalents of one ring: each within 3 % of the
-    /// peak before it) and the first three clusters are its rings; a ring's radius is the median over the positions that have it (at least
-    /// 20 % of those with any peak). Its weakness: a ring broader than the band is split differently at every position, and a position
-    /// that lacks a ring shifts the count of the later ones.
+    /// The rings read position by position: at each position the peaks are clustered (the equivalents of one ring: within 3 % of its first
+    /// peak) and the first three clusters are its rings; a ring's radius is the median over the positions that have it (at least 20 % of
+    /// those with any peak). Its weakness: a ring that spreads more than the band is split, and a position that lacks a ring shifts the
+    /// count of the later ones.
     static func ringsPerPosition(_ radiiPerPosition: [[Double]], minimumRadiusPixels: Double) -> [Double] {
         var perRing = [[Double]](repeating: [], count: assignmentMaximumRings)
         var positionsWithPeaks = 0
@@ -153,8 +152,9 @@ extension LinearScale {
             positionsWithPeaks += 1
             var i = 0, ring = 0
             while i < radii.count, ring < assignmentMaximumRings {
-                var j = i + 1, sum = radii[i]
-                while j < radii.count, radii[j] <= radii[j - 1] * (1 + assignmentClusterBand) { sum += radii[j]; j += 1 }
+                let limit = radii[i] * (1 + assignmentClusterBand)
+                var j = i, sum = 0.0
+                while j < radii.count, radii[j] <= limit { sum += radii[j]; j += 1 }
                 perRing[ring].append(sum / Double(j - i))
                 i = j; ring += 1
             }
