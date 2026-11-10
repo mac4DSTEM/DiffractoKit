@@ -149,4 +149,66 @@ struct LinearScaleAssignmentTests {
         #expect(LinearScale.compactShellLabel("{3 3 3} + {5 1 1}") == "{3 3 3} + {5 1 1}")
         #expect(LinearScale.compactShellLabel("{10 0 0}") == "{10 0 0}")
     }
+
+    static let cubicLabels = ["{111}", "{200}", "{220}", "{311}", "{222}", "{400}", "{331}", "{420}"]
+    static func fcc(_ a: Double) -> [Double] { [3.0, 4.0, 8.0, 11.0, 12.0, 16.0, 19.0, 20.0].map { $0.squareRoot() / a } }
+
+    /// A polycrystal's broad first ring (mac4DSTEM#110, the py4DSTEM Au simulation): {111} spread over 19.5 to 23 px beside {200} near 25 px, then
+    /// {220} and {311}. Read position by position the broad ring is two "rings" a few percent apart, which with {200} fit {311}, {222}, {400} on all
+    /// three (Δq 1.9 times too large: what `assign` returned before the readings had to agree). Read over the whole scan it is one ring and the
+    /// sequence is {111}. The two scales differ, so nothing is assigned. Mutation: return the per-position reading alone and {311} comes back.
+    @Test func aBroadFirstRingReadTwoWaysIsRefusedNotAssignedToThreeEleven() throws {
+        let au = Self.fcc(4.0782), deltaQ = 0.0195
+        var state: UInt64 = 42
+        func uniform() -> Double {
+            state = state &* 6364136223846793005 &+ 1442695040888963407
+            return Double(state >> 11) / Double(1 << 53) * 2 - 1
+        }
+        let r200 = au[1] / deltaQ, r220 = au[2] / deltaQ, r311 = au[3] / deltaQ
+        let radii: [[Double]] = (0 ..< 400).map { i in
+            var peaks = (0 ..< (3 + i % 2)).map { _ in 21.25 + 1.75 * uniform() }
+            peaks += (0 ..< 2).map { _ in r200 + 0.4 * uniform() }
+            peaks += [r220 + 0.5 * uniform(), r311 + 0.5 * uniform()]
+            return peaks
+        }
+        // the two readings on their own: {311} at twice the scale, and {111}
+        let perPosition = LinearScale.ringsPerPosition(radii, minimumRadiusPixels: 2), pooled = LinearScale.ringsPooled(radii, minimumRadiusPixels: 2)
+        #expect(perPosition.count == 3 && perPosition[1] / perPosition[0] < 1.10, "the broad ring read as two: \(perPosition)")
+        #expect(pooled.count == 3 && abs(pooled[0] - 21.25) < 0.2 && abs(pooled[1] - r200) < 0.3 && abs(pooled[2] - r220) < 0.3, "\(pooled)")
+        do {
+            let r = try LinearScale.assign(radiiPerPosition: radii, shellLengths: au, labels: Self.cubicLabels, crystalName: "Au")
+            Issue.record("assigned \(r?.label ?? "nil"), rings \(r?.observedRadiiPixels ?? [])")
+        } catch let error as LinearScaleAssignmentError {
+            guard case .readingsDisagree(let a, let b) = error else { Issue.record("\(error)"); return }
+            #expect(a.hasPrefix("{311} at ") && b.hasPrefix("{111} at "), "\(a), \(b)")
+            #expect(error.errorDescription?.contains("read over the whole scan it is {111}") == true)
+        }
+    }
+
+    /// Grains of two orientations in one scan (the Al-Mg-Si demo's shape): 70 % of the positions show Al [001] ({200}, {220}, {400}), 30 % show
+    /// [011] ({111}, {200}, {220}). Position by position the first ring is {200}; over the whole scan the rings are {111}, {200}, {220}. The labels
+    /// differ and the scale is the same, so the per-position assignment stands.
+    @Test func twoGrainOrientationsGiveTwoLabelsAtOneScaleAndAreAssigned() throws {
+        let al = Self.fcc(Self.a), deltaQ = 0.0120
+        let radii: [[Double]] = (0 ..< 100).map { i in
+            (i % 10 < 7 ? [al[1], al[2], al[5]] : [al[0], al[1], al[2]]).flatMap { g in [g / deltaQ, g / deltaQ] }
+        }
+        let pooled = LinearScale.ringsPooled(radii, minimumRadiusPixels: 2)
+        #expect(abs(pooled[0] - al[0] / deltaQ) < 1e-9, "the pooled first ring is {111}: \(pooled)")
+        let r = try #require(try LinearScale.assign(radiiPerPosition: radii, shellLengths: al, labels: Self.cubicLabels, crystalName: "Al"))
+        #expect(r.label == "{200}")
+        #expect(abs(r.referenceRadiusInvAngstrom / r.observedRadiiPixels[0] - deltaQ) <= 1e-9 * deltaQ)
+    }
+
+    /// Tight polycrystal rings of three lattices, every shell at every position: both readings see the same rings and the first shell is assigned.
+    @Test func tightPolycrystalRingsOfFccBccAndDiamondAreAssignedToTheFirstShell() throws {
+        let bcc = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0].map { $0.squareRoot() / 2.8665 }
+        let diamond = [3.0, 8.0, 11.0, 16.0, 19.0, 24.0, 27.0, 32.0].map { $0.squareRoot() / 5.4309 }
+        for (shells, deltaQ) in [(Self.fcc(Self.a), 0.027), (bcc, 0.035), (diamond, 0.020)] {
+            let radii = Self.positions(shells.prefix(4).map { $0 / deltaQ }, noise: 0.1, seed: 3)
+            let r = try #require(try LinearScale.assign(radiiPerPosition: radii, shellLengths: shells, crystalName: "x"))
+            #expect(r.shellIndex == 0 && r.matchedRings == 3)
+            #expect(abs(r.referenceRadiusInvAngstrom / r.observedRadiiPixels[0] / deltaQ - 1) < 0.005)
+        }
+    }
 }
