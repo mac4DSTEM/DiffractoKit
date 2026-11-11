@@ -36,9 +36,12 @@ public struct LearnedOrientationRelationship: Sendable {
     /// near-identical pairs.
     public let variants: [simd_double3x3]
 
+    /// The angle within which two variants are one, radians (3°).
+    public static let defaultVariantMergeAngleRad = 3 * Double.pi / 180
+
     public init(relation: simd_double3x3, positionCount: Int, spreadRad: Double,
                 matrixSymmetry: CrystalOrientationSymmetry, precipitateSymmetry: CrystalOrientationSymmetry,
-                variantMergeAngleRad: Double = 3 * Double.pi / 180) {
+                variantMergeAngleRad: Double = LearnedOrientationRelationship.defaultVariantMergeAngleRad) {
         self.relation = relation
         self.positionCount = positionCount
         self.spreadRad = spreadRad
@@ -214,7 +217,9 @@ extension PhaseVectorMatcher {
     /// minimum is searched by coordinate descent over the three components of a small rotation, in steps of 2°, 1°, 0.5°
     /// and 0.25°, within `limitRad` of the input. A step is taken only when it lowers the sum by at least `minimumGain`
     /// of its current value: where the positions show the variants in one kind of projection only, some angle is not fixed
-    /// by the spots, and the relation must not drift along it on rounding noise. Measured 2026-11-11: with 2 % the
+    /// by the spots, and the relation must not drift along it on rounding noise. The score is taken WITHOUT the in-plane
+    /// fit of the classification: with it (tried 2026-11-11) the fit hides part of the error, the demo's relation drifts to
+    /// 2.0° and Thronsen dataset A falls to 98.24 %. Measured 2026-11-11: with 2 % the
     /// synthetic demo's relation stays at 0.04° from the planted one and Thronsen et al. dataset A classifies 98.3 to
     /// 98.4 %; with 0.5 % the demo drifts to 0.5° and Thronsen falls to 98.29 %; with no threshold the demo drifts to 2.4°.
     ///
@@ -298,6 +303,22 @@ extension PhaseVectorMatcher {
     ///   - matrixInPlaneCorrectionRad: the in-plane correction the removal fitted here
     ///     (``MatrixResidualScan/inPlaneCorrectionsRad``), so the matrix's spots are where the removal had them.
     ///   - matrixExcitationSlabInvAngstrom: the slab the removal used.
+    ///   - allPeaks: every peak of the position, the matrix's included. When given together with `matrixReflections`, a variant
+    ///     is scored on the whole pattern: its own spots together with the matrix's spots here, against every vector. `peaks`
+    ///     (the residual) then serves only the in-plane fit. A precipitate that shares spots with the matrix loses them to
+    ///     the removal, and the few left score badly on their own (measured on Thronsen et al. dataset A: 69 T1 positions
+    ///     just over the cut-off). The score, and so the cut-off, is then of the whole pattern: a vector on a matrix spot
+    ///     adds nothing to the sum and one to the divisor, so a few vectors that nothing explains weigh less than they do on
+    ///     the residual. That is what brings those positions back, and it is a weaker cut-off; the phase-specific-reflection
+    ///     guard and the firm rule are what refuse a position then. Where a variant was scored, the counts are of the
+    ///     vectors that lie on no matrix spot ("own" vectors): `survivingCount` is their number, `matchedCount` how many of
+    ///     them the winner explains, and the chance guard, when on, is applied to those two; where none was scored, the
+    ///     residual's gate decides and `survivingCount` is the residual's. `matrixInPlaneCorrectionRad` is applied to the
+    ///     matrix's spots as before.
+    ///   - countsSingleOwnVector: with `allPeaks`. false (the default): a position with at most
+    ///     `settings.directMatrixMaximumVectors` own vectors is the matrix (the firm rule: the residual gate's count, taken
+    ///     on the whole pattern; `removedCount` is not consulted). true: such a position can be indexed (the caller then
+    ///     decides, see ``classifyInTwoPasses``): its `survivingCount` says so.
     public static func classifyAgainstVariants(peaks: [SIMD2<Double>], removedCount: Int, matrixOrientation: simd_double3x3?,
                                                phases: [PhaseVariantSet], settings: PhaseOrientationSearchSettings,
                                                originX: Float, originY: Float, invAngstromPerPixel: Double,
@@ -305,25 +326,37 @@ extension PhaseVectorMatcher {
                                                matrixInPlaneCorrectionRad: Double = 0,
                                                matrixExcitationSlabInvAngstrom: Double = matrixRemovalSlabInvAngstrom,
                                                matrixToleranceInvAngstrom: Double = 0.02,
-                                               minimumSpecificReflections: Int = 1) -> PhaseOrientationVerdict {
+                                               minimumSpecificReflections: Int = 1,
+                                               allPeaks: [SIMD2<Double>]? = nil,
+                                               countsSingleOwnVector: Bool = false) -> PhaseOrientationVerdict {
         var out = PhaseOrientationVerdict()
         let vectors = experimentalVectors(peaks: peaks, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
                                           directBeamRadiusInvAngstrom: settings.directBeamRadiusInvAngstrom,
                                           maximumVectorInvAngstrom: settings.maximumVectorInvAngstrom)
         out.survivingCount = vectors.count
         out.orientationsTried = phases.reduce(0) { $0 + $1.relationships.reduce(0) { $0 + $1.variants.count } }
-        if vectors.count <= settings.directMatrixMaximumVectors {
+        if vectors.count <= settings.directMatrixMaximumVectors, allPeaks == nil || matrixReflections == nil || matrixOrientation == nil {
             out.verdict = removedCount > 0 ? .matrix : (vectors.isEmpty ? .noData : .notIndexed)
             return out
         }
         guard let matrixOrientation else { out.verdict = .notIndexed; return out }
 
-        struct Scored { var phase: Int; var orientation: simd_double3x3; var score: Double; var matched: Int; var spots: Int; var specific: Int }
+        struct Scored { var phase: Int; var orientation: simd_double3x3; var score: Double; var matched: Int; var spots: Int; var specific: Int; var ownVectors: Int; var ownMatched: Int }
         let matrixSpotsHere: [SIMD2<Double>]? = matrixReflections.map {
             let c = cos(matrixInPlaneCorrectionRad), s = sin(matrixInPlaneCorrectionRad)
             return matrixSpots(reflections: $0, orientation: matrixOrientation, excitationSlabInvAngstrom: matrixExcitationSlabInvAngstrom)
                 .map { SIMD2(c * $0.x - s * $0.y, s * $0.x + c * $0.y) }
         }
+        // Scored on every spot of the position when they are given and the matrix's spots are known: each variant is then the
+        // phase's spots together with the matrix's.
+        let onAllSpots = allPeaks != nil && matrixSpotsHere != nil
+        let scoring: [SIMD2<Double>] = onAllSpots
+            ? experimentalVectors(peaks: allPeaks!, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
+                                  directBeamRadiusInvAngstrom: settings.directBeamRadiusInvAngstrom,
+                                  maximumVectorInvAngstrom: settings.maximumVectorInvAngstrom)
+            : vectors
+        let extra: [SIMD2<Double>] = onAllSpots ? (matrixSpotsHere ?? []) : []
+        if scoring.isEmpty { out.verdict = .noData; return out }
         var bestPerPhase: [Scored] = []
         for (phase, set) in phases.enumerated() {
             var best: Scored?
@@ -336,9 +369,10 @@ extension PhaseVectorMatcher {
                     let fitted = fittingInPlane(spots: predicted, vectors: vectors, toleranceInvAngstrom: settings.pairRadiusInvAngstrom)
                     var sum = 0.0, matched = 0
                     var hits = Set<Int>()
-                    for u in vectors {
+                    let together = fitted.spots + extra
+                    for u in scoring {
                         var nearest = 0, distance = Double.infinity
-                        for (k, s) in fitted.spots.enumerated() { let d = simd_length(u - s); if d < distance { distance = d; nearest = k } }
+                        for (k, s) in together.enumerated() { let d = simd_length(u - s); if d < distance { distance = d; nearest = k } }
                         sum += distance
                         hits.insert(nearest)
                         if distance <= settings.pairRadiusInvAngstrom { matched += 1 }
@@ -348,24 +382,36 @@ extension PhaseVectorMatcher {
                         let c = cos(fitted.rotationRad), s = sin(fitted.rotationRad)
                         let turned = simd_double3x3(columns: (c * m.columns.0 - s * m.columns.1, s * m.columns.0 + c * m.columns.1, m.columns.2))
                         // The distinct predicted spots hit within the pair radius that are not on a matrix spot.
-                        var specific = 0
+                        var specific = 0, ownVectors = 0, ownMatched = 0
                         if let matrixSpotsHere {
                             var own = Set<Int>()
-                            for u in vectors {
+                            // On the whole pattern a vector on a matrix spot is the matrix's, never the phase's own.
+                            for u in scoring where !(onAllSpots && matrixSpotsHere.contains(where: { simd_length($0 - u) <= matrixToleranceInvAngstrom })) {
+                                ownVectors += 1
                                 var nearest = 0, distance = Double.infinity
                                 for (k, sp) in fitted.spots.enumerated() { let d = simd_length(u - sp); if d < distance { distance = d; nearest = k } }
                                 guard distance <= settings.pairRadiusInvAngstrom else { continue }
+                                ownMatched += 1
                                 if !matrixSpotsHere.contains(where: { simd_length($0 - fitted.spots[nearest]) <= matrixToleranceInvAngstrom }) { own.insert(nearest) }
                             }
                             specific = own.count
                         }
-                        best = Scored(phase: phase, orientation: turned, score: score, matched: matched, spots: fitted.spots.count, specific: specific)
+                        best = Scored(phase: phase, orientation: turned, score: score, matched: matched, spots: fitted.spots.count, specific: specific, ownVectors: ownVectors, ownMatched: ownMatched)
                     }
                 }
             }
             if let best { bestPerPhase.append(best) }
         }
-        guard var winner = bestPerPhase.first else { out.verdict = .notIndexed; return out }
+        guard var winner = bestPerPhase.first else {
+            // Nothing to score against (no relationship learned, or no variant with a spot here): the residual's gate decides,
+            // as it does without the whole pattern.
+            if onAllSpots, vectors.count <= settings.directMatrixMaximumVectors {
+                out.verdict = removedCount > 0 ? .matrix : (vectors.isEmpty ? .noData : .notIndexed)
+            } else {
+                out.verdict = .notIndexed
+            }
+            return out
+        }
         for s in bestPerPhase.dropFirst() where s.score < winner.score { winner = s }
         var runnerUp: Scored?
         for s in bestPerPhase where s.phase != winner.phase { if runnerUp == nil || s.score < runnerUp!.score { runnerUp = s } }
@@ -374,9 +420,18 @@ extension PhaseVectorMatcher {
         out.score = winner.score
         out.matchedCount = winner.matched
         if let runnerUp { out.runnerUpPhaseIndex = runnerUp.phase; out.runnerUpScore = runnerUp.score }
-        out.requiredMatches = requiredMatches(vectors: vectors.count, spots: winner.spots, orientationsTried: out.orientationsTried,
-                                              settings: settings)
-        out.verdict = winner.score <= settings.residualCutoffInvAngstrom && winner.matched >= out.requiredMatches ? .indexed : .notIndexed
+        out.requiredMatches = requiredMatches(vectors: onAllSpots ? winner.ownVectors : vectors.count, spots: winner.spots,
+                                              orientationsTried: out.orientationsTried, settings: settings)
+        if onAllSpots {
+            out.matchedCount = winner.ownMatched
+            out.survivingCount = winner.ownVectors
+            let enough = countsSingleOwnVector || winner.ownVectors > settings.directMatrixMaximumVectors
+            out.verdict = winner.score > settings.residualCutoffInvAngstrom ? .notIndexed
+                : (winner.ownMatched >= out.requiredMatches && enough ? .indexed : .matrix)
+            if out.verdict == .matrix { out.orientation = nil }
+        } else {
+            out.verdict = winner.score <= settings.residualCutoffInvAngstrom && winner.matched >= out.requiredMatches ? .indexed : .notIndexed
+        }
         if out.verdict == .indexed, matrixSpotsHere != nil, minimumSpecificReflections > 0, winner.specific < minimumSpecificReflections {
             out.verdict = .matrix
             out.orientation = nil
