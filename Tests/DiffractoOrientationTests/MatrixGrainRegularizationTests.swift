@@ -104,6 +104,103 @@ import DiffractoOrientation
         #expect(out.field == truth)
     }
 
+    /// A precipitate-rich position: its own (wrong) zone scores clearly BETTER in the template match than the grain's zone, so the
+    /// score test keeps it. Judged by the spots a zone explains, the grain's zone takes all eight matrix spots and the wrong zone
+    /// fewer, so with the matrix's reflections given the position is repaired. The boundary and the small grain still do not
+    /// move with the reflections given. Mutation: the explained-spot test left out (the pulled position keeps its zone).
+    @Test func aPositionWhoseWrongZoneScoresBetterIsRepairedByTheSpotsTheGrainsZoneExplains() throws {
+        let (reflections, matcher) = try Self.setup()
+        let side = 5
+        let a = Base.pattern(Planted(zone: SIMD3(0, 0, 1), inPlaneDeg: 12), reflections).peaks
+        let scan = [[SIMD2<Double>]](repeating: a, count: side * side)
+        let truth = try Self.field(scan, width: side, height: side, matcher)
+        let centre = 2 * side + 2
+        let zone111 = try #require(matcher.library.zoneAxes.max { simd_dot($0, simd_normalize(SIMD3(1, 1, 1))) < simd_dot($1, simd_normalize(SIMD3(1, 1, 1))) })
+        let peaks = a.dropFirst().map { ACOMPeak(x: Float($0.x), y: Float($0.y), intensity: 1) }
+        var wrong = matcher.match(peaks: peaks, originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q,
+                                  near: zone111, withinRadians: 5 * .pi / 180)
+        wrong.score = 2          // clearly better than anything the grain's zone can score here
+        var results = truth.results, orientations = truth.orientations
+        results[centre] = wrong
+        orientations[centre] = matcher.library.orientationMatrix(templateIndex: wrong.templateIndex, inPlaneAngle: wrong.inPlaneAngle, mirrored: wrong.mirrored)
+        let pulled = MatrixOrientationField(width: side, height: side, results: results, orientations: orientations)
+
+        let byScore = try Self.regularized(pulled, scan, matcher)
+        #expect(byScore.changedPositions.isEmpty, "the score test alone must keep a zone that scores clearly better")
+        let bySpots = try #require(PhaseVectorMatcher.regularizingMatrixOrientations(
+            pulled, scan: scan, matcher: matcher, originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q,
+            explainedBy: reflections))
+        #expect(bySpots.changedPositions == [centre])
+        #expect(Self.isZone(Self.family(bySpots.field, centre), SIMD3(0, 0, 1)))
+
+        // Two grains at a boundary and a 2 x 2 grain, with the reflections given: still nothing moves.
+        let b = Base.pattern(Planted(zone: SIMD3(0, 1, 1), inPlaneDeg: 40), reflections).peaks
+        let c = Base.pattern(Planted(zone: SIMD3(1, 1, 1), inPlaneDeg: 70), reflections).peaks
+        let boundary = (0..<48).map { $0 % 8 < 4 ? a : b }
+        let boundaryField = try Self.field(boundary, width: 8, height: 6, matcher)
+        let small = (0..<49).map { (3...4).contains($0 / 7) && (3...4).contains($0 % 7) ? c : a }
+        let smallField = try Self.field(small, width: 7, height: 7, matcher)
+        for (f, sc) in [(boundaryField, boundary), (smallField, small)] {
+            let out = try #require(PhaseVectorMatcher.regularizingMatrixOrientations(
+                f, scan: sc, matcher: matcher, originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q,
+                explainedBy: reflections))
+            #expect(out.changedPositions.isEmpty, "smeared with the reflections given: \(out.changedPositions)")
+        }
+    }
+
+    /// Two matrix grains overlapping along the beam (an inclined boundary): the position holds both grains' spots. Its own
+    /// orientation explains one grain; with the neighbouring grains taken into the removal the other grain's spots go too, and
+    /// the position ends as matrix. Spots that are no grain's stay. Without the neighbours the second grain's spots are left,
+    /// which is what a candidate phase was then matched to.
+    /// Mutation: a neighbour's orientation removing whatever lies near any of its spots without the share test (the two spots
+    /// planted on the neighbouring grain's positions at a single-grain position would go).
+    @Test func aPositionWhereTwoGrainsOverlapEndsAsMatrix() throws {
+        let (reflections, matcher) = try Self.setup()
+        let a = Base.pattern(Planted(zone: SIMD3(0, 0, 1), inPlaneDeg: 12), reflections)
+        let b = Base.pattern(Planted(zone: SIMD3(0, 1, 1), inPlaneDeg: 40), reflections)
+        let both = a.peaks + b.peaks.dropFirst()
+        let withExtras = both + Base.extras.map { SIMD2(Double(Base.origin) + $0.x / Base.q, Double(Base.origin) + $0.y / Base.q) }
+        // Seven columns, three rows: grain A, the overlap column, grain B; the middle row's overlap position carries extras.
+        let width = 7, height = 3
+        let scan: [[SIMD2<Double>]] = (0..<width * height).map { i in
+            let column = i % width
+            if column < 3 { return a.peaks }
+            if column > 3 { return b.peaks }
+            return i / width == 1 ? withExtras : both
+        }
+        let field = try Self.regularized(try Self.field(scan, width: width, height: height, matcher), scan, matcher).field
+        let symmetry = CrystalOrientationSymmetry(laueClass: matcher.library.laueClass)
+        let alone = try #require(PhaseVectorMatcher.removingMatrixSpots(
+            scan: scan, field: field, reflections: reflections, originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q))
+        let together = try #require(PhaseVectorMatcher.removingMatrixSpots(
+            scan: scan, field: field, reflections: reflections, originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q,
+            neighbouringGrains: MatrixNeighbourhood(radius: 2, symmetry: symmetry)))
+        func left(_ r: MatrixResidualScan, _ i: Int) -> Int {
+            PhaseVectorMatcher.experimentalVectors(peaks: r.scan[i], originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q,
+                                                   directBeamRadiusInvAngstrom: 0.15).count
+        }
+        for row in 0..<height {
+            let i = row * width + 3
+            #expect(left(alone, i) >= 6, "row \(row): without the neighbours the other grain's spots are left (\(left(alone, i)))")
+            #expect(left(together, i) == (row == 1 ? Base.extras.count : 0), "row \(row): \(left(together, i)) vectors left")
+            #expect(together.removedCounts[i] == a.matrixSpots + b.matrixSpots)
+        }
+        // A grain that is merely next door takes nothing: a grain-A position two columns from the overlap, with two spots
+        // planted exactly on two of grain B's spot positions. Grain B is in its window, but only two of B's eight spots are
+        // measured there (a quarter, under the half that is asked for), so they stay.
+        let bVectors = PhaseVectorMatcher.experimentalVectors(peaks: b.peaks, originX: Base.origin, originY: Base.origin,
+                                                              invAngstromPerPixel: Base.q, directBeamRadiusInvAngstrom: 0.15)
+        var nextDoor = scan
+        let position = 1 * width + 2
+        nextDoor[position] = a.peaks + bVectors.prefix(2).map { SIMD2(Double(Base.origin) + $0.x / Base.q, Double(Base.origin) + $0.y / Base.q) }
+        let nextField = try Self.regularized(try Self.field(nextDoor, width: width, height: height, matcher), nextDoor, matcher).field
+        let kept = try #require(PhaseVectorMatcher.removingMatrixSpots(
+            scan: nextDoor, field: nextField, reflections: reflections, originX: Base.origin, originY: Base.origin, invAngstromPerPixel: Base.q,
+            neighbouringGrains: MatrixNeighbourhood(radius: 2, symmetry: symmetry)))
+        #expect(left(kept, position) == 2, "two spots on a neighbouring grain's positions were taken at a single-grain position")
+        #expect(kept.removedCounts[position] == a.matrixSpots)
+    }
+
     /// Malformed input is refused, and a position without an orientation is left alone.
     @Test func malformedInputIsRefused() throws {
         let (reflections, matcher) = try Self.setup()

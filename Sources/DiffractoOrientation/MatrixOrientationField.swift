@@ -40,6 +40,28 @@ public struct MatrixOrientationField: Sendable, Equatable {
     }
 }
 
+/// The neighbourhood whose other matrix grains a position's removal also considers
+/// (``PhaseVectorMatcher/removingMatrixSpots(scan:field:reflections:originX:originY:invAngstromPerPixel:toleranceInvAngstrom:excitationSlabInvAngstrom:directBeamRadiusInvAngstrom:maximumVectorInvAngstrom:neighbouringGrains:)``).
+public struct MatrixNeighbourhood: Sendable {
+    /// r, in positions: the (2r + 1)² window around the position.
+    public var radius: Int
+    /// The matrix crystal's symmetry, by which two orientations are the same grain's.
+    public var symmetry: CrystalOrientationSymmetry
+    /// Orientations farther apart than this are different grains, radians.
+    public var distinctOrientationRad: Double
+    /// A neighbouring grain's orientation is taken into the removal only when at least this share of its predicted spots
+    /// (within the pattern's reach) is measured here, and at least two.
+    public var minimumShareFound: Double
+
+    public init(radius: Int, symmetry: CrystalOrientationSymmetry, distinctOrientationRad: Double = 10 * Double.pi / 180,
+                minimumShareFound: Double = 0.5) {
+        self.radius = radius
+        self.symmetry = symmetry
+        self.distinctOrientationRad = distinctOrientationRad
+        self.minimumShareFound = minimumShareFound
+    }
+}
+
 /// A scan with the matrix's spots taken out, and what was taken.
 public struct MatrixResidualScan: Sendable, Equatable {
     /// The peaks of every position that the matrix orientation of that position does not explain, in the input's
@@ -191,6 +213,12 @@ extension PhaseVectorMatcher {
     ///   - excitationSlabInvAngstrom: see ``matrixSpots(reflections:orientation:excitationSlabInvAngstrom:)``.
     ///   - directBeamRadiusInvAngstrom: vectors inside it are the direct beam and stay (`PhaseVectorSettings`' default).
     ///   - maximumVectorInvAngstrom: vectors at or beyond it are not the matcher's and stay; 0 (the default) uses all.
+    ///   - neighbouringGrains: when given, the orientations of the OTHER matrix grains in the position's neighbourhood are
+    ///     tried too. Where two grains overlap along the beam a pattern holds both grains' spots, and the position's own
+    ///     orientation explains only one of them. A neighbouring grain's orientation removes its spots here only when at
+    ///     least `minimumShareFound` of its predicted spots are measured here (and at least two, and at least two of the
+    ///     spots the own grain left), so a grain that is merely next door removes nothing. nil (the default): the position's
+    ///     own orientation only.
     /// - Returns: nil when the scan and the field do not have the same number of positions.
     public static func removingMatrixSpots(scan: [[SIMD2<Double>]], field: MatrixOrientationField,
                                            reflections: [ACOMReflection],
@@ -198,8 +226,13 @@ extension PhaseVectorMatcher {
                                            toleranceInvAngstrom: Double = 0.02,
                                            excitationSlabInvAngstrom: Double = matrixRemovalSlabInvAngstrom,
                                            directBeamRadiusInvAngstrom: Double = 0.15,
-                                           maximumVectorInvAngstrom: Double = 0) -> MatrixResidualScan? {
+                                           maximumVectorInvAngstrom: Double = 0,
+                                           neighbouringGrains: MatrixNeighbourhood? = nil) -> MatrixResidualScan? {
         guard scan.count == field.orientations.count, scan.count == field.width * field.height else { return nil }
+        // Each position's orientation reduced by the matrix symmetry, to tell the grains of a neighbourhood apart.
+        let reduced: [simd_double3x3?] = neighbouringGrains.map { n in
+            field.orientations.map { m in m.flatMap { (try? n.symmetry.reduce($0))?.matrix } }
+        } ?? []
         var out: [[SIMD2<Double>]] = []
         out.reserveCapacity(scan.count)
         var removedCounts = [Int](repeating: 0, count: scan.count)
@@ -227,14 +260,49 @@ extension PhaseVectorMatcher {
             let fitted = fittingInPlane(spots: spots, vectors: vectors.compactMap { $0 }, toleranceInvAngstrom: toleranceInvAngstrom)
             spots = fitted.spots
             corrections[position] = fitted.rotationRad
+            var isMatrix = vectors.map { v in v.flatMap { nearest($0) }.map { $0.distance <= toleranceInvAngstrom } ?? false }
+            // The other grains of the neighbourhood: one orientation per grain, in row-major order of first appearance.
+            if let n = neighbouringGrains, n.radius >= 1, let own = reduced[position] {
+                let cosDistinct = cos(n.distinctOrientationRad)
+                func same(_ x: simd_double3x3, _ y: simd_double3x3) -> Bool {
+                    let t = x.transpose * y
+                    return (t[0][0] + t[1][1] + t[2][2] - 1) / 2 > cosDistinct
+                }
+                let row = position / field.width, column = position % field.width
+                var grains: [(reduced: simd_double3x3, orientation: simd_double3x3)] = []
+                for r in max(0, row - min(n.radius, field.height))...min(field.height - 1, row + min(n.radius, field.height)) {
+                    for c in max(0, column - min(n.radius, field.width))...min(field.width - 1, column + min(n.radius, field.width)) {
+                        let j = r * field.width + c
+                        guard j != position, let other = reduced[j], let orientationJ = field.orientations[j],
+                              !same(other, own), !grains.contains(where: { same($0.reduced, other) }) else { continue }
+                        grains.append((other, orientationJ))
+                    }
+                }
+                let left = zip(vectors, isMatrix).compactMap { v, taken in taken ? nil : v }
+                for grain in grains where !left.isEmpty {
+                    let all = vectors.compactMap { $0 }
+                    let found = predictedSpotsFound(vectors: all, orientation: grain.orientation, reflections: reflections,
+                                                    toleranceInvAngstrom: toleranceInvAngstrom,
+                                                    excitationSlabInvAngstrom: excitationSlabInvAngstrom)
+                    guard found.found >= 2, Double(found.found) >= n.minimumShareFound * Double(found.predicted) else { continue }
+                    let theirs = fittingInPlane(spots: matrixSpots(reflections: reflections, orientation: grain.orientation,
+                                                                    excitationSlabInvAngstrom: excitationSlabInvAngstrom),
+                                                vectors: all, toleranceInvAngstrom: toleranceInvAngstrom).spots
+                    // And at least two of the vectors the position's own grain left: a neighbour that only restates the
+                    // own grain's spots takes nothing.
+                    let leftNow = zip(vectors, isMatrix).compactMap { v, taken in taken ? nil : v }
+                    var explainedOfLeft = 0
+                    for u in leftNow where theirs.contains(where: { simd_length(u - $0) <= toleranceInvAngstrom }) { explainedOfLeft += 1 }
+                    guard explainedOfLeft >= 2 else { continue }
+                    for (k, v) in vectors.enumerated() where !isMatrix[k] {
+                        if let u = v, theirs.contains(where: { simd_length(u - $0) <= toleranceInvAngstrom }) { isMatrix[k] = true }
+                    }
+                }
+            }
             var kept: [SIMD2<Double>] = []
             kept.reserveCapacity(peaks.count)
-            for (peak, vector) in zip(peaks, vectors) {
-                if let u = vector, let n = nearest(u), n.distance <= toleranceInvAngstrom {
-                    removedCounts[position] += 1
-                } else {
-                    kept.append(peak)
-                }
+            for (peak, taken) in zip(peaks, isMatrix) {
+                if taken { removedCounts[position] += 1 } else { kept.append(peak) }
             }
             out.append(kept)
         }
@@ -271,18 +339,45 @@ extension PhaseVectorMatcher {
         }
     }
 
+    /// How many of the spots an orientation predicts are measured: of the crystal's spots at that orientation that lie within
+    /// the pattern's own reach (no farther from the centre than the farthest measured vector, plus the tolerance), after the
+    /// in-plane fit of the removal, `found` have a measured vector within `toleranceInvAngstrom`.
+    public static func predictedSpotsFound(vectors: [SIMD2<Double>], orientation: simd_double3x3, reflections: [ACOMReflection],
+                                           toleranceInvAngstrom: Double = 0.02,
+                                           excitationSlabInvAngstrom: Double = matrixRemovalSlabInvAngstrom)
+        -> (found: Int, predicted: Int) {
+        let spots = matrixSpots(reflections: reflections, orientation: orientation, excitationSlabInvAngstrom: excitationSlabInvAngstrom)
+        guard !spots.isEmpty, let reach = vectors.map({ simd_length($0) }).max() else { return (0, 0) }
+        let fitted = fittingInPlane(spots: spots, vectors: vectors, toleranceInvAngstrom: toleranceInvAngstrom).spots
+            .filter { simd_length($0) <= reach + toleranceInvAngstrom }
+        let found = fitted.reduce(0) { count, s in count + (vectors.contains { simd_length($0 - s) <= toleranceInvAngstrom } ? 1 : 0) }
+        return (found, fitted.count)
+    }
+
     /// The field with the matrix orientation held to the grain where the pattern allows it.
     ///
     /// A grain has one orientation, but a pattern full of precipitate spots can pull the template match of a single position
-    /// to another zone (on Thronsen et al. dataset A about 1 % of the positions of a one-grain scan land 40° from the
+    /// to another zone, or to the right zone at a wrong in-plane angle (on Thronsen et al. dataset A about 1 % of the positions of a one-grain scan land 40° from the
     /// matrix zone). For every position whose zone disagrees with its neighbourhood:
     ///
-    /// 1. the neighbourhood's zone is the zone that most of the other positions in the (2r + 1)² window share (beam
-    ///    directions within the library's distinct angle of one another); it must be shared by more than half of ALL the
-    ///    other positions of the window, with or without an orientation;
-    /// 2. the position's OWN pattern is matched against the templates around that zone
+    /// 1. the neighbourhood's orientation is the one that most of the other positions in the (2r + 1)² window share
+    ///    (whole orientations, zone and in-plane angle, within the library's distinct angle of one another after reduction
+    ///    by the crystal's symmetry); it must be shared by more than half of ALL the other positions of the window, with or
+    ///    without an orientation;
+    /// 2. with the matrix's reflections given, the neighbour's orientation itself is tried on the position's own spots
+    ///    (step 3, second test); the position that passes takes the neighbour's orientation and carries the neighbour's
+    ///    template and score. Otherwise the position's OWN pattern is matched against the templates around that zone
     ///    (``ACOMMatcher/match(peaks:originX:originY:invAngstromPerPixel:near:withinRadians:)``);
-    /// 3. the position takes that match only if its score is at least `keepFraction` of the position's own best score.
+    /// 3. the position takes that match only if its score is at least `keepFraction` of the position's own best score,
+    ///    or, when the matrix's reflections are given (`explainedBy`), if at least as large a share of that match's
+    ///    predicted spots is measured here as of its own orientation's, and at least two of them
+    ///    (``predictedSpotsFound(vectors:orientation:reflections:toleranceInvAngstrom:excitationSlabInvAngstrom:)``).
+    ///
+    /// The second test is for patterns dense with precipitate spots: there the template correlation, a blurred image
+    /// comparison, can prefer a zone that lies on the precipitate's spots, while the grain's zone is the one whose predicted
+    /// spots are all measured. The share and not the count: a zone that predicts many spots finds some of them in any
+    /// dense pattern. At a boundary or in a small grain the neighbours' zone explains none of the
+    /// position's spots, so neither test moves it.
     ///
     /// So nothing is decided by the vote alone: a position whose own best is clearly better keeps it. A grain boundary
     /// stays where it is, and a grain of a few positions inside another stays, because their patterns do not fit the
@@ -295,6 +390,10 @@ extension PhaseVectorMatcher {
     ///   - matcher: the matcher the field was made with.
     ///   - neighbourhoodRadius: r, in positions; 2 is a 5 × 5 window.
     ///   - keepFraction: see step 3; in 0...1.
+    ///   - reflections: the matrix crystal's reflections, for the explained-spot test of step 3; nil (the default) leaves
+    ///     the score test alone.
+    ///   - toleranceInvAngstrom: how close a measured vector must be to a predicted spot to be explained.
+    ///   - excitationSlabInvAngstrom: as in ``removingMatrixSpots(scan:field:reflections:originX:originY:invAngstromPerPixel:toleranceInvAngstrom:excitationSlabInvAngstrom:directBeamRadiusInvAngstrom:maximumVectorInvAngstrom:)``.
     /// - Returns: nil when the scan and the field do not have the same number of positions, or a result names a template
     ///   the matcher's library does not hold.
     public static func regularizingMatrixOrientations(_ field: MatrixOrientationField, scan: [[SIMD2<Double>]],
@@ -303,49 +402,101 @@ extension PhaseVectorMatcher {
                                                       directBeamRadiusInvAngstrom: Double = 0.15,
                                                       maximumVectorInvAngstrom: Double = 0,
                                                       neighbourhoodRadius: Int = 2,
-                                                      keepFraction: Float = 0.9) -> MatrixOrientationRegularization? {
+                                                      keepFraction: Float = 0.9,
+                                                      explainedBy reflections: [ACOMReflection]? = nil,
+                                                      toleranceInvAngstrom: Double = 0.02,
+                                                      excitationSlabInvAngstrom: Double = matrixRemovalSlabInvAngstrom)
+        -> MatrixOrientationRegularization? {
         let width = field.width, height = field.height
         guard scan.count == field.results.count, scan.count == field.orientations.count, neighbourhoodRadius >= 1 else { return nil }
         let (positions, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, positions == scan.count else { return nil }
         let library = matcher.library
         guard field.results.allSatisfy({ $0.templateIndex < library.count }) else { return nil }
+        // Every position's orientation reduced by the crystal's symmetry once, so two positions of one grain compare by the
+        // plain rotation angle between their reduced matrices. Two orientations on opposite sides of the fundamental zone's
+        // boundary read as far apart; the effect is no repair there, never a wrong one.
+        let symmetry = CrystalOrientationSymmetry(laueClass: library.laueClass)
+        let reduced: [simd_double3x3?] = field.orientations.enumerated().map { i, m in
+            guard let m, field.results[i].templateIndex >= 0 else { return nil }
+            return (try? symmetry.reduce(m))?.matrix
+        }
+        // A zero-order pattern fixes the in-plane angle only up to a half turn about the beam (the templates are exactly
+        // pi-periodic with the flat excitation model), so a position's orientation is also its half-turned twin: lab x and y
+        // negated. Where the beam is no two-fold axis of the crystal the two reduce to different matrices.
+        let reducedTwin: [simd_double3x3?] = field.orientations.enumerated().map { i, m in
+            guard let m, field.results[i].templateIndex >= 0 else { return nil }
+            return (try? symmetry.reduce(simd_double3x3(columns: (-m.columns.0, -m.columns.1, m.columns.2))))?.matrix
+        }
         let cosDistinct = cos(library.distinctOrientationRadians)
-        func zone(_ i: Int) -> SIMD3<Double>? {
-            let t = field.results[i].templateIndex
-            return field.orientations[i] != nil && t >= 0 ? library.zoneAxes[t] : nil
+        func nearMatrices(_ x: simd_double3x3, _ y: simd_double3x3) -> Bool {
+            let t = x.transpose * y
+            return (t[0][0] + t[1][1] + t[2][2] - 1) / 2 > cosDistinct
+        }
+        func near(_ i: Int, _ j: Int) -> Bool {
+            guard let a = reduced[i], let b = reduced[j] else { return false }
+            if nearMatrices(a, b) { return true }
+            if let twin = reducedTwin[i], nearMatrices(twin, b) { return true }
+            return false
         }
         var results = field.results, orientations = field.orientations
         var changed: [Int] = []
         for row in 0..<height {
             for column in 0..<width {
                 let i = row * width + column
-                guard let own = zone(i) else { continue }
-                // The other positions of the window that have an orientation.
-                var neighbours: [SIMD3<Double>] = []
+                guard reduced[i] != nil else { continue }
+                // The other positions of the window, and those of them that have an orientation.
+                var neighbours: [Int] = []
                 var others = 0
                 for r in max(0, row - min(neighbourhoodRadius, height))...min(height - 1, row + min(neighbourhoodRadius, height)) {
                     for c in max(0, column - min(neighbourhoodRadius, width))...min(width - 1, column + min(neighbourhoodRadius, width)) where !(r == row && c == column) {
                         others += 1
-                        if let z = zone(r * width + c) { neighbours.append(z) }
+                        if reduced[r * width + c] != nil { neighbours.append(r * width + c) }
                     }
                 }
                 guard !neighbours.isEmpty else { continue }
                 var dominant = neighbours[0], dominantCount = 0
-                for z in neighbours {
-                    let count = neighbours.reduce(0) { $0 + (simd_dot($1, z) > cosDistinct ? 1 : 0) }
-                    if count > dominantCount { dominant = z; dominantCount = count }
+                for j in neighbours {
+                    let count = neighbours.reduce(0) { $0 + (near($1, j) ? 1 : 0) }
+                    if count > dominantCount { dominant = j; dominantCount = count }
                 }
-                guard 2 * dominantCount > others, simd_dot(own, dominant) <= cosDistinct else { continue }
+                guard 2 * dominantCount > others, !near(i, dominant), let theirOrientation = field.orientations[dominant] else { continue }
+                // The spot test, with the neighbour's own orientation (its in-plane angle included).
+                if let reflections, let ownOrientation = field.orientations[i] {
+                    let vectors = experimentalVectors(peaks: scan[i], originX: originX, originY: originY,
+                                                      invAngstromPerPixel: invAngstromPerPixel,
+                                                      directBeamRadiusInvAngstrom: directBeamRadiusInvAngstrom,
+                                                      maximumVectorInvAngstrom: maximumVectorInvAngstrom)
+                    let theirs = predictedSpotsFound(vectors: vectors, orientation: theirOrientation, reflections: reflections,
+                                                     toleranceInvAngstrom: toleranceInvAngstrom,
+                                                     excitationSlabInvAngstrom: excitationSlabInvAngstrom)
+                    let mine = predictedSpotsFound(vectors: vectors, orientation: ownOrientation, reflections: reflections,
+                                                   toleranceInvAngstrom: toleranceInvAngstrom,
+                                                   excitationSlabInvAngstrom: excitationSlabInvAngstrom)
+                    // found/predicted compared without dividing: theirs.found / theirs.predicted >= mine.found / mine.predicted.
+                    if theirs.found >= 2 && theirs.found * max(1, mine.predicted) >= mine.found * theirs.predicted {
+                        results[i] = field.results[dominant]
+                        orientations[i] = theirOrientation
+                        changed.append(i)
+                        continue
+                    }
+                }
+                // The score test, with this position's own match around the neighbour's zone.
+                let dominantZone = library.zoneAxes[field.results[dominant].templateIndex]
                 let peaks = usableACOMPeaks(scan[i], originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
                                             directBeamRadiusInvAngstrom: directBeamRadiusInvAngstrom,
                                             maximumVectorInvAngstrom: maximumVectorInvAngstrom)
                 let candidate = matcher.match(peaks: peaks, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
-                                              near: dominant, withinRadians: library.distinctOrientationRadians)
+                                              near: dominantZone, withinRadians: library.distinctOrientationRadians)
                 guard candidate.templateIndex >= 0, candidate.score >= keepFraction * field.results[i].score else { continue }
+                let candidateOrientation = library.orientationMatrix(templateIndex: candidate.templateIndex,
+                                                                    inPlaneAngle: candidate.inPlaneAngle, mirrored: candidate.mirrored)
+                // A match around the zone that is still not the grain's orientation (another in-plane angle) is no repair.
+                guard let candidateReduced = (try? symmetry.reduce(candidateOrientation))?.matrix,
+                      let candidateTwin = (try? symmetry.reduce(simd_double3x3(columns: (-candidateOrientation.columns.0, -candidateOrientation.columns.1, candidateOrientation.columns.2))))?.matrix,
+                      nearMatrices(candidateReduced, reduced[dominant]!) || nearMatrices(candidateTwin, reduced[dominant]!) else { continue }
                 results[i] = candidate
-                orientations[i] = library.orientationMatrix(templateIndex: candidate.templateIndex,
-                                                            inPlaneAngle: candidate.inPlaneAngle, mirrored: candidate.mirrored)
+                orientations[i] = candidateOrientation
                 changed.append(i)
             }
         }
