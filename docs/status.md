@@ -20,7 +20,54 @@ Since 0.10.0: 0.11.0 (2026-10-30) dropped the unused public API; 0.12.0 (2026-11
 Metal path 1.9 to 3.2 times faster and the ring profile fit stop runs that cannot improve, and retired the apps-parity dumps.
 Details and the migration notes: `CHANGELOG.md`.
 
-Tests: `DiffractoKitParityTests` holds the pinned comparisons against the Python references; the other test targets hold the
+## In progress, not wired: phase orientations from the structure alone (#81)
+
+The aim: a crystal structure in, and the scan's phases and their orientations out, with no zone axis typed. Five steps are
+merged as kit functions; none is used by `PhaseVectorMatcher.map`. State of 2026-11-11.
+
+| Step | PR | What it is |
+|---|---|---|
+| 1 | #82 | The matrix orientation of every position, its spots predicted and removed (`matrixOrientations`, `removingMatrixSpots`) |
+| 2 | #84 | One orientation per grain (`regularizingMatrixOrientations`) and the guarded free search of the residual (`searchOrientations`) |
+| 3 | #85 | Relationships learned from the strong positions, refined, and every position scored against their variants (`learnOrientationRelationships`, `classifyAgainstVariants`); grain overlaps in the removal |
+| 4 | #86 | The two passes as one call, scored on the whole pattern, firm rule by default, neighbour rule as a switch (`classifyInTwoPasses`) |
+| 5 | #88 | The rational relationships near a learned one, listed and never chosen (`rationalRelationships`) |
+
+Where it stands against the bar (typed zone axes through `map`):
+
+- Thronsen et al. dataset A, stride 3: 28 771 of 29 241 positions (98.39 %) with 103 matrix positions called a phase,
+  against 28 858 (98.69 %) and 104. With the neighbour rule 98.51 % and 112. The positions that decide it show one vector of
+  their own: the precipitate edges.
+- The synthetic three-grain demo: relationship 0.03 degrees from the planted one, all nine precipitates found, nothing
+  labelled outside them.
+- Planted pairs (`TwoPassOtherMaterialsTests`):
+
+| Pair | Relationship learned | Positions |
+|---|---|---|
+| alpha-Ti (hcp) + beta-Ti, Burgers | 2.65 degrees off, 12 variants for 6 | all right |
+| alpha-Fe (bcc) + cementite, Bagaryatsky | 1.44 degrees off | all right |
+| Al + beta'' (monoclinic), Andersen | exact | all right |
+| Ni + gamma' Ni3Al, cube on cube | nothing learned | no gamma' found (known gap, pinned by the test) |
+
+It is wired only when Thronsen A reaches the typed result on both numbers and nothing is worse on the demo or the pairs.
+
+Next step: lattice-correspondence proposals in `searchOrientations`. For each position, besides the template proposals,
+propose the precipitate orientations that put low-index precipitate lattice vectors onto matrix lattice vectors at that
+position's matrix orientation (the free search does not take the matrix orientation today), and score them on the residual.
+A phase on the matrix lattice (gamma') leaves only its superlattice spots after the removal and the template match never
+proposes its orientation. The case to turn round is Ni + gamma' in `TwoPassOtherMaterialsTests`. Then before and after on
+Thronsen A, the demo and the four pairs.
+
+Parked: generating `map`'s entries (zone axis per variant, in-plane pair, slab) from a relationship. The typed Thronsen
+entries carry hand-set values (the T1 zone [0 -4 1], a slab of 0.3 for theta'), and reproducing them by rule risks tuning
+to that dataset.
+
+Open beside it: the tolerances in Å⁻¹ should follow the disk size and the calibration (#87). Measurements, per step:
+`docs/parity.md`.
+
+## Tests
+
+`DiffractoKitParityTests` holds the pinned comparisons against the Python references; the other test targets hold the
 fast unit tests; `DiffractoKitTestSupport` holds the helpers both use.
 
 What is checked against what: `docs/parity.md`. Timings against Python: `docs/benchmarks.md`. What is open: the GitHub
