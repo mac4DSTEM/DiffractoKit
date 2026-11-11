@@ -71,6 +71,51 @@ public struct ACOMMatcher: Sendable {
                           secondScore: selected.secondScore, mirrored: all.mirrored[selected.template], binOffset: offset)
     }
 
+    /// The best match among the templates whose beam direction is within `withinRadians` of `zoneAxis` (a unit vector in
+    /// the library's fundamental zone, as ``ACOMTemplateLibrary/zoneAxes`` holds them): what this pattern looks like to ONE
+    /// orientation's neighbourhood, for a caller that has a reason to ask about it (a neighbouring position's orientation).
+    /// `secondScore` is 0. `.empty` for too few peaks or when no template lies within the angle.
+    public func match<Peaks: Collection>(peaks: Peaks, originX: Float, originY: Float, invAngstromPerPixel: Double = 1,
+                                         near zoneAxis: SIMD3<Double>, withinRadians: Double)
+        -> OrientationResult where Peaks.Element == ACOMPeak {
+        guard let experimental = experimentalFFT(peaks: peaks, originX: originX, originY: originY,
+                                                 invAngstromPerPixel: invAngstromPerPixel) else { return .empty }
+        let all = correlate(experimentalRe: experimental.re, experimentalIm: experimental.im)
+        let cosLimit = cos(withinRadians)
+        var best = -1
+        for t in 0..<all.scores.count where simd_dot(library.zoneAxes[t], zoneAxis) >= cosLimit {
+            if best < 0 || all.scores[t] > all.scores[best] { best = t }
+        }
+        guard best >= 0 else { return .empty }
+        return makeResult(bestTemplate: best, bestBin: Int(all.bins[best]), bestScore: all.scores[best], secondScore: 0,
+                          mirrored: all.mirrored[best])
+    }
+
+    /// The `count` best matches at distinct orientations, best first: the winner, then the best template farther than the
+    /// library's distinct angle from every match already taken, and so on (py4DSTEM's `num_matches_return` with
+    /// `min_angle_between_matches_deg`). Each result's `secondScore` is 0. Fewer than `count` when the library runs out of
+    /// distinct templates; empty for too few peaks.
+    public func matches<Peaks: Collection>(peaks: Peaks, originX: Float, originY: Float, invAngstromPerPixel: Double = 1,
+                                           count: Int) -> [OrientationResult] where Peaks.Element == ACOMPeak {
+        guard count > 0, let experimental = experimentalFFT(peaks: peaks, originX: originX, originY: originY,
+                                                             invAngstromPerPixel: invAngstromPerPixel) else { return [] }
+        let all = correlate(experimentalRe: experimental.re, experimentalIm: experimental.im)
+        let cosLimit = cos(library.distinctOrientationRadians)
+        var taken: [Int] = []
+        while taken.count < count {
+            var best = -1
+            for t in 0..<all.scores.count {
+                if taken.contains(where: { $0 == t || simd_dot(library.zoneAxes[$0], library.zoneAxes[t]) > cosLimit }) { continue }
+                if best < 0 || all.scores[t] > all.scores[best] { best = t }
+            }
+            guard best >= 0 else { break }
+            taken.append(best)
+        }
+        return taken.map {
+            makeResult(bestTemplate: $0, bestBin: Int(all.bins[$0]), bestScore: all.scores[$0], secondScore: 0, mirrored: all.mirrored[$0])
+        }
+    }
+
     /// The vertex of the parabola through the correlation at `bin - 1`, `bin`, `bin + 1` of one template and pass, in bins
     /// (|offset| ≤ 0.5; 0 when the three are not a strict local maximum).
     private func binOffset(template t: Int, bin: Int, mirrored: Bool, experimentalRe: [Float], experimentalIm: [Float]) -> Double {

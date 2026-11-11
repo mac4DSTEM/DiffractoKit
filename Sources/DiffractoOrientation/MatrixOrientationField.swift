@@ -223,24 +223,10 @@ extension PhaseVectorMatcher {
                 }
                 return best.map { (spot: $0.0, distance: $0.1) }
             }
-            // The in-plane rotation that lays the matrix spots on the measured vectors (2D least squares), twice.
-            var total = 0.0
-            for _ in 0..<2 {
-                var cross = 0.0, dot = 0.0, pairs = 0
-                for case let u? in vectors {
-                    guard let n = nearest(u), n.distance <= 3 * toleranceInvAngstrom else { continue }
-                    cross += n.spot.x * u.y - n.spot.y * u.x
-                    dot += n.spot.x * u.x + n.spot.y * u.y
-                    pairs += 1
-                }
-                guard pairs >= 2, dot > 0 else { break }
-                let delta = atan2(cross, dot)
-                guard abs(total + delta) <= matrixInPlaneCorrectionLimitRad else { break }
-                total += delta
-                let c = cos(delta), s = sin(delta)
-                spots = spots.map { SIMD2(c * $0.x - s * $0.y, s * $0.x + c * $0.y) }
-            }
-            corrections[position] = total
+            // The in-plane rotation that lays the matrix spots on the measured vectors (`fittingInPlane`).
+            let fitted = fittingInPlane(spots: spots, vectors: vectors.compactMap { $0 }, toleranceInvAngstrom: toleranceInvAngstrom)
+            spots = fitted.spots
+            corrections[position] = fitted.rotationRad
             var kept: [SIMD2<Double>] = []
             kept.reserveCapacity(peaks.count)
             for (peak, vector) in zip(peaks, vectors) {
@@ -253,5 +239,118 @@ extension PhaseVectorMatcher {
             out.append(kept)
         }
         return MatrixResidualScan(scan: out, removedCounts: removedCounts, inPlaneCorrectionsRad: corrections)
+    }
+}
+
+// MARK: - One orientation per grain
+
+/// A matrix orientation field after ``PhaseVectorMatcher/regularizingMatrixOrientations(_:scan:matcher:originX:originY:invAngstromPerPixel:directBeamRadiusInvAngstrom:maximumVectorInvAngstrom:neighbourhoodRadius:keepFraction:)``.
+public struct MatrixOrientationRegularization: Sendable, Equatable {
+    public let field: MatrixOrientationField
+    /// The positions (row-major indices, ascending) whose orientation was replaced by their neighbourhood's.
+    public let changedPositions: [Int]
+
+    public init(field: MatrixOrientationField, changedPositions: [Int]) {
+        self.field = field
+        self.changedPositions = changedPositions
+    }
+}
+
+extension PhaseVectorMatcher {
+
+    /// The usable peaks of one position for the template match: the rule of
+    /// ``experimentalVector(peak:originX:originY:invAngstromPerPixel:directBeamRadiusInvAngstrom:maximumVectorInvAngstrom:)``,
+    /// each peak counting 1.
+    static func usableACOMPeaks(_ peaks: [SIMD2<Double>], originX: Float, originY: Float, invAngstromPerPixel: Double,
+                                directBeamRadiusInvAngstrom: Double, maximumVectorInvAngstrom: Double) -> [ACOMPeak] {
+        peaks.compactMap { p in
+            experimentalVector(peak: p, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
+                               directBeamRadiusInvAngstrom: directBeamRadiusInvAngstrom,
+                               maximumVectorInvAngstrom: maximumVectorInvAngstrom) == nil
+                ? nil : ACOMPeak(x: Float(p.x), y: Float(p.y), intensity: 1)
+        }
+    }
+
+    /// The field with the matrix orientation held to the grain where the pattern allows it.
+    ///
+    /// A grain has one orientation, but a pattern full of precipitate spots can pull the template match of a single position
+    /// to another zone (on Thronsen et al. dataset A about 1 % of the positions of a one-grain scan land 40° from the
+    /// matrix zone). For every position whose zone disagrees with its neighbourhood:
+    ///
+    /// 1. the neighbourhood's zone is the zone that most of the other positions in the (2r + 1)² window share (beam
+    ///    directions within the library's distinct angle of one another); it must be shared by more than half of ALL the
+    ///    other positions of the window, with or without an orientation;
+    /// 2. the position's OWN pattern is matched against the templates around that zone
+    ///    (``ACOMMatcher/match(peaks:originX:originY:invAngstromPerPixel:near:withinRadians:)``);
+    /// 3. the position takes that match only if its score is at least `keepFraction` of the position's own best score.
+    ///
+    /// So nothing is decided by the vote alone: a position whose own best is clearly better keeps it. A grain boundary
+    /// stays where it is, and a grain of a few positions inside another stays, because their patterns do not fit the
+    /// neighbours' zone. The neighbourhood is read from the input field, so the result does not depend on the order of
+    /// the positions. A replaced position carries the template's bin angle (the matcher's in-plane refinement is not applied
+    /// to it); the removal fits the angle anyway.
+    ///
+    /// - Parameters:
+    ///   - scan: the scan the field was made from, in detector pixels.
+    ///   - matcher: the matcher the field was made with.
+    ///   - neighbourhoodRadius: r, in positions; 2 is a 5 × 5 window.
+    ///   - keepFraction: see step 3; in 0...1.
+    /// - Returns: nil when the scan and the field do not have the same number of positions, or a result names a template
+    ///   the matcher's library does not hold.
+    public static func regularizingMatrixOrientations(_ field: MatrixOrientationField, scan: [[SIMD2<Double>]],
+                                                      matcher: ACOMMatcher,
+                                                      originX: Float, originY: Float, invAngstromPerPixel: Double,
+                                                      directBeamRadiusInvAngstrom: Double = 0.15,
+                                                      maximumVectorInvAngstrom: Double = 0,
+                                                      neighbourhoodRadius: Int = 2,
+                                                      keepFraction: Float = 0.9) -> MatrixOrientationRegularization? {
+        let width = field.width, height = field.height
+        guard scan.count == field.results.count, scan.count == field.orientations.count, neighbourhoodRadius >= 1 else { return nil }
+        let (positions, overflow) = width.multipliedReportingOverflow(by: height)
+        guard width > 0, height > 0, !overflow, positions == scan.count else { return nil }
+        let library = matcher.library
+        guard field.results.allSatisfy({ $0.templateIndex < library.count }) else { return nil }
+        let cosDistinct = cos(library.distinctOrientationRadians)
+        func zone(_ i: Int) -> SIMD3<Double>? {
+            let t = field.results[i].templateIndex
+            return field.orientations[i] != nil && t >= 0 ? library.zoneAxes[t] : nil
+        }
+        var results = field.results, orientations = field.orientations
+        var changed: [Int] = []
+        for row in 0..<height {
+            for column in 0..<width {
+                let i = row * width + column
+                guard let own = zone(i) else { continue }
+                // The other positions of the window that have an orientation.
+                var neighbours: [SIMD3<Double>] = []
+                var others = 0
+                for r in max(0, row - min(neighbourhoodRadius, height))...min(height - 1, row + min(neighbourhoodRadius, height)) {
+                    for c in max(0, column - min(neighbourhoodRadius, width))...min(width - 1, column + min(neighbourhoodRadius, width)) where !(r == row && c == column) {
+                        others += 1
+                        if let z = zone(r * width + c) { neighbours.append(z) }
+                    }
+                }
+                guard !neighbours.isEmpty else { continue }
+                var dominant = neighbours[0], dominantCount = 0
+                for z in neighbours {
+                    let count = neighbours.reduce(0) { $0 + (simd_dot($1, z) > cosDistinct ? 1 : 0) }
+                    if count > dominantCount { dominant = z; dominantCount = count }
+                }
+                guard 2 * dominantCount > others, simd_dot(own, dominant) <= cosDistinct else { continue }
+                let peaks = usableACOMPeaks(scan[i], originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
+                                            directBeamRadiusInvAngstrom: directBeamRadiusInvAngstrom,
+                                            maximumVectorInvAngstrom: maximumVectorInvAngstrom)
+                let candidate = matcher.match(peaks: peaks, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
+                                              near: dominant, withinRadians: library.distinctOrientationRadians)
+                guard candidate.templateIndex >= 0, candidate.score >= keepFraction * field.results[i].score else { continue }
+                results[i] = candidate
+                orientations[i] = library.orientationMatrix(templateIndex: candidate.templateIndex,
+                                                            inPlaneAngle: candidate.inPlaneAngle, mirrored: candidate.mirrored)
+                changed.append(i)
+            }
+        }
+        return MatrixOrientationRegularization(
+            field: MatrixOrientationField(width: width, height: height, results: results, orientations: orientations),
+            changedPositions: changed)
     }
 }
