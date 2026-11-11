@@ -4,6 +4,14 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.12.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.12.0...0.12.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* LinearScale.assign keeps a spread ring whole and takes the lower shell of one prediction at two scales ([#78](https://github.com/mac4DSTEM/DiffractoKit/issues/78)) ([ebae174](https://github.com/mac4DSTEM/DiffractoKit/commit/ebae1743ba16f978dfb2de2de102616e33c49552))
+* LinearScale.assign reads the rings twice and refuses when the two readings disagree ([#80](https://github.com/mac4DSTEM/DiffractoKit/issues/80)) ([60d6134](https://github.com/mac4DSTEM/DiffractoKit/commit/60d61342d5cf8ec4745b4bc8b284cde954c02992))
+
 ## [0.12.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.11.0...0.12.0) (2026-11-01)
 
 
