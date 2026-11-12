@@ -4,6 +4,20 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.15.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.14.0...0.15.0) (2026-11-12)
+
+
+### Features
+
+* say which variants a spot pattern cannot tell apart ([#109](https://github.com/mac4DSTEM/DiffractoKit/issues/109)) ([38c5bc9](https://github.com/mac4DSTEM/DiffractoKit/commit/38c5bc923291eb248769fd5eb6057bbd9494d173))
+
+
+### Bug Fixes
+
+* a neighbouring grain's spots are not a phase's own vectors ([a51c5c3](https://github.com/mac4DSTEM/DiffractoKit/commit/a51c5c342980c73ed3bdd6ea21612a0319dfb072)), closes [#103](https://github.com/mac4DSTEM/DiffractoKit/issues/103)
+* a neighbouring grain's spots are not a phase's own vectors (a grain boundary is not called a precipitate) ([#104](https://github.com/mac4DSTEM/DiffractoKit/issues/104)) ([a51c5c3](https://github.com/mac4DSTEM/DiffractoKit/commit/a51c5c342980c73ed3bdd6ea21612a0319dfb072))
+* one matrix tolerance through the second pass of mapFromStructures ([#108](https://github.com/mac4DSTEM/DiffractoKit/issues/108)) ([556b446](https://github.com/mac4DSTEM/DiffractoKit/commit/556b4468db50f28687fe6cf6b61d6aeba01b662e)), closes [#106](https://github.com/mac4DSTEM/DiffractoKit/issues/106)
+
 ## [0.14.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.13.0...0.14.0) (2026-11-12)
 
 
