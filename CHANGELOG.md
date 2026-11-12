@@ -4,6 +4,23 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.13.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.12.1...0.13.0) (2026-11-12)
+
+
+### Features
+
+* list the rational orientation relationships near a measured one, without choosing ([#88](https://github.com/mac4DSTEM/DiffractoKit/issues/88)) ([b9255ec](https://github.com/mac4DSTEM/DiffractoKit/commit/b9255eca5b47790d02210ef5cbc0d45ced75cf53))
+* orientation relationships learned from the scan, and positions classified against their variants ([#85](https://github.com/mac4DSTEM/DiffractoKit/issues/85)) ([73dadb0](https://github.com/mac4DSTEM/DiffractoKit/commit/73dadb06764251fb429bed161a09613c0d2b9531))
+* the detector's distortion measured on the matrix's spots ([#97](https://github.com/mac4DSTEM/DiffractoKit/issues/97)) ([8a5d85d](https://github.com/mac4DSTEM/DiffractoKit/commit/8a5d85dee03fffab4ee03acfd84421d849d2dd3c))
+* the matrix orientation held to the grain, and a phase search from the structures alone on the residual spots ([#84](https://github.com/mac4DSTEM/DiffractoKit/issues/84)) ([83b679d](https://github.com/mac4DSTEM/DiffractoKit/commit/83b679d0deb631e8f0662f9a25b46d0177e6d09e))
+* the matrix orientation per scan position, and the removal of the spots it explains ([#82](https://github.com/mac4DSTEM/DiffractoKit/issues/82)) ([210998f](https://github.com/mac4DSTEM/DiffractoKit/commit/210998f9213f76a4f95805736089344cbf9379ed))
+* the two passes as one call, scored on the whole pattern, with planted tests on other material pairs ([#86](https://github.com/mac4DSTEM/DiffractoKit/issues/86)) ([d09aa34](https://github.com/mac4DSTEM/DiffractoKit/commit/d09aa345ba8b80649080b761d51d07e417d472c8))
+
+
+### Bug Fixes
+
+* a displaced matrix pattern is never classified as a precipitate ([#95](https://github.com/mac4DSTEM/DiffractoKit/issues/95)) ([3c568fb](https://github.com/mac4DSTEM/DiffractoKit/commit/3c568fb66461571a28b20f817a9ba2fe1f8c2d9d))
+
 ## [0.12.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.12.0...0.12.1) (2026-11-10)
 
 
