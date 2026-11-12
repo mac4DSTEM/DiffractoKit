@@ -34,6 +34,7 @@ merged as kit functions; none is used by `PhaseVectorMatcher.map`. State of 2026
 | 5 | #88 | The rational relationships near a learned one, listed and never chosen (`rationalRelationships`) |
 | guard | #95 | A displaced matrix pattern is never a phase (inside `classifyInTwoPasses`) |
 | input | #96 | The detector's distortion measured on the matrix's spots, for a scan with no ring (`matrixSpotDistortion`) |
+| one call | #99 | Steps 1 to 4 chained with the values they share, returning a `PhaseMap` (`mapFromStructures`); the call an application makes |
 
 Where it stands against the bar (typed zone axes through `map`):
 
