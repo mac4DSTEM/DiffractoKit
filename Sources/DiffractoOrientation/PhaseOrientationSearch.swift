@@ -52,14 +52,20 @@ public struct PhaseOrientationCandidate: Sendable {
     public init(name: String, crystal: CrystalStructure, kMax: Double,
                 templateSettings: ACOMTemplateSettings = ACOMTemplateSettings(),
                 excitationSlabInvAngstrom: Double = 0.05) throws(ACOMError) {
+        let reflections = try Self.reflections(of: crystal, kMax: kMax)
+        let library = try ACOMTemplateLibrary.generate(crystal: crystal, kMax: kMax, settings: templateSettings)
+        guard let matcher = ACOMMatcher(library: library) else { throw .invalidSettings("no FFT plan for the library's azimuthal length") }
+        self.init(name: name, matcher: matcher, reflections: reflections, excitationSlabInvAngstrom: excitationSlabInvAngstrom)
+    }
+
+    /// The reflections a candidate of `crystal` holds: its kinematic reflections up to `kMax`, each with its intensity. For a
+    /// caller that predicts spots and needs no template library
+    /// (``PhaseVectorMatcher/indistinguishableVariants(_:matrixOrientation:reflections:excitationSlabInvAngstrom:reachInvAngstrom:toleranceInvAngstrom:directBeamRadiusInvAngstrom:)``).
+    public static func reflections(of crystal: CrystalStructure, kMax: Double) throws(ACOMError) -> [ACOMReflection] {
         let list: KinematicReflectionList
         do { list = try crystal.kinematicReflections(kMax: kMax, retainingAll: false) }
         catch { throw .kinematics(error.description) }
-        let library = try ACOMTemplateLibrary.generate(crystal: crystal, kMax: kMax, settings: templateSettings)
-        guard let matcher = ACOMMatcher(library: library) else { throw .invalidSettings("no FFT plan for the library's azimuthal length") }
-        self.init(name: name, matcher: matcher,
-                  reflections: list.kept.map { ACOMReflection(g: $0.reflection.g, intensity: $0.structureFactor.intensity) },
-                  excitationSlabInvAngstrom: excitationSlabInvAngstrom)
+        return list.kept.map { ACOMReflection(g: $0.reflection.g, intensity: $0.structureFactor.intensity) }
     }
 }
 

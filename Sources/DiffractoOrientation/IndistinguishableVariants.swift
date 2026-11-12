@@ -28,18 +28,19 @@ extension PhaseVectorMatcher {
     ///     and `OrientationVariantSet.variants` hold them.
     ///   - matrixOrientation: the matrix orientation at the position (columns lab x, y, z in crystal coordinates). The
     ///     groups depend on it: which needles lie in the plane is a matter of the beam.
-    ///   - candidate: the phase; its reflections and its excitation slab predict the spots.
+    ///   - reflections: the phase's reflections (``PhaseOrientationCandidate/reflections(of:kMax:)``).
+    ///   - excitationSlabInvAngstrom: the slab the phase was matched with; with the reflections it predicts the spots.
     ///   - reachInvAngstrom: spots farther from the centre are not recorded and tell nothing apart.
     ///   - toleranceInvAngstrom: two predicted spots nearer than this are one spot: the pair radius of the matching.
     ///   - directBeamRadiusInvAngstrom: spots inside it are the direct beam.
     /// - Returns: the groups, each ascending, ordered by their first variant. Every index 0..<variants.count is in one.
     public static func indistinguishableVariants(_ variants: [simd_double3x3], matrixOrientation: simd_double3x3,
-                                                 candidate: PhaseOrientationCandidate, reachInvAngstrom: Double,
-                                                 toleranceInvAngstrom: Double = 0.02,
+                                                 reflections: [ACOMReflection], excitationSlabInvAngstrom: Double,
+                                                 reachInvAngstrom: Double, toleranceInvAngstrom: Double = 0.02,
                                                  directBeamRadiusInvAngstrom: Double = 0.15) -> [[Int]] {
         let spots: [[SIMD2<Double>]] = variants.map { relation in
-            matrixSpots(reflections: candidate.reflections, orientation: relation.transpose * matrixOrientation,
-                        excitationSlabInvAngstrom: candidate.excitationSlabInvAngstrom)
+            matrixSpots(reflections: reflections, orientation: relation.transpose * matrixOrientation,
+                        excitationSlabInvAngstrom: excitationSlabInvAngstrom)
                 .filter { let r = simd_length($0); return r > directBeamRadiusInvAngstrom && r <= reachInvAngstrom }
         }
         func covers(_ a: [SIMD2<Double>], _ b: [SIMD2<Double>]) -> Bool {

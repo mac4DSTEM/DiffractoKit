@@ -46,7 +46,8 @@ import DiffractoOrientation
     @Test func inPlaneNeedlesComeInPairsAndEndOnNeedlesAlone() throws {
         let s = try Self.setup()
         #expect(s.variants.count == 12 && s.endOn.filter { $0 }.count == 4)
-        let groups = PhaseVectorMatcher.indistinguishableVariants(s.variants, matrixOrientation: s.matrix, candidate: s.candidate,
+        let groups = PhaseVectorMatcher.indistinguishableVariants(s.variants, matrixOrientation: s.matrix, reflections: s.candidate.reflections,
+                                                                  excitationSlabInvAngstrom: s.candidate.excitationSlabInvAngstrom,
                                                                   reachInvAngstrom: Self.reach)
         #expect(groups.flatMap { $0 }.sorted() == Array(0..<12), "every variant once: \(groups)")
         #expect(groups == groups.sorted { $0[0] < $1[0] } && groups.allSatisfy { $0 == $0.sorted() })
@@ -68,12 +69,18 @@ import DiffractoOrientation
     /// predict the same spots exactly, so they stay pairs; and no reach means no spots, so nothing can be told apart.
     @Test func theGroupsFollowTheGeometryNotTheTolerance() throws {
         let s = try Self.setup()
-        let tight = PhaseVectorMatcher.indistinguishableVariants(s.variants, matrixOrientation: s.matrix, candidate: s.candidate,
+        // The reflection list on its own is the candidate's.
+        let alone = try PhaseOrientationCandidate.reflections(of: CrystalPresets.betaDoublePrime, kMax: Self.reach)
+        #expect(alone.count == s.candidate.reflections.count && alone.count > 0)
+        let tight = PhaseVectorMatcher.indistinguishableVariants(s.variants, matrixOrientation: s.matrix, reflections: s.candidate.reflections,
+                                                                  excitationSlabInvAngstrom: s.candidate.excitationSlabInvAngstrom,
                                                                  reachInvAngstrom: Self.reach, toleranceInvAngstrom: 1e-6)
         #expect(tight.filter { $0.count == 2 }.count == 4 && tight.filter { $0.count == 1 }.count == 4, "\(tight)")
-        let blind = PhaseVectorMatcher.indistinguishableVariants(s.variants, matrixOrientation: s.matrix, candidate: s.candidate,
+        let blind = PhaseVectorMatcher.indistinguishableVariants(s.variants, matrixOrientation: s.matrix, reflections: s.candidate.reflections,
+                                                                  excitationSlabInvAngstrom: s.candidate.excitationSlabInvAngstrom,
                                                                  reachInvAngstrom: 0.1)
         #expect(blind == [Array(0..<12)], "with no spot in reach every variant is the same: \(blind)")
-        #expect(PhaseVectorMatcher.indistinguishableVariants([], matrixOrientation: s.matrix, candidate: s.candidate, reachInvAngstrom: Self.reach).isEmpty)
+        #expect(PhaseVectorMatcher.indistinguishableVariants([], matrixOrientation: s.matrix, reflections: s.candidate.reflections,
+                                                                  excitationSlabInvAngstrom: s.candidate.excitationSlabInvAngstrom, reachInvAngstrom: Self.reach).isEmpty)
     }
 }
