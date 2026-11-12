@@ -169,6 +169,7 @@ extension PhaseVectorMatcher {
                                             matrixReflections: matrixCandidate.reflections, scan: scan, scanWidth: scanWidth,
                                             usesNeighbourSupport: settings.usesNeighbourSupport,
                                             minimumPositions: settings.minimumPositions,
+                                            matrixToleranceInvAngstrom: settings.matrixToleranceInvAngstrom,
                                             maximumWorkers: maximumWorkers, isCancelled: isCancelled) else { return nil }
 
         var map = PhaseMap(width: scanWidth, height: scanHeight, matrixEntryIndex: -1,

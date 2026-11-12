@@ -162,6 +162,9 @@ extension PhaseVectorMatcher {
     ///     default: it finds more of a precipitate's edge and calls more matrix positions a phase, and a false precipitate
     ///     is the worse error.
     ///   - minimumPositions: the fewest strong positions a relationship is learned from.
+    ///   - matrixToleranceInvAngstrom: how near a vector must lie to a predicted matrix spot to be the matrix's, Å⁻¹: the
+    ///     tolerance the removal was run with (DiffractoKit#106). It decides which removed vectors are the position's own
+    ///     matrix spots and which vectors of the whole pattern are a phase's own.
     /// - Returns: nil when the lengths disagree or the run was cancelled.
     public static func classifyInTwoPasses(residual: MatrixResidualScan, matrixOrientations: [simd_double3x3?],
                                            phases: [TwoPassPhase], matrixSymmetry: CrystalOrientationSymmetry,
@@ -171,6 +174,7 @@ extension PhaseVectorMatcher {
                                            scan: [[SIMD2<Double>]]? = nil, scanWidth: Int = 0,
                                            usesNeighbourSupport: Bool = false,
                                            minimumPositions: Int = 20,
+                                           matrixToleranceInvAngstrom: Double = 0.02,
                                            maximumWorkers: Int? = nil,
                                            isCancelled: (@Sendable () -> Bool)? = nil) -> TwoPassClassification? {
         let total = residual.scan.count
@@ -233,12 +237,14 @@ extension PhaseVectorMatcher {
                 whole = patternWithoutNeighbouringGrainSpots(all: all, left: residual.scan[i], matrixOrientation: matrixOrientations[i],
                                                              matrixReflections: reflections, originX: originX, originY: originY,
                                                              invAngstromPerPixel: invAngstromPerPixel,
+                                                             matrixToleranceInvAngstrom: matrixToleranceInvAngstrom,
                                                              directBeamRadiusInvAngstrom: passTwo.directBeamRadiusInvAngstrom)
             }
             var v = classifyAgainstVariants(peaks: residual.scan[i], removedCount: residual.removedCounts[i],
                                             matrixOrientation: matrixOrientations[i], phases: sets, settings: passTwo,
                                             originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
-                                            matrixReflections: matrixReflections, allPeaks: whole, countsSingleOwnVector: true)
+                                            matrixReflections: matrixReflections, matrixToleranceInvAngstrom: matrixToleranceInvAngstrom,
+                                            allPeaks: whole, countsSingleOwnVector: true)
             if onAllSpots, matrixOrientations[i] != nil, v.verdict == .indexed, v.survivingCount <= passTwo.directMatrixMaximumVectors {
                 single[i] = v
                 v.verdict = .matrix
