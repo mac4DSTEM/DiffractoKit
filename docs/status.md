@@ -32,6 +32,8 @@ merged as kit functions; none is used by `PhaseVectorMatcher.map`. State of 2026
 | 3 | #85 | Relationships learned from the strong positions, refined, and every position scored against their variants (`learnOrientationRelationships`, `classifyAgainstVariants`); grain overlaps in the removal |
 | 4 | #86 | The two passes as one call, scored on the whole pattern, firm rule by default, neighbour rule as a switch (`classifyInTwoPasses`) |
 | 5 | #88 | The rational relationships near a learned one, listed and never chosen (`rationalRelationships`) |
+| guard | #95 | A displaced matrix pattern is never a phase (inside `classifyInTwoPasses`) |
+| input | #96 | The detector's distortion measured on the matrix's spots, for a scan with no ring (`matrixSpotDistortion`) |
 
 Where it stands against the bar (typed zone axes through `map`):
 
