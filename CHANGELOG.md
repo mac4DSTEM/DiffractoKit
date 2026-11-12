@@ -4,6 +4,13 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.15.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.15.0...0.15.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* a structure from a CIF is named by the file's own chemical name ([#111](https://github.com/mac4DSTEM/DiffractoKit/issues/111)) ([3e47866](https://github.com/mac4DSTEM/DiffractoKit/commit/3e47866a54766536f4a6a56e2572eaac3f4a037b)), closes [#110](https://github.com/mac4DSTEM/DiffractoKit/issues/110)
+
 ## [0.15.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.14.0...0.15.0) (2026-11-12)
 
 
