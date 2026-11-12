@@ -4,6 +4,13 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.14.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.13.0...0.14.0) (2026-11-12)
+
+
+### Features
+
+* one call that maps a scan's phases from the structures alone ([#101](https://github.com/mac4DSTEM/DiffractoKit/issues/101)) ([19211e3](https://github.com/mac4DSTEM/DiffractoKit/commit/19211e3702ba881fc41127534acb701a8e867884)), closes [#99](https://github.com/mac4DSTEM/DiffractoKit/issues/99)
+
 ## [0.13.0](https://github.com/mac4DSTEM/DiffractoKit/compare/0.12.1...0.13.0) (2026-11-12)
 
 
