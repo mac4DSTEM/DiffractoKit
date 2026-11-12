@@ -143,9 +143,27 @@ extension PhaseVectorMatcher {
         guard matrixOrientations.count == total, residual.removedCounts.count == total else { return nil }
         if let scan, scan.count != total { return nil }
         let candidates = phases.map(\.candidate)
-        guard let free = searchOrientations(residual: residual, candidates: candidates, settings: settings,
+        guard var free = searchOrientations(residual: residual, candidates: candidates, settings: settings,
                                             originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
                                             maximumWorkers: maximumWorkers, isCancelled: isCancelled) else { return nil }
+        // A displaced matrix pattern: the removal took none of the position's vectors, yet at least half of the matrix's
+        // predicted spots (and at least two) have a vector within three pair radii. The residual there is the matrix pattern
+        // itself, a little off (a shifted origin, a wrong calibration), and a phase indexed on it is the matrix's spots read as
+        // a precipitate. Such a position teaches no relationship and is never indexed (DiffractoKit#94). Needs the matrix's
+        // reflections; without them nothing is judged.
+        let hasUnusableMatrix: [Bool] = (0..<total).map { i in
+            guard let reflections = matrixReflections, let m = matrixOrientations[i], residual.removedCounts[i] == 0 else { return false }
+            let spots = matrixSpots(reflections: reflections, orientation: m, excitationSlabInvAngstrom: matrixRemovalSlabInvAngstrom)
+            guard spots.count >= 2 else { return false }
+            let vectors = residual.scan[i].compactMap {
+                experimentalVector(peak: $0, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
+                                   directBeamRadiusInvAngstrom: 0.15, maximumVectorInvAngstrom: settings.maximumVectorInvAngstrom)
+            }
+            let near = 3 * settings.pairRadiusInvAngstrom
+            let found = spots.filter { s in vectors.contains { simd_length($0 - s) <= near } }.count
+            return found >= 2 && 2 * found >= spots.count
+        }
+        for i in 0..<total where hasUnusableMatrix[i] && free[i].verdict == .indexed { free[i].verdict = .notIndexed }
         var passTwo = settings
         passTwo.chanceLevel = .infinity
 
@@ -186,6 +204,10 @@ extension PhaseVectorMatcher {
             }
             // A phase with no learned relationship stays on the guarded free search.
             if v.verdict != .indexed, free[i].verdict == .indexed, relationships[free[i].phaseIndex].isEmpty { v = free[i] }
+            if hasUnusableMatrix[i] {
+                single[i] = nil
+                if v.verdict == .indexed { v.verdict = .notIndexed; v.orientation = nil }
+            }
             verdicts[i] = v
         }
         var supported = [Bool](repeating: false, count: total)
