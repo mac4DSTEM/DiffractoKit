@@ -216,7 +216,7 @@ public enum CIFImport {
         let parsed = try parse(cifText, policy: policy)
         let cell = UnitCell(a: parsed.a, b: parsed.b, c: parsed.c,
                             alphaDeg: parsed.alpha, betaDeg: parsed.beta, gammaDeg: parsed.gamma)
-        let name = displayName(dataBlockName: parsed.dataBlockName, fileBaseName: fileBaseName)
+        let name = displayName(chemicalName: parsed.chemicalName, dataBlockName: parsed.dataBlockName, fileBaseName: fileBaseName)
         // The symmetry is detected from the (expanded) cell either way: a
         // file's loop may declare less than its atoms have.
         let structure = CrystalStructure.detectingSymmetry(
@@ -236,20 +236,36 @@ public enum CIFImport {
                            warnings: parsed.warnings)
     }
 
-    /// The name a structure imports under: the CIF's `data_` block name, unless it says nothing — empty, or the
-    /// placeholder a structure editor writes into every file (VESTA exports `data_VESTA_phase_1` whatever the
-    /// structure). The file name is then the reader's only handle.
-    public static func displayName(dataBlockName: String?, fileBaseName: String) -> String {
+    /// The name a structure imports under: the file's own chemical name (`chemicalName(in:)`), else the CIF's `data_`
+    /// block name, unless that says nothing — empty, the placeholder a structure editor writes into every file (VESTA
+    /// exports `data_VESTA_phase_1` whatever the structure), or a database's entry number (`data_5910003`). The file name
+    /// is then the reader's only handle.
+    public static func displayName(chemicalName: String? = nil, dataBlockName: String?, fileBaseName: String) -> String {
+        if let chemical = chemicalName?.trimmingCharacters(in: .whitespaces), !chemical.isEmpty { return chemical }
         guard let block = dataBlockName?.trimmingCharacters(in: .whitespaces), !block.isEmpty,
-              block.range(of: #"^VESTA_phase_[0-9]+$"#, options: .regularExpression) == nil
+              block.range(of: #"^VESTA_phase_[0-9]+$"#, options: .regularExpression) == nil,
+              block.contains(where: { !$0.isNumber })
         else { return fileBaseName }
         return block
+    }
+
+    /// The name the file gives its compound: `_chemical_name_mineral`, else `_chemical_name_common`, else
+    /// `_chemical_formula_sum`, the first that says something. `?`, `.`, an empty value and the placeholder a structure
+    /// editor writes ("New structure") say nothing. `values` maps lower-case tags to their values.
+    static func chemicalName(in values: [String: String]) -> String? {
+        for tag in ["_chemical_name_mineral", "_chemical_name_common", "_chemical_formula_sum"] {
+            guard let raw = values[tag]?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty, raw != "?", raw != ".",
+                  raw.caseInsensitiveCompare("New structure") != .orderedSame else { continue }
+            return raw.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        }
+        return nil
     }
 
     // MARK: - Parsed intermediate structure
 
     private struct ParsedStructure {
         var dataBlockName: String?
+        var chemicalName: String?
         var a: Double, b: Double, c: Double
         var alpha: Double, beta: Double, gamma: Double
         var sites: [AtomSite]
@@ -524,7 +540,7 @@ public enum CIFImport {
             max($0, max($1.halfStep.x, max($1.halfStep.y, $1.halfStep.z)))
         }
         return ParsedStructure(
-            dataBlockName: dataBlockName,
+            dataBlockName: dataBlockName, chemicalName: chemicalName(in: cellValues),
             a: a, b: b, c: c, alpha: alpha, beta: beta, gamma: gamma,
             sites: sites, operations: operations, coarsestHalfStep: coarsestHalfStep,
             spaceGroupNumber: spaceGroupNumber, spaceGroupSymbol: declaredHermannMauguin(cellValues),
