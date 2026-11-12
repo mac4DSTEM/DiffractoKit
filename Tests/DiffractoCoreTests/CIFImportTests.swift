@@ -18,7 +18,7 @@ struct CIFImportTests {
         let doc = try CIFImport.read(Fixtures.betaDoublePrimeCIF, fileBaseName: "beta_double_prime_Mg5Si6")
         let s = doc.structure
         #expect(doc.dataBlockName == "beta_double_prime_Mg5Si6")
-        #expect(doc.displayName == "beta_double_prime_Mg5Si6")
+        #expect(doc.displayName == "beta-double-prime")   // the file's `_chemical_name_mineral`, before its block name
         #expect(doc.declaredSpaceGroupNumber == 12)
         #expect(doc.declaredSpaceGroupSymbol == "C 2/m")
         #expect(doc.hadSymmetryOperations)
@@ -327,6 +327,24 @@ struct CIFImportTests {
         #expect(CIFImport.displayName(dataBlockName: "gold", fileBaseName: "f") == "gold")
         #expect(CIFImport.displayName(dataBlockName: "", fileBaseName: "f") == "f")
         #expect(CIFImport.displayName(dataBlockName: "VESTA_phase_12", fileBaseName: "f") == "f")
+    }
+
+    /// A structure is named by what its file calls the compound: the mineral name, else the common name, else the sum
+    /// formula; then the block name, unless it is a database's entry number; then the file name. Seen in an app: a COD
+    /// file of WS2 imported as "5910003".
+    @Test func testTheFilesOwnChemicalNameIsTheDisplayName() throws {
+        func named(_ tags: String, block: String = "data_gold") throws -> String {
+            try CIFImport.read(Self.goldP1.replacingOccurrences(of: "data_gold\n", with: block + "\n" + tags + "\n"), fileBaseName: "file").displayName
+        }
+        #expect(try named("_chemical_name_mineral 'beta-double-prime'\n_chemical_name_common 'common'\n_chemical_formula_sum 'Mg10 Si12'") == "beta-double-prime")
+        #expect(try named("_chemical_name_mineral ?\n_chemical_name_common 'Tungsten disulphide'\n_chemical_formula_sum 'S2 W'") == "Tungsten disulphide")
+        #expect(try named("_chemical_name_common 'New structure'\n_chemical_formula_sum 'S2  W'", block: "data_5910003") == "S2 W")
+        #expect(try named("_chemical_name_common ''\n_chemical_formula_sum .") == "gold", "nothing chemical: the block name")
+        #expect(try named("_chemical_name_common ''", block: "data_5910003") == "file", "a database number is no name")
+        #expect(try named("_chemical_name_common ''", block: "data_VESTA_phase_1") == "file")
+        #expect(CIFImport.displayName(chemicalName: "  ", dataBlockName: "gold", fileBaseName: "f") == "gold")
+        #expect(CIFImport.displayName(dataBlockName: "2026", fileBaseName: "f") == "f")
+        #expect(CIFImport.displayName(dataBlockName: "mp-165", fileBaseName: "f") == "mp-165")
     }
 
     /// Written precision: `0.2500` is exact, `0.333` is a half-step of 1e-3, `0.33` 1e-2, nothing beyond 1e-2.
