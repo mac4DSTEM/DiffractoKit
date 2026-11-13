@@ -35,8 +35,8 @@ RingCalibration+Fit.swift and DSpacingIndexing.swift). The ring-fit tests port
 those applications' plants and their renderer at those versions. macTEM's public
 history starts at v1.0.0, so its earlier commits are named by version, not hash.
 
-    mac4DSTEM - https://github.com/mac4DSTEM/mac4DSTEM
-    macTEM    - https://github.com/mac4DSTEM/macTEM
+    mac4DSTEM - https://github.com/macEMSuite/mac4DSTEM
+    macTEM    - https://github.com/macEMSuite/macTEM
     Copyright (C) 2026 Paul Lobpreis
     Both licensed under the GNU General Public License v3.0
 
