@@ -122,13 +122,13 @@ extension PhaseVectorMatcher {
         let beam = settings.directBeamRadiusInvAngstrom
 
         let matrixCandidate = try PhaseOrientationCandidate(name: matrix.name, crystal: matrix.crystal, kMax: reach)
-        let matrixSymmetry = CrystalOrientationSymmetry(laueClass: matrixCandidate.matcher.library.laueClass)
+        let matrixSymmetry = matrixCandidate.matcher.library.orientationSymmetry
         var phases: [TwoPassPhase] = []
         for c in candidates {
             let candidate = try PhaseOrientationCandidate(name: c.name, crystal: c.crystal, kMax: reach,
                                                           excitationSlabInvAngstrom: c.excitationSlabInvAngstrom)
             phases.append(TwoPassPhase(candidate: candidate,
-                                       symmetry: CrystalOrientationSymmetry(laueClass: candidate.matcher.library.laueClass)))
+                                       symmetry: candidate.matcher.library.orientationSymmetry))
         }
         if isCancelled?() == true { return nil }
 

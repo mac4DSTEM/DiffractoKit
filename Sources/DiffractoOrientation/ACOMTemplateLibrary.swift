@@ -173,6 +173,8 @@ public struct ACOMTemplateLibrary: Sendable {
 
     public let geometry: Geometry
     public let laueClass: LaueClass
+    /// For `-3m` the placement of the twofolds in the crystal's cell (`ThreeBarMSetting`); nil for every other class.
+    public let threeBarMSetting: ThreeBarMSetting?
     public let settings: ACOMTemplateSettings
     /// The beam direction of each template, unit vectors in the crystal's Cartesian frame.
     public let zoneAxes: [SIMD3<Double>]
@@ -190,6 +192,12 @@ public struct ACOMTemplateLibrary: Sendable {
 
     public var count: Int { zoneAxes.count }
 
+    /// The orientation symmetry the library was sampled in, and the one every orientation matched against it is reduced by:
+    /// the Laue class with, for `-3m`, the crystal's own setting (DiffractoKit#118).
+    public var orientationSymmetry: CrystalOrientationSymmetry {
+        CrystalOrientationSymmetry(laueClass: laueClass, setting: threeBarMSetting ?? .threeBarOneM)
+    }
+
     // MARK: Generation
 
     /// Builds the library from reflections.
@@ -198,11 +206,15 @@ public struct ACOMTemplateLibrary: Sendable {
     ///   - reflections: the reflections to project (`g` ≠ 0; a zero vector has no azimuth and is skipped).
     ///   - kMax: the radius (Å⁻¹) of the outermost ring; reflections beyond it are not deposited.
     ///   - laueClass: the Laue class whose fundamental zone the beam directions sample.
+    ///   - threeBarMSetting: for `-3m`, the placement of the crystal's twofolds (default -31m, the kit's original setting);
+    ///     ignored for every other class. A -3m1 cell (P-3m1, P-3c1, R-3m, R-3c in hexagonal axes) sampled in -31m misses half
+    ///     of its beam directions and is reduced by operators it does not have.
     ///   - settings: see ``ACOMTemplateSettings``.
     ///   - isCancelled: polled before every beam direction; once it returns true `generate` throws ``ACOMError/cancelled``.
     ///   - progress: called from the calling thread with the fraction of beam directions done, after each one, ending at 1.
     /// - Throws: ``ACOMError``.
     public static func generate(reflections: [ACOMReflection], kMax: Double, laueClass: LaueClass,
+                                threeBarMSetting: ThreeBarMSetting = .threeBarOneM,
                                 settings: ACOMTemplateSettings = ACOMTemplateSettings(),
                                 isCancelled: (@Sendable () -> Bool)? = nil,
                                 progress: (@Sendable (Double) -> Void)? = nil) throws(ACOMError)
@@ -217,7 +229,8 @@ public struct ACOMTemplateLibrary: Sendable {
         }
         let axes: [SIMD3<Double>]
         do {
-            axes = try CrystalOrientationSymmetry(laueClass: laueClass).sampleFundamentalZone(count: settings.zoneAxisCount)
+            axes = try CrystalOrientationSymmetry(laueClass: laueClass, setting: threeBarMSetting)
+                .sampleFundamentalZone(count: settings.zoneAxisCount)
         } catch let error as OrientationSymmetryError { throw .zoneSampling(error) }
         catch { throw .invalidSettings("\(error)") }
         let geo = Geometry(nRadial: settings.nRadial, nAzimuthal: settings.nAzimuthal,
@@ -245,14 +258,17 @@ public struct ACOMTemplateLibrary: Sendable {
             fftIm.append(contentsOf: im)
             progress?(Double(k + 1) / Double(axes.count))
         }
-        return ACOMTemplateLibrary(geometry: geo, laueClass: laueClass, settings: settings, zoneAxes: axes,
+        return ACOMTemplateLibrary(geometry: geo, laueClass: laueClass,
+                                   threeBarMSetting: laueClass == .threeBarM ? threeBarMSetting : nil,
+                                   settings: settings, zoneAxes: axes,
                                    detectorBases: bases, templateSpots: allSpots, templates: templates,
                                    templateFFTRe: fftRe, templateFFTIm: fftIm,
                                    distinctOrientationRadians: settings.distinctOrientationDegrees * .pi / 180)
     }
 
     /// Builds the library of a crystal: the kit's kinematic reflections up to `kMax` (after the |F| cut) and the crystal's own
-    /// Laue class.
+    /// Laue class, for `-3m` in the crystal's own setting (`PhaseModel.orientationSymmetry(of:)`; -31m when the cell has
+    /// no standard setting).
     ///
     /// - Throws: ``ACOMError`` (`.kinematics` for the kit's refusal of the structure, `.noLaueClass` when its symmetry is
     ///   undetermined).
@@ -266,7 +282,8 @@ public struct ACOMTemplateLibrary: Sendable {
         do { list = try crystal.kinematicReflections(kMax: kMax, retainingAll: false) }
         catch { throw .kinematics(error.description) }
         let reflections = list.kept.map { ACOMReflection(g: $0.reflection.g, intensity: $0.structureFactor.intensity) }
-        return try generate(reflections: reflections, kMax: kMax, laueClass: laue, settings: settings,
+        let setting = PhaseModel.orientationSymmetry(of: crystal)?.threeBarMSetting ?? .threeBarOneM
+        return try generate(reflections: reflections, kMax: kMax, laueClass: laue, threeBarMSetting: setting, settings: settings,
                             isCancelled: isCancelled, progress: progress)
     }
 
