@@ -9,7 +9,7 @@ authors:
 version: 0.15.1 # x-release-please-version
 date-released: 2026-11-12 # x-release-please-date
 license: GPL-3.0-only
-repository-code: "https://github.com/mac4DSTEM/DiffractoKit"
+repository-code: "https://github.com/macEMSuite/DiffractoKit"
 keywords:
   - crystallography
   - electron diffraction

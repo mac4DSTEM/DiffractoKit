@@ -410,7 +410,7 @@ upstream counterpart and therefore no row above.
 
 ## Known limits and decisions
 
-Open work is in the [issues](https://github.com/mac4DSTEM/DiffractoKit/issues), including the ones closed as *not planned*
+Open work is in the [issues](https://github.com/macEMSuite/DiffractoKit/issues), including the ones closed as *not planned*
 and parked for later (`cif_import` speed #5, `reflections(kMax:)` speed #6, phase-matching options #7, orix gaps #13). Speed
 against Python is in `docs/benchmarks.md`.
 
