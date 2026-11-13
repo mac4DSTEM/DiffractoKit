@@ -7,7 +7,10 @@ trigonal -3m has two settings in hexagonal axes, chosen with `CrystalOrientation
 `PointGroup("-3m")`; the default) and `.threeBarMOne` (-3m1: P-3m1, P-3c1, R-3m and R-3c in hexagonal axes; twofolds on a, b and -(a+b),
 at 0, 60 and 120 degrees; orix's `D3d`). A cell in another setting must first be transformed into one of these frames
 (a rhombohedral-axes R-3m cell is not covered). This constructor does not infer a setting from a cell or from its atoms;
-`PhaseModel.orientationSymmetry(of:)` does.
+`PhaseModel.orientationSymmetry(of:)` does. An ACOM library carries the setting (`ACOMTemplateLibrary.threeBarMSetting`,
+taken from the crystal by `generate(crystal:)`, passed to `generate(reflections:)`), and the matcher, the matrix orientation
+field and structure phase mapping reduce with `library.orientationSymmetry`. Before DiffractoKit#118 every -3m library
+was -31m: a -3m1 phase was sampled over the wrong sector and reduced by twofolds it does not have.
 
 | Laue class | Proper subgroup order | Generators (fractional for hexagonal axes) |
 |---|---:|---|

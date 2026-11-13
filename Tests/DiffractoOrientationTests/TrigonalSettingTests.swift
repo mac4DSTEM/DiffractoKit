@@ -93,6 +93,41 @@ struct TrigonalSettingTests {
         print("TRIGONAL detection: \(seen.joined(separator: ", "))")
     }
 
+    /// DiffractoKit#118: the ACOM library of a -3m1 crystal (CdI2, P-3m1) samples its beam directions in the crystal's own
+    /// setting and matches and reduces with it. Before, the library knew only the Laue class: every -3m library was -31m, so a
+    /// -3m1 phase got half of its distinct beam directions twice and the other half never (the -31m sector straddles a -3m1
+    /// mirror), and its orientations were reduced by twofolds it does not have. Mutation: the setting dropped from
+    /// `generate(crystal:)` -> red (setting, and directions outside the -3m1 zone).
+    @Test func anACOMLibraryOfAMinus3m1CrystalSamplesAndReducesInItsOwnSetting() throws {
+        let cdi2 = try CIFImport.read(try Fixtures.text("cdi2_P-3m1.cif"), fileBaseName: "cdi2_P-3m1.cif").structure
+        let own = try #require(PhaseModel.orientationSymmetry(of: cdi2))
+        #expect(own.threeBarMSetting == .threeBarMOne)
+        let library = try ACOMTemplateLibrary.generate(crystal: cdi2, kMax: 1.5, settings: ACOMTemplateSettings(zoneAxisCount: 60))
+        #expect(library.laueClass == .threeBarM && library.threeBarMSetting == .threeBarMOne)
+        #expect(library.orientationSymmetry.operators == own.operators)
+        // Every sampled beam direction is already in the crystal's own fundamental zone.
+        var outside = 0
+        for axis in library.zoneAxes {
+            if simd_dot(try own.reduceDirection(axis), axis) < 1 - 1e-9 { outside += 1 }
+        }
+        #expect(outside == 0, "\(outside) of \(library.count) beam directions lie outside the -3m1 zone")
+        // And the two settings are not interchangeable: the -31m sector has directions the -3m1 reduction moves.
+        let other = CrystalOrientationSymmetry(laueClass: .threeBarM, setting: .threeBarOneM)
+        let foreign = try other.sampleFundamentalZone(count: 60)
+        var moved = 0
+        for axis in foreign {
+            if simd_dot(try own.reduceDirection(axis), axis) < 1 - 1e-6 { moved += 1 }
+        }
+        #expect(moved > 0)
+        // Other classes and the -31m default keep what they had.
+        let al = try ACOMTemplateLibrary.generate(reflections: [ACOMReflection(g: SIMD3(0.5, 0, 0), intensity: 1)], kMax: 1,
+                                                 laueClass: .mThreeBarM, settings: ACOMTemplateSettings(zoneAxisCount: 10))
+        #expect(al.threeBarMSetting == nil)
+        let minus31m = try ACOMTemplateLibrary.generate(reflections: [ACOMReflection(g: SIMD3(0.5, 0, 0), intensity: 1)], kMax: 1,
+                                                       laueClass: .threeBarM, settings: ACOMTemplateSettings(zoneAxisCount: 10))
+        #expect(minus31m.threeBarMSetting == .threeBarOneM)
+    }
+
     @Test func aDeclaredSettingThatTheCellDoesNotHaveIsAValidationIssue() throws {
         let cases = try pins()
         let p31m = structure(try #require(cases.first { $0.setting == "-31m" }))

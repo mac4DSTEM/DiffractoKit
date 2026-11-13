@@ -416,7 +416,7 @@ extension PhaseVectorMatcher {
         // Every position's orientation reduced by the crystal's symmetry once, so two positions of one grain compare by the
         // plain rotation angle between their reduced matrices. Two orientations on opposite sides of the fundamental zone's
         // boundary read as far apart; the effect is no repair there, never a wrong one.
-        let symmetry = CrystalOrientationSymmetry(laueClass: library.laueClass)
+        let symmetry = library.orientationSymmetry
         let reduced: [simd_double3x3?] = field.orientations.enumerated().map { i, m in
             guard let m, field.results[i].templateIndex >= 0 else { return nil }
             return (try? symmetry.reduce(m))?.matrix

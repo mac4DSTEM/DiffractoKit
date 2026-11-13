@@ -38,7 +38,7 @@ public struct ACOMMatcher: Sendable {
         self.refinesInPlaneAngle = refinesInPlaneAngle
         self.library = library
         self.fft = fft
-        self.symmetry = CrystalOrientationSymmetry(laueClass: library.laueClass)
+        self.symmetry = library.orientationSymmetry
     }
 
     /// The least number of peaks a pattern needs.
