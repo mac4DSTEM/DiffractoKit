@@ -4,6 +4,13 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.17.0](https://github.com/macEMSuite/DiffractoKit/compare/0.16.0...0.17.0) (2026-11-14)
+
+
+### Features
+
+* phase mapping from structures reports progress through its two passes ([#127](https://github.com/macEMSuite/DiffractoKit/issues/127)) ([775356a](https://github.com/macEMSuite/DiffractoKit/commit/775356af661f5ab80c70053a8d231451eb529a91))
+
 ## [0.16.0](https://github.com/macEMSuite/DiffractoKit/compare/0.15.1...0.16.0) (2026-11-14)
 
 
