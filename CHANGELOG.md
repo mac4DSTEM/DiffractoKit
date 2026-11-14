@@ -4,6 +4,18 @@ All notable changes to DiffractoKit. Versions are semantic (0.x: a minor release
 reproduces, and against what, are in `docs/parity.md`. From 0.11.0 on, release-please writes each entry from the
 conventional-commit titles of the merged pull requests. The entries up to 0.10.0 use Keep a Changelog's sections (Added, Changed, Fixed, Removed, Migration).
 
+## [0.16.0](https://github.com/macEMSuite/DiffractoKit/compare/0.15.1...0.16.0) (2026-11-14)
+
+
+### Features
+
+* LinearScale.assign takes double-diffraction shells that match later rings only ([#126](https://github.com/macEMSuite/DiffractoKit/issues/126)) ([8b4213d](https://github.com/macEMSuite/DiffractoKit/commit/8b4213d770f1dce70c76ec078f9716405f13bf5a))
+
+
+### Bug Fixes
+
+* ACOM samples and reduces a -3m1 phase in its own -3m setting ([#122](https://github.com/macEMSuite/DiffractoKit/issues/122)) ([b4156ec](https://github.com/macEMSuite/DiffractoKit/commit/b4156ecb1bf53c0380e8cc0775775a9648ad3e52)), closes [#118](https://github.com/macEMSuite/DiffractoKit/issues/118)
+
 ## [0.15.1](https://github.com/mac4DSTEM/DiffractoKit/compare/0.15.0...0.15.1) (2026-11-12)
 
 
