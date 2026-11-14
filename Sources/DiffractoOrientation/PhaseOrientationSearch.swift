@@ -308,9 +308,9 @@ extension PhaseVectorMatcher {
                         peaks: residual.scan[position], removedCount: residual.removedCounts[position], candidates: candidates,
                         settings: settings, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel)
                     pending += 1
-                    if progress != nil && pending >= batch { progress?(Double(counter.add(pending)) / Double(total)); pending = 0 }
+                    if let progress, pending >= batch { counter.add(pending, of: total, reporting: progress); pending = 0 }
                 }
-                if progress != nil && pending > 0 { progress?(Double(counter.add(pending)) / Double(total)) }
+                if let progress, pending > 0 { counter.add(pending, of: total, reporting: progress) }
             }
         }
         guard isCancelled?() != true else { return nil }

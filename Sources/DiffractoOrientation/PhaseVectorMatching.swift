@@ -348,6 +348,10 @@ public enum PhaseVectorMatcher {
             lock.lock(); done += n; let completed = done; lock.unlock()
             return completed
         }
+        /// Adds `n` and reports the fraction done while holding the lock, so the reports reach the caller in rising order.
+        func add(_ n: Int, of total: Int, reporting progress: @Sendable (Double) -> Void) {
+            lock.lock(); done += n; progress(Double(done) / Double(total)); lock.unlock()
+        }
     }
 }
 
