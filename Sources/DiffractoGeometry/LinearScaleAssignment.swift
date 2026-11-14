@@ -112,25 +112,31 @@ extension LinearScale {
     ///
     /// - Parameters:
     ///   - radiiPerPosition: peak radii in pixels from the origin, one array per scan position.
-    ///   - shellLengths: the crystal's distinct |g| (Å⁻¹), ascending.
+    ///   - shellLengths: the crystal's distinct |g| (Å⁻¹), strictly ascending (a precondition: the matching walks them in order).
     ///   - labels: one family name per shell for the sentences ("{200}"); "shell k" when absent.
     ///   - crystalName: for the "no match" sentence.
     ///   - priorScale: a Δq (Å⁻¹ per pixel) from the file or typed.
+    ///   - doubleDiffractionShells: |g| (Å⁻¹) of kinematically forbidden shells that double diffraction puts on the detector (diamond-cubic
+    ///     {002} and {222}, hcp (0001)). They may match a LATER ring, never the first, and they don't count toward the window of shells a
+    ///     hypothesis may use (only those within its reach are read), so a zone that doesn't show them is assigned as without them.
     /// - Returns: nil when no position holds a radius above `minimumRadiusPixels` (or the shell list is empty or has a non-positive length).
     /// - Throws: `LinearScaleAssignmentError` when the sequence matches no starting shell, two assignments with different predictions fit
     ///   equally well, or the two readings of the rings give different scales.
     public static func assign(
         radiiPerPosition: [[Double]], shellLengths: [Double], labels: [String]? = nil, crystalName: String = "the crystal",
-        priorScale: Double? = nil, minimumRadiusPixels: Double = 2
+        priorScale: Double? = nil, minimumRadiusPixels: Double = 2, doubleDiffractionShells: [Double] = []
     ) throws -> LinearScaleAssignment? {
         guard shellLengths.count > 0, shellLengths.allSatisfy({ $0.isFinite && $0 > 0 }) else { return nil }
+        let extra = doubleDiffractionShells.filter { $0.isFinite && $0 > 0 }
         func name(_ k: Int) -> String { labels.flatMap { k < $0.count ? $0[k] : nil } ?? "shell \(k + 1)" }
 
         // Two readings of the same peaks, with different weaknesses, must give the same scale; a reading that refuses refuses for both.
         let perPosition = ringsPerPosition(radiiPerPosition, minimumRadiusPixels: minimumRadiusPixels)
         let pooled = ringsPooled(radiiPerPosition, minimumRadiusPixels: minimumRadiusPixels)
-        guard let a = try assign(rings: perPosition, shellLengths: shellLengths, name: name, crystalName: crystalName, priorScale: priorScale),
-              let b = try assign(rings: pooled, shellLengths: shellLengths, name: name, crystalName: crystalName, priorScale: priorScale) else { return nil }
+        guard let a = try assign(rings: perPosition, shellLengths: shellLengths, extra: extra, name: name, crystalName: crystalName,
+                                 priorScale: priorScale),
+              let b = try assign(rings: pooled, shellLengths: shellLengths, extra: extra, name: name, crystalName: crystalName,
+                                 priorScale: priorScale) else { return nil }
         let scaleA = a.referenceRadiusInvAngstrom / a.observedRadiiPixels[0], scaleB = b.referenceRadiusInvAngstrom / b.observedRadiiPixels[0]
         guard abs(scaleA / scaleB - 1) <= assignmentReadingAgreement else {
             func at(_ x: LinearScaleAssignment) -> String { "\(x.label) at \(String(format: "%.1f", x.observedRadiiPixels[0])) px" }
@@ -211,16 +217,19 @@ extension LinearScale {
     }
 
     /// The hypotheses scored against one reading of the rings (`assign`'s documentation). Nil without a first ring.
-    private static func assign(rings observed: [Double], shellLengths: [Double], name: (Int) -> String, crystalName: String,
+    static func assign(rings observed: [Double], shellLengths: [Double], extra: [Double], name: (Int) -> String, crystalName: String,
                                priorScale: Double?) throws -> LinearScaleAssignment? {
         guard let r1 = observed.first, r1 > 0 else { return nil }
 
         let shells = Array(shellLengths.prefix(assignmentShellWindow))
+        // What a later ring may match: the window's shells and the double-diffraction shells within its reach, ascending by |g|.
+        let reach = shells.last ?? 0
+        let candidates = (shells + extra.filter { $0 <= reach * (1 + 1e-9) && !shells.contains($0) }).sorted()
         let tried = min(assignmentHypotheses, shells.count)
-        func assigned(_ j: Int, matched: Int, rms: Double, secondShell: Int?, equallyFitting: [String] = []) -> LinearScaleAssignment {
+        func assigned(_ j: Int, matched: Int, rms: Double, secondShell: Double?, equallyFitting: [String] = []) -> LinearScaleAssignment {
             LinearScaleAssignment(
                 shellIndex: j, label: name(j), referenceRadiusInvAngstrom: shells[j],
-                nextShellInvAngstrom: secondShell.map { shells[$0] } ?? (j + 1 < shells.count ? shells[j + 1] : nil),
+                nextShellInvAngstrom: secondShell ?? (j + 1 < shells.count ? shells[j + 1] : nil),
                 observedRadiiPixels: observed, matchedRings: matched, observedRings: observed.count, rmsMisfit: rms,
                 equallyFitting: equallyFitting)
         }
@@ -234,24 +243,24 @@ extension LinearScale {
             return assigned(j, matched: 1, rms: 0, secondShell: nil)
         }
 
-        /// `shellPerRing[i]` is the shell matched to observed ring i + 1, nil when none was.
-        struct Score { let j: Int; let matched: Int; let rms: Double; let secondShell: Int?; let shellPerRing: [Int?] }
+        /// `shellPerRing[i]` is the |g| of the candidate matched to observed ring i + 1, nil when none was.
+        struct Score { let j: Int; let matched: Int; let rms: Double; let secondShell: Double?; let shellPerRing: [Double?] }
         var scores: [Score] = []
         for j in 0 ..< tried {
             let scale = shells[j] / r1
-            var last = j, matched = 1, squares = 0.0, second: Int?
-            var shellPerRing = [Int?](repeating: nil, count: observed.count - 1)
+            var last = shells[j], matched = 1, squares = 0.0, second: Double?
+            var shellPerRing = [Double?](repeating: nil, count: observed.count - 1)
             for ring in 1 ..< observed.count {
                 let r = observed[ring]
-                var best: (k: Int, error: Double)?
-                for k in (last + 1) ..< max(shells.count, last + 1) {
-                    let error = abs(shells[k] / scale - r) / r
-                    if best == nil || error < best!.error { best = (k, error) }
+                var best: (g: Double, error: Double)?
+                for g in candidates where g > last * (1 + 1e-9) {
+                    let error = abs(g / scale - r) / r
+                    if best == nil || error < best!.error { best = (g, error) }
                 }
-                guard let hit = best, abs(shells[hit.k] / scale - r) <= max(0.03 * r, 1) else { continue }
-                matched += 1; squares += hit.error * hit.error; last = hit.k
-                shellPerRing[ring - 1] = hit.k
-                if ring == 1 { second = hit.k }
+                guard let hit = best, abs(hit.g / scale - r) <= max(0.03 * r, 1) else { continue }
+                matched += 1; squares += hit.error * hit.error; last = hit.g
+                shellPerRing[ring - 1] = hit.g
+                if ring == 1 { second = hit.g }
             }
             scores.append(Score(j: j, matched: matched, rms: matched > 1 ? (squares / Double(matched - 1)).squareRoot() : 0, secondShell: second,
                                 shellPerRing: shellPerRing))
@@ -280,7 +289,7 @@ extension LinearScale {
                 switch (mine, theirs) {
                 case (nil, nil): return true
                 case let (k?, m?):
-                    let p = shells[k] / shells[best.j], q = shells[m] / shells[s.j]
+                    let p = k / shells[best.j], q = m / shells[s.j]
                     return abs(p - q) <= assignmentSameRatios * p
                 default: return false
                 }
@@ -301,10 +310,11 @@ extension LinearScale {
     /// `assign`, then `estimate` against the assigned shell, the shell the second ring matched as the check.
     public static func estimateAssigned(
         radiiPerPosition: [[Double]], shellLengths: [Double], labels: [String]? = nil, crystalName: String = "the crystal",
-        priorScale: Double? = nil, minimumRadiusPixels: Double = 2
+        priorScale: Double? = nil, minimumRadiusPixels: Double = 2, doubleDiffractionShells: [Double] = []
     ) throws -> (estimate: LinearScaleEstimate, assignment: LinearScaleAssignment)? {
         guard let a = try assign(radiiPerPosition: radiiPerPosition, shellLengths: shellLengths, labels: labels, crystalName: crystalName,
-                                 priorScale: priorScale, minimumRadiusPixels: minimumRadiusPixels),
+                                 priorScale: priorScale, minimumRadiusPixels: minimumRadiusPixels,
+                                 doubleDiffractionShells: doubleDiffractionShells),
               let e = estimate(radiiPerPosition: radiiPerPosition, referenceRadiusInvAngstrom: a.referenceRadiusInvAngstrom,
                                secondShellRadiusInvAngstrom: a.nextShellInvAngstrom, minimumRadiusPixels: minimumRadiusPixels) else { return nil }
         return (e, a)
