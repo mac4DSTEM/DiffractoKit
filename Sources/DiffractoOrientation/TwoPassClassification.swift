@@ -48,7 +48,7 @@ extension MatrixOrientationField {
     }
 }
 
-/// A phase for ``PhaseVectorMatcher/classifyInTwoPasses(residual:matrixOrientations:phases:matrixSymmetry:settings:originX:originY:invAngstromPerPixel:matrixReflections:scan:scanWidth:usesNeighbourSupport:minimumPositions:maximumWorkers:isCancelled:)``.
+/// A phase for ``PhaseVectorMatcher/classifyInTwoPasses(residual:matrixOrientations:phases:matrixSymmetry:settings:originX:originY:invAngstromPerPixel:matrixReflections:scan:scanWidth:usesNeighbourSupport:minimumPositions:matrixToleranceInvAngstrom:maximumWorkers:isCancelled:progress:)``.
 public struct TwoPassPhase: Sendable {
     public let candidate: PhaseOrientationCandidate
     /// The phase's symmetry, by which its relationships are clustered and its variants counted.
@@ -176,14 +176,18 @@ extension PhaseVectorMatcher {
                                            minimumPositions: Int = 20,
                                            matrixToleranceInvAngstrom: Double = 0.02,
                                            maximumWorkers: Int? = nil,
-                                           isCancelled: (@Sendable () -> Bool)? = nil) -> TwoPassClassification? {
+                                           isCancelled: (@Sendable () -> Bool)? = nil,
+                                           progress: (@Sendable (Double) -> Void)? = nil) -> TwoPassClassification? {
         let total = residual.scan.count
         guard matrixOrientations.count == total, residual.removedCounts.count == total else { return nil }
         if let scan, scan.count != total { return nil }
         let candidates = phases.map(\.candidate)
+        var searchProgress: (@Sendable (Double) -> Void)?
+        if let progress { searchProgress = { @Sendable fraction in progress(0.8 * fraction) } }
         guard var free = searchOrientations(residual: residual, candidates: candidates, settings: settings,
                                             originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
-                                            maximumWorkers: maximumWorkers, isCancelled: isCancelled) else { return nil }
+                                            maximumWorkers: maximumWorkers, isCancelled: isCancelled,
+                                            progress: searchProgress) else { return nil }
         // A displaced matrix pattern: the removal took none of the position's vectors, yet at least half of the matrix's
         // predicted spots (and at least two) have a vector within three pair radii. The residual there is the matrix pattern
         // itself, a little off (a shifted origin, a wrong calibration), and a phase indexed on it is the matrix's spots read as
@@ -224,13 +228,16 @@ extension PhaseVectorMatcher {
             relationships.append(merged.count == first.count ? first : merged.map(refined))
         }
         if isCancelled?() == true { return nil }
+        progress?(0.85)
 
         // 3 and 4. every position against the variants.
         let sets = zip(candidates, relationships).map { PhaseVariantSet(candidate: $0, relationships: $1) }
         let onAllSpots = scan != nil && matrixReflections != nil
         var verdicts = [PhaseOrientationVerdict](repeating: PhaseOrientationVerdict(), count: total)
         var single = [PhaseOrientationVerdict?](repeating: nil, count: total)   // indexed on one own vector: for the neighbour rule
+        let step = max(1, total / 100)
         for i in 0..<total {
+            if let progress, i % step == 0 { progress(0.85 + 0.15 * Double(i) / Double(total)) }
             // The whole pattern, without what the removal took for a neighbouring grain (DiffractoKit#103).
             var whole: [SIMD2<Double>]? = scan?[i]
             if let all = whole, let reflections = matrixReflections {

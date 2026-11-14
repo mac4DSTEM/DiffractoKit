@@ -106,7 +106,8 @@ extension PhaseVectorMatcher {
     ///   - scan: every position's peaks, row-major, in detector pixels.
     ///   - matrix: the matrix phase.
     ///   - candidates: the phases to look for, each structure once.
-    ///   - progress: 0 to 1; the matrix step reports up to 0.6, the later steps at their ends.
+    ///   - progress: 0 to 1; the matrix step reports up to 0.6, the regularization and the removal at 0.7 and 0.75, and the two
+    ///     passes from 0.75 to 1 as they go (their search about every 1 % of the scan), so a long search is never shown as stalled.
     /// - Returns: nil when the scan's size does not fit, there is no candidate, or the run was cancelled.
     /// - Throws: ``ACOMError`` when a structure is refused or its Laue class cannot be determined.
     public static func mapFromStructures(scan: [[SIMD2<Double>]], scanWidth: Int, scanHeight: Int,
@@ -163,6 +164,8 @@ extension PhaseVectorMatcher {
         let search = PhaseOrientationSearchSettings(reachInvAngstrom: reach, pairRadiusInvAngstrom: settings.pairRadiusInvAngstrom,
                                                     residualCutoffInvAngstrom: settings.residualCutoffInvAngstrom,
                                                     directBeamRadiusInvAngstrom: beam, maximumVectorInvAngstrom: cut)
+        var passesProgress: (@Sendable (Double) -> Void)?
+        if let progress { passesProgress = { @Sendable fraction in progress(0.75 + 0.25 * fraction) } }
         guard let two = classifyInTwoPasses(residual: residual, matrixOrientations: corrected, phases: phases,
                                             matrixSymmetry: matrixSymmetry, settings: search,
                                             originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel,
@@ -170,7 +173,8 @@ extension PhaseVectorMatcher {
                                             usesNeighbourSupport: settings.usesNeighbourSupport,
                                             minimumPositions: settings.minimumPositions,
                                             matrixToleranceInvAngstrom: settings.matrixToleranceInvAngstrom,
-                                            maximumWorkers: maximumWorkers, isCancelled: isCancelled) else { return nil }
+                                            maximumWorkers: maximumWorkers, isCancelled: isCancelled,
+                                            progress: passesProgress) else { return nil }
 
         var map = PhaseMap(width: scanWidth, height: scanHeight, matrixEntryIndex: -1,
                            phaseNames: [matrix.name] + candidates.map(\.name), matrixPhaseIndex: 0)
