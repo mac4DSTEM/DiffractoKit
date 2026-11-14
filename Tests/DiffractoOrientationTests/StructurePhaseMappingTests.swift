@@ -135,8 +135,8 @@ import DiffractoOrientation
         // rising. Mutation: no progress handed to `classifyInTwoPasses` - none in between, red.
         let passes = reported.filter { $0 > 0.75 && $0 < 1 }
         #expect(passes.count >= 10, "the two passes reported \(passes.count) values")
-        #expect(zip(passes, passes.dropFirst()).filter { $0 > $1 + 1e-12 }.count <= 2 * ProcessInfo.processInfo.activeProcessorCount,
-                "the two passes' progress must rise (worker reports may interleave)")
+        // Workers report after their lock, so two reports may arrive a batch out of order; a drop of more than 1 % may not.
+        #expect(!zip(passes, passes.dropFirst()).contains { $0 > $1 + 0.01 }, "the two passes' progress must rise")
     }
 
     /// What is refused: a scan whose size does not fit, no candidate, a cancelled run (nil each), and a structure the

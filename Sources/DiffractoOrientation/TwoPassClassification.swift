@@ -48,7 +48,7 @@ extension MatrixOrientationField {
     }
 }
 
-/// A phase for ``PhaseVectorMatcher/classifyInTwoPasses(residual:matrixOrientations:phases:matrixSymmetry:settings:originX:originY:invAngstromPerPixel:matrixReflections:scan:scanWidth:usesNeighbourSupport:minimumPositions:maximumWorkers:isCancelled:)``.
+/// A phase for ``PhaseVectorMatcher/classifyInTwoPasses(residual:matrixOrientations:phases:matrixSymmetry:settings:originX:originY:invAngstromPerPixel:matrixReflections:scan:scanWidth:usesNeighbourSupport:minimumPositions:matrixToleranceInvAngstrom:maximumWorkers:isCancelled:progress:)``.
 public struct TwoPassPhase: Sendable {
     public let candidate: PhaseOrientationCandidate
     /// The phase's symmetry, by which its relationships are clustered and its variants counted.
