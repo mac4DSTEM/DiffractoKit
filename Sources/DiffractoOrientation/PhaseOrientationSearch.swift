@@ -288,7 +288,8 @@ extension PhaseVectorMatcher {
                                           settings: PhaseOrientationSearchSettings,
                                           originX: Float, originY: Float, invAngstromPerPixel: Double,
                                           maximumWorkers: Int? = nil,
-                                          isCancelled: (@Sendable () -> Bool)? = nil) -> [PhaseOrientationVerdict]? {
+                                          isCancelled: (@Sendable () -> Bool)? = nil,
+                                          progress: (@Sendable (Double) -> Void)? = nil) -> [PhaseOrientationVerdict]? {
         let total = residual.scan.count
         guard residual.removedCounts.count == total else { return nil }
         guard total > 0 else { return [] }
@@ -296,13 +297,20 @@ extension PhaseVectorMatcher {
         results.withUnsafeMutableBufferPointer { buffer in
             let box = VerdictBox(buffer.baseAddress!)
             let workers = max(1, min(maximumWorkers ?? ProcessInfo.processInfo.activeProcessorCount, total))
+            // The positions done so far, reported about every 1 % of the scan (mac4DSTEM#333: this step ran for minutes unreported).
+            let counter = PhaseVectorMatcher.ProgressCounter()
+            let batch = max(1, total / (workers * 100))
             DispatchQueue.concurrentPerform(iterations: workers) { worker in
+                var pending = 0
                 for position in Swift.stride(from: worker, to: total, by: workers) {
                     if isCancelled?() == true { break }
                     box.value[position] = searchOrientations(
                         peaks: residual.scan[position], removedCount: residual.removedCounts[position], candidates: candidates,
                         settings: settings, originX: originX, originY: originY, invAngstromPerPixel: invAngstromPerPixel)
+                    pending += 1
+                    if progress != nil && pending >= batch { progress?(Double(counter.add(pending)) / Double(total)); pending = 0 }
                 }
+                if progress != nil && pending > 0 { progress?(Double(counter.add(pending)) / Double(total)) }
             }
         }
         guard isCancelled?() != true else { return nil }

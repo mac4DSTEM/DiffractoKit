@@ -131,6 +131,12 @@ import DiffractoOrientation
         #expect(result.map.phaseCounts == [Self.side * Self.side - 36, 36])
         let reported = progress.values
         #expect(reported.last == 1 && reported.max() == 1 && reported.allSatisfy { $0 >= 0 }, "progress must end at 1: \(reported.suffix(4))")
+        // The two passes report as they go (mac4DSTEM#333: the bar sat at 0.75 for minutes): values strictly between 0.75 and 1,
+        // rising. Mutation: no progress handed to `classifyInTwoPasses` - none in between, red.
+        let passes = reported.filter { $0 > 0.75 && $0 < 1 }
+        #expect(passes.count >= 10, "the two passes reported \(passes.count) values")
+        #expect(zip(passes, passes.dropFirst()).filter { $0 > $1 + 1e-12 }.count <= 2 * ProcessInfo.processInfo.activeProcessorCount,
+                "the two passes' progress must rise (worker reports may interleave)")
     }
 
     /// What is refused: a scan whose size does not fit, no candidate, a cancelled run (nil each), and a structure the

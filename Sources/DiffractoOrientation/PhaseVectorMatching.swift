@@ -341,7 +341,7 @@ public enum PhaseVectorMatcher {
     }
 
     /// The positions done so far, shared by the workers: a lock around a captured counter, as in the apps' original.
-    private final class ProgressCounter: @unchecked Sendable {
+    final class ProgressCounter: @unchecked Sendable {
         private let lock = NSLock()
         private var done = 0
         func add(_ n: Int) -> Int {
